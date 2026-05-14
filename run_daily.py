@@ -28,6 +28,7 @@ from sim.stock_pool import StockPool
 from sim.realtime_price import get_latest_prices
 from sim.reporter import generate_daily_report, generate_nav_chart
 from sim.config import risk_params, broker_mode
+from sim.trade_calendar import is_trading_day
 from broker import get_broker
 
 
@@ -180,6 +181,7 @@ def main():
     parser.add_argument("--settle", action="store_true", help="收盘结算模式")
     parser.add_argument("--date", type=str, default=None, help="指定日期 YYYY-MM-DD")
     parser.add_argument("--init-db", action="store_true", help="仅初始化数据库")
+    parser.add_argument("--force", action="store_true", help="非交易日也强制跑")
     args = parser.parse_args()
 
     trade_date = None
@@ -192,6 +194,12 @@ def main():
 
     if args.init_db:
         print("✅ 数据库初始化完成")
+        return
+
+    # 交易日检查
+    today = trade_date or Date.today()
+    if not args.force and not is_trading_day(today):
+        print(f"⏸ {today} 非交易日，跳过（加 --force 可强制运行）")
         return
 
     # 创建 broker（命令行 > 配置 > 默认 sim）

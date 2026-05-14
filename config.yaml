@@ -35,6 +35,15 @@ fees:
   stamp_tax_rate: 0.001       # 印花税千1（仅卖出）
   unit_size: 100              # 交易单位（A 股 100 股）
 
+# ========== 推送通知 ==========
+notifier:
+  enabled: true
+  # 企微群机器人 webhook URL
+  # 获取方法：建个企微群 → 右上角 → 添加群机器人 → 拿 webhook
+  # 详细文档：https://developer.work.weixin.qq.com/document/path/91770
+  # 敏感：实际值建议写到 config.local.yaml不交仓库
+  wecom_webhook: ""
+
 # ========== 交易模式 ==========
 broker:
   mode: "sim"                 # sim / live

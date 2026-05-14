@@ -29,6 +29,7 @@ from sim.realtime_price import get_latest_prices
 from sim.reporter import generate_daily_report, generate_nav_chart
 from sim.config import risk_params, broker_mode
 from sim.trade_calendar import is_trading_day
+from sim import notifier
 from broker import get_broker
 
 
@@ -128,6 +129,8 @@ def run_settle(broker, trade_date: Date = None):
                     trade_date=trade_date,
                 )
                 print(f"  → {'✅' if result.success else '❌'} 买入: {result.msg}")
+                notifier.notify_trade("BUY", name, code, quantity, price,
+                                       "+".join(sig["reasons"]), result.success)
                 if result.success:
                     trades_today += 1
             else:
@@ -142,6 +145,8 @@ def run_settle(broker, trade_date: Date = None):
                     trade_date=trade_date,
                 )
                 print(f"  → {'✅' if result.success else '❌'} 卖出: {result.msg}")
+                notifier.notify_trade("SELL", name, code, pos.quantity, price,
+                                       "+".join(sig["reasons"]), result.success)
                 if result.success:
                     trades_today += 1
             else:
@@ -163,12 +168,17 @@ def run_settle(broker, trade_date: Date = None):
     print("\n" + report)
 
     # 7. 生成净值曲线
+    chart_path = None
     try:
         chart_path = generate_nav_chart()
         if chart_path:
             print(f"\n📈 净值曲线已保存: {chart_path}")
     except Exception as e:
         print(f"\n⚠ 净值曲线生成失败: {e}")
+
+    # 8. 推送企微
+    notifier.notify_signals(signals, trade_date)
+    notifier.notify_daily_report(report, chart_path)
 
     return report, signals
 
@@ -209,7 +219,8 @@ def main():
 
     try:
         if args.pre_market:
-            run_pre_market(broker)
+            signals = run_pre_market(broker)
+            notifier.notify_signals(signals)
         elif args.settle:
             run_settle(broker, trade_date)
         else:

@@ -3,3 +3,12 @@ __pycache__/
 output/*.png
 *.db
 .env
+data/sim.db
+data/sim.db-journal
+data/sim.db-wal
+data/sim.db-shm
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+output/*.png

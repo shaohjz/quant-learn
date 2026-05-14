@@ -1,6 +1,6 @@
 """
 sim/reporter.py
-报告生成器 — 生成每日模拟盘报告 + 净值曲线图
+报告生成器 — 生成每日模拟盘报告 + 净值曲线图（SQLite 版）
 """
 
 import os
@@ -26,42 +26,37 @@ def _fmt_pct(v):
 def generate_daily_report(trade_date: Date = None,
                           signals: list = None,
                           account_id: int = 1) -> str:
-    """
-    生成每日模拟盘报告（纯文本/Markdown）
-    """
+    """生成每日模拟盘报告（纯文本/Markdown）"""
     trade_date = trade_date or Date.today()
     conn = get_conn()
     try:
-        with conn.cursor() as cur:
-            # 账户状态
-            cur.execute(
-                "SELECT account_name, initial_cash, cash, total_value "
-                "FROM sim_account WHERE id = %s", (account_id,))
-            acct = cur.fetchone()
+        cur = conn.cursor()
 
-            # 今日交易
-            cur.execute(
-                "SELECT direction, stock_code, stock_name, price, quantity, "
-                "amount, commission, tax, signal_reason "
-                "FROM sim_trades WHERE account_id = %s AND trade_date = %s "
-                "ORDER BY id", (account_id, trade_date))
-            trades = cur.fetchall()
+        cur.execute(
+            "SELECT account_name, initial_cash, cash, total_value "
+            "FROM sim_account WHERE id = ?", (account_id,))
+        acct = cur.fetchone()
 
-            # 当前持仓
-            cur.execute(
-                "SELECT stock_code, stock_name, quantity, avg_cost, "
-                "current_price, market_value, pnl, pnl_pct "
-                "FROM sim_positions WHERE account_id = %s AND quantity > 0",
-                (account_id,))
-            positions = cur.fetchall()
+        cur.execute(
+            "SELECT direction, stock_code, stock_name, price, quantity, "
+            "amount, commission, tax, signal_reason, broker "
+            "FROM sim_trades WHERE account_id = ? AND trade_date = ? "
+            "ORDER BY id", (account_id, str(trade_date)))
+        trades = cur.fetchall()
 
-            # 今日净值
-            cur.execute(
-                "SELECT total_value, cash, market_value, daily_return, "
-                "cumulative_return, max_drawdown "
-                "FROM sim_daily_nav WHERE account_id = %s AND trade_date = %s",
-                (account_id, trade_date))
-            nav = cur.fetchone()
+        cur.execute(
+            "SELECT stock_code, stock_name, quantity, avg_cost, "
+            "current_price, market_value, pnl, pnl_pct "
+            "FROM sim_positions WHERE account_id = ? AND quantity > 0",
+            (account_id,))
+        positions = cur.fetchall()
+
+        cur.execute(
+            "SELECT total_value, cash, market_value, daily_return, "
+            "cumulative_return, max_drawdown "
+            "FROM sim_daily_nav WHERE account_id = ? AND trade_date = ?",
+            (account_id, str(trade_date)))
+        nav = cur.fetchone()
     finally:
         conn.close()
 
@@ -71,9 +66,9 @@ def generate_daily_report(trade_date: Date = None,
 
     # 账户概况
     if acct:
-        initial = float(acct[1])
-        cash = float(acct[2])
-        total = float(acct[3])
+        initial = float(acct["initial_cash"])
+        cash = float(acct["cash"])
+        total = float(acct["total_value"])
         pnl = total - initial
         lines.append("")
         lines.append("💰 账户概况")
@@ -85,9 +80,10 @@ def generate_daily_report(trade_date: Date = None,
     if nav:
         lines.append("")
         lines.append("📈 净值数据")
-        lines.append(f"  日收益率: {_fmt_pct(nav[3])}")
-        lines.append(f"  累计收益: {_fmt_pct(nav[4])}")
-        lines.append(f"  最大回撤: {_fmt_pct(-abs(float(nav[5])) if nav[5] else 0)}")
+        lines.append(f"  日收益率: {_fmt_pct(nav['daily_return'])}")
+        lines.append(f"  累计收益: {_fmt_pct(nav['cumulative_return'])}")
+        mdd = nav["max_drawdown"]
+        lines.append(f"  最大回撤: {_fmt_pct(-abs(float(mdd)) if mdd else 0)}")
 
     # 今日信号
     if signals:
@@ -98,7 +94,6 @@ def generate_daily_report(trade_date: Date = None,
             lines.append(f"  {emoji} {s['name']}({s['code']}): {s['signal']}")
             lines.append(f"     价格: ¥{s['price']:.2f}")
             lines.append(f"     原因: {', '.join(s['reasons'])}")
-            # 关键指标
             ind = s.get("indicators", {})
             if ind:
                 lines.append(f"     RSI={ind.get('RSI','')}, K={ind.get('K','')}, "
@@ -111,16 +106,17 @@ def generate_daily_report(trade_date: Date = None,
         lines.append("")
         lines.append("📋 今日交易")
         for t in trades:
-            direction = t[0]
+            direction = t["direction"]
             emoji = "🟢买入" if direction == "BUY" else "🔴卖出"
-            lines.append(f"  {emoji} {t[2]}({t[1]})")
-            lines.append(f"     {t[4]}股 × ¥{float(t[3]):.4f} = ¥{_fmt_money(t[5])}")
-            fee_parts = [f"佣金¥{float(t[6]):.2f}"]
-            if t[7] and float(t[7]) > 0:
-                fee_parts.append(f"印花税¥{float(t[7]):.2f}")
+            broker_tag = "" if (t["broker"] or "sim") == "sim" else f" [{t['broker']}]"
+            lines.append(f"  {emoji}{broker_tag} {t['stock_name']}({t['stock_code']})")
+            lines.append(f"     {t['quantity']}股 × ¥{float(t['price']):.4f} = ¥{_fmt_money(t['amount'])}")
+            fee_parts = [f"佣金¥{float(t['commission']):.2f}"]
+            if t["tax"] and float(t["tax"]) > 0:
+                fee_parts.append(f"印花税¥{float(t['tax']):.2f}")
             lines.append(f"     费用: {' + '.join(fee_parts)}")
-            if t[8]:
-                lines.append(f"     信号: {t[8]}")
+            if t["signal_reason"]:
+                lines.append(f"     信号: {t['signal_reason']}")
     else:
         lines.append("")
         lines.append("📋 今日无交易")
@@ -130,13 +126,13 @@ def generate_daily_report(trade_date: Date = None,
     if positions:
         lines.append("📦 当前持仓")
         for p in positions:
-            pnl_pct = float(p[7]) if p[7] else 0
+            pnl_pct = float(p["pnl_pct"]) if p["pnl_pct"] else 0
             emoji = "📈" if pnl_pct > 0 else "📉" if pnl_pct < 0 else "➖"
-            lines.append(f"  {emoji} {p[1]}({p[0]})")
-            lines.append(f"     {p[2]}股, 成本¥{float(p[3]):.4f}, "
-                         f"现价¥{float(p[4]):.4f}")
-            lines.append(f"     市值¥{_fmt_money(p[5])}, "
-                         f"盈亏¥{_fmt_money(p[6])}({_fmt_pct(pnl_pct)})")
+            lines.append(f"  {emoji} {p['stock_name']}({p['stock_code']})")
+            lines.append(f"     {p['quantity']}股, 成本¥{float(p['avg_cost']):.4f}, "
+                         f"现价¥{float(p['current_price']):.4f}")
+            lines.append(f"     市值¥{_fmt_money(p['market_value'])}, "
+                         f"盈亏¥{_fmt_money(p['pnl'])}({_fmt_pct(pnl_pct)})")
     else:
         lines.append("📦 当前空仓")
 
@@ -147,10 +143,7 @@ def generate_daily_report(trade_date: Date = None,
 
 
 def generate_nav_chart(account_id: int = 1) -> str:
-    """
-    生成净值曲线图，保存到 output/nav_chart.png
-    返回文件路径
-    """
+    """生成净值曲线图，保存到 output/nav_chart.png"""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -158,26 +151,38 @@ def generate_nav_chart(account_id: int = 1) -> str:
 
     conn = get_conn()
     try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT trade_date, total_value, cumulative_return "
-                "FROM sim_daily_nav WHERE account_id = %s ORDER BY trade_date",
-                (account_id,))
-            rows = cur.fetchall()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT trade_date, total_value, cumulative_return "
+            "FROM sim_daily_nav WHERE account_id = ? ORDER BY trade_date",
+            (account_id,))
+        rows = cur.fetchall()
+
+        # 获取初始资金作为基准线
+        cur.execute("SELECT initial_cash FROM sim_account WHERE id = ?", (account_id,))
+        acct_row = cur.fetchone()
+        initial_cash = float(acct_row["initial_cash"]) if acct_row else 20000.0
     finally:
         conn.close()
 
     if not rows:
         return ""
 
-    dates = [r[0] for r in rows]
-    values = [float(r[1]) for r in rows]
-    returns = [float(r[2]) * 100 for r in rows]
+    from datetime import datetime as _dt
+    dates = []
+    for r in rows:
+        d = r["trade_date"]
+        if isinstance(d, str):
+            dates.append(_dt.strptime(d, "%Y-%m-%d").date())
+        else:
+            dates.append(d)
+    values = [float(r["total_value"]) for r in rows]
+    returns = [float(r["cumulative_return"]) * 100 for r in rows]
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 
     ax1.plot(dates, values, "b-", linewidth=1.5)
-    ax1.axhline(100000, color="gray", linestyle="--", alpha=0.5)
+    ax1.axhline(initial_cash, color="gray", linestyle="--", alpha=0.5)
     ax1.set_ylabel("Total Value (¥)")
     ax1.set_title("Simulated Portfolio NAV")
     ax1.grid(True, alpha=0.3)

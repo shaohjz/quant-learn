@@ -15,3 +15,4 @@ output/*.png
 config.local.yaml
 .env
 
+data/trade_dates.json

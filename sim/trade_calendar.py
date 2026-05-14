@@ -1,44 +1,119 @@
 """
 sim/trade_calendar.py
-A股交易日历（简化版：周一-周五 + 排除节假日列表）
+A股交易日历 — 用 akshare 拉新浪官方交易日，本地缓存到 data/trade_dates.json。
 
-未来如需精确，可改用 akshare 的 tool_trade_date_hist_sina() 拉官方交易日。
+策略：
+  - 第一次调用拉全量并缓存
+  - 缓存超过 7 天自动刷新（节假日提前公告，足够时效）
+  - 网络失败时回退到"周末判定"
 """
 
-from datetime import date as Date, datetime
+import json
+from datetime import date as Date, datetime, timedelta
+from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_CACHE_FILE = _PROJECT_ROOT / "data" / "trade_dates.json"
+_CACHE_TTL_DAYS = 7
+
+_cache = None  # 内存缓存：set[str]
 
 
-# 2026 年 A 股节假日（手动维护，每年初更新一次）
-# 数据来源：上交所/深交所官方休市公告
-HOLIDAYS_2026 = {
-    # 元旦
-    "2026-01-01", "2026-01-02",
-    # 春节
-    "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20",
-    # 清明
-    "2026-04-06",
-    # 劳动节
-    "2026-05-01", "2026-05-04", "2026-05-05",
-    # 端午
-    "2026-06-19",
-    # 中秋
-    "2026-09-25",
-    # 国庆
-    "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
-}
+def _refresh_cache():
+    """从 akshare 拉交易日并写本地缓存"""
+    global _cache
+    try:
+        import akshare as ak
+        df = ak.tool_trade_date_hist_sina()
+        dates = sorted({str(d) for d in df["trade_date"].tolist()})
+        _CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "updated_at": datetime.now().isoformat(),
+                "dates": dates,
+            }, f, ensure_ascii=False)
+        _cache = set(dates)
+        return True
+    except Exception as e:
+        print(f"⚠ 拉取交易日历失败：{e}（回退到本地缓存或周末判定）")
+        return False
+
+
+def _load_cache() -> set:
+    """从本地缓存加载，过期则刷新；都失败返回 None"""
+    global _cache
+    if _cache is not None:
+        return _cache
+
+    if _CACHE_FILE.exists():
+        try:
+            with open(_CACHE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            updated = datetime.fromisoformat(data["updated_at"])
+            if datetime.now() - updated < timedelta(days=_CACHE_TTL_DAYS):
+                _cache = set(data["dates"])
+                return _cache
+        except Exception:
+            pass
+
+    # 缓存不存在或过期，尝试刷新
+    if _refresh_cache():
+        return _cache
+
+    # 刷新失败，但若有旧缓存也凑合用
+    if _CACHE_FILE.exists():
+        try:
+            with open(_CACHE_FILE, "r", encoding="utf-8") as f:
+                _cache = set(json.load(f)["dates"])
+                return _cache
+        except Exception:
+            pass
+
+    return None
 
 
 def is_trading_day(d: Date = None) -> bool:
     """是否为交易日"""
     d = d or Date.today()
-    # 周末
-    if d.weekday() >= 5:
-        return False
-    # 节假日
-    return d.strftime("%Y-%m-%d") not in HOLIDAYS_2026
+    cache = _load_cache()
+    if cache:
+        return d.strftime("%Y-%m-%d") in cache
+    # 兜底：周末判定
+    return d.weekday() < 5
+
+
+def next_trading_day(d: Date = None, max_days: int = 14) -> Date:
+    """下一个交易日"""
+    d = d or Date.today()
+    cur = d + timedelta(days=1)
+    for _ in range(max_days):
+        if is_trading_day(cur):
+            return cur
+        cur += timedelta(days=1)
+    return cur
+
+
+def prev_trading_day(d: Date = None, max_days: int = 14) -> Date:
+    """上一个交易日"""
+    d = d or Date.today()
+    cur = d - timedelta(days=1)
+    for _ in range(max_days):
+        if is_trading_day(cur):
+            return cur
+        cur -= timedelta(days=1)
+    return cur
+
+
+def force_refresh():
+    """手动强制刷新"""
+    global _cache
+    _cache = None
+    return _refresh_cache()
 
 
 if __name__ == "__main__":
     today = Date.today()
-    print(f"今天 {today} ({['周一','周二','周三','周四','周五','周六','周日'][today.weekday()]})"
-          f" 是否交易日：{is_trading_day(today)}")
+    weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    print(f"今天 {today} ({weekdays[today.weekday()]}) 交易日: {is_trading_day(today)}")
+    print(f"上一交易日: {prev_trading_day(today)}")
+    print(f"下一交易日: {next_trading_day(today)}")

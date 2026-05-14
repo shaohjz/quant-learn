@@ -27,14 +27,16 @@ from sim.signal_generator import generate_signals
 from sim.stock_pool import StockPool
 from sim.realtime_price import get_latest_prices
 from sim.reporter import generate_daily_report, generate_nav_chart
+from sim.config import risk_params, broker_mode
 from broker import get_broker
 
 
-# 风控参数
-MAX_POSITION_PCT = 0.60     # 单次开仓不超过总资金的 60%
-DAILY_MAX_TRADES = 5        # 每日最多 5 笔
-STOP_LOSS_PCT = -0.08       # 止损线 -8%
-TAKE_PROFIT_PCT = 0.15      # 止盈线 +15%
+# 风控参数（从 config.yaml 加载，可被环境变量覆盖）
+_RISK = risk_params()
+MAX_POSITION_PCT = _RISK["max_position_pct"]
+DAILY_MAX_TRADES = _RISK["max_daily_trades"]
+STOP_LOSS_PCT = _RISK["stop_loss_pct"]
+TAKE_PROFIT_PCT = _RISK["take_profit_pct"]
 
 
 def _build_existing_position_map(broker):
@@ -172,8 +174,8 @@ def run_settle(broker, trade_date: Date = None):
 
 def main():
     parser = argparse.ArgumentParser(description="A股每日主程序（模拟/实盘）")
-    parser.add_argument("--mode", choices=["sim", "live"], default="sim",
-                        help="交易模式：sim=模拟盘（默认） / live=实盘QMT")
+    parser.add_argument("--mode", choices=["sim", "live"], default=None,
+                        help="交易模式：sim=模拟盘 / live=实盘QMT；默认读 config.yaml broker.mode")
     parser.add_argument("--pre-market", action="store_true", help="盘前信号模式")
     parser.add_argument("--settle", action="store_true", help="收盘结算模式")
     parser.add_argument("--date", type=str, default=None, help="指定日期 YYYY-MM-DD")
@@ -192,8 +194,9 @@ def main():
         print("✅ 数据库初始化完成")
         return
 
-    # 创建 broker
-    broker = get_broker(mode=args.mode)
+    # 创建 broker（命令行 > 配置 > 默认 sim）
+    mode = args.mode or broker_mode()
+    broker = get_broker(mode=mode)
     print(f"✅ broker 已连接：{broker.name}")
 
     try:

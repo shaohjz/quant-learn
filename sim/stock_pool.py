@@ -1,23 +1,19 @@
 """
 sim/stock_pool.py
-股票池管理
+股票池管理（从 config.yaml 读取）
 """
 
-# 默认股票池
-DEFAULT_POOL = {
-    "000967": "盈峰环境",
-    "002256": "兆新股份",
-}
+from sim.config import stock_pool_enabled
 
 
 class StockPool:
     """股票池管理器"""
 
     def __init__(self):
-        self._pool = dict(DEFAULT_POOL)
+        # 从配置文件加载启用的股票池
+        self._pool = stock_pool_enabled() or {}
 
     def get_all(self) -> dict:
-        """返回 {code: name}"""
         return dict(self._pool)
 
     def get_codes(self) -> list:

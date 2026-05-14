@@ -1,0 +1,207 @@
+"""
+dashboard.py — 本地小看板
+启动：python dashboard.py
+访问：http://127.0.0.1:5555
+"""
+
+import os
+import sys
+from datetime import date as Date
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from flask import Flask, jsonify, render_template_string
+from sim.db import get_conn
+from sim.config import get as cfg_get
+
+app = Flask(__name__)
+
+
+HTML = """
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>quant-learn 看板</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+       background:#0f1419;color:#e6e6e6;margin:0;padding:24px;max-width:1100px;
+       margin-left:auto;margin-right:auto}
+  h1{margin:0 0 8px;font-size:24px}
+  .meta{color:#8a8f99;font-size:13px;margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .card{background:#1a1f2e;border-radius:8px;padding:18px;border:1px solid #2d3548}
+  .card .label{color:#8a8f99;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .card .value{font-size:24px;font-weight:600;margin-top:6px}
+  .card.pnl-up .value{color:#4ade80}
+  .card.pnl-down .value{color:#f87171}
+  .section{background:#1a1f2e;border-radius:8px;padding:18px;border:1px solid #2d3548;
+           margin-bottom:16px}
+  .section h2{margin:0 0 12px;font-size:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #2d3548}
+  th{color:#8a8f99;font-weight:500;font-size:11px;text-transform:uppercase}
+  tr:hover{background:#222837}
+  .buy{color:#4ade80}.sell{color:#f87171}
+  .nav-img{max-width:100%;border-radius:6px;display:block}
+  .empty{color:#6c7280;text-align:center;padding:32px;font-style:italic}
+  .refresh{position:fixed;top:20px;right:20px;background:#3b82f6;color:white;
+           border:none;border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<button class="refresh" onclick="location.reload()">🔄 刷新</button>
+<h1>📊 quant-learn 模拟盘</h1>
+<div class="meta">{{ now }} · 数据来源 SQLite (data/sim.db)</div>
+
+<div class="grid">
+  <div class="card {{ 'pnl-up' if account.pnl >= 0 else 'pnl-down' }}">
+    <div class="label">总资产</div>
+    <div class="value">¥{{ '%.2f'|format(account.total_value) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">可用资金</div>
+    <div class="value">¥{{ '%.2f'|format(account.cash) }}</div>
+  </div>
+  <div class="card {{ 'pnl-up' if account.pnl >= 0 else 'pnl-down' }}">
+    <div class="label">总盈亏</div>
+    <div class="value">¥{{ '%+.2f'|format(account.pnl) }}</div>
+  </div>
+  <div class="card {{ 'pnl-up' if account.pnl >= 0 else 'pnl-down' }}">
+    <div class="label">累计收益率</div>
+    <div class="value">{{ '%+.2f'|format(account.pnl_pct * 100) }}%</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📦 当前持仓</h2>
+  {% if positions %}
+  <table>
+    <tr><th>股票</th><th>数量</th><th>成本</th><th>现价</th><th>市值</th><th>盈亏</th><th>%</th></tr>
+    {% for p in positions %}
+    <tr>
+      <td>{{ p.stock_name }}({{ p.stock_code }})</td>
+      <td>{{ p.quantity }}</td>
+      <td>¥{{ '%.4f'|format(p.avg_cost) }}</td>
+      <td>¥{{ '%.4f'|format(p.current_price or 0) }}</td>
+      <td>¥{{ '%.2f'|format(p.market_value or 0) }}</td>
+      <td class="{{ 'buy' if (p.pnl or 0) >= 0 else 'sell' }}">¥{{ '%+.2f'|format(p.pnl or 0) }}</td>
+      <td class="{{ 'buy' if (p.pnl_pct or 0) >= 0 else 'sell' }}">{{ '%+.2f'|format((p.pnl_pct or 0) * 100) }}%</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <div class="empty">空仓中</div>
+  {% endif %}
+</div>
+
+<div class="section">
+  <h2>📋 最近交易（最多 30 条）</h2>
+  {% if trades %}
+  <table>
+    <tr><th>日期</th><th>方向</th><th>股票</th><th>数量</th><th>价格</th><th>金额</th><th>来源</th><th>信号</th></tr>
+    {% for t in trades %}
+    <tr>
+      <td>{{ t.trade_date }}</td>
+      <td class="{{ 'buy' if t.direction == 'BUY' else 'sell' }}">
+        {{ '🟢买' if t.direction == 'BUY' else '🔴卖' }}
+      </td>
+      <td>{{ t.stock_name }}({{ t.stock_code }})</td>
+      <td>{{ t.quantity }}</td>
+      <td>¥{{ '%.4f'|format(t.price) }}</td>
+      <td>¥{{ '%.2f'|format(t.amount) }}</td>
+      <td>{{ t.broker or 'sim' }}</td>
+      <td>{{ (t.signal_reason or '')[:40] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <div class="empty">尚无交易</div>
+  {% endif %}
+</div>
+
+<div class="section">
+  <h2>📈 净值曲线</h2>
+  {% if has_chart %}
+  <img class="nav-img" src="/nav-chart.png?t={{ ts }}" alt="净值曲线">
+  {% else %}
+  <div class="empty">净值数据不足，先跑一次 settle 生成</div>
+  {% endif %}
+</div>
+</body>
+</html>
+"""
+
+
+def _fetch_dashboard_data(account_id: int = 1):
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT initial_cash, cash, total_value FROM sim_account WHERE id = ?",
+            (account_id,))
+        a = cur.fetchone()
+        initial = float(a["initial_cash"]) if a else 0
+        cash = float(a["cash"]) if a else 0
+        total = float(a["total_value"]) if a else 0
+        pnl = total - initial
+        pnl_pct = (pnl / initial) if initial else 0
+        account = {
+            "initial_cash": initial, "cash": cash, "total_value": total,
+            "pnl": pnl, "pnl_pct": pnl_pct,
+        }
+
+        cur.execute(
+            "SELECT stock_code, stock_name, quantity, avg_cost, current_price, "
+            "market_value, pnl, pnl_pct FROM sim_positions "
+            "WHERE account_id = ? AND quantity > 0",
+            (account_id,))
+        positions = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            "SELECT trade_date, direction, stock_code, stock_name, quantity, "
+            "price, amount, broker, signal_reason "
+            "FROM sim_trades WHERE account_id = ? "
+            "ORDER BY id DESC LIMIT 30",
+            (account_id,))
+        trades = [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+    return account, positions, trades
+
+
+@app.route("/")
+def index():
+    from datetime import datetime
+    account, positions, trades = _fetch_dashboard_data()
+    chart_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "output", "nav_chart.png")
+    return render_template_string(
+        HTML,
+        account=account, positions=positions, trades=trades,
+        has_chart=os.path.exists(chart_path),
+        now=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        ts=int(datetime.now().timestamp()),
+    )
+
+
+@app.route("/nav-chart.png")
+def nav_chart():
+    from flask import send_file
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "output", "nav_chart.png")
+    if not os.path.exists(p):
+        return "no chart", 404
+    return send_file(p, mimetype="image/png")
+
+
+@app.route("/api/summary")
+def api_summary():
+    account, positions, trades = _fetch_dashboard_data()
+    return jsonify({"account": account, "positions": positions, "trades": trades})
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("DASHBOARD_PORT", 5555))
+    print(f"🚀 看板：http://127.0.0.1:{port}")
+    app.run(host="127.0.0.1", port=port, debug=False)

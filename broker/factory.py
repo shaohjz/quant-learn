@@ -31,11 +31,18 @@ def get_broker(mode: str = "sim", **kwargs) -> IBroker:
                 "实盘模式需要设置 QMT_USERDATA_MINI 和 QMT_ACCOUNT_ID 环境变量，"
                 "或在调用时传 qmt_path 和 qmt_account 参数"
             )
+        # ⚠️ 硬隔离：拒绝连接真实账户
+        if str(account_id) in QMTBroker.FORBIDDEN_ACCOUNTS:
+            raise RuntimeError(
+                f"拒绝创建 QMTBroker：account_id={account_id} 在禁止名单（真实账户）"
+            )
         broker = QMTBroker(
             qmt_path=qmt_path,
             account_id=account_id,
             session_id=int(kwargs.get("session_id", os.environ.get("QMT_SESSION_ID", "123456"))),
             local_account_id=int(kwargs.get("account_id", 1)),
+            dry_run=bool(kwargs.get("dry_run", False)),
+            xtquant_site_packages=kwargs.get("xtquant_site_packages"),
         )
     else:
         raise ValueError(f"未知的 broker mode: {mode}")

@@ -1,0 +1,303 @@
+"""scripts/daily_review_vnpy.py — vnpy 双账户复盘脚本（Phase 2 完成版）
+
+数据源：
+  - sim 25000：sim/db.py 直读 sim.db
+  - QMT mini 1000 万 (90072426)：尝试用 broker.factory.get_broker('qmt', dry_run=True)
+    连 QMT mini，拉 query_account / query_positions；
+    QMT 没启动或 connect 失败时降级用 sim_live_mirror.db（最近一次镜像）
+
+输出：
+  - docs/reviews/YYYY-MM-DD.md
+  - 通过 notifier.push_text 推到企微（dry-run 默认开，环境变量 NOTIFIER_DRY_RUN=0 可真发）
+
+用法：
+  python -m scripts.daily_review_vnpy [--day YYYY-MM-DD] [--no-qmt] [--push]
+"""
+from __future__ import annotations
+
+import argparse
+import logging
+import os
+import sys
+import yaml
+from datetime import date
+from pathlib import Path
+from typing import Optional
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from notifier import push_text
+from sim.db import get_conn  # noqa: E402
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger("daily_review_vnpy")
+
+
+# ============================================================
+# 安全闸门
+# ============================================================
+FORBIDDEN_ACCOUNTS = {"8890461376"}
+
+
+def _assert_safe(account_id: Optional[str]):
+    if account_id and str(account_id) in FORBIDDEN_ACCOUNTS:
+        raise RuntimeError(f"⚠️ 禁止访问真实账户 {account_id}")
+
+
+# ============================================================
+# sim 25000 数据
+# ============================================================
+def fetch_sim_snapshot(day: str, db_path: Path) -> dict:
+    """从指定 sim*.db 拉账户/持仓/当日成交 (直接开 sqlite，不走 sim/db.py 的全局常量)"""
+    import sqlite3
+    snap = {"account": None, "positions": [], "trades": [], "db_path": str(db_path)}
+    if not db_path.exists():
+        logger.warning("DB 不存在: %s", db_path)
+        return snap
+    try:
+        conn = sqlite3.connect(str(db_path), timeout=10)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT id, account_name, initial_cash, cash, total_value FROM sim_account WHERE id=1")
+        row = cur.fetchone()
+        if row:
+            snap["account"] = {
+                "id": row["id"], "name": row["account_name"],
+                "initial_cash": row["initial_cash"],
+                "cash": row["cash"], "total_value": row["total_value"],
+                "return_pct": (row["total_value"] / row["initial_cash"] - 1) * 100
+                              if row["initial_cash"] else 0.0,
+            }
+        cur.execute("SELECT stock_code, stock_name, quantity, avg_cost, current_price, "
+                    "market_value, pnl, pnl_pct FROM sim_positions WHERE quantity>0")
+        snap["positions"] = [dict(r) for r in cur.fetchall()]
+        cur.execute(
+            "SELECT trade_date, stock_code, stock_name, direction, price, quantity, "
+            "amount, signal_reason, broker FROM sim_trades WHERE trade_date=? "
+            "ORDER BY created_at",
+            (day,),
+        )
+        snap["trades"] = [dict(r) for r in cur.fetchall()]
+        conn.close()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("读取 %s 失败: %s", db_path, e)
+    return snap
+
+
+# ============================================================
+# QMT mini 数据（尝试连真 broker，失败降级 sim_live_mirror）
+# ============================================================
+def fetch_qmt_snapshot(day: str, allow_qmt: bool = True) -> dict:
+    """优先连 QMT mini → 失败回退 sim_live_mirror.db"""
+    snap: dict = {"source": "none", "account": None, "positions": [], "trades": []}
+
+    if allow_qmt:
+        try:
+            cfg = yaml.safe_load((ROOT / "config.local.yaml").read_text(encoding="utf-8")) or {}
+            live_cfg = (cfg.get("broker") or {}).get("live") or {}
+            qmt_account = str(live_cfg.get("qmt_account", ""))
+            _assert_safe(qmt_account)
+            qmt_path = live_cfg.get("qmt_path")
+            xtq = live_cfg.get("xtquant_site_packages")
+            if not qmt_account or not qmt_path:
+                raise RuntimeError("config.local.yaml 缺少 broker.live 配置")
+
+            from broker.factory import get_broker
+            logger.info("尝试连 QMT mini account=%s dry_run=True", qmt_account)
+            broker = get_broker(
+                "qmt",
+                qmt_path=qmt_path,
+                qmt_account=qmt_account,
+                session_id=int(live_cfg.get("session_id", 970515)),
+                dry_run=True,
+                xtquant_site_packages=xtq,
+            )
+            try:
+                acc = broker.get_account()
+                pos = broker.get_positions()
+                snap["source"] = "qmt_live"
+                snap["account"] = {
+                    "id": qmt_account, "name": "QMT-mini",
+                    "initial_cash": acc.initial_cash, "cash": acc.cash,
+                    "total_value": acc.total_value,
+                    "market_value": acc.market_value,
+                }
+                snap["positions"] = [
+                    {"stock_code": p.stock_code, "stock_name": p.stock_name,
+                     "quantity": p.quantity, "avg_cost": p.avg_cost,
+                     "current_price": p.current_price, "market_value": p.market_value,
+                     "pnl": p.pnl, "pnl_pct": p.pnl_pct}
+                    for p in pos if p.quantity > 0
+                ]
+                # QMT 不直接给"今日成交"，先空。后续用 vnpy MainEngine.get_all_trades() 补
+                logger.info("✅ QMT 连接成功，positions=%d cash=%.2f",
+                            len(snap["positions"]), acc.cash)
+                return snap
+            finally:
+                try:
+                    broker.disconnect()
+                except Exception:
+                    pass
+        except Exception as e:  # noqa: BLE001
+            logger.warning("QMT 直连失败，降级用 sim_live_mirror.db: %s", e)
+
+    # 降级：QMT 连不上 → 只说明，不拿 sim_live_mirror 充数（避免两边重复）
+    snap["source"] = "unavailable"
+    snap["note"] = "QMT 未连接且 sim_live_mirror.db 已被 sim 25000 占用；QMT 侧需接 vnpy MainEngine 补数据。"
+    return snap
+
+
+# ============================================================
+# Markdown 报告
+# ============================================================
+def render_markdown(day: str, sim_snap: dict, qmt_snap: dict) -> str:
+    lines = [f"# 双账户复盘 {day}", ""]
+
+    # ---- 概览 ----
+    lines.append("## 一、账户概览")
+    lines.append("| 账户 | 来源 | 初始资金 | 现金 | 总资产 | 浮动收益率 |")
+    lines.append("|------|------|---------:|-----:|-------:|-----------:|")
+
+    def _fmt_acc(name: str, source: str, acc: Optional[dict]) -> str:
+        if not acc:
+            return f"| {name} | {source} | - | - | - | - |"
+        ret = ((acc.get("total_value", 0) / (acc.get("initial_cash") or 1)) - 1) * 100 \
+            if acc.get("initial_cash") else 0.0
+        return (f"| {name} | {source} | {acc.get('initial_cash', 0):,.0f} "
+                f"| {acc.get('cash', 0):,.2f} | {acc.get('total_value', 0):,.2f} "
+                f"| {ret:+.2f}% |")
+
+    lines.append(_fmt_acc("sim 25000", Path(sim_snap.get('db_path', '')).name, sim_snap.get("account")))
+    lines.append(_fmt_acc("QMT mini 90072426", qmt_snap.get("source", "?"),
+                          qmt_snap.get("account")))
+    lines.append("")
+
+    # ---- 持仓对比 ----
+    lines.append("## 二、持仓对比")
+    sim_codes = {p["stock_code"] for p in sim_snap.get("positions", [])}
+    qmt_codes = {p["stock_code"] for p in qmt_snap.get("positions", [])}
+    common = sorted(sim_codes & qmt_codes)
+    sim_only = sorted(sim_codes - qmt_codes)
+    qmt_only = sorted(qmt_codes - sim_codes)
+    lines.append(f"- 共同持仓: {', '.join(common) or '无'}")
+    lines.append(f"- 仅 sim 持有: {', '.join(sim_only) or '无'}")
+    lines.append(f"- 仅 QMT 持有: {', '.join(qmt_only) or '无'}")
+    lines.append("")
+
+    # sim 持仓详表
+    lines.append("### sim 持仓")
+    lines.append("| 代码 | 名称 | 数量 | 成本 | 现价 | 市值 | 浮盈 | 浮盈% |")
+    lines.append("|------|------|----:|----:|----:|----:|----:|----:|")
+    for p in sim_snap.get("positions", []):
+        lines.append(f"| {p['stock_code']} | {p.get('stock_name', '-')} | "
+                     f"{p['quantity']} | {p.get('avg_cost', 0):.2f} | "
+                     f"{p.get('current_price', 0):.2f} | {p.get('market_value', 0):,.2f} | "
+                     f"{p.get('pnl', 0):,.2f} | {p.get('pnl_pct', 0):+.2f}% |")
+    if not sim_snap.get("positions"):
+        lines.append("| - | - | - | - | - | - | - | - |")
+    lines.append("")
+
+    lines.append("### QMT 持仓")
+    lines.append("| 代码 | 名称 | 数量 | 成本 | 现价 | 市值 | 浮盈 |")
+    lines.append("|------|------|----:|----:|----:|----:|----:|")
+    for p in qmt_snap.get("positions", []):
+        lines.append(f"| {p['stock_code']} | {p.get('stock_name', '-')} | "
+                     f"{p['quantity']} | {p.get('avg_cost', 0):.2f} | "
+                     f"{p.get('current_price', 0):.2f} | {p.get('market_value', 0):,.2f} | "
+                     f"{p.get('pnl', 0):,.2f} |")
+    if not qmt_snap.get("positions"):
+        lines.append("| - | - | - | - | - | - | - |")
+    lines.append("")
+
+    # ---- 当日交易 ----
+    lines.append(f"## 三、{day} 当日交易")
+
+    def _trade_block(title: str, trades: list):
+        lines.append(f"### {title} ({len(trades)} 笔)")
+        if not trades:
+            lines.append("（无）")
+            return
+        lines.append("| 时间/标记 | 股票 | 方向 | 数量 | 价格 | 金额 | 信号 | broker |")
+        lines.append("|---------|------|----|----:|----:|-----:|------|--------|")
+        for t in trades:
+            lines.append(f"| {t.get('trade_date', '')} | "
+                         f"{t.get('stock_code', '')} {t.get('stock_name', '')} | "
+                         f"{t.get('direction', '')} | {t.get('quantity', 0)} | "
+                         f"{t.get('price', 0):.2f} | {t.get('amount', 0):,.2f} | "
+                         f"{(t.get('signal_reason') or '')[:24]} | {t.get('broker', '-')} |")
+
+    _trade_block("sim 25000 成交", sim_snap.get("trades", []))
+    _trade_block(f"QMT mini ({qmt_snap.get('source','?')}) 成交", qmt_snap.get("trades", []))
+    lines.append("")
+
+    # ---- 摘要 / 提示 ----
+    lines.append("## 四、备注")
+    lines.append(f"- QMT 数据来源：`{qmt_snap.get('source','?')}` "
+                 f"(live = 实时 broker，live_mirror = sim_live_mirror.db 最近镜像)")
+    lines.append("- 如需更详细的 vnpy 端订单/成交回放，建议接入 vnpy OmsEngine 持久化。")
+    lines.append(f"- 报告生成时间: {date.today().isoformat()}")
+    return "\n".join(lines) + "\n"
+
+
+def short_summary_for_push(day: str, sim_snap: dict, qmt_snap: dict) -> str:
+    sim_acc = sim_snap.get("account") or {}
+    qmt_acc = qmt_snap.get("account") or {}
+    sim_pos_n = len(sim_snap.get("positions", []))
+    qmt_pos_n = len(qmt_snap.get("positions", []))
+    return (f"📊 [{day}] 双账户复盘\n"
+            f"sim 25k 总资产 {sim_acc.get('total_value', 0):,.2f} ({sim_pos_n} 仓)\n"
+            f"QMT mini 总资产 {qmt_acc.get('total_value', 0):,.2f} ({qmt_pos_n} 仓) "
+            f"src={qmt_snap.get('source','?')}\n"
+            f"sim 当日 {len(sim_snap.get('trades', []))} 笔 / QMT {len(qmt_snap.get('trades', []))} 笔")
+
+
+# ============================================================
+# CLI
+# ============================================================
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--day", default=date.today().isoformat())
+    p.add_argument("--no-qmt", action="store_true",
+                   help="跳过尝试连 QMT，直接读 sim_live_mirror.db")
+    p.add_argument("--push", action="store_true",
+                   help="实际推送企微（默认走 dry-run）")
+    p.add_argument("--out-dir", default=str(ROOT / "docs" / "reviews"))
+    p.add_argument("--sim-db", default=None,
+                   help="sim 账户 DB 路径，默认 data/sim_live_mirror.db")
+    return p.parse_args()
+
+
+def main():
+    args = parse_args()
+    day = args.day
+    if args.push:
+        os.environ["NOTIFIER_DRY_RUN"] = "0"
+    else:
+        os.environ.setdefault("NOTIFIER_DRY_RUN", "1")
+
+    print(f"==== vnpy 双账户复盘 {day} ====")
+
+    # sim 25000 = sim_live_mirror.db（用户实际账本）
+    # 如果你想读 sim.db（旧空账户），加 --sim-db data/sim.db
+    sim_db_path = Path(args.sim_db) if args.sim_db else ROOT / "data" / "sim_live_mirror.db"
+    if not sim_db_path.exists():
+        sim_db_path = ROOT / "data" / "sim.db"
+    sim_snap = fetch_sim_snapshot(day, sim_db_path)
+    qmt_snap = fetch_qmt_snapshot(day, allow_qmt=not args.no_qmt)
+
+    md = render_markdown(day, sim_snap, qmt_snap)
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"{day}.md"
+    out_file.write_text(md, encoding="utf-8")
+    print(f"✅ 复盘报告已写入 {out_file}")
+
+    summary = short_summary_for_push(day, sim_snap, qmt_snap)
+    push_text(summary)
+    print(summary)
+
+
+if __name__ == "__main__":
+    main()

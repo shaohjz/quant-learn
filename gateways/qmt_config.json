@@ -1,0 +1,7 @@
+{
+  "qmt_path": "D:\\国金QMT交易端模拟\\userdata_mini",
+  "qmt_account": "90072426",
+  "session_id": 970525,
+  "xtquant_site_packages": "D:\\国金QMT交易端模拟\\bin.x64\\Lib\\site-packages",
+  "_comment": "vnpy_xtquant 在 PyPI 找不到、git 又不可用，因此自带轻量 gateway（gateways/qmt_gateway.py）直接调 xtquant。如果以后切到官方 vnpy_xtquant，这里的字段保持兼容。"
+}

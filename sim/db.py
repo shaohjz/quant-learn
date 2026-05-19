@@ -16,7 +16,7 @@ _DEFAULT_DB = _PROJECT_ROOT / "data" / "sim.db"
 DB_PATH = Path(os.environ.get("QUANT_DB_PATH", str(_DEFAULT_DB)))
 
 # 默认初始资金（可通过环境变量覆盖）
-DEFAULT_INITIAL_CASH = float(os.environ.get("QUANT_INITIAL_CASH", "20000"))
+DEFAULT_INITIAL_CASH = float(os.environ.get("QUANT_INITIAL_CASH", "10000"))
 
 
 def _ensure_db_dir():
@@ -54,9 +54,9 @@ def init_tables():
             CREATE TABLE IF NOT EXISTS sim_account (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 account_name TEXT DEFAULT 'default',
-                initial_cash REAL DEFAULT 20000.00,
-                cash REAL DEFAULT 20000.00,
-                total_value REAL DEFAULT 20000.00,
+                initial_cash REAL DEFAULT 10000.00,
+                cash REAL DEFAULT 10000.00,
+                total_value REAL DEFAULT 10000.00,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )

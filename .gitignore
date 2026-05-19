@@ -16,3 +16,12 @@ config.local.yaml
 .env
 
 data/trade_dates.json
+
+.venv/
+output/
+research/
+memory/
+decision/
+docs/
+vnpy_xtquant_main.zip
+

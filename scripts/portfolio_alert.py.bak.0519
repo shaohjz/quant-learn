@@ -1,0 +1,262 @@
+"""
+scripts/portfolio_alert.py — 盘中阈值提醒（持仓 + 观察股）
+
+策略：
+  - 价格触发阈值 → 推消息
+  - 同一阈值同一天只推一次（用 alert_state.json 去重）
+  - 非交易时段直接退出
+  - 调用方（cron）拿 stdout 推给用户；没触发就只有"无新警报"一行
+
+阈值表说明：
+  level: 行动等级（stop_loss/half_out/take_profit/buy_zone/...）
+  trigger_dir: 'below'=价格跌至该值或以下触发；'above'=涨至该值或以上触发
+  message: 推消息正文
+
+日志输出：
+  - output/portfolio_alert.log  ：每次运行的详细日志（追加写）
+  - output/intraday_log.jsonl   ：每次现价快照 JSON（一行一条，便于后续分析）
+  - output/alert_state.json     ：今日已触发阈值去重记录
+"""
+import json, sys, logging, traceback
+from datetime import datetime, time as dtime
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from sim.realtime_price import get_latest_prices
+
+OUTPUT_DIR = ROOT / "output"
+STATE_FILE = OUTPUT_DIR / "alert_state.json"
+LOG_FILE = OUTPUT_DIR / "portfolio_alert.log"
+INTRADAY_LOG = OUTPUT_DIR / "intraday_log.jsonl"
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+# ====================================================================
+#  日志配置
+# ====================================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+        logging.StreamHandler(sys.stderr),  # 控制台 stderr不干扰 stdout 传递给 cron
+    ],
+)
+logger = logging.getLogger("portfolio_alert")
+
+# ====================================================================
+#  阈值规则表（行动手册）
+# ====================================================================
+RULES = [
+    # ============ 持仓股 ============
+    # 天通股份 600330 ——成本32.82，现价~30
+    {"code": "600330", "name": "天通股份", "level": "stop_loss",
+     "trigger": 27.00, "dir": "below",
+     "message": "🚨 跌破 MA20 止损线！立即挂卖 400 股 @市价"},
+    {"code": "600330", "name": "天通股份", "level": "half_out",
+     "trigger": 32.00, "dir": "above",
+     "message": "✅ 回到 32 回本线！建议挂卖 200 股 @32.00"},
+    {"code": "600330", "name": "天通股份", "level": "take_profit",
+     "trigger": 35.00, "dir": "above",
+     "message": "🎉 突破 35！建议清仓剩余 200 股 @35.00"},
+
+    # 兆新股份 002256 ——成本5.246，现价~4.86
+    {"code": "002256", "name": "兆新股份", "level": "stop_loss",
+     "trigger": 4.50, "dir": "below",
+     "message": "🚨 跌破 4.50 止损！全部卖出 700 股"},
+    {"code": "002256", "name": "兆新股份", "level": "half_out",
+     "trigger": 5.10, "dir": "above",
+     "message": "📈 涨到 5.10！建议挂卖 350 股回本"},
+    {"code": "002256", "name": "兆新股份", "level": "take_profit",
+     "trigger": 5.50, "dir": "above",
+     "message": "🎉 涨至 5.50！清仓剩余股份"},
+
+    # 华软科技 002453 ——成本6.467，现价~6.21
+    {"code": "002453", "name": "华软科技", "level": "stop_loss",
+     "trigger": 5.80, "dir": "below",
+     "message": "🚨 跌破 5.80 止损！卖出 300 股"},
+    {"code": "002453", "name": "华软科技", "level": "half_out",
+     "trigger": 6.80, "dir": "above",
+     "message": "📈 涨到 6.80！建议挂卖 150 股"},
+    {"code": "002453", "name": "华软科技", "level": "take_profit",
+     "trigger": 7.20, "dir": "above",
+     "message": "🎉 涨至 7.20！清仓剩余 150 股"},
+
+    # 巨力索具 002342 ——成本19.68，跌停反弹中
+    {"code": "002342", "name": "巨力索具", "level": "stop_loss",
+     "trigger": 17.00, "dir": "below",
+     "message": "🚨 跌破 17.00！卖出 100 股止损"},
+    {"code": "002342", "name": "巨力索具", "level": "take_profit",
+     "trigger": 22.00, "dir": "above",
+     "message": "🎉 涨至 22！全部卖出 100 股"},
+
+    # ============ 观察股（买入提醒）============
+    # 通富微电 002156 ——量化首推
+    {"code": "002156", "name": "通富微电", "level": "buy_zone",
+     "trigger": 55.00, "dir": "below",
+     "message": "💰 跌至 55！进入首选买入区，可分批 100 股建仓"},
+    {"code": "002156", "name": "通富微电", "level": "buy_strong",
+     "trigger": 54.00, "dir": "below",
+     "message": "💰💰 跌至 54！加大买入力度"},
+
+    # 天赐材料 002709
+    {"code": "002709", "name": "天赐材料", "level": "buy_zone",
+     "trigger": 54.00, "dir": "below",
+     "message": "💰 跌至 54！可买入区，但需等 MACD 转金叉"},
+    {"code": "002709", "name": "天赐材料", "level": "buy_strong",
+     "trigger": 53.00, "dir": "below",
+     "message": "💰💰 跌至 53！加大买入"},
+
+    # 西部材料 002149
+    {"code": "002149", "name": "西部材料", "level": "buy_zone",
+     "trigger": 67.00, "dir": "below",
+     "message": "💰 跌至 67！可考虑建仓"},
+    {"code": "002149", "name": "西部材料", "level": "buy_strong",
+     "trigger": 65.00, "dir": "below",
+     "message": "💰💰 跌至 65！强买入"},
+]
+
+
+def in_trade_hours(now: datetime) -> bool:
+    """A股交易时段：周一到周五 9:30-11:30 / 13:00-15:00"""
+    if now.weekday() >= 5:
+        return False
+    t = now.time()
+    return (dtime(9, 30) <= t <= dtime(11, 30)) or (dtime(13, 0) <= t <= dtime(15, 0))
+
+
+def load_state():
+    if STATE_FILE.exists():
+        try:
+            return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def save_state(state):
+    STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def is_triggered(price: float, trigger: float, direction: str) -> bool:
+    if direction == "below":
+        return price <= trigger
+    else:  # above
+        return price >= trigger
+
+
+def main():
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    run_id = now.strftime("%H%M%S")
+    
+    logger.info(f"==== 运行开始 run_id={run_id} ====")
+    
+    if not in_trade_hours(now):
+        # 非交易时段，静默退出
+        msg = f"📴 非交易时段 ({now.strftime('%Y-%m-%d %H:%M %A')})，跳过"
+        print(msg)
+        logger.info("非交易时段，退出")
+        return 0
+
+    # 拉取所有股票当前价
+    codes = list({r["code"] for r in RULES})
+    logger.info(f"准备拉取 {len(codes)} 只股票行情: {codes}")
+    try:
+        prices = get_latest_prices(codes)
+        logger.info(f"行情拉取成功，返回 {len(prices)} 条")
+    except Exception as e:
+        logger.error(f"获取行情失败: {e}\n{traceback.format_exc()}")
+        print(f"❌ 获取行情失败: {e}")
+        return 1
+
+    # 提取干净价格（price 字段）
+    clean_prices = {}
+    for c, p in prices.items():
+        if isinstance(p, dict):
+            v = p.get("price") or p.get("close") or 0
+        else:
+            v = p or 0
+        clean_prices[c] = float(v) if v else 0
+
+    # 写快照 JSONL（便于后续分析价格走势）
+    snapshot = {
+        "ts": now.isoformat(),
+        "run_id": run_id,
+        "prices": clean_prices,
+    }
+    try:
+        with open(INTRADAY_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(snapshot, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logger.warning(f"写快照失败: {e}")
+
+    # 加载已推送状态
+    state = load_state()
+    today_state = state.get(today, {})
+    logger.info(f"今日已推送阈值数: {len(today_state)}")
+
+    triggered_msgs = []
+    checked_count = 0
+    skipped_already = 0
+    
+    for rule in RULES:
+        code = rule["code"]
+        rule_id = f"{code}_{rule['level']}"
+        
+        # 已推过，跳过
+        if today_state.get(rule_id):
+            skipped_already += 1
+            continue
+        
+        cur_price = clean_prices.get(code, 0)
+        if cur_price <= 0:
+            logger.warning(f"跳过 {code}: 价格为 0或缺失")
+            continue
+        
+        checked_count += 1
+        
+        if is_triggered(cur_price, rule["trigger"], rule["dir"]):
+            arrow = "↓" if rule["dir"] == "below" else "↑"
+            msg = (f"【{rule['name']} {code}】\n"
+                   f"现价 ¥{cur_price:.2f} {arrow} 阈值 ¥{rule['trigger']:.2f}\n"
+                   f"{rule['message']}")
+            triggered_msgs.append(msg)
+            today_state[rule_id] = {
+                "triggered_at": now.strftime("%H:%M"),
+                "price": cur_price,
+                "trigger": rule["trigger"],
+            }
+            logger.warning(f"🔔 触发阈值: {rule_id} 价={cur_price} 阈值={rule['trigger']} {rule['dir']}")
+
+    # 保存状态
+    state[today] = today_state
+    # 清理 7 天前的状态
+    keep_days = 7
+    sorted_dates = sorted(state.keys(), reverse=True)
+    state = {d: state[d] for d in sorted_dates[:keep_days]}
+    save_state(state)
+
+    logger.info(f"检查完成: 检查了 {checked_count} 个阈值, 跳过已推送 {skipped_already} 个, 本次触发 {len(triggered_msgs)} 个")
+
+    # 输出（cron 会把 stdout 推给用户）
+    if triggered_msgs:
+        print(f"🔔 盘中提醒 ({now.strftime('%H:%M')})")
+        print(f"=" * 40)
+        for m in triggered_msgs:
+            print(m)
+            print("-" * 40)
+        logger.info(f"推送 {len(triggered_msgs)} 条警报给用户")
+    else:
+        # 没触发就只输出一行简短状态（cron 默认不通知）
+        snapshot_str = " / ".join(f"{c}:{clean_prices.get(c, 0):.2f}" for c in codes if clean_prices.get(c))
+        print(f"✓ {now.strftime('%H:%M')} 无新警报 | {snapshot_str}")
+        logger.info(f"无新警报，静默返回")
+    
+    logger.info(f"==== 运行结束 run_id={run_id} ====\n")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

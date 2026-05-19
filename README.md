@@ -1,4 +1,28 @@
-# A股量化回测系统
+# A股量化交易系统（vnpy 版）
+
+基于 [vnpy 4.x](https://www.vnpy.com/) 的 A 股盘中盯盘 + 双账户并行框架。
+老的自研框架（Backtrader + AKShare 回测 + sim/engine.py + scripts/portfolio_alert.py）
+全部保留作为对照组，详见 [docs/vnpy_migration.md](docs/vnpy_migration.md)。
+
+- **交易网关**：自封装 `gateways/qmt_gateway.py`（基于 xtquant 直连国金 QMT mini）
+- **账户**：QMT mini 模拟 90072426（1000 万）+ 本地 sim 25000（双账户并行）
+- **策略**：ThresholdAlertStrategy（阈值告警） + FusionStrategy（双账户融合决策）
+- **推送**：企微群机器人 webhook（`notifier/wecom_notifier.py`）
+
+## 快速启动
+
+```powershell
+cd C:\Users\Administrator\.openclaw\workspace\quant-learn
+.venv\Scripts\python.exe -m runners.run_intraday          # 盘中盯盘（dry-run）
+.venv\Scripts\python.exe -m runners.run_gui               # GUI（按需）
+.venv\Scripts\python.exe scripts\test_vnpy_qmt.py         # QMT 连通验证
+```
+
+所有默认 dry_run，要真下单加 `--live` 并 `set NOTIFIER_DRY_RUN=0`。
+
+---
+
+# 老 README（仅供参考）
 
 基于 Backtrader + AKShare 的 A 股量化回测框架，支持多策略对比分析。
 

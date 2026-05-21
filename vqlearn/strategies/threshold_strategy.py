@@ -132,6 +132,8 @@ class ThresholdAlertStrategy(CtaTemplate):
         # avg_vol_5d 由 runner 在加载策略后注入；缺失则不做量过滤
         # stock_name 由 runner 注入
         # last_volume = 缓存最近一个 tick 的当日累计量（akshare 给的是当日累计 volume）
+        # shadow 打点：记录上次 shadow 跱踪时间，用来限制为每分钟一次
+        self._last_shadow_minute = ''
 
     # ----- 持久化辅助 -----
     @property
@@ -161,6 +163,8 @@ class ThresholdAlertStrategy(CtaTemplate):
     def on_tick(self, tick: TickData) -> None:
         self.last_price = tick.last_price
         self._check_rules(tick)
+        # 每分钟跳一次 shadow（多策略虚拟跱踪）
+        self._maybe_run_shadow(tick.last_price)
         self.put_event()
 
     def on_bar(self, bar: BarData) -> None:
@@ -350,3 +354,77 @@ class ThresholdAlertStrategy(CtaTemplate):
             self._try_buy('buy_strong', self.buy_strong, price, tick)
         elif self.buy_zone > 0 and price <= self.buy_zone:
             self._try_buy('buy_zone', self.buy_zone, price, tick)
+
+    # ----- shadow 多策略跳踪（不下单，仅记录虚拟信号）-----
+    def _maybe_run_shadow(self, price: float) -> None:
+        """每分钟跳一次，让 5 个纯策略都 decide 一次，记录信号到 db。
+        只在交易时段内跳，避免平白浪费。"""
+        if not _is_trading_hours():
+            return
+
+        cur_minute = datetime.now().strftime('%Y-%m-%d %H:%M')
+        if cur_minute == self._last_shadow_minute:
+            return
+        self._last_shadow_minute = cur_minute
+
+        try:
+            from vqlearn.services.history_loader import load_history
+            from vqlearn.strategies.pure_signals import ALL_STRATEGIES, get_strategy
+            from vqlearn.services.multi_strategy_shadow import record_shadow_signal
+            import pandas as _pd
+
+            # 拉历史数据（3 个月，足够算 ma60）。这里不含今天。
+            from datetime import timedelta as _td
+            today = datetime.now()
+            start = (today - _td(days=180)).strftime('%Y-%m-%d')
+            end = (today - _td(days=1)).strftime('%Y-%m-%d')  # 不含今天
+            bars = load_history(self.code, start, end)
+            if bars.empty or len(bars) < 30:
+                return
+
+            # 拼上今日实时价（模拟在跳动中调用）
+            today_row = _pd.DataFrame([{
+                'date': today.strftime('%Y-%m-%d'),
+                'open': price, 'high': price, 'low': price,
+                'close': price, 'volume': 0,
+            }])
+            # 调整列顺序与 bars 一致
+            for col in ['amount', 'turnover', 'pct']:
+                if col in bars.columns:
+                    today_row[col] = 0
+            full_bars = _pd.concat([bars, today_row], ignore_index=True)
+
+            # 获取当前持仓（从 sim_positions）
+            position = 0
+            try:
+                import sqlite3
+                conn = sqlite3.connect(str(_ROOT / 'data' / 'sim_live_mirror.db'))
+                row = conn.execute(
+                    "SELECT quantity FROM sim_positions WHERE stock_code=? AND quantity>0",
+                    (self.code,)
+                ).fetchone()
+                position = row[0] if row else 0
+                conn.close()
+            except Exception:
+                pass
+
+            rules = {
+                'buy_zone': self.buy_zone,
+                'buy_strong': self.buy_strong,
+                'trend_break': self.trend_break,
+                'take_profit': self.take_profit,
+            }
+
+            for sid in ALL_STRATEGIES:
+                try:
+                    strat = get_strategy(sid)
+                    sig = strat.decide(full_bars, position, rules)
+                    if sig.action != 'NO_ACTION':
+                        record_shadow_signal(sid, self.code, self.stock_name_safe,
+                                             price, position, sig)
+                except Exception:
+                    continue
+        except Exception as e:
+            # shadow 不能影响主逻辑
+            self.write_log(f"⚠️ shadow 异常（忽略）: {e}")
+

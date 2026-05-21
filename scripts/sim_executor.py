@@ -28,6 +28,53 @@ import logging
 logger = logging.getLogger(__name__)
 
 # A股最小交易单位 100 股
+
+# 涨跌停阈值（主板 10%，创业板/科创板 20%）
+def _get_limit_pct(code: str) -> float:
+    """返回该股票的涨跌停限制（0.10 或 0.20）"""
+    if code.startswith(('30', '68')):  # 创业板 / 科创板
+        return 0.20
+    if code.startswith(('8', '4')):  # 北交所 30%
+        return 0.30
+    return 0.10  # 主板 / 中小板
+
+
+def _get_yesterday_close(code: str) -> float | None:
+    """从新浪拿 yesterday_close。失败返回 None。"""
+    try:
+        from sim.realtime_price import fetch_sina_realtime
+        r = fetch_sina_realtime([code])
+        if code in r and r[code].get('yesterday_close', 0) > 0:
+            return r[code]['yesterday_close']
+    except Exception:
+        pass
+    return None
+
+
+def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, str]:
+    """检查价格合理性。返回 (ok, reason)。抦截接近涨跌停的买卖。"""
+    yc = _get_yesterday_close(code)
+    if not yc or yc <= 0:
+        return True, "无昨收价参考，跳过检查"
+
+    limit_pct = _get_limit_pct(code)
+
+    if action.startswith('BUY'):
+        # 接近涨停不买（0.5% 安全边际）
+        cap = yc * (1 + limit_pct * 0.95)
+        if cur_price >= cap:
+            return False, f"价格 {cur_price:.2f} 接近涨停阈 {cap:.2f}（昨收 {yc:.2f} +{limit_pct*100:.0f}%），拒买入"
+        # 当前价 等于 昨收 是可疑伪实时价（baostock fallback 返昨日收盘）
+        if abs(cur_price - yc) < 0.005:
+            return False, f"价格 {cur_price:.2f} == 昨收价 {yc:.2f}，可疑 fallback 返回昨收价冲实时，拒买入"
+
+    elif action.startswith('SELL'):
+        floor = yc * (1 - limit_pct * 0.95)
+        if cur_price <= floor:
+            return False, f"价格 {cur_price:.2f} 接近跌停阈 {floor:.2f}（昨收 {yc:.2f} -{limit_pct*100:.0f}%），拒卖出"
+
+    return True, "价格合理"
+
 LOT_SIZE = 100
 
 # 默认每次买入的金额上限（避免一把梭）
@@ -158,6 +205,12 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     
     if action == 'NO_ACTION':
         return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None}
+
+    # 价格合理性检查（涨跌停阈 + 伪实时价检测）
+    sane, sane_reason = check_price_sanity(code, cur_price, action)
+    if not sane:
+        logger.warning(f"🚫 [{code}] 抦截下单: {sane_reason}")
+        return {'action': action, 'success': False, 'message': f'价格安全检查未过: {sane_reason}', 'trade': None}
     
     account = get_account()
     if not account:

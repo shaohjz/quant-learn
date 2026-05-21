@@ -128,21 +128,38 @@ def fetch_baostock_latest(codes: list, days_back: int = 5) -> dict:
 
 def get_latest_prices(codes: list) -> dict:
     """
-    获取最新价格，先试新浪，失败回退 baostock。
+    获取最新价格，只走新浪实时。
+    注意：不再 fallback baostock，因为 baostock 返回是昨日收盘价，
+    在盘中误当实时价会造成进场重大误伤（案例：2026-05-21 12:35
+    豫能 14.88 “买入”，实际盘中已在涨停 16.37）。
     返回 {code: {name, open, high, low, price, volume, ...}}
     """
     print("  📡 获取实时行情（新浪）...")
     prices = fetch_sina_realtime(codes)
 
-    # 检查是否所有股票都拿到了有效价格
     missing = [c for c in codes if c not in prices or prices[c]["price"] <= 0]
     if missing:
-        print(f"  ⚠ 新浪缺少 {missing}，尝试 baostock 补充...")
+        # 不再从 baostock 拿（那是昨日收盘价），避免伪“实时”价
+        print(f"  ⚠ 新浪缺少 {len(missing)} 只，跳过（在交易时段外/休市/服务异常，不作为实时价使用）")
+
+    return prices
+
+
+def get_latest_prices_with_fallback(codes: list) -> dict:
+    """
+    只供非实时使用场景（如代码名查询/调试/复盘）调用：
+    新浪 + baostock 后退。调用者需明确知道 baostock 会返回昨收盘。
+    """
+    print("  📡 获取行情（新浪 + baostock 作为后退）...")
+    prices = fetch_sina_realtime(codes)
+    missing = [c for c in codes if c not in prices or prices[c]["price"] <= 0]
+    if missing:
+        print(f"  ⚠ 新浪缺少 {missing}，尝试 baostock 补充（返回昨日收盘价!）...")
         bs_prices = fetch_baostock_latest(missing)
         for code, data in bs_prices.items():
             if data["price"] > 0:
+                data["_source"] = "baostock_yesterday"  # 明确标记是昨日价
                 prices[code] = data
-
     return prices
 
 

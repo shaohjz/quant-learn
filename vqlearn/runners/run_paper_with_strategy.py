@@ -48,6 +48,33 @@ from vnpy_ctastrategy.engine import CtaEngine
 CONFIG_PATH = ROOT / "vqlearn" / "config" / "portfolio.yaml"
 
 
+def _fetch_5d_avg_volumes(codes: list[str]) -> dict[str, float]:
+    """拉近 5 个交易日的日 K 线，计算 avg_vol（股数）。优先新浪。"""
+    import akshare as ak
+    from datetime import date, timedelta
+    avg = {}
+    end = date.today().strftime("%Y%m%d")
+    start = (date.today() - timedelta(days=15)).strftime("%Y%m%d")
+    for code in codes:
+        # 新浪 code prefix
+        if code.startswith(('60', '68', '11', '12', '5')):
+            sina_code = 'sh' + code
+        elif code.startswith(('00', '30', '15', '16')):
+            sina_code = 'sz' + code
+        else:
+            sina_code = 'sh' + code
+        try:
+            df = ak.stock_zh_a_daily(symbol=sina_code, start_date=start, end_date=end, adjust='qfq')
+            if df is None or len(df) < 5:
+                continue
+            tail5 = df.tail(5)
+            v = float(tail5['volume'].mean())  # 新浪 volume 单位是股
+            avg[code] = v
+        except Exception as e:
+            logger.debug(f"avg_vol_5d 拉取失败 {code}: {e}")
+    return avg
+
+
 def load_portfolio() -> tuple[list[dict], list[dict]]:
     cfg = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
     return cfg.get("holdings", []), cfg.get("watchlist", [])
@@ -158,11 +185,32 @@ def main(timeout: int = 0, auto_trade: bool = False) -> None:
                 vt_symbol=vt_symbol,
                 setting=setting,
             )
+            # 注入 stock_name（sim_executor 要用）
+            strat = cta_engine.strategies.get(instance_name)
+            if strat is not None:
+                strat.stock_name = item.get("name", symbol)
             loaded += 1
         except Exception as e:
             logger.warning(f"加载策略 {instance_name} 失败: {e}")
 
     logger.info(f"✓ 已加载 {loaded} 个 ThresholdAlertStrategy 实例")
+
+    # ---- 5b. 拉 5 日均量注入各策略 ----
+    try:
+        codes = [s.split('.')[0] for s in (cta_engine.symbol_strategy_map.keys() if hasattr(cta_engine, 'symbol_strategy_map') else [])]
+        if not codes:
+            codes = [item['symbol'] for item, _, _ in pending_subs]
+        logger.info(f"📊 拉取 5 日均量 {len(codes)} 只...")
+        avg_vols = _fetch_5d_avg_volumes(codes)
+        logger.info(f"   获得 {len(avg_vols)} 只均量")
+        for name, strat in cta_engine.strategies.items():
+            code = strat.vt_symbol.split('.')[0]
+            if code in avg_vols:
+                strat.avg_vol_5d = avg_vols[code]
+        sample = list(avg_vols.items())[:3]
+        logger.info(f"   样本: {sample}")
+    except Exception as e:
+        logger.warning(f"拉取 5 日均量失败，量过滤可能不生效: {e}")
 
     # 初始化所有策略
     for name in list(cta_engine.strategies.keys()):
@@ -177,10 +225,38 @@ def main(timeout: int = 0, auto_trade: bool = False) -> None:
 
     # ---- 6. 主循环 ----
     end_at = time.time() + timeout if timeout > 0 else None
+    last_close_confirm = None  # 防重复处理
+
+    def _maybe_run_close_confirm():
+        nonlocal last_close_confirm
+        from datetime import datetime as _dt, time as _tt, date as _date
+        n = _dt.now()
+        if last_close_confirm == _date.today():
+            return
+        if not (_tt(14, 55) <= n.time() <= _tt(15, 5)):
+            return
+        # 从 all_ticks 里拿最新价当作收盘价
+        from vqlearn.services.threshold_state import mark_close_confirm_for_all_pending
+        ticks = main_engine.get_all_ticks()
+        price_map = {t.symbol: t.last_price for t in ticks if t.last_price > 0}
+        upgraded, expired = mark_close_confirm_for_all_pending(
+            lambda code: price_map.get(code)
+        )
+        last_close_confirm = _date.today()
+        logger.info(f"🔔 收盘价确认: armed={len(upgraded)} expired={len(expired)}")
+        for r in upgraded:
+            logger.info(f"   ✅ armed: {r}")
+        for r in expired:
+            logger.info(f"   ♻️ expired: {r}")
+
     try:
         while True:
             time.sleep(15)
             logger.info(f"♥ 心跳 | 策略 {len(cta_engine.strategies)} 个 | tick {len(main_engine.get_all_ticks())}")
+            try:
+                _maybe_run_close_confirm()
+            except Exception as e:
+                logger.warning(f"收盘确认出错: {e}")
             if end_at and time.time() >= end_at:
                 logger.info("达到 timeout")
                 break

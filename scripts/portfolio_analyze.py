@@ -23,14 +23,24 @@ import pandas as pd
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_DIR, "data")
 
-# 你的持仓（来自截图 02:17）
-PORTFOLIO = [
-    {"code": "002256", "name": "兆新股份", "qty": 700, "cost": 5.246,  "current": 4.850},
-    {"code": "000967", "name": "盈峰环境", "qty": 400, "cost": 12.660, "current": 14.250},
-    {"code": "002453", "name": "华软科技", "qty": 300, "cost": 6.467,  "current": 6.380},
-    {"code": "600330", "name": "天通股份", "qty": 300, "cost": 33.774, "current": 32.800},
-]
-TOTAL_ASSETS = 22158.37
+# 持仓（2026-05-22 重构：从 sim/portfolio.py 加载真实账户镜像）
+#   - 持仓数量/成本/现价 ← sim_live_mirror.db (account_id=2)
+#   - 现金/总资产 ← sim_account.id=2
+#   - 修改持仓请用 scripts/sync_real_position.py
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+from sim.portfolio import load_real_holdings, fetch_account, real_account_id  # noqa: E402
+
+_holdings = load_real_holdings()
+PORTFOLIO = [{
+    "code": h["code"], "name": h["name"], "qty": h["qty"],
+    "cost": h["cost"], "current": h["current"],
+} for h in _holdings]
+
+_acc = fetch_account(real_account_id()) or {}
+TOTAL_ASSETS = float(_acc.get("total_value", 0))
+CASH = float(_acc.get("cash", 0))
 CASH = 1309.37
 
 

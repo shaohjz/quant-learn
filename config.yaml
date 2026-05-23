@@ -1,55 +1,219 @@
-# config.yaml — 量化交易系统配置（提交时不要写敏感信息）
+# config.yaml — 量化交易系统配置（单一真源 / 2026-05-22 重构）
 #
 # 推荐用法：把账户敏感配置放到 config.local.yaml（已加入 .gitignore），
 # config.local.yaml 会覆盖本文件的同名字段。
+#
+# 设计原则：
+#   - 持仓 / 现金 / 阈值规则均以本文件为准，所有脚本统一读这里
+#   - 真实账户（real）由用户手动同步，仅监控告警；
+#     学习账户（learn）由 vqlearn 自动下单
+#   - 数据库 sim_live_mirror.db 是运行时镜像，不是真源；
+#     用 scripts/sync_real_position.py 来同步真实交易
 
-# ========== 资金 ==========
-account:
-  initial_cash: 10000   # 初始资金 1 万（贴近真实可交易金额）
-  account_id: 1
 
-# ========== 股票池 ==========
-# 国金 mini-QMT 模拟账户（90072426）支持沪深两市
-stock_pool:
-  - code: "000967"
-    name: "盈峰环境"
+# ========== 双账户 ==========
+accounts:
+  learn:
+    account_id: 1                # 数据库 sim_account.id
+    account_name: live_mirror
+    initial_cash: 100000.00      # 学习账户初始资金 10 万
+    auto_trade: true             # vqlearn 实盘策略自动下单
+    max_total_value: 100000.00   # 总资产硬上限（含市值），达上限不再买入
+    description: "vqlearn 量化策略自学习账户，自动下单"
+
+  real:
+    account_id: 2
+    account_name: real_portfolio
+    initial_cash: 25000.00       # 用户实际初始资金（约略，用于历史对比）
+    auto_trade: false            # 仅监控告警，绝不下单
+    description: "用户实际持仓镜像，由 scripts/sync_real_position.py 维护"
+
+
+# ========== 真实持仓（snapshot — 数据库为权威，本块仅用于规则匹配/便于审计） ==========
+# 注：实际数量/成本/现价 以 sim_positions(account_id=2) 为准；
+#     这里只描述【告警规则】，让告警脚本知道每只股的止损/止盈/观察阈值。
+real_portfolio_rules:
+  "600330":
+    name: 天通股份
+    rules:
+      stop_loss:    { trigger: 27.00, dir: below, msg: "🚨 跌破 MA20 止损线！立即挂卖 400 股 @市价" }
+      half_out:     { trigger: 32.00, dir: above, msg: "✅ 回到 32 回本线！建议挂卖 200 股 @32.00" }
+      take_profit:  { trigger: 35.00, dir: above, msg: "🎉 突破 35！建议清仓剩余 200 股 @35.00" }
+
+  "002453":
+    name: 华软科技
+    rules:
+      stop_loss_tight: { trigger: 5.95, dir: below, msg: "⚠️ 跌破 5.95！已接近 -8% 止损线，考虑卖出 300 股" }
+      stop_loss:       { trigger: 5.80, dir: below, msg: "🚨 跌破 5.80！硬止损卖出 300 股" }
+      half_out:        { trigger: 6.80, dir: above, msg: "📈 涨到 6.80！建议挂卖 150 股" }
+      take_profit:     { trigger: 7.20, dir: above, msg: "🎉 涨至 7.20！清仓剩余 150 股" }
+
+  "603601":
+    name: 再升科技
+    rules:
+      stop_loss:        { trigger: 16.24, dir: below, msg: "🚨 再升科技跌破 MA20 (16.24)！题材冷却，考虑止损卖 100 股" }
+      hard_stop:        { trigger: 15.00, dir: below, msg: "🚨🚨 再升科技跌破 15.00！硬止损（-15.8%）必须卖 100 股" }
+      take_profit_half: { trigger: 19.50, dir: above, msg: "🎉 涨到 19.50！出一半保本息利" }
+      take_profit:      { trigger: 21.00, dir: above, msg: "🎉🎉 涨到 21.00！题材股高位，清仓 100 股" }
+
+
+# ========== 观察池（不持仓，触发买入提醒）==========
+# metadata 字段说明：
+#   source            来源（玄鉴录/涛哥推荐/量化首推/自选/...）
+#   recommended_by    推荐人（个人名，source 为个人推荐时填）
+#   added_at          加入日期
+#   added_price       加入时价格（复盘参考）
+#   added_reason      加入理由
+#   tags              标签列表（行业/主题）
+#   notes             备注
+watchlist:
+  "002156":
+    name: 通富微电
     enabled: true
-  - code: "002256"
-    name: "兆新股份"
-    enabled: true
-  - code: "002453"
-    name: "华软科技"
-    enabled: false   # 暂未启用，开仓前再切
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐量化首选
+    tags: [半导体, 封装测试]
+    rules:
+      buy_zone:   { trigger: 55.00, dir: below, msg: "💰 跌至 55！进入首选买入区，可分批 100 股建仓" }
+      buy_strong: { trigger: 54.00, dir: below, msg: "💰💰 跌至 54！加大买入力度" }
 
-# ========== 风控 ==========
+  "002709":
+    name: 天赐材料
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [锂电池, 新能源材料]
+    rules:
+      buy_zone:   { trigger: 54.00, dir: below, msg: "💰 跌至 54！可买入区，但需等 MACD 转金叉" }
+      buy_strong: { trigger: 53.00, dir: below, msg: "💰💰 跌至 53！加大买入" }
+
+  "002149":
+    name: 西部材料
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [有色金属, 钛材]
+    rules:
+      buy_zone:   { trigger: 67.00, dir: below, msg: "💰 跌至 67！可考虑建仓" }
+      buy_strong: { trigger: 65.00, dir: below, msg: "💰💰 跌至 65！强买入" }
+
+  "605006":
+    name: 山东玻纤
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [玻纤, 新材料]
+    rules:
+      buy_zone:    { trigger: 13.50, dir: below, msg: "💰 跌至 13.50！接近 MA10 支撑，可试探建仓 100 股" }
+      buy_strong:  { trigger: 12.74, dir: below, msg: "💰💰 跌破 MA20 (12.74)！主上升趋势考验区，谨慎加仓" }
+      trend_break: { trigger: 11.50, dir: below, msg: "⚠️ 跌破 11.50！主上升趋势可能结束，不建议买入" }
+
+  "603757":
+    name: 大元泵业
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [机械设备, 泵阀]
+    rules:
+      buy_zone:    { trigger: 57.50, dir: below, msg: "💰 跌至 57.50！接近 MA10，可试探建仓" }
+      buy_strong:  { trigger: 55.00, dir: below, msg: "💰💰 回踩 MA20 (55.36)！优质建仓区" }
+      trend_break: { trigger: 49.00, dir: below, msg: "⚠️ 跌破 MA60 (49.08)！主趋势变化，谨慎" }
+
+  # ========== 2026-05-22 涛哥推荐三只 ==========
+  "000725":
+    name: 京东方A
+    enabled: true
+    source: 涛哥推荐
+    recommended_by: 涛哥
+    added_at: 2026-05-22
+    added_price: 5.16
+    added_reason: 5/22 涨停 +10.02%，摸顶 4.69 启动；面板/存储/AI 硬件复苏龙头
+    tags: [面板, 半导体, 央企]
+    notes: "当前涨停，不追高。等回踩前高 4.69 附近不破才买"
+    rules:
+      buy_zone:   { trigger: 4.80, dir: below, msg: "💰 京东方 回踩 4.80！接近前高 4.69，试探 100 股建仓" }
+      buy_strong: { trigger: 4.50, dir: below, msg: "💰💰 京东方 跌至 4.50！接近 MA10 4.26，优质建仓区" }
+
+  "600309":
+    name: 万华化学
+    enabled: true
+    source: 涛哥推荐
+    recommended_by: 涛哥
+    added_at: 2026-05-22
+    added_price: 78.00
+    added_reason: 化工龙头高位回调，近 60 日高 94.32 低 75.01，在 MA20/MA60 下方整理
+    tags: [化工, 白马, 龙头]
+    notes: "当前 MA60 下方，右侧交易，等回调到位"
+    rules:
+      buy_zone:   { trigger: 76.00, dir: below, msg: "💰 万华跌至 76！接近 60 日低点 75.01，建仓区" }
+      buy_strong: { trigger: 73.00, dir: below, msg: "💰💰 万华破 73！创近期新低，加大建仓" }
+
+  "601728":
+    name: 中国电信
+    enabled: true
+    source: 涛哥推荐
+    recommended_by: 涛哥
+    added_at: 2026-05-22
+    added_price: 6.16
+    added_reason: 央企运营商，今日 -2.99% 跌破 MA20 (6.19)，接近 MA60 5.96 主趋势线
+    tags: [运营商, 央企, 高股息]
+    notes: "防御型、稳健型选手，适合低吸"
+    rules:
+      buy_zone:   { trigger: 6.10, dir: below, msg: "💰 电信跌至 6.10！接近 MA60 5.96，建仓区" }
+      buy_strong: { trigger: 5.96, dir: below, msg: "💰💰 电信破 MA60 5.96！主趋势线考验，优质加仓区" }
+
+
+# ========== 巨力索具（已清仓但保留观察）==========
+# 如不需要可整段删掉
+legacy_watch:
+  "002342":
+    name: 巨力索具
+    enabled: false              # 默认禁用，需要再开
+    note: "5/19 暴跌后清仓"
+
+
+# ========== 风控（学习账户用） ==========
 risk:
-  max_position_pct: 0.60      # 单只股票最大仓位
-  max_daily_trades: 5         # 每日最大交易笔数
-  stop_loss_pct: -0.08        # 止损线
-  take_profit_pct: 0.15       # 止盈线
+  max_position_pct: 0.60        # 单只股票最大仓位
+  max_daily_trades: 5           # 每日最大交易笔数
+  stop_loss_pct: -0.08          # 止损线
+  take_profit_pct: 0.15         # 止盈线
+
 
 # ========== 费用模型 ==========
 fees:
-  commission_rate: 0.0003     # 佣金万3
-  min_commission: 5.0         # 最低佣金 5 元
-  stamp_tax_rate: 0.001       # 印花税千1（仅卖出）
-  unit_size: 100              # 交易单位（A 股 100 股）
+  commission_rate: 0.00025      # 佣金万 2.5（现行国金 mini-QMT 默认）
+  min_commission: 5.0           # 最低佣金 5 元
+  stamp_tax_rate: 0.0005        # 印花税千 0.5（2023.8 起减半，现行）
+  unit_size: 100                # 交易单位（A 股 100 股）
+
 
 # ========== 推送通知 ==========
 notifier:
   enabled: true
-  # 企微群机器人 webhook URL
-  # 获取方法：建个企微群 → 右上角 → 添加群机器人 → 拿 webhook
-  # 详细文档：https://developer.work.weixin.qq.com/document/path/91770
-  # 敏感：实际值建议写到 config.local.yaml不交仓库
-  wecom_webhook: ""
+  # webhook URL 写到 config.local.yaml 不入库
+
 
 # ========== 交易模式 ==========
 broker:
-  mode: "sim"                 # sim / live
+  mode: "sim"                   # sim / live
   sim:
-    slippage: 0.0             # 模拟盘滑点
+    slippage: 0.0               # 模拟盘滑点
   live:
-    # qmt_path / qmt_account 不要写在这里，
-    # 通过环境变量 QMT_USERDATA_MINI / QMT_ACCOUNT_ID 注入
+    # qmt_path / qmt_account 通过环境变量 QMT_USERDATA_MINI / QMT_ACCOUNT_ID 注入
     session_id: 123456
+
+
+# ========== 旧字段兼容（逐步淘汰） ==========
+# 兼容老脚本读取 account.initial_cash / account.account_id
+account:
+  initial_cash: 100000          # = accounts.learn.initial_cash
+  account_id: 1                 # = accounts.learn.account_id
+
+# 兼容老脚本读取 stock_pool（已废弃，统一从 real_portfolio_rules + watchlist 读）
+stock_pool: []

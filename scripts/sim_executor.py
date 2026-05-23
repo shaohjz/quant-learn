@@ -27,6 +27,24 @@ from sim.db import get_conn
 import logging
 logger = logging.getLogger(__name__)
 
+# ============================================================
+# 双账户架构（2026-05-22）
+#   id=1 live_mirror    → 学习账户（自动下单）
+#   id=2 real_portfolio → 真实账户（仅告警，不下单）
+# 调用方设 set_active_account(2) 可切换；但 execute_trade 会拒绝真实账户下单。
+# ============================================================
+_ACCOUNT_ID: int = int(os.environ.get('SIM_ACCOUNT_ID', '1'))
+_LEARN_MAX_TOTAL: float = 100000.0  # 学习账户总额上限（现金+持仓市值）
+
+
+def set_active_account(account_id: int) -> None:
+    global _ACCOUNT_ID
+    _ACCOUNT_ID = int(account_id)
+
+
+def active_account_id() -> int:
+    return _ACCOUNT_ID
+
 # A股最小交易单位 100 股
 
 # 涨跌停阈值（主板 10%，创业板/科创板 20%）
@@ -93,14 +111,17 @@ def calc_commission(amount: float) -> float:
 
 def get_account():
     conn = get_conn()
-    row = conn.execute("SELECT * FROM sim_account WHERE id=1").fetchone()
+    row = conn.execute("SELECT * FROM sim_account WHERE id=?", (_ACCOUNT_ID,)).fetchone()
     conn.close()
     return dict(row) if row else None
 
 
 def get_position(code: str):
     conn = get_conn()
-    row = conn.execute("SELECT * FROM sim_positions WHERE stock_code=? AND account_id=1", (code,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM sim_positions WHERE stock_code=? AND account_id=?",
+        (code, _ACCOUNT_ID)
+    ).fetchone()
     conn.close()
     return dict(row) if row else None
 
@@ -108,7 +129,10 @@ def get_position(code: str):
 def update_account_cash(delta: float):
     """delta 正数=资金增加，负数=资金减少"""
     conn = get_conn()
-    conn.execute("UPDATE sim_account SET cash = cash + ?, updated_at=CURRENT_TIMESTAMP WHERE id=1", (delta,))
+    conn.execute(
+        "UPDATE sim_account SET cash = cash + ?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (delta, _ACCOUNT_ID)
+    )
     conn.close()
 
 
@@ -118,8 +142,9 @@ def insert_trade(code: str, name: str, direction: str, price: float, qty: int,
     conn.execute(
         """INSERT INTO sim_trades 
            (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, tax, signal_reason, broker)
-           VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'live_mirror')""",
-        (date.today().isoformat(), code, name, direction, price, qty, price*qty, commission, tax, signal_reason)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (_ACCOUNT_ID, date.today().isoformat(), code, name, direction, price, qty, price*qty,
+         commission, tax, signal_reason, 'live_mirror' if _ACCOUNT_ID == 1 else 'real_mirror')
     )
     conn.close()
 
@@ -128,24 +153,30 @@ def upsert_position(code: str, name: str, qty: int, avg_cost: float, cur_price: 
     """新建或更新持仓。qty=0 时删除"""
     conn = get_conn()
     if qty <= 0:
-        conn.execute("DELETE FROM sim_positions WHERE stock_code=? AND account_id=1", (code,))
+        conn.execute(
+            "DELETE FROM sim_positions WHERE stock_code=? AND account_id=?",
+            (code, _ACCOUNT_ID)
+        )
     else:
         market_value = qty * cur_price
         pnl = (cur_price - avg_cost) * qty
         pnl_pct = (cur_price/avg_cost - 1) * 100 if avg_cost > 0 else 0
         # 用 UPSERT 模式
-        existing = conn.execute("SELECT id FROM sim_positions WHERE stock_code=? AND account_id=1", (code,)).fetchone()
+        existing = conn.execute(
+            "SELECT id FROM sim_positions WHERE stock_code=? AND account_id=?",
+            (code, _ACCOUNT_ID)
+        ).fetchone()
         if existing:
             conn.execute(
                 """UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP
-                   WHERE stock_code=? AND account_id=1""",
-                (qty, avg_cost, cur_price, market_value, pnl, pnl_pct, code)
+                   WHERE stock_code=? AND account_id=?""",
+                (qty, avg_cost, cur_price, market_value, pnl, pnl_pct, code, _ACCOUNT_ID)
             )
         else:
             conn.execute(
                 """INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct)
-                   VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (code, name, qty, avg_cost, cur_price, market_value, pnl, pnl_pct)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (_ACCOUNT_ID, code, name, qty, avg_cost, cur_price, market_value, pnl, pnl_pct)
             )
     conn.close()
 
@@ -206,6 +237,14 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     if action == 'NO_ACTION':
         return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None}
 
+    # ⛔ 真实账户拒绝任何下单（1=学习，2=真实）
+    if _ACCOUNT_ID != 1:
+        return {
+            'action': action, 'success': False,
+            'message': f'账户 id={_ACCOUNT_ID} 仅告警模式，不下单',
+            'trade': None
+        }
+
     # 价格合理性检查（涨跌停阈 + 伪实时价检测）
     sane, sane_reason = check_price_sanity(code, cur_price, action)
     if not sane:
@@ -216,6 +255,18 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     if not account:
         return {'action': action, 'success': False, 'message': '账户不存在', 'trade': None}
     cash = account['cash']
+
+    # 🔒 学习账户总额上限检查（现金+持仓市值 不得超 100k）
+    # 注：cur_total > _LEARN_MAX_TOTAL 才拒绝（>= 会误伤初始账户刚好 100000 的状态）
+    if action.startswith('BUY'):
+        cur_total = account.get('total_value', 0) or 0
+        # 加 buffer：初始 100000，第一次买后市值约等于现金（手续费小损耗），允许小幅波动
+        if cur_total > _LEARN_MAX_TOTAL + 100:  # 100 元缓冲
+            return {
+                'action': action, 'success': False,
+                'message': f'学习账户总额 {cur_total:.0f} 已超上限 {_LEARN_MAX_TOTAL:.0f}+100，拒绝买入',
+                'trade': None
+            }
     
     pos = get_position(code)
     
@@ -301,7 +352,10 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
 def update_all_positions_market_value(prices: dict):
     """收盘/盘中更新所有持仓的市值（不改成本）"""
     conn = get_conn()
-    rows = conn.execute("SELECT stock_code, quantity, avg_cost FROM sim_positions WHERE account_id=1").fetchall()
+    rows = conn.execute(
+        "SELECT stock_code, quantity, avg_cost FROM sim_positions WHERE account_id=?",
+        (_ACCOUNT_ID,)
+    ).fetchall()
     for row in rows:
         code = row['stock_code']
         cur_price = prices.get(code, 0)
@@ -310,22 +364,29 @@ def update_all_positions_market_value(prices: dict):
             pnl = (cur_price - row['avg_cost']) * row['quantity']
             pnl_pct = (cur_price/row['avg_cost'] - 1) * 100 if row['avg_cost'] > 0 else 0
             conn.execute(
-                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP WHERE stock_code=? AND account_id=1",
-                (cur_price, mv, pnl, pnl_pct, code)
+                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP WHERE stock_code=? AND account_id=?",
+                (cur_price, mv, pnl, pnl_pct, code, _ACCOUNT_ID)
             )
     # 更新账户总市值
-    total_mv = conn.execute("SELECT COALESCE(SUM(market_value),0) AS s FROM sim_positions WHERE account_id=1").fetchone()['s']
-    cash = conn.execute("SELECT cash FROM sim_account WHERE id=1").fetchone()['cash']
-    conn.execute("UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=1", (total_mv + cash,))
+    total_mv = conn.execute(
+        "SELECT COALESCE(SUM(market_value),0) AS s FROM sim_positions WHERE account_id=?",
+        (_ACCOUNT_ID,)
+    ).fetchone()['s']
+    cash_row = conn.execute("SELECT cash FROM sim_account WHERE id=?", (_ACCOUNT_ID,)).fetchone()
+    cash = cash_row['cash'] if cash_row else 0.0
+    conn.execute(
+        "UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (total_mv + cash, _ACCOUNT_ID)
+    )
     conn.close()
 
 
 if __name__ == "__main__":
     # 自检
     acc = get_account()
-    print(f"账户: {acc['account_name']} / 现金 {acc['cash']:.2f} / 总值 {acc['total_value']:.2f}")
+    print(f"账户: id={_ACCOUNT_ID} {acc['account_name']} / 现金 {acc['cash']:.2f} / 总值 {acc['total_value']:.2f}")
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM sim_positions WHERE account_id=1").fetchall()
+    rows = conn.execute("SELECT * FROM sim_positions WHERE account_id=?", (_ACCOUNT_ID,)).fetchall()
     for r in rows:
         print(f"  {r['stock_code']} {r['stock_name']:>6} {r['quantity']:>4}股 @{r['avg_cost']:.3f} 现价{r['current_price']:.2f} 浮亏{r['pnl']:+.2f} ({r['pnl_pct']:+.2f}%)")
     conn.close()

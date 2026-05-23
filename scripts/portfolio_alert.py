@@ -91,126 +91,20 @@ logger = logging.getLogger("portfolio_alert")
 # ====================================================================
 #  阈值规则表（行动手册）
 # ====================================================================
-RULES = [
-    # ============ 持仓股 ============
-    # 天通股份 600330 ——成本32.82，现价~30
-    {"code": "600330", "name": "天通股份", "level": "stop_loss",
-     "trigger": 27.00, "dir": "below",
-     "message": "🚨 跌破 MA20 止损线！立即挂卖 400 股 @市价"},
-    {"code": "600330", "name": "天通股份", "level": "half_out",
-     "trigger": 32.00, "dir": "above",
-     "message": "✅ 回到 32 回本线！建议挂卖 200 股 @32.00"},
-    {"code": "600330", "name": "天通股份", "level": "take_profit",
-     "trigger": 35.00, "dir": "above",
-     "message": "🎉 突破 35！建议清仓剩余 200 股 @35.00"},
-
-    # 兆新股份 002256 ——成本5.246，现价~4.86
-    {"code": "002256", "name": "兆新股份", "level": "stop_loss",
-     "trigger": 4.50, "dir": "below",
-     "message": "🚨 跌破 4.50 止损！全部卖出 700 股"},
-    {"code": "002256", "name": "兆新股份", "level": "half_out",
-     "trigger": 5.10, "dir": "above",
-     "message": "📈 涨到 5.10！建议挂卖 350 股回本"},
-    {"code": "002256", "name": "兆新股份", "level": "take_profit",
-     "trigger": 5.50, "dir": "above",
-     "message": "🎉 涨至 5.50！清仓剩余股份"},
-
-    # 华软科技 002453 ——成本6.467，5/18收盘5.99（已越-7.4%）
-    {"code": "002453", "name": "华软科技", "level": "stop_loss_tight",
-     "trigger": 5.95, "dir": "below",
-     "message": "⚠️ 跌破5.95！已接近-8%止损线，考虑卖出300股"},
-    {"code": "002453", "name": "华软科技", "level": "stop_loss",
-     "trigger": 5.80, "dir": "below",
-     "message": "🚨 跌破5.80！硬止损卖出300股"},
-    {"code": "002453", "name": "华软科技", "level": "half_out",
-     "trigger": 6.80, "dir": "above",
-     "message": "📈 涨到 6.80！建议挂卖 150 股"},
-    {"code": "002453", "name": "华软科技", "level": "take_profit",
-     "trigger": 7.20, "dir": "above",
-     "message": "🎉 涨至 7.20！清仓剩余 150 股"},
-
-    # 巨力索具 002342 ——成本19.68 / 5/19昨收17.49 / 今日跌停15.74
-    # 多档监控：跌停撬开/反抽都尽量发出走人信号
-    {"code": "002342", "name": "巨力索具", "level": "limitdown_open",
-     "trigger": 15.85, "dir": "above",
-     "message": "⚡ 跌停板撬开（站上15.85）！立即市价卖100股，别恋战"},
-    {"code": "002342", "name": "巨力索具", "level": "rebound_exit",
-     "trigger": 16.50, "dir": "above",
-     "message": "📈 反抽16.50！强烈建议挂卖100股"},
-    {"code": "002342", "name": "巨力索具", "level": "yc_exit",
-     "trigger": 17.00, "dir": "above",
-     "message": "🟢 反弹回17.00（接近昨收）！这是好价位，挂卖100股"},
-    {"code": "002342", "name": "巨力索具", "level": "take_profit",
-     "trigger": 19.50, "dir": "above",
-     "message": "🎉 反弹接近成本（19.50）！清仓100股"},
-    # 删除 deep_drop=15.74 该阈值与跌停价重叠，开盘就会触发但没有动作价值——已移除
-
-    # ============ 观察股（买入提醒）============
-    # 通富微电 002156 ——量化首推
-    {"code": "002156", "name": "通富微电", "level": "buy_zone",
-     "trigger": 55.00, "dir": "below",
-     "message": "💰 跌至 55！进入首选买入区，可分批 100 股建仓"},
-    {"code": "002156", "name": "通富微电", "level": "buy_strong",
-     "trigger": 54.00, "dir": "below",
-     "message": "💰💰 跌至 54！加大买入力度"},
-
-    # 天赐材料 002709
-    {"code": "002709", "name": "天赐材料", "level": "buy_zone",
-     "trigger": 54.00, "dir": "below",
-     "message": "💰 跌至 54！可买入区，但需等 MACD 转金叉"},
-    {"code": "002709", "name": "天赐材料", "level": "buy_strong",
-     "trigger": 53.00, "dir": "below",
-     "message": "💰💰 跌至 53！加大买入"},
-
-    # 西部材料 002149
-    {"code": "002149", "name": "西部材料", "level": "buy_zone",
-     "trigger": 67.00, "dir": "below",
-     "message": "💰 跌至 67！可考虑建仓"},
-    {"code": "002149", "name": "西部材料", "level": "buy_strong",
-     "trigger": 65.00, "dir": "below",
-     "message": "💰💰 跌至 65！强买入"},
-
-    # ============ 5/19 新增观察股 ============
-    # 山东玻纤 605006 —— 5/18收盘14.50 / MA5=15.52 MA10=14.63 MA20=12.74
-    # 近期已连跌4天从16.99→今日低开到8上方，回调中
-    {"code": "605006", "name": "山东玻纤", "level": "buy_zone",
-     "trigger": 13.50, "dir": "below",
-     "message": "💰 山东玻纤跌至13.50！接近MA10支撑，可试探建仓100股"},
-    {"code": "605006", "name": "山东玻纤", "level": "buy_strong",
-     "trigger": 12.74, "dir": "below",
-     "message": "💰💰 山东玻纤跌破MA20(12.74)！主上升趋势考验区，谨慎加仓"},
-    {"code": "605006", "name": "山东玻纤", "level": "trend_break",
-     "trigger": 11.50, "dir": "below",
-     "message": "⚠️ 山东玻纤跌破11.50！主上升趋势可能结束，不建议买入"},
-
-    # 大元泵业 603757 —— 5/18收盘60.80 / 60日最高价 / 需等回调
-    # 现价高位，不追，等跳水6主要支撑位
-    {"code": "603757", "name": "大元泵业", "level": "buy_zone",
-     "trigger": 57.50, "dir": "below",
-     "message": "💰 大元泵业跌至57.50！接近MA10(57.39)，可试探建仓"},
-    {"code": "603757", "name": "大元泵业", "level": "buy_strong",
-     "trigger": 55.00, "dir": "below",
-     "message": "💰💰 大元泵业回踭MA20(55.36)！优质建仓区"},
-    {"code": "603757", "name": "大元泵业", "level": "trend_break",
-     "trigger": 49.00, "dir": "below",
-     "message": "⚠️ 大元泵业跌破MA60(49.08)！主趋势变化，谨慎"},
-
-    # 再升科技 603601 —— 已建仓 100股 @17.83（8:48已买）
-    # 5/18收盘18.56 / 刚创60日新高 / 题材股波动大
-    # 限仓后重点：止损保护本金 + 止盈供师
-    {"code": "603601", "name": "再升科技", "level": "stop_loss",
-     "trigger": 16.24, "dir": "below",
-     "message": "🚨 再升科技跌破MA20(16.24)！题材冷却，考虑止损卖100股"},
-    {"code": "603601", "name": "再升科技", "level": "hard_stop",
-     "trigger": 15.00, "dir": "below",
-     "message": "🚨🚨 再升科技跌破15.00！硬止损（-15.8%）必须卖100股"},
-    {"code": "603601", "name": "再升科技", "level": "take_profit_half",
-     "trigger": 19.50, "dir": "above",
-     "message": "🎉 再升科技涨冓19.50！出一半保本息利（但你只买了100股，如果不只仓看是否加仓）"},
-    {"code": "603601", "name": "再升科技", "level": "take_profit",
-     "trigger": 21.00, "dir": "above",
-     "message": "🎉🎉 再升科技涨到21.00！题材股高位几位，清仓卖出100股"},
-]
+#  阈值规则表（2026-05-22 重构：从 config.yaml + sim_live_mirror.db 加载）
+#
+#  以前这里是硬编码 RULES 列表，现在由 sim/portfolio.py 统一供应：
+#    - 持仓股规则 ← config.yaml: real_portfolio_rules
+#    - 观察股规则 ← config.yaml: watchlist
+#    - 持仓数量/成本 ← sim_live_mirror.db (account_id=2 真实账户)
+#
+#  修改规则请改 config.yaml 。
+# ====================================================================
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+from sim.portfolio import load_all_alert_rules  # noqa: E402
+RULES = load_all_alert_rules()
 
 
 def in_trade_hours(now: datetime) -> bool:

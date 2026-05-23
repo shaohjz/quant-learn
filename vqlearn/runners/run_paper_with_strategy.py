@@ -45,7 +45,83 @@ from vnpy_paperaccount import PaperAccountApp
 from vnpy_ctastrategy import CtaStrategyApp
 from vnpy_ctastrategy.engine import CtaEngine
 
-CONFIG_PATH = ROOT / "vqlearn" / "config" / "portfolio.yaml"
+CONFIG_PATH = ROOT / "vqlearn" / "config" / "portfolio.yaml"  # 遗留（回退路径）
+
+
+def _load_from_config_yaml() -> tuple[list[dict], list[dict]] | None:
+    """从项目根 config.yaml 加载阈值规则（2026-05-22 统一真源）。
+    holdings  = 学习账户持仓股（account_id=1）→ 跑卖出策略
+    watchlist = 真实账户持仓 + 观察股 → 跑买入策略
+    返回 None 表示 config.yaml 未配置这些块，需要回退。
+    """
+    try:
+        from sim.portfolio import (
+            load_real_holdings, load_watchlist_rules,
+            fetch_positions, learn_account_id,
+        )
+        from sim.config import load_config
+        load_config.cache_clear()
+    except Exception as e:
+        logger.warning(f"加载 sim.portfolio 失败，回退 portfolio.yaml: {e}")
+        return None
+
+    # 学习账户持仓（需要跑卖出策略）
+    learn_holdings_raw = fetch_positions(learn_account_id())
+    holdings = []
+    for p in learn_holdings_raw:
+        # 学习账户持仓股的卖出阈值可用动态计算（成本-8% / +15%）
+        avg_cost = p['avg_cost']
+        holdings.append({
+            'symbol': p['stock_code'],
+            'name': p['stock_name'],
+            'rules': {
+                'trend_break':  round(avg_cost * 0.92, 2),   # -8% 止损
+                'take_profit':  round(avg_cost * 1.15, 2),   # +15% 止盈
+            },
+        })
+
+    # 真实账户持仓股 + 观察股 → watchlist（跑买入信号提醒，但不在这下单）
+    watchlist = []
+    # 真实持仓股：可能也需要 buy_zone/buy_strong（加仓信号）——但现阶段不设，只订阅行情
+    for h in load_real_holdings():
+        watchlist.append({
+            'symbol': h['code'],
+            'name': h['name'],
+            'rules': {},  # 只订阅不触发；真实持仓的买卖告警走 portfolio_alert.py
+        })
+    # 观察池
+    for code, body in load_watchlist_rules().items():
+        rules = {}
+        for r in body['rules']:
+            rules[r['level']] = r['trigger']
+        item = {
+            'symbol': code,
+            'name': body['name'],
+            'rules': rules,
+        }
+        # 趋势策略标记透传（config.yaml 中设 strategy: trend）
+        if body.get('strategy'):
+            item['strategy'] = body['strategy']
+        watchlist.append(item)
+
+    if not holdings and not watchlist:
+        return None
+    logger.info(
+        f"从 config.yaml 加载成功：holdings={len(holdings)} 只，"
+        f"watchlist={len(watchlist)} 只"
+    )
+    return holdings, watchlist
+
+
+def load_portfolio() -> tuple[list[dict], list[dict]]:
+    # 优先从项目根 config.yaml 加载（2026-05-22 统一真源）
+    out = _load_from_config_yaml()
+    if out is not None:
+        return out
+    # 回退：老的 vqlearn/config/portfolio.yaml
+    logger.warning(f"回退加载老 portfolio.yaml: {CONFIG_PATH}")
+    cfg = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+    return cfg.get("holdings", []), cfg.get("watchlist", [])
 
 
 def _fetch_5d_avg_volumes(codes: list[str]) -> dict[str, float]:
@@ -75,9 +151,7 @@ def _fetch_5d_avg_volumes(codes: list[str]) -> dict[str, float]:
     return avg
 
 
-def load_portfolio() -> tuple[list[dict], list[dict]]:
-    cfg = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
-    return cfg.get("holdings", []), cfg.get("watchlist", [])
+
 
 
 def hook_logging(event_engine: EventEngine) -> None:
@@ -160,6 +234,7 @@ def main(timeout: int = 0, auto_trade: bool = False) -> None:
 
     # 显式加载我们的策略类（vnpy 默认只扫 strategies/ 和 vnpy_ctastrategy.strategies）
     cta_engine.load_strategy_class_from_module("vqlearn.strategies.threshold_strategy")
+    cta_engine.load_strategy_class_from_module("vqlearn.strategies.trend_strategy")
     logger.info(f"已加载策略类: {list(cta_engine.classes.keys())}")
 
     # ---- 5. 给每只股票装一个 ThresholdAlertStrategy 实例 ----
@@ -194,6 +269,34 @@ def main(timeout: int = 0, auto_trade: bool = False) -> None:
             logger.warning(f"加载策略 {instance_name} 失败: {e}")
 
     logger.info(f"✓ 已加载 {loaded} 个 ThresholdAlertStrategy 实例")
+
+    # ---- 5c. 加载趋势跟随策略 (仅 watchlist 中带 strategy='trend' 标记的) ----
+    trend_loaded = 0
+    for item, symbol, exch in pending_subs:
+        if str(item.get("strategy", "")).lower() != "trend":
+            continue
+        vt_symbol = f"{symbol}.{exch.value}"
+        instance_name = f"trend_{symbol}"
+        setting = {
+            "breakout_period": 20,
+            "vol_ratio": 1.5,
+            "ma_fast": 10,
+            "ma_slow": 20,
+            "atr_stop_x": 2.0,
+            "rsi_overbought": 75.0,
+            "name": item.get("name", symbol),
+        }
+        try:
+            cta_engine.add_strategy(
+                class_name="TrendFollowStrategy",
+                strategy_name=instance_name,
+                vt_symbol=vt_symbol,
+                setting=setting,
+            )
+            trend_loaded += 1
+        except Exception as e:
+            logger.warning(f"加载趋势策略 {instance_name} 失败: {e}")
+    logger.info(f"✓ 已加载 {trend_loaded} 个 TrendFollowStrategy 实例")
 
     # ---- 5b. 拉 5 日均量注入各策略 ----
     try:

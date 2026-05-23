@@ -93,6 +93,72 @@ def _send_wecom_notify(text: str) -> bool:
         return False
 
 
+# ============================================================
+# 未成交告警去重表（每天每只股每个 level 只推 1 次；
+# 现金不足全天只推 1 次总告警）
+# 进程内内存即可——盘中告警；进程重启重置（一天最多重复一次也能接受）
+# ============================================================
+_NOTIFY_DEDUP: set[str] = set()
+_CASH_INSUFFICIENT_NOTIFIED_DAY: dict[str, bool] = {}
+_LEARN_LIMIT_NOTIFIED_DAY: dict[str, bool] = {}
+
+
+def _notify_unfilled_once(code: str, name: str, rule_name: str, price: float,
+                          fail_reason: str | None = None) -> None:
+    """未成交告警：按 (code, level, day) 去重；
+    '现金不足' / '已达上限' 类原因走全天总告警（一天 1 条）。"""
+    today = datetime.now().strftime('%Y%m%d')
+
+    if not fail_reason:
+        fail_reason = ''
+    is_cash_issue = (
+        '现金不足' in fail_reason or 'insufficient' in fail_reason.lower()
+        or '余额不足' in fail_reason
+    )
+    is_limit_issue = ('上限' in fail_reason)
+
+    if is_limit_issue:
+        if _LEARN_LIMIT_NOTIFIED_DAY.get(today):
+            return
+        _LEARN_LIMIT_NOTIFIED_DAY[today] = True
+        _send_wecom_notify(
+            f"## 🎯 学习账户已达 10万上限\n"
+            f"今日有 buy 信号触发但**学习账户总额已达上限 ¥100,000**，后续不再买入。\n\n"
+            f"- 首次抦截: **{name} ({code})** @¥{price:.2f}\n"
+            f"- 失败原因: {fail_reason}\n"
+            f"- 时间: {datetime.now().strftime('%H:%M:%S')}\n"
+            f"- 备注: 同类告警今日不再提醒"
+        )
+        return
+
+    if is_cash_issue:
+        if _CASH_INSUFFICIENT_NOTIFIED_DAY.get(today):
+            return
+        _CASH_INSUFFICIENT_NOTIFIED_DAY[today] = True
+        _send_wecom_notify(
+            f"## ⚠️ vqlearn 现金不足\n"
+            f"今日有 buy_zone/buy_strong 触发但**账户现金不足以下 1 手**，"
+            f"后续此类信号将不再逐条提醒。\n\n"
+            f"- 首次触发: **{name} ({code})** @¥{price:.2f}\n"
+            f"- 失败原因: {fail_reason}\n"
+            f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
+        )
+        return
+
+    key = f"{code}_{rule_name}_{today}"
+    if key in _NOTIFY_DEDUP:
+        return
+    _NOTIFY_DEDUP.add(key)
+    _send_wecom_notify(
+        f"## ⚠️ vqlearn 信号未成交\n"
+        f"**{name} ({code})**\n\n"
+        f"- 触发: 🟢 `{rule_name}` @¥{price:.2f}\n"
+        f"- 失败原因: {fail_reason or '查看日志'}\n"
+        f"- 时间: {datetime.now().strftime('%H:%M:%S')}\n"
+        f"- 备注: 同一 level 当日不再重复提醒"
+    )
+
+
 def _trading_minutes_elapsed() -> float:
     """返回当前已开盘多少分钟（用于估算 volume 完成度）。
     上午 9:30-11:30 = 120 分钟，下午 13:00-15:00 = 120 分钟。
@@ -238,7 +304,7 @@ class ThresholdAlertStrategy(CtaTemplate):
         elif action == 'execute':
             self.write_log(f"🚀 [{rule_name}] {self.vt_symbol} {price:.2f}: {reason}")
             if self.auto_trade:
-                success = self._exec_via_sim(rule_name, price, reason)
+                success, _ = self._exec_via_sim(rule_name, price, reason)
                 if success and record_sell_executed:
                     record_sell_executed(self.code, rule_name, price, reason)
 
@@ -273,28 +339,26 @@ class ThresholdAlertStrategy(CtaTemplate):
         self.write_log(f"{emoji} [{rule_name}] {self.vt_symbol} {price:.2f} ≤ {threshold:.2f} ({vol_reason})")
 
         if self.auto_trade:
-            success = self._exec_via_sim(rule_name, price, f"{self.vt_symbol} 触发 {rule_name} | {vol_reason}")
+            success, fail_reason = self._exec_via_sim(
+                rule_name, price, f"{self.vt_symbol} 触发 {rule_name} | {vol_reason}"
+            )
             if success and record_buy_executed:
                 record_buy_executed(
                     self.code, self.stock_name_safe, rule_name, threshold, price,
                     notes=f"vol={tick.volume:.0f}"
                 )
             elif not success:
-                # 触发但没成交（现金不足/价格不合理/涨跌停）发通知提醒
-                _send_wecom_notify(
-                    f"## ⚠️ vqlearn 信号未成交\n"
-                    f"**{self.stock_name_safe} ({self.code})**\n\n"
-                    f"- 触发: 🟢 `{rule_name}` @¥{price:.2f}\n"
-                    f"- 详情: 查看日志看为什么未成交\n"
-                    f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
+                # 触发但没成交（现金不足/价格不合理/涨跌停）发去重告警
+                _notify_unfilled_once(
+                    self.code, self.stock_name_safe, rule_name, price, fail_reason
                 )
 
     # ----- sim_executor 真下单 -----
-    def _exec_via_sim(self, level: str, price: float, msg: str) -> bool:
-        """返回 True 仅当下单成功（并写入 sim_trades）。"""
+    def _exec_via_sim(self, level: str, price: float, msg: str):
+        """返回 (success, fail_reason)。success=True 表示已下单写入 sim_trades。"""
         if _sim_execute_trade is None:
             self.write_log("⚠️ sim_executor 未加载，跳过下单")
-            return False
+            return False, 'sim_executor 未加载'
         rule = {'code': self.code, 'name': self.stock_name_safe, 'level': level, 'message': msg}
         try:
             r = _sim_execute_trade(rule, price)
@@ -317,13 +381,14 @@ class ThresholdAlertStrategy(CtaTemplate):
                     f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
                 )
                 _send_wecom_notify(notify_text)
-                return True
+                return True, None
             else:
-                self.write_log(f"⚠️ [sim_executor] {r.get('action')}失败: {r.get('message')}")
-                return False
+                fail_msg = r.get('message') or r.get('action') or '未知失败'
+                self.write_log(f"⚠️ [sim_executor] {r.get('action')}失败: {fail_msg}")
+                return False, fail_msg
         except Exception as e:
             self.write_log(f"❌ [sim_executor] 执行异常: {e}")
-            return False
+            return False, f'异常: {e}'
 
     # ----- 规则检查（核心） -----
     def _check_rules(self, tick: TickData) -> None:

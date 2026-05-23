@@ -17,6 +17,15 @@ config.local.yaml
 
 data/trade_dates.json
 
+# 周末清理：不入库的内容
+*_archive/
+scripts/_archive/
+data/_archive/
+data/cache/
+# 这些状态文件以前误 track 进库，现在恢复忽略
+output/intraday_log.jsonl
+output/portfolio_analysis.json
+
 .venv/
 output/
 research/

@@ -36,24 +36,24 @@ real_portfolio_rules:
   "600330":
     name: 天通股份
     rules:
-      stop_loss:    { trigger: 27.00, dir: below, msg: "🚨 跌破 MA20 止损线！立即挂卖 400 股 @市价" }
+      stop_loss:    { trigger: 27.94, dir: below, msg: "🚨 天通股份跌破 MA20×0.97 (27.94)！止损线" }
       half_out:     { trigger: 32.00, dir: above, msg: "✅ 回到 32 回本线！建议挂卖 200 股 @32.00" }
-      take_profit:  { trigger: 35.00, dir: above, msg: "🎉 突破 35！建议清仓剩余 200 股 @35.00" }
+      take_profit:  { trigger: 33.92, dir: above, msg: "🎉 天通股份涨至 33.92！(MA20+2ATR)，建议止盈" }
 
   "002453":
     name: 华软科技
     rules:
-      stop_loss_tight: { trigger: 5.95, dir: below, msg: "⚠️ 跌破 5.95！已接近 -8% 止损线，考虑卖出 300 股" }
+      stop_loss_tight: { trigger: 5.69, dir: below, msg: "⚠️ 华软科技跌破 MA20×0.98 (5.69)！接近止损线" }
       stop_loss:       { trigger: 5.80, dir: below, msg: "🚨 跌破 5.80！硬止损卖出 300 股" }
       half_out:        { trigger: 6.80, dir: above, msg: "📈 涨到 6.80！建议挂卖 150 股" }
-      take_profit:     { trigger: 7.20, dir: above, msg: "🎉 涨至 7.20！清仓剩余 150 股" }
+      take_profit:     { trigger: 7.44, dir: above, msg: "🎉 华软科技涨至 7.44！(成本×1.15 或 MA20+2ATR)，建议止盈" }
 
   "603601":
     name: 再升科技
     rules:
-      stop_loss:        { trigger: 16.24, dir: below, msg: "🚨 再升科技跌破 MA20 (16.24)！题材冷却，考虑止损卖 100 股" }
+      stop_loss:        { trigger: 16.31, dir: below, msg: "🚨 再升科技跌破 MA20×0.97 (16.31)！止损线" }
       hard_stop:        { trigger: 15.00, dir: below, msg: "🚨🚨 再升科技跌破 15.00！硬止损（-15.8%）必须卖 100 股" }
-      take_profit_half: { trigger: 19.50, dir: above, msg: "🎉 涨到 19.50！出一半保本息利" }
+      take_profit_half: { trigger: 19.89, dir: above, msg: "🎉 再升科技涨至 19.89！(MA20+2ATR)，建议止盈" }
       take_profit:      { trigger: 21.00, dir: above, msg: "🎉🎉 涨到 21.00！题材股高位，清仓 100 股" }
 
 
@@ -75,8 +75,8 @@ watchlist:
     added_reason: 玄鉴录推荐量化首选
     tags: [半导体, 封装测试]
     rules:
-      buy_zone:   { trigger: 55.00, dir: below, msg: "💰 跌至 55！进入首选买入区，可分批 100 股建仓" }
-      buy_strong: { trigger: 54.00, dir: below, msg: "💰💰 跌至 54！加大买入力度" }
+      buy_zone:   { trigger: 60.04, dir: below, msg: "💰 通富微电跌至 60.04！接近 MA10(60.04)，试探建仓" }
+      buy_strong: { trigger: 56.04, dir: below, msg: "💰💰 通富微电跌至 56.04！回踩 MA20(56.04)，优质建仓区" }
 
   "002709":
     name: 天赐材料
@@ -86,8 +86,8 @@ watchlist:
     added_reason: 玄鉴录推荐
     tags: [锂电池, 新能源材料]
     rules:
-      buy_zone:   { trigger: 54.00, dir: below, msg: "💰 跌至 54！可买入区，但需等 MACD 转金叉" }
-      buy_strong: { trigger: 53.00, dir: below, msg: "💰💰 跌至 53！加大买入" }
+      buy_zone:   { trigger: 57.33, dir: below, msg: "💰 天赐材料跌至 57.33！接近 MA10(57.33)，试探建仓" }
+      buy_strong: { trigger: 57.05, dir: below, msg: "💰💰 天赐材料跌至 57.05！回踩 MA20(57.05)，优质建仓区" }
 
   "002149":
     name: 西部材料
@@ -97,8 +97,8 @@ watchlist:
     added_reason: 玄鉴录推荐
     tags: [有色金属, 钛材]
     rules:
-      buy_zone:   { trigger: 67.00, dir: below, msg: "💰 跌至 67！可考虑建仓" }
-      buy_strong: { trigger: 65.00, dir: below, msg: "💰💰 跌至 65！强买入" }
+      buy_zone:   { trigger: 71.63, dir: below, msg: "💰 西部材料跌至 71.63！接近 MA10(71.63)，试探建仓" }
+      buy_strong: { trigger: 67.70, dir: below, msg: "💰💰 西部材料跌至 67.7！回踩 MA20(67.7)，优质建仓区" }
 
   "605006":
     name: 山东玻纤
@@ -108,9 +108,9 @@ watchlist:
     added_reason: 玄鉴录推荐
     tags: [玻纤, 新材料]
     rules:
-      buy_zone:    { trigger: 13.50, dir: below, msg: "💰 跌至 13.50！接近 MA10 支撑，可试探建仓 100 股" }
-      buy_strong:  { trigger: 12.74, dir: below, msg: "💰💰 跌破 MA20 (12.74)！主上升趋势考验区，谨慎加仓" }
-      trend_break: { trigger: 11.50, dir: below, msg: "⚠️ 跌破 11.50！主上升趋势可能结束，不建议买入" }
+      buy_zone:    { trigger: 15.33, dir: below, msg: "💰 山东玻纤跌至 15.33！接近 MA10(15.33)，试探建仓" }
+      buy_strong:  { trigger: 13.61, dir: below, msg: "💰💰 山东玻纤跌至 13.61！回踩 MA20(13.61)，优质建仓区" }
+      trend_break: { trigger: 11.49, dir: below, msg: "⚠️ 山东玻纤破 11.49！跌破 MA20-1.5ATR，趋势可能反转" }
 
   "603757":
     name: 大元泵业
@@ -120,9 +120,9 @@ watchlist:
     added_reason: 玄鉴录推荐
     tags: [机械设备, 泵阀]
     rules:
-      buy_zone:    { trigger: 57.50, dir: below, msg: "💰 跌至 57.50！接近 MA10，可试探建仓" }
-      buy_strong:  { trigger: 55.00, dir: below, msg: "💰💰 回踩 MA20 (55.36)！优质建仓区" }
-      trend_break: { trigger: 49.00, dir: below, msg: "⚠️ 跌破 MA60 (49.08)！主趋势变化，谨慎" }
+      buy_zone:    { trigger: 61.81, dir: below, msg: "💰 大元泵业跌至 61.81！接近 MA10(61.81)，试探建仓" }
+      buy_strong:  { trigger: 56.85, dir: below, msg: "💰💰 大元泵业跌至 56.85！回踩 MA20(56.85)，优质建仓区" }
+      trend_break: { trigger: 50.13, dir: below, msg: "⚠️ 大元泵业破 50.13！跌破 MA20-1.5ATR，趋势可能反转" }
 
   # ========== 2026-05-22 涛哥推荐三只 ==========
   "000725":
@@ -136,8 +136,8 @@ watchlist:
     tags: [面板, 半导体, 央企]
     notes: "当前涨停，不追高。等回踩前高 4.69 附近不破才买"
     rules:
-      buy_zone:   { trigger: 4.80, dir: below, msg: "💰 京东方 回踩 4.80！接近前高 4.69，试探 100 股建仓" }
-      buy_strong: { trigger: 4.50, dir: below, msg: "💰💰 京东方 跌至 4.50！接近 MA10 4.26，优质建仓区" }
+      buy_zone:   { trigger: 4.36, dir: below, msg: "💰 京东方A跌至 4.36！接近 MA10(4.36)，试探建仓" }
+      buy_strong: { trigger: 4.27, dir: below, msg: "💰💰 京东方A跌至 4.27！回踩 MA20(4.27)，优质建仓区" }
 
   "600309":
     name: 万华化学
@@ -150,8 +150,8 @@ watchlist:
     tags: [化工, 白马, 龙头]
     notes: "当前 MA60 下方，右侧交易，等回调到位"
     rules:
-      buy_zone:   { trigger: 76.00, dir: below, msg: "💰 万华跌至 76！接近 60 日低点 75.01，建仓区" }
-      buy_strong: { trigger: 73.00, dir: below, msg: "💰💰 万华破 73！创近期新低，加大建仓" }
+      buy_zone:   { trigger: 80.78, dir: below, msg: "💰 万华化学跌至 80.78！接近 MA10(80.78)，试探建仓" }
+      buy_strong: { trigger: 84.46, dir: below, msg: "💰💰 万华化学跌至 84.46！回踩 MA20(84.46)，优质建仓区" }
 
   "601728":
     name: 中国电信
@@ -164,9 +164,49 @@ watchlist:
     tags: [运营商, 央企, 高股息]
     notes: "防御型、稳健型选手，适合低吸"
     rules:
-      buy_zone:   { trigger: 6.10, dir: below, msg: "💰 电信跌至 6.10！接近 MA60 5.96，建仓区" }
-      buy_strong: { trigger: 5.96, dir: below, msg: "💰💰 电信破 MA60 5.96！主趋势线考验，优质加仓区" }
+      buy_zone:   { trigger: 6.42, dir: below, msg: "💰 中国电信跌至 6.42！接近 MA10(6.42)，试探建仓" }
+      buy_strong: { trigger: 6.20, dir: below, msg: "💰💰 中国电信跌至 6.2！回踩 MA20(6.2)，优质建仓区" }
 
+
+# ========== 2026-05-25 用户手动加入 ==========
+  "002290":
+    name: 禾盛新材
+    enabled: true
+    source: 用户指定
+    added_at: 2026-05-25
+    added_price: 99.13
+    added_reason: 用户观察，当前高位震荡(MA20=89.06)，等回调MA10附近再入
+    tags: [新材料, 薄膜]
+    rules:
+      buy_zone:    { trigger: 95.58, dir: below, msg: "💰 禾盛新材跌至 95.58！接近 MA10(95.58)，试探建仓" }
+      buy_strong:  { trigger: 89.06, dir: below, msg: "💰💰 禾盛新材跌至 89.06！回踩 MA20(89.06)，优质建仓区" }
+      trend_break: { trigger: 77.38, dir: below, msg: "⚠️ 禾盛新材破 77.38！跌破 MA20-1.5ATR，趋势可能反转" }
+
+  "600186":
+    name: 莲花控股
+    enabled: true
+    source: 用户指定
+    added_at: 2026-05-25
+    added_price: 12.93
+    added_reason: 今日涨停+10.04%，不追高，等回踩确认
+    tags: [食品, 味精, 重组]
+    rules:
+      buy_zone:    { trigger: 10.74, dir: below, msg: "💰 莲花控股跌至 10.74！接近 MA10(10.74)，试探建仓" }
+      buy_strong:  { trigger: 10.42, dir: below, msg: "💰💰 莲花控股跌至 10.42！回踩 MA20(10.42)，优质建仓区" }
+      trend_break: { trigger: 9.10, dir: below, msg: "⚠️ 莲花控股破 9.1！跌破 MA20-1.5ATR，趋势可能反转" }
+
+  "603256":
+    name: 宏和科技
+    enabled: true
+    source: 用户指定
+    added_at: 2026-05-25
+    added_price: 170.20
+    added_reason: 今日+6.80%创新高，不追高，等回踩MA5/MA10
+    tags: [电子材料, 玻纤布]
+    rules:
+      buy_zone:    { trigger: 143.84, dir: below, msg: "💰 宏和科技跌至 143.84！接近 MA10(143.84)，试探建仓" }
+      buy_strong:  { trigger: 131.92, dir: below, msg: "💰💰 宏和科技跌至 131.92！回踩 MA20(131.92)，优质建仓区" }
+      trend_break: { trigger: 115.31, dir: below, msg: "⚠️ 宏和科技破 115.31！跌破 MA20-1.5ATR，趋势可能反转" }
 
 # ========== 巨力索具（已清仓但保留观察）==========
 # 如不需要可整段删掉

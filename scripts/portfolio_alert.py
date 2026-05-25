@@ -107,6 +107,101 @@ from sim.portfolio import load_all_alert_rules  # noqa: E402
 RULES = load_all_alert_rules()
 
 
+# ====================================================================
+#  交易计划计算（买入信号附带盈亏比）
+# ====================================================================
+TOTAL_CAPITAL = 100000  # 学习账户总资金
+MAX_SINGLE_PCT = 0.10    # 单只最多 10%
+LOT_SIZE = 100           # A股最小单位
+
+
+def calc_trade_plan(code: str, entry_price: float, triggered_rule: dict, all_rules: list) -> str:
+    """
+    计算交易计划：止损/止盈/盈亏比/仓位建议
+
+    止损 = 同一股票的 trend_break 触发价（如果没有，用 entry_price × 0.92）
+    止盈① = entry_price × 1.15（+15%）
+    止盈② = entry_price × 1.25（+25%）
+    盈亏比 = (止盈① - entry_price) / (entry_price - 止损)
+    仓位 = 总资金的 5%（即约 ¥5,000 / entry_price 取整到 100 股）
+    """
+    # 找同一股票的 trend_break 规则
+    trend_break_price = None
+    for r in all_rules:
+        if r['code'] == code and 'trend_break' in r['level']:
+            trend_break_price = r['trigger']
+            break
+    
+    # 止损取 trend_break 和 -8% 中较近的那个（较大值 = 较小亏损）
+    default_stop = round(entry_price * 0.92, 2)
+    if trend_break_price and trend_break_price > 0:
+        stop_loss = max(trend_break_price, default_stop)
+    else:
+        stop_loss = default_stop
+    
+    stop_reason = "跌破 trend_break" if (trend_break_price and stop_loss == trend_break_price) else "-8%止损"
+    
+    # 止盈
+    take_profit_1 = round(entry_price * 1.15, 2)
+    take_profit_2 = round(entry_price * 1.25, 2)
+    
+    # 盈亏比
+    risk = entry_price - stop_loss
+    if risk <= 0:
+        return ""  # 止损高于买入价，计算无意义
+    reward = take_profit_1 - entry_price
+    rr_ratio = round(reward / risk, 2)
+    
+    # 盈亏比标签
+    if rr_ratio >= 2.0:
+        rr_label = f"{rr_ratio}:1 ✅ 优秀"
+    elif rr_ratio >= 1.5:
+        rr_label = f"{rr_ratio}:1 ✅ 可行"
+    else:
+        rr_label = f"{rr_ratio}:1 ⚠️ 盈亏比偏低，建议观望"
+    
+    # 仓位建议（总资金 5%）
+    budget = TOTAL_CAPITAL * 0.05
+    # 不超过单只上限
+    max_budget = TOTAL_CAPITAL * MAX_SINGLE_PCT
+    budget = min(budget, max_budget)
+    shares = int(budget / entry_price / LOT_SIZE) * LOT_SIZE
+    if shares < LOT_SIZE:
+        shares = LOT_SIZE
+    cost = round(shares * entry_price, 0)
+    
+    # 止损百分比
+    stop_pct = round((stop_loss - entry_price) / entry_price * 100, 1)
+    
+    plan = (
+        f"\n📐 交易计划（盈亏比 {rr_ratio}:1）\n"
+        f"├ 建议买入：¥{entry_price:.2f}\n"
+        f"├ 止损：¥{stop_loss:.2f}（{stop_pct}%，{stop_reason}）\n"
+        f"├ 止盈①：¥{take_profit_1:.2f}（+15%）\n"
+        f"├ 止盈②：¥{take_profit_2:.2f}（+25%）\n"
+        f"├ 盈亏比：{rr_label}\n"
+        f"└ 仓位建议：{shares} 股 ≈ ¥{cost:,.0f}"
+    )
+    return plan
+
+
+def get_rr_ratio_for_rule(code: str, entry_price: float, all_rules: list) -> float:
+    """快速计算盈亏比，用于决定消息前缀"""
+    stop_loss = None
+    for r in all_rules:
+        if r['code'] == code and 'trend_break' in r['level']:
+            stop_loss = r['trigger']
+            break
+    if stop_loss is None or stop_loss <= 0:
+        stop_loss = entry_price * 0.92
+    
+    risk = entry_price - stop_loss
+    if risk <= 0:
+        return 0.0
+    reward = entry_price * 0.15  # +15% 止盈
+    return reward / risk
+
+
 def in_trade_hours(now: datetime) -> bool:
     """A股交易时段：周一到周五 9:30-11:30 / 13:00-15:00"""
     if now.weekday() >= 5:
@@ -211,6 +306,18 @@ def main():
             msg = (f"【{rule['name']} {code}】\n"
                    f"现价 ¥{cur_price:.2f} {arrow} 阈值 ¥{rule['trigger']:.2f}\n"
                    f"{rule['message']}")
+            
+            # 买入信号附带交易计划 + 盈亏比
+            if 'buy' in rule['level']:
+                all_rules_for_code = [r for r in RULES if r['code'] == code]
+                plan = calc_trade_plan(code, cur_price, rule, all_rules_for_code)
+                if plan:
+                    # 检查盈亏比，决定前缀
+                    rr = get_rr_ratio_for_rule(code, cur_price, all_rules_for_code)
+                    if rr < 1.5 and rr > 0:
+                        # 替换消息开头的 💰 为 ⚠️💰
+                        msg = msg.replace("💰💰", "⚠️💰💰", 1) if "💰💰" in msg else msg.replace("💰", "⚠️💰", 1)
+                    msg += plan
             
             # 虚拟下单（全自动模式 A）
             try:

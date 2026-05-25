@@ -1,0 +1,27 @@
+# venv
+.venv-qlib/
+__pycache__/
+*.pyc
+*.pyo
+
+# qlib runtime
+mlruns/
+*.pkl
+output/*.png
+output/*.html
+
+# data (qlib data lives in ~/.qlib by convention)
+data/raw/
+data/cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+output/pip_install.log

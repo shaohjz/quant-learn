@@ -1,0 +1,53 @@
+# quant-qlib config
+# 用户：jizhouhu（胡济洲），本金 25000（模拟）
+# 与 quant-learn 项目并行运行，不互相修改文件，未来通过 signals.json 通信。
+
+project:
+  name: quant-qlib
+  owner: jizhouhu
+  capital_simulated: 25000
+
+# qlib 数据路径（默认）
+qlib:
+  provider_uri: ~/.qlib/qlib_data/cn_data
+  region: cn
+  freq: day
+
+# 用户的 10 只股票（5 持仓 + 5 观察）
+# qlib A 股代码格式：交易所前缀 + 6 位代码，如 SH600330 / SZ002256
+stock_pool:
+  holdings:
+    - SH600330   # 天通股份
+    - SZ002256   # 兆新股份
+    - SZ002453   # 华软科技
+    - SZ002342   # 巨力索具
+    - SH603601   # 再升科技
+  watchlist:
+    - SZ002709   # 天赐材料
+    - SZ002149   # 西部材料
+    - SZ002156   # 通富微电
+    - SH605006   # 山东玻纤
+    - SH603757   # 大元泵业
+
+# 回测窗口
+backtest:
+  train_start: "2018-01-01"
+  train_end:   "2022-12-31"
+  valid_start: "2023-01-01"
+  valid_end:   "2023-06-30"
+  test_start:  "2023-07-01"
+  test_end:    "2024-12-31"
+
+# 模型
+model:
+  default: lightgbm
+  alternatives: [xgboost, linear]
+
+# 信号桥接（设计中，尚未实现）
+bridge:
+  output_signals_path: C:\Users\Administrator\.openclaw\workspace\quant-qlib\output\signals.json
+  thresholds:
+    buy_quantile:  0.20   # score 进入 top 20% → BUY
+    sell_quantile: 0.80   # score 落入 bottom 20% → SELL
+  consumer_project: quant-learn
+  consumer_note: "由 portfolio_alert.py 读取 signals.json，与自身阈值合并"

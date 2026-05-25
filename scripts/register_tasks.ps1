@@ -26,3 +26,11 @@ Write-Host "  schtasks /query /tn QuantLearn_CleanupWatchlist /fo LIST /v"
 Write-Host "`n手动触发测试："
 Write-Host "  schtasks /run /tn QuantLearn_IntradayScanner"
 Write-Host "  schtasks /run /tn QuantLearn_CleanupWatchlist"
+
+# 任务3: 每日PM工作流（每日18:30）
+Write-Host "注册任务: QuantLearn_DailyPM_Workflow"
+schtasks /create /tn "QuantLearn_DailyPM_Workflow" ` 
+    /tr "$ProjectRoot\scripts\daily_pm_runner.bat" ` 
+    /sc DAILY /st 18:30 ` 
+    /sd 01/01/2026 ` 
+    /f /rl HIGHEST

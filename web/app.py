@@ -1,21 +1,19 @@
 """
-持仓 Web 仪表盘 — Flask
-端口: 8080 (云桌面对外开放)
+持仓 Web 仪表盘 v2 — 参考券商APP设计
+端口: 8080
 """
 import sys, json, sqlite3, re
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Flask, jsonify, send_from_directory
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-app = Flask(__name__, static_folder=str(ROOT / 'web' / 'templates'))
+app = Flask(__name__)
 DB_PATH = ROOT / "data" / "sim_live_mirror.db"
 
 # ====================================================================
-#  实时行情
+#  行情
 # ====================================================================
 def get_sina_prices(codes):
     if not codes:
@@ -40,73 +38,50 @@ def get_sina_prices(codes):
             parts = m.group(3).split(',')
             if len(parts) >= 10 and parts[3]:
                 code = m.group(2)
-                prices[code] = {
-                    'name': parts[0],
-                    'price': float(parts[3]),
-                    'yclose': float(parts[2]),
-                    'pct': round((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100, 2) if float(parts[2]) > 0 else 0,
-                    'high': float(parts[4]),
-                    'low': float(parts[5]),
-                    'volume': float(parts[8]),
-                    'amount': float(parts[9]),
-                }
+                try:
+                    prices[code] = {
+                        'name': parts[0],
+                        'price': float(parts[3]),
+                        'yclose': float(parts[2]),
+                        'open': float(parts[1]),
+                        'high': float(parts[4]),
+                        'low': float(parts[5]),
+                        'volume': float(parts[8]),
+                        'amount': float(parts[9]),
+                        'pct': round((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100, 2) if float(parts[2]) > 0 else 0,
+                    }
+                except (ValueError, IndexError):
+                    pass
     return prices
 
 # ====================================================================
-#  数据库
+#  DB
 # ====================================================================
-def get_positions(account_id=1):
+def query_db(sql, params=()):
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT * FROM sim_positions WHERE account_id=? AND quantity > 0", (account_id,)
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-def get_account(account_id=1):
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    row = conn.execute("SELECT * FROM sim_account WHERE id=?", (account_id,)).fetchone()
-    conn.close()
-    return dict(row) if row else {}
-
-def get_trades(account_id=1, limit=30):
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT * FROM sim_trades WHERE account_id=? ORDER BY created_at DESC LIMIT ?",
-        (account_id, limit)
-    ).fetchall()
+    rows = conn.execute(sql, params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 # ====================================================================
-#  实盘
-# ====================================================================
-def get_real_positions():
-    real_path = ROOT / "config_real.yaml"
-    if not real_path.exists():
-        return None, []
-    data = yaml.safe_load(real_path.read_text(encoding='utf-8'))
-    return data.get('account', {}), data.get('positions', [])
-
-# ====================================================================
-#  API
+#  API: 模拟盘
 # ====================================================================
 @app.route('/api/portfolio')
 def api_portfolio():
-    acc = get_account(1)
-    positions = get_positions(1)
+    positions = query_db("SELECT * FROM sim_positions WHERE account_id=1 AND quantity > 0")
+    acc = query_db("SELECT * FROM sim_account WHERE id=1")
+    acc = acc[0] if acc else {'cash': 0}
+    
     codes = [p['stock_code'] for p in positions]
-    rt = get_sina_prices(codes) if codes else {}
+    rt = get_sina_prices(codes)
     
     result = []
     total_mv = 0
     total_pnl = 0
     for p in positions:
         code = p['stock_code']
-        cur = rt.get(code, {}).get('price', p.get('current_price', 0))
+        cur = rt.get(code, {}).get('price', p.get('avg_cost', 0))
         pct_today = rt.get(code, {}).get('pct', 0)
         qty = p['quantity']
         cost = p['avg_cost']
@@ -115,16 +90,28 @@ def api_portfolio():
         pnl_pct = (cur - cost) / cost * 100 if cost > 0 else 0
         total_mv += mv
         total_pnl += pnl
+        
+        # 查交易理由
+        trades = query_db(
+            "SELECT signal_reason, trade_date FROM sim_trades WHERE stock_code=? AND direction='BUY' ORDER BY created_at LIMIT 1",
+            (code,)
+        )
+        reason = trades[0]['signal_reason'] if trades and trades[0].get('signal_reason') else '阈值触发自动买入'
+        
         result.append({
             'code': code,
             'name': p.get('stock_name', rt.get(code, {}).get('name', '')),
             'quantity': qty,
             'avg_cost': round(cost, 3),
-            'current_price': round(cur, 3),
+            'current_price': round(cur, 2),
             'pct_today': round(pct_today, 2),
             'market_value': round(mv, 2),
             'pnl': round(pnl, 2),
             'pnl_pct': round(pnl_pct, 2),
+            'buy_reason': reason,
+            'high': rt.get(code, {}).get('high', 0),
+            'low': rt.get(code, {}).get('low', 0),
+            'amount': rt.get(code, {}).get('amount', 0),
         })
     
     total_asset = acc.get('cash', 0) + total_mv
@@ -133,6 +120,7 @@ def api_portfolio():
             'cash': round(acc.get('cash', 0), 2),
             'total_asset': round(total_asset, 2),
             'total_return_pct': round((total_asset - 100000) / 100000 * 100, 2),
+            'position_pct': round(total_mv / total_asset * 100, 1) if total_asset > 0 else 0,
         },
         'positions': result,
         'total_market_value': round(total_mv, 2),
@@ -140,11 +128,17 @@ def api_portfolio():
         'updated_at': datetime.now().strftime('%H:%M:%S'),
     })
 
+# ====================================================================
+#  API: 实盘
+# ====================================================================
 @app.route('/api/real_portfolio')
 def api_real_portfolio():
-    acc, positions = get_real_positions()
-    if not positions:
-        return jsonify({'error': 'no real positions configured'})
+    real_path = ROOT / "config_real.yaml"
+    if not real_path.exists():
+        return jsonify({'error': 'no config_real.yaml'})
+    data = yaml.safe_load(real_path.read_text(encoding='utf-8'))
+    acc = data.get('account', {})
+    positions = data.get('positions', [])
     
     codes = [p['code'] for p in positions]
     rt = get_sina_prices(codes)
@@ -154,7 +148,7 @@ def api_real_portfolio():
     total_pnl = 0
     for p in positions:
         code = p['code']
-        cur = rt.get(code, {}).get('price', 0)
+        cur = rt.get(code, {}).get('price', p['avg_cost'])
         pct_today = rt.get(code, {}).get('pct', 0)
         qty = p['quantity']
         cost = p['avg_cost']
@@ -168,22 +162,25 @@ def api_real_portfolio():
             'name': p.get('name', rt.get(code, {}).get('name', '')),
             'quantity': qty,
             'avg_cost': round(cost, 3),
-            'current_price': round(cur, 3),
+            'current_price': round(cur, 2),
             'pct_today': round(pct_today, 2),
             'market_value': round(mv, 2),
             'pnl': round(pnl, 2),
             'pnl_pct': round(pnl_pct, 2),
+            'buy_reason': p.get('reason', '手动买入'),
+            'high': rt.get(code, {}).get('high', 0),
+            'low': rt.get(code, {}).get('low', 0),
+            'amount': rt.get(code, {}).get('amount', 0),
         })
     
     cash = acc.get('cash', 0)
-    init_capital = acc.get('initial_capital', 25000)
+    init = acc.get('initial_capital', 25000)
     total_asset = cash + total_mv
-    
     return jsonify({
         'account': {
             'cash': round(cash, 2),
             'total_asset': round(total_asset, 2),
-            'total_return_pct': round((total_asset - init_capital) / init_capital * 100, 2),
+            'total_return_pct': round((total_asset - init) / init * 100, 2),
             'position_pct': round(total_mv / total_asset * 100, 1) if total_asset > 0 else 0,
         },
         'positions': result,
@@ -192,23 +189,123 @@ def api_real_portfolio():
         'updated_at': datetime.now().strftime('%H:%M:%S'),
     })
 
-@app.route('/api/trades')
-def api_trades():
-    trades = get_trades(1, 30)
-    return jsonify({'trades': trades})
+# ====================================================================
+#  API: 观察列表
+# ====================================================================
+@app.route('/api/watchlist')
+def api_watchlist():
+    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding='utf-8'))
+    wl = cfg.get('watchlist', {})
+    um = wl.get('user_manual', {}) if isinstance(wl, dict) else {}
+    
+    auto_path = ROOT / "config_auto.yaml"
+    auto_cfg = yaml.safe_load(auto_path.read_text(encoding='utf-8')) if auto_path.exists() else {}
+    ad = auto_cfg.get('auto_discovered', {}) if auto_cfg else {}
+    
+    # 合并所有观察股
+    all_codes = list(set(list(um.keys()) + list(ad.keys())))
+    rt = get_sina_prices(all_codes)
+    
+    result = []
+    for code, info in um.items():
+        if not info.get('enabled', True):
+            continue
+        price = rt.get(code, {}).get('price', 0)
+        pct_today = rt.get(code, {}).get('pct', 0)
+        
+        # 计算从加入以来的涨跌
+        added_at = str(info.get('added_at', ''))
+        # 用 buy_zone trigger 作为加入时的参考价
+        rules = info.get('rules', {})
+        ref_price = 0
+        if isinstance(rules, dict):
+            bz = rules.get('buy_zone', {})
+            if isinstance(bz, dict):
+                ref_price = bz.get('trigger', 0)
+        since_pct = round((price - ref_price) / ref_price * 100, 1) if ref_price > 0 and price > 0 else None
+        
+        result.append({
+            'code': code,
+            'name': info.get('name', rt.get(code, {}).get('name', '')),
+            'source': info.get('source', '手动添加'),
+            'added_at': added_at,
+            'added_reason': info.get('added_reason', ''),
+            'tags': info.get('tags', []),
+            'price': round(price, 2),
+            'pct_today': round(pct_today, 2),
+            'since_pct': since_pct,
+            'category': 'user_manual',
+            'buy_zone': rules.get('buy_zone', {}).get('trigger', 0) if isinstance(rules, dict) else 0,
+            'buy_strong': rules.get('buy_strong', {}).get('trigger', 0) if isinstance(rules, dict) else 0,
+        })
+    
+    for code, info in ad.items():
+        if not info.get('enabled', True):
+            continue
+        price = rt.get(code, {}).get('price', 0)
+        pct_today = rt.get(code, {}).get('pct', 0)
+        result.append({
+            'code': code,
+            'name': info.get('name', rt.get(code, {}).get('name', '')),
+            'source': info.get('source', 'intraday_scanner'),
+            'added_at': str(info.get('added_at', '')),
+            'added_reason': info.get('added_reason', ''),
+            'tags': [],
+            'price': round(price, 2),
+            'pct_today': round(pct_today, 2),
+            'since_pct': None,
+            'category': 'auto_discovered',
+            'buy_zone': info.get('buy_zone', 0),
+            'buy_strong': info.get('buy_strong', 0),
+        })
+    
+    return jsonify({'watchlist': result, 'updated_at': datetime.now().strftime('%H:%M:%S')})
 
+# ====================================================================
+#  API: 单股交易历史
+# ====================================================================
 @app.route('/api/stock_trades/<code>')
 def api_stock_trades(code):
-    """查询单只股票的交易历史"""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT trade_date, trade_time, direction, quantity, price, amount FROM sim_trades WHERE stock_code=? ORDER BY created_at DESC LIMIT 20",
+    trades = query_db(
+        "SELECT trade_date, trade_time, direction, quantity, price, amount, signal_reason FROM sim_trades WHERE stock_code=? ORDER BY created_at DESC LIMIT 20",
         (code,)
-    ).fetchall()
-    conn.close()
-    return jsonify({'trades': [dict(r) for r in rows]})
+    )
+    return jsonify({'trades': trades})
 
+# ====================================================================
+#  API: 账户统计
+# ====================================================================
+@app.route('/api/stats')
+def api_stats():
+    # 近7天交易统计
+    since = (date.today() - timedelta(days=7)).isoformat()
+    trades = query_db(
+        "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=1 AND trade_date >= ?",
+        (since,)
+    )
+    buy_count = sum(1 for t in trades if t['direction'] == 'BUY')
+    sell_count = sum(1 for t in trades if t['direction'] == 'SELL')
+    buy_amount = sum(t.get('amount', 0) or 0 for t in trades if t['direction'] == 'BUY')
+    sell_amount = sum(t.get('amount', 0) or 0 for t in trades if t['direction'] == 'SELL')
+    
+    # 胜率(有盈利的卖出 / 总卖出)
+    all_sells = query_db(
+        "SELECT stock_code, price as sell_price FROM sim_trades WHERE account_id=1 AND direction='SELL' ORDER BY created_at DESC LIMIT 20"
+    )
+    
+    return jsonify({
+        'week_trades': {
+            'buy_count': buy_count,
+            'sell_count': sell_count,
+            'buy_amount': round(buy_amount, 0),
+            'sell_amount': round(sell_amount, 0),
+        },
+        'total_trades': len(query_db("SELECT id FROM sim_trades WHERE account_id=1")),
+    })
+
+# ====================================================================
+#  页面
+# ====================================================================
 @app.route('/')
 def index():
     return send_from_directory(str(ROOT / 'web' / 'templates'), 'index.html')

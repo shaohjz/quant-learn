@@ -5,189 +5,280 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📊 量化仪表盘</title>
 <style>
+:root { --bg: #0d1117; --card: #161b22; --border: #21262d; --blue: #58a6ff; --green: #3fb950; --red: #f85149; --gray: #8b949e; --text: #c9d1d9; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
-.header { text-align: center; margin-bottom: 20px; }
-.header h1 { font-size: 24px; color: #00d4ff; }
-.header .time { color: #888; font-size: 14px; margin-top: 5px; }
-.tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-.tab { padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; border: 1px solid #333; background: #16213e; color: #aaa; transition: all 0.3s; user-select: none; }
-.tab.active { background: #00d4ff; color: #000; border-color: #00d4ff; font-weight: bold; }
-.tab:hover { border-color: #00d4ff; }
-.summary { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-.card { background: #16213e; border-radius: 12px; padding: 15px 20px; flex: 1; min-width: 140px; }
-.card .label { color: #888; font-size: 12px; }
-.card .value { font-size: 20px; font-weight: bold; margin-top: 5px; }
-.pos { color: #00e676; }
-.neg { color: #ff5252; }
-.stock-row { background: #16213e; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s; }
-.stock-row:hover { background: #1a2745; }
-.stock-main { display: flex; padding: 12px 15px; align-items: center; gap: 15px; flex-wrap: wrap; }
-.stock-main .code { color: #888; font-size: 12px; min-width: 60px; }
-.stock-main .name { font-weight: bold; min-width: 80px; }
-.stock-main .qty { color: #aaa; font-size: 13px; min-width: 60px; }
-.stock-main .price { min-width: 70px; }
-.stock-main .pct { min-width: 60px; font-weight: bold; }
-.stock-main .pnl { min-width: 80px; }
-.stock-main .arrow { margin-left: auto; color: #555; transition: transform 0.2s; }
-.stock-row.open .arrow { transform: rotate(180deg); }
-.stock-detail { display: none; padding: 0 15px 12px; border-top: 1px solid #222; }
-.stock-row.open .stock-detail { display: block; }
-.trade-list { font-size: 12px; color: #aaa; padding-top: 8px; }
-.trade-list .trade-item { padding: 4px 0; display: flex; gap: 10px; border-bottom: 1px solid #1a1a2e; }
-.trade-list .trade-item .buy { color: #00e676; }
-.trade-list .trade-item .sell { color: #ff5252; }
-.no-trades { color: #555; font-size: 12px; padding: 8px 0; }
-h2 { color: #00d4ff; margin: 15px 0 10px; font-size: 16px; }
-.footer { text-align: center; color: #555; font-size: 12px; margin-top: 30px; }
+body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.container { max-width: 1200px; margin: 0 auto; padding: 15px; }
+.header { text-align: center; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+.header h1 { font-size: 20px; color: var(--blue); }
+.header .sub { font-size: 12px; color: var(--gray); margin-top: 4px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; margin-bottom: 15px; background: var(--card); border-radius: 8px; overflow: hidden; }
+.tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 13px; color: var(--gray); border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(88,166,255,0.05); }
+.tab:hover { color: var(--text); }
+
+/* Summary cards */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.stat-card .label { font-size: 11px; color: var(--gray); }
+.stat-card .value { font-size: 18px; font-weight: 600; margin-top: 4px; }
+.stat-card .change { font-size: 11px; margin-top: 2px; }
+
+/* Stock list */
+.section-title { font-size: 14px; color: var(--gray); margin: 12px 0 8px; display: flex; align-items: center; gap: 8px; }
+.section-title .badge { background: var(--blue); color: #000; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+
+.stock-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; overflow: hidden; transition: border-color 0.2s; }
+.stock-item:hover { border-color: var(--blue); }
+.stock-item.open { border-color: var(--blue); }
+
+.stock-header { display: grid; grid-template-columns: 70px 1fr 80px 90px 100px 30px; align-items: center; padding: 10px 12px; cursor: pointer; gap: 8px; }
+.stock-header .code { font-size: 12px; color: var(--gray); font-family: monospace; }
+.stock-header .name { font-weight: 600; font-size: 14px; }
+.stock-header .name .tags { font-size: 10px; color: var(--gray); font-weight: normal; }
+.stock-header .price { text-align: right; font-family: monospace; font-size: 14px; }
+.stock-header .today { text-align: right; font-size: 13px; font-weight: 600; }
+.stock-header .pnl { text-align: right; font-size: 12px; }
+.stock-header .arrow { color: var(--gray); font-size: 10px; transition: transform 0.2s; }
+.stock-item.open .arrow { transform: rotate(180deg); }
+
+.stock-body { display: none; padding: 0 12px 12px; border-top: 1px solid var(--border); }
+.stock-item.open .stock-body { display: block; }
+
+.stock-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; font-size: 12px; }
+.stock-info .info-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.stock-info .info-label { color: var(--gray); }
+
+.trade-history { margin-top: 10px; }
+.trade-history .title { font-size: 12px; color: var(--gray); margin-bottom: 6px; }
+.trade-row { display: grid; grid-template-columns: 100px 40px 50px 70px 70px; font-size: 11px; padding: 4px 0; border-bottom: 1px solid var(--border); gap: 5px; }
+.trade-row:last-child { border-bottom: none; }
+
+/* Watchlist */
+.watch-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; padding: 10px 12px; display: grid; grid-template-columns: 70px 1fr 70px 70px 90px; align-items: center; gap: 8px; }
+.watch-item .source { font-size: 10px; color: var(--gray); background: rgba(88,166,255,0.1); padding: 2px 5px; border-radius: 3px; }
+.watch-item .since { font-size: 11px; }
+.watch-item .triggers { font-size: 10px; color: var(--gray); }
+
+.pos { color: var(--green); }
+.neg { color: var(--red); }
 .hidden { display: none; }
-.btn { background: #0f3460; color: #00d4ff; border: 1px solid #00d4ff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-.btn:hover { background: #00d4ff; color: #000; }
+
+/* Footer */
+.footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray); border-top: 1px solid var(--border); margin-top: 20px; }
+.btn { background: var(--card); color: var(--blue); border: 1px solid var(--blue); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.btn:hover { background: var(--blue); color: #000; }
+
+@media (max-width: 768px) {
+  .stock-header { grid-template-columns: 60px 1fr 65px 70px 30px; }
+  .stock-header .pnl { display: none; }
+  .watch-item { grid-template-columns: 60px 1fr 60px 70px; }
+  .watch-item .triggers { display: none; }
+}
 </style>
 </head>
 <body>
+<div class="container">
 <div class="header">
-  <h1>📊 量化持仓仪表盘</h1>
-  <div class="time">更新: <span id="update-time">-</span> <button class="btn" onclick="refresh()">🔄</button></div>
+  <h1>📊 QuantLearn 仪表盘</h1>
+  <div class="sub">更新 <span id="time">-</span> | <button class="btn" onclick="refresh()">刷新</button> | 自动30s</div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-tab="real" onclick="switchTab(this,'real')">💼 实盘</div>
-  <div class="tab" data-tab="sim" onclick="switchTab(this,'sim')">🧪 模拟盘</div>
+  <div class="tab active" onclick="switchTab(this,'real')">💼 实盘</div>
+  <div class="tab" onclick="switchTab(this,'sim')">🧪 模拟盘</div>
+  <div class="tab" onclick="switchTab(this,'watch')">👀 观察列表</div>
+  <div class="tab" onclick="switchTab(this,'stats')">📊 统计</div>
 </div>
 
 <!-- 实盘 -->
 <div id="panel-real">
-<div class="summary">
-  <div class="card"><div class="label">总资产</div><div class="value" id="r-total-asset">-</div></div>
-  <div class="card"><div class="label">现金</div><div class="value" id="r-cash">-</div></div>
-  <div class="card"><div class="label">仓位</div><div class="value" id="r-position-pct">-</div></div>
-  <div class="card"><div class="label">浮动盈亏</div><div class="value" id="r-total-pnl">-</div></div>
-  <div class="card"><div class="label">总收益率</div><div class="value" id="r-total-return">-</div></div>
-</div>
-<h2>📈 实盘持仓 <span style="font-size:12px;color:#666">(点击查看交易历史)</span></h2>
-<div id="r-positions">加载中...</div>
+  <div class="summary" id="r-summary"></div>
+  <div class="section-title">持仓明细 <span class="badge" id="r-count">0</span> <span style="font-size:11px;color:var(--gray)">点击展开详情</span></div>
+  <div id="r-list"></div>
 </div>
 
 <!-- 模拟盘 -->
 <div id="panel-sim" class="hidden">
-<div class="summary">
-  <div class="card"><div class="label">总资产</div><div class="value" id="s-total-asset">-</div></div>
-  <div class="card"><div class="label">现金</div><div class="value" id="s-cash">-</div></div>
-  <div class="card"><div class="label">持仓市值</div><div class="value" id="s-market-value">-</div></div>
-  <div class="card"><div class="label">浮动盈亏</div><div class="value" id="s-total-pnl">-</div></div>
-  <div class="card"><div class="label">总收益率</div><div class="value" id="s-total-return">-</div></div>
-</div>
-<h2>📈 模拟盘持仓 <span style="font-size:12px;color:#666">(点击查看交易历史)</span></h2>
-<div id="s-positions">加载中...</div>
+  <div class="summary" id="s-summary"></div>
+  <div class="section-title">持仓明细 <span class="badge" id="s-count">0</span></div>
+  <div id="s-list"></div>
 </div>
 
-<div class="footer">quant-learn | 数据: 新浪行情 | 自动刷新 30s | 点击股票可展开/收起交易历史</div>
+<!-- 观察列表 -->
+<div id="panel-watch" class="hidden">
+  <div class="section-title">观察列表 <span class="badge" id="w-count">0</span></div>
+  <div id="w-list"></div>
+</div>
+
+<!-- 统计 -->
+<div id="panel-stats" class="hidden">
+  <div class="summary" id="stats-cards"></div>
+</div>
+
+<div class="footer">QuantLearn 量化学习系统 | 新浪实时行情 | github.com/jizhouhu/quant-learn</div>
+</div>
 
 <script>
-function fmt(n) { return n >= 0 ? '+' + n.toFixed(2) : n.toFixed(2); }
-function cls(n) { return n >= 0 ? 'pos' : 'neg'; }
-let tradesCache = {};
+const fmt = n => n >= 0 ? '+' + n.toFixed(2) : n.toFixed(2);
+const cls = n => n >= 0 ? 'pos' : 'neg';
+const money = n => '¥' + Math.abs(n).toLocaleString(undefined, {maximumFractionDigits:0});
 
 function switchTab(el, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('[id^="panel-"]').forEach(p => p.classList.add('hidden'));
   el.classList.add('active');
   document.getElementById('panel-' + tab).classList.remove('hidden');
+  if (tab === 'watch') loadWatchlist();
+  if (tab === 'stats') loadStats();
 }
 
 function toggleStock(el) {
   el.classList.toggle('open');
-  const code = el.dataset.code;
-  const detail = el.querySelector('.stock-detail');
-  if (el.classList.contains('open') && !detail.dataset.loaded) {
-    loadTrades(code, detail);
+  if (el.classList.contains('open')) {
+    const code = el.dataset.code;
+    const detail = el.querySelector('.trade-history');
+    if (!detail.dataset.loaded) {
+      loadStockTrades(code, detail);
+    }
   }
 }
 
-async function loadTrades(code, container) {
-  container.innerHTML = '<div class="trade-list">加载中...</div>';
+async function loadStockTrades(code, container) {
+  container.innerHTML = '<div style="color:var(--gray);font-size:11px">加载中...</div>';
   try {
     const res = await fetch('/api/stock_trades/' + code);
     const data = await res.json();
     if (data.trades && data.trades.length > 0) {
-      let html = '<div class="trade-list">';
+      let html = '<div class="title">交易记录</div>';
       data.trades.forEach(t => {
-        const dirCls = t.direction === 'BUY' ? 'buy' : 'sell';
-        const dirText = t.direction === 'BUY' ? '买入' : '卖出';
-        const time = t.trade_time || '';
-        html += '<div class="trade-item">' +
-          '<span>' + t.trade_date + ' ' + time + '</span>' +
-          '<span class="' + dirCls + '">' + dirText + '</span>' +
-          '<span>' + t.quantity + '股</span>' +
-          '<span>@¥' + t.price.toFixed(3) + '</span>' +
-          '<span>¥' + (t.amount||0).toFixed(0) + '</span>' +
-          '</div>';
+        const c = t.direction === 'BUY' ? 'pos' : 'neg';
+        const d = t.direction === 'BUY' ? '买入' : '卖出';
+        html += `<div class="trade-row">
+          <span>${t.trade_date} ${t.trade_time||''}</span>
+          <span class="${c}">${d}</span>
+          <span>${t.quantity}股</span>
+          <span>@${t.price.toFixed(2)}</span>
+          <span>${t.signal_reason||''}</span>
+        </div>`;
       });
-      html += '</div>';
       container.innerHTML = html;
     } else {
-      container.innerHTML = '<div class="no-trades">暂无交易记录</div>';
+      container.innerHTML = '<div style="color:var(--gray);font-size:11px">暂无交易记录</div>';
     }
     container.dataset.loaded = '1';
   } catch(e) {
-    container.innerHTML = '<div class="no-trades">加载失败</div>';
+    container.innerHTML = '<div style="color:var(--red);font-size:11px">加载失败</div>';
   }
 }
 
-function renderStockCards(positions, containerId) {
+function renderSummary(containerId, acc) {
+  const items = [
+    { label: '总资产', value: money(acc.total_asset), cls: '' },
+    { label: '可用现金', value: money(acc.cash), cls: '' },
+    { label: '仓位', value: (acc.position_pct||0) + '%', cls: '' },
+    { label: '总收益率', value: fmt(acc.total_return_pct) + '%', cls: cls(acc.total_return_pct) },
+  ];
+  document.getElementById(containerId).innerHTML = items.map(i =>
+    `<div class="stat-card"><div class="label">${i.label}</div><div class="value ${i.cls}">${i.value}</div></div>`
+  ).join('');
+}
+
+function renderPositions(positions, containerId, countId) {
+  document.getElementById(countId).textContent = positions.length;
+  if (!positions.length) {
+    document.getElementById(containerId).innerHTML = '<div style="color:var(--gray);padding:20px;text-align:center">暂无持仓</div>';
+    return;
+  }
   let html = '';
   positions.forEach(p => {
-    const pnlCls = cls(p.pnl_pct);
     const todayCls = cls(p.pct_today);
-    html += '<div class="stock-row" data-code="' + p.code + '" onclick="toggleStock(this)">' +
-      '<div class="stock-main">' +
-      '<span class="code">' + p.code + '</span>' +
-      '<span class="name">' + p.name + '</span>' +
-      '<span class="qty">' + p.quantity + '股</span>' +
-      '<span class="price">¥' + p.current_price.toFixed(2) + '</span>' +
-      '<span class="pct ' + todayCls + '">' + fmt(p.pct_today) + '%</span>' +
-      '<span class="pnl ' + pnlCls + '">' + (p.pnl>=0?'+':'') + '¥' + p.pnl.toFixed(0) + ' (' + fmt(p.pnl_pct) + '%)</span>' +
-      '<span class="arrow">▼</span>' +
-      '</div>' +
-      '<div class="stock-detail"></div>' +
-      '</div>';
+    const pnlCls = cls(p.pnl_pct);
+    html += `<div class="stock-item" data-code="${p.code}" onclick="toggleStock(this)">
+      <div class="stock-header">
+        <span class="code">${p.code}</span>
+        <span class="name">${p.name} <span class="tags">${p.quantity}股 @${p.avg_cost.toFixed(2)}</span></span>
+        <span class="price">¥${p.current_price.toFixed(2)}</span>
+        <span class="today ${todayCls}">${fmt(p.pct_today)}%</span>
+        <span class="pnl ${pnlCls}">${p.pnl>=0?'+':''}${p.pnl.toFixed(0)} (${fmt(p.pnl_pct)}%)</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="stock-body">
+        <div class="stock-info">
+          <div><div class="info-row"><span class="info-label">成本价</span><span>¥${p.avg_cost.toFixed(3)}</span></div>
+               <div class="info-row"><span class="info-label">市值</span><span>¥${p.market_value.toFixed(0)}</span></div>
+               <div class="info-row"><span class="info-label">今日最高</span><span>¥${(p.high||0).toFixed(2)}</span></div></div>
+          <div><div class="info-row"><span class="info-label">浮盈</span><span class="${pnlCls}">${p.pnl>=0?'+':''}¥${p.pnl.toFixed(0)}</span></div>
+               <div class="info-row"><span class="info-label">成交额</span><span>${((p.amount||0)/10000).toFixed(0)}万</span></div>
+               <div class="info-row"><span class="info-label">买入逻辑</span><span>${p.buy_reason||'-'}</span></div></div>
+        </div>
+        <div class="trade-history"></div>
+      </div>
+    </div>`;
   });
-  document.getElementById(containerId).innerHTML = html || '<div style="color:#555;padding:20px">暂无持仓</div>';
+  document.getElementById(containerId).innerHTML = html;
+}
+
+async function loadWatchlist() {
+  try {
+    const res = await fetch('/api/watchlist');
+    const data = await res.json();
+    const list = data.watchlist || [];
+    document.getElementById('w-count').textContent = list.length;
+    
+    let html = '';
+    list.forEach(w => {
+      const todayCls = cls(w.pct_today);
+      const sinceCls = w.since_pct !== null ? cls(w.since_pct) : '';
+      const sinceText = w.since_pct !== null ? fmt(w.since_pct) + '%' : '-';
+      const cat = w.category === 'auto_discovered' ? '🤖' : '👤';
+      html += `<div class="watch-item">
+        <span class="code" style="font-family:monospace;font-size:12px">${w.code}</span>
+        <span>
+          <div style="font-weight:600;font-size:13px">${w.name} ${cat}</div>
+          <div style="font-size:10px;color:var(--gray)">${w.added_reason || w.source} | ${w.added_at}</div>
+          ${w.tags && w.tags.length ? '<div style="font-size:10px;color:var(--gray)">标签: '+w.tags.join(', ')+'</div>' : ''}
+        </span>
+        <span class="price" style="text-align:right;font-size:13px">¥${w.price.toFixed(2)}<br><span class="${todayCls}" style="font-size:11px">${fmt(w.pct_today)}%</span></span>
+        <span class="since ${sinceCls}" style="text-align:right">加入以来<br>${sinceText}</span>
+        <span class="triggers">买①¥${(w.buy_zone||0).toFixed(1)}<br>买②¥${(w.buy_strong||0).toFixed(1)}</span>
+      </div>`;
+    });
+    document.getElementById('w-list').innerHTML = html || '<div style="color:var(--gray);padding:20px">暂无观察股</div>';
+  } catch(e) { console.error(e); }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    const w = data.week_trades;
+    document.getElementById('stats-cards').innerHTML = `
+      <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div class="change">¥${w.buy_amount.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div class="change">¥${w.sell_amount.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
+    `;
+  } catch(e) { console.error(e); }
 }
 
 async function refresh() {
   try {
-    // 实盘
-    const rRes = await fetch('/api/real_portfolio');
+    const [rRes, sRes] = await Promise.all([
+      fetch('/api/real_portfolio'),
+      fetch('/api/portfolio')
+    ]);
     const rData = await rRes.json();
-    if (!rData.error) {
-      document.getElementById('r-total-asset').textContent = '¥' + rData.account.total_asset.toLocaleString();
-      document.getElementById('r-cash').textContent = '¥' + rData.account.cash.toLocaleString();
-      document.getElementById('r-position-pct').textContent = rData.account.position_pct + '%';
-      const rpnl = document.getElementById('r-total-pnl');
-      rpnl.textContent = (rData.total_pnl>=0?'+':'') + '¥' + rData.total_pnl.toFixed(0);
-      rpnl.className = 'value ' + cls(rData.total_pnl);
-      const rret = document.getElementById('r-total-return');
-      rret.textContent = fmt(rData.account.total_return_pct) + '%';
-      rret.className = 'value ' + cls(rData.account.total_return_pct);
-      renderStockCards(rData.positions, 'r-positions');
-      document.getElementById('update-time').textContent = rData.updated_at;
-    }
-
-    // 模拟盘
-    const sRes = await fetch('/api/portfolio');
     const sData = await sRes.json();
-    document.getElementById('s-total-asset').textContent = '¥' + sData.account.total_asset.toLocaleString();
-    document.getElementById('s-cash').textContent = '¥' + sData.account.cash.toLocaleString();
-    document.getElementById('s-market-value').textContent = '¥' + sData.total_market_value.toLocaleString();
-    const spnl = document.getElementById('s-total-pnl');
-    spnl.textContent = (sData.total_pnl>=0?'+':'') + '¥' + sData.total_pnl.toFixed(0);
-    spnl.className = 'value ' + cls(sData.total_pnl);
-    const sret = document.getElementById('s-total-return');
-    sret.textContent = fmt(sData.account.total_return_pct) + '%';
-    sret.className = 'value ' + cls(sData.account.total_return_pct);
-    renderStockCards(sData.positions, 's-positions');
+    
+    if (!rData.error) {
+      renderSummary('r-summary', rData.account);
+      renderPositions(rData.positions, 'r-list', 'r-count');
+    }
+    renderSummary('s-summary', sData.account);
+    renderPositions(sData.positions, 's-list', 's-count');
+    document.getElementById('time').textContent = sData.updated_at;
   } catch(e) { console.error(e); }
 }
 

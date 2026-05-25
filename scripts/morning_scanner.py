@@ -230,16 +230,55 @@ def calc_factors(code: str, hist_df, spot_row):
 
 
 def get_kline(code: str, days: int = 30, retries: int = 3):
-    """拉单只 K 线（带重试）"""
-    import akshare as ak
+    """拉单只 K 线（带重试），由于akshare在云桌面限流，切换到baostock"""
+    import baostock as bs
+    import pandas as pd
+    from datetime import datetime, timedelta
+    
+    bs.login() # 确保已登录
+    
+    # 转换股票代码格式，baostock需要sh/sz前缀
+    bs_code = f"sh.{code}" if code.startswith("6") else f"sz.{code}"
+    
+    start_date = (datetime.now() - timedelta(days=days*2)).strftime("%Y-%m-%d")
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    
     last_err = None
     for attempt in range(retries):
         try:
-            df = ak.stock_zh_a_hist(symbol=code, period="daily", adjust="qfq",
-                                    start_date=(datetime.now() - __import__("datetime").timedelta(days=days*2)).strftime("%Y%m%d"))
-            if df is None or len(df) == 0:
+            rs = bs.query_history_k_data_plus(bs_code,
+                "date,code,open,high,low,close,volume,amount,adjustflag",
+                start_date=start_date, end_date=end_date,
+                frequency="d", adjustflag="2") # 2 = 前复权
+            
+            data_list = []
+            while (rs.error_code == '0') & rs.next():
+                data_list.append(rs.get_row_data())
+            
+            if not data_list:
                 return None
+                
+            df = pd.DataFrame(data_list, columns=rs.fields)
+            
+            # baostock返回的是字符串，需要转换，且处理停牌空字符串
+            for col in ["open", "high", "low", "close", "volume", "amount"]:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+            df = df.dropna()
+            
+            # 为了适配现有的 calc_factors
+            df = df.rename(columns={
+                "close": "收盘",
+                "volume": "成交量",
+                "high": "最高",
+                "low": "最低",
+                "open": "开盘",
+                "date": "日期"
+            })
+            
+            # bs.logout() # 退出移到脚本结尾比较好，但为了简单这里就不频繁开关了。由全局处理或者只开一次更好。
+            
             return df.tail(days).reset_index(drop=True)
+            
         except Exception as e:
             last_err = e
             if attempt < retries - 1:

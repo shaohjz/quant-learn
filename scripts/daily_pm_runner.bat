@@ -1,5 +1,5 @@
 @echo off
-REM æ¯å¤© 18:30 è‡ªåŠ¨æ‰§è¡Œ PM æµç¨‹ï¼Œç”¨äºŽæ ¹æ® test_reports è¿›è¡ŒçŠ¶æ€æ‰­è½¬åŠç”Ÿæˆæ¡†æž¶
+REM Ã¿Ìì 18:30 ×Ô¶¯Ö´ÐÐ PM Á÷³Ì£¬ÓÃÓÚ test_reports ½øÐÐ×´Ì¬Å¤×ª¼°Éú³É¿ò¼Ü
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 ".\.venv\Scripts\python.exe" "scripts\pm_daily_workflow.py" >> "pm\daily\workflow_cron.log" 2>&1
 exit /b 0

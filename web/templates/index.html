@@ -6,7 +6,7 @@
 <title>📊 量化仪表盘</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
-:root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --yellow: #d97706; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
+:root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --yellow: #d97706; --orange: #f59e0b; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .container { max-width: 1200px; margin: 0 auto; padding: 15px; }
@@ -62,6 +62,61 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 .push-item .push-header .time { color: var(--gray); }
 .push-item .push-content { display: none; margin-top: 8px; font-size: 11px; white-space: pre-wrap; color: var(--gray); line-height: 1.5; max-height: 300px; overflow-y: auto; }
 .push-item.open .push-content { display: block; }
+/* 刷新按钮动画 */
+.btn.spinning {
+  animation: spin 0.5s linear;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 价格变化闪动动画 */
+.flash-up {
+  animation: flashGreen 0.5s ease-out;
+}
+.flash-down {
+  animation: flashRed 0.5s ease-out;
+}
+@keyframes flashGreen {
+  from { background: rgba(22,163,74,0.15); }
+  to { background: var(--card); }
+}
+@keyframes flashRed {
+  from { background: rgba(220,38,38,0.15); }
+  to { background: var(--card); }
+}
+
+/* 状态指示器 */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.status-indicator.ok {
+  background: var(--green);
+  box-shadow: 0 0 4px rgba(22,163,74,0.5);
+}
+.status-indicator.error {
+  background: var(--red);
+  box-shadow: 0 0 4px rgba(220,38,38,0.5);
+}
+.status-indicator.warning {
+  background: var(--orange);
+  box-shadow: 0 0 4px rgba(245,158,11,0.5);
+}
+
+/* 更新时间样式 */
+.update-time {
+  display: inline-block;
+}
+.update-time.stale {
+  color: var(--orange);
+}
+
 @media (max-width: 768px) {
   .stock-header { grid-template-columns: 60px 1fr 65px 60px 30px; }
   .stock-header .pnl { display: none; }
@@ -72,7 +127,12 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 <div class="container">
 <div class="header">
   <h1>📊 QuantLearn 仪表盘</h1>
-  <div class="sub">更新 <span id="time">-</span> | <button class="btn" onclick="refresh()">🔄 刷新</button></div>
+  <div class="sub">
+    <span class="update-time" id="update-time">最后更新: --:--:--</span>
+    <span class="status-indicator ok" id="status-indicator" title="连接正常"></span>
+    | 
+    <button class="btn" id="refresh-btn" onclick="refresh()">🔄 刷新</button>
+  </div>
 </div>
 
 <div class="tabs">
@@ -86,6 +146,7 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 <div id="panel-real">
   <div class="summary" id="r-summary"></div>
   <div id="equity-chart" style="height:250px;margin-bottom:15px"></div>
+  <div id="pie-chart" style="height:200px;margin-bottom:15px"></div>
   <h2>持仓 <span class="badge" id="r-count">0</span> <span style="font-size:11px;color:var(--gray)">点击展开</span></h2>
   <div id="r-list"></div>
 </div>
@@ -131,6 +192,42 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 <script>
 const fmt = n => n >= 0 ? '+' + n.toFixed(2) : n.toFixed(2);
 const cls = n => n >= 0 ? 'pos' : 'neg';
+
+// 记录上次持仓数据（用于价格变化检测）
+let lastPositions = {};
+let lastUpdateTime = null;
+
+// 格式化时间
+function formatTime(date) {
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+// 更新状态指示器
+function updateStatusIndicator(status, message) {
+  const indicator = document.getElementById('status-indicator');
+  indicator.className = 'status-indicator ' + status;
+  indicator.title = message;
+}
+
+// 更新时间显示
+function updateTimeDisplay() {
+  if (!lastUpdateTime) return;
+  
+  const now = new Date();
+  const diff = Math.floor((now - lastUpdateTime) / 1000);
+  const timeEl = document.getElementById('update-time');
+  
+  // 如果超过60秒，变黄色提醒
+  if (diff > 60) {
+    timeEl.classList.add('stale');
+    updateStatusIndicator('warning', `数据已过期 ${diff} 秒`);
+  } else {
+    timeEl.classList.remove('stale');
+  }
+}
 
 function switchTab(el, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -210,7 +307,18 @@ function renderPositions(positions, listId, countId) {
   document.getElementById(countId).textContent = positions.length;
   let html = '';
   positions.forEach(p => {
-    html += `<div class="stock-item" data-code="${p.code}" onclick="toggleStock(this)">
+    // 检测价格变化
+    let flashClass = '';
+    if (lastPositions[p.code]) {
+      const oldPrice = lastPositions[p.code].current_price;
+      if (p.current_price > oldPrice) {
+        flashClass = ' flash-up';
+      } else if (p.current_price < oldPrice) {
+        flashClass = ' flash-down';
+      }
+    }
+    
+    html += `<div class="stock-item${flashClass}" data-code="${p.code}" onclick="toggleStock(this)">
       <div class="stock-header">
         <span class="code">${p.code}</span>
         <span class="name">${p.name}<div class="sub">${p.quantity}股 @${p.avg_cost.toFixed(2)} | ${p.buy_reason||''}</div></span>
@@ -221,7 +329,21 @@ function renderPositions(positions, listId, countId) {
       </div>
       <div class="stock-body"></div>
     </div>`;
+    
+    // 更新记录
+    lastPositions[p.code] = {
+      current_price: p.current_price,
+      pct_today: p.pct_today
+    };
   });
+  
+  // 清理动画类（500ms后）
+  setTimeout(() => {
+    document.querySelectorAll('.stock-item').forEach(el => {
+      el.classList.remove('flash-up', 'flash-down');
+    });
+  }, 500);
+  
   document.getElementById(listId).innerHTML = html || '<div style="color:var(--gray);padding:20px;text-align:center">暂无持仓</div>';
 }
 
@@ -332,6 +454,7 @@ async function loadStats() {
 }
 
 let equityChart = null;
+let pieChart = null;
 async function loadEquityCurve() {
   try {
     const res = await fetch('/api/equity_curve');
@@ -466,23 +589,126 @@ async function loadEquityCurve() {
   }
 }
 
+function renderPieChart(positions, cash, totalAsset) {
+  const chartDom = document.getElementById('pie-chart');
+  if (!chartDom) return;
+  
+  chartDom.style.display = 'block';
+  chartDom.innerHTML = '';
+  
+  if (!pieChart) {
+    pieChart = echarts.init(chartDom);
+  }
+  
+  // 准备数据
+  const data = [];
+  const colors = ['#1a73e8', '#16a34a', '#d97706', '#dc2626', '#8b5cf6', '#ec4899', '#06b6d4', '#10b981'];
+  
+  positions.forEach((p, idx) => {
+    data.push({
+      name: `${p.name} (${p.code})`,
+      value: p.market_value,
+      itemStyle: { color: colors[idx % colors.length] }
+    });
+  });
+  
+  // 添加现金
+  if (cash > 0) {
+    data.push({
+      name: '现金',
+      value: cash,
+      itemStyle: { color: '#9ca3af' }
+    });
+  }
+  
+  const option = {
+    title: {
+      text: `总资产 ￥${totalAsset.toLocaleString()}`,
+      left: 'center',
+      top: 'center',
+      textStyle: {
+        fontSize: 16,
+        fontWeight: 600,
+        color: '#1f2937'
+      }
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: ￥{c} ({d}%)'
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '70%'],
+        avoidLabelOverlap: true,
+        label: {
+          show: true,
+          formatter: '{b}\n{d}%',
+          fontSize: 10
+        },
+        labelLine: {
+          show: true,
+          length: 10,
+          length2: 5
+        },
+        data: data
+      }
+    ]
+  };
+  
+  pieChart.setOption(option);
+  
+  // 响应式调整
+  window.addEventListener('resize', function() {
+    if (pieChart) {
+      pieChart.resize();
+    }
+  });
+}
+
 async function refresh() {
+  // 添加旋转动画
+  const refreshBtn = document.getElementById('refresh-btn');
+  refreshBtn.classList.add('spinning');
+  
   try {
     const [rRes, sRes] = await Promise.all([fetch('/api/real_portfolio'), fetch('/api/portfolio')]);
     const rData = await rRes.json();
     const sData = await sRes.json();
+    
     if (!rData.error) {
       renderSummary('r-summary', rData.account);
       renderPositions(rData.positions, 'r-list', 'r-count');
     }
     renderSummary('s-summary', sData.account);
     renderPositions(sData.positions, 's-list', 's-count');
-    document.getElementById('time').textContent = sData.updated_at;
+    
+    // 更新时间显示
+    lastUpdateTime = new Date();
+    document.getElementById('update-time').textContent = '最后更新: ' + formatTime(lastUpdateTime);
+    
+    // 更新状态指示器为正常
+    updateStatusIndicator('ok', '连接正常');
 
     // 加载收益率曲线
     await loadEquityCurve();
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    console.error(e);
+    // 网络异常处理
+    updateStatusIndicator('error', '连接异常');
+    const timeEl = document.getElementById('update-time');
+    timeEl.textContent = '连接异常';
+    timeEl.classList.add('stale');
+  } finally {
+    // 移除旋转动画
+    setTimeout(() => {
+      refreshBtn.classList.remove('spinning');
+    }, 500);
+  }
 }
+
+// 定期检查更新时间
+setInterval(updateTimeDisplay, 5000);
 
 refresh();
 setInterval(refresh, 30000);

@@ -138,13 +138,16 @@ def update_account_cash(delta: float):
 
 def insert_trade(code: str, name: str, direction: str, price: float, qty: int,
                  commission: float, tax: float, signal_reason: str):
+    from datetime import datetime as _dt
+    now = _dt.now()
+    trade_time_str = now.strftime('%H:%M:%S')  # 北京时间 HH:MM:SS
     conn = get_conn()
     conn.execute(
         """INSERT INTO sim_trades 
-           (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, tax, signal_reason, broker)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, tax, signal_reason, broker, trade_time)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (_ACCOUNT_ID, date.today().isoformat(), code, name, direction, price, qty, price*qty,
-         commission, tax, signal_reason, 'live_mirror' if _ACCOUNT_ID == 1 else 'real_mirror')
+         commission, tax, signal_reason, 'live_mirror' if _ACCOUNT_ID == 1 else 'real_mirror', trade_time_str)
     )
     conn.close()
 

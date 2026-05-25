@@ -356,6 +356,47 @@ def api_stats():
     })
 
 # ====================================================================
+#  API: 收益率曲线
+# ====================================================================
+@app.route('/api/equity_curve')
+def api_equity_curve():
+    """获取近30天收益率曲线数据"""
+    # 查询近30天的快照数据
+    since_date = (date.today() - timedelta(days=30)).isoformat()
+    snapshots = query_db(
+        "SELECT snapshot_date, total_asset FROM daily_snapshot WHERE account_type='sim' AND snapshot_date >= ? ORDER BY snapshot_date",
+        (since_date,)
+    )
+    
+    if not snapshots:
+        return jsonify({
+            'dates': [],
+            'returns': [],
+            'benchmark': []
+        })
+    
+    # 计算收益率
+    dates = [s['snapshot_date'] for s in snapshots]
+    initial_asset = snapshots[0]['total_asset']
+    
+    if initial_asset == 0:
+        returns = [0] * len(snapshots)
+    else:
+        returns = [
+            round((s['total_asset'] - initial_asset) / initial_asset * 100, 2)
+            for s in snapshots
+        ]
+    
+    # 基准线（假设为0，即不涨不跌）
+    benchmark = [0] * len(dates)
+    
+    return jsonify({
+        'dates': dates,
+        'returns': returns,
+        'benchmark': benchmark
+    })
+
+# ====================================================================
 #  页面
 # ====================================================================
 @app.route('/')

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📊 量化仪表盘</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
 :root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --yellow: #d97706; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -84,6 +85,7 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 
 <div id="panel-real">
   <div class="summary" id="r-summary"></div>
+  <div id="equity-chart" style="height:250px;margin-bottom:15px"></div>
   <h2>持仓 <span class="badge" id="r-count">0</span> <span style="font-size:11px;color:var(--gray)">点击展开</span></h2>
   <div id="r-list"></div>
 </div>
@@ -123,7 +125,7 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
   <div class="summary" id="stats-cards"></div>
 </div>
 
-<div class="footer">QuantLearn 量化学习 | 不依赖LLM，纯规则+统计驱动</div>
+<div class="footer">QuantLearn 量化学习 | 不依赖LLM,纯规则+统计驱动</div>
 </div>
 
 <script>
@@ -159,7 +161,7 @@ async function loadStockDetail(code, container) {
     ]);
     const tData = await tRes.json();
     const nData = await nRes.json();
-    
+
     let html = '<div class="stock-info"><div>';
     // 持仓笔记
     if (nData.notes && nData.notes.length) {
@@ -169,7 +171,7 @@ async function loadStockDetail(code, container) {
       });
     }
     html += '</div><div></div></div>';
-    
+
     // 交易记录
     html += '<div class="trade-history"><div class="title">交易记录</div>';
     if (tData.trades && tData.trades.length) {
@@ -229,7 +231,7 @@ async function loadWatchlist() {
   const data = await res.json();
   watchlistData = data.watchlist || [];
   document.getElementById('w-count').textContent = watchlistData.length;
-  
+
   // 提取所有来源用于筛选
   const sources = [...new Set(watchlistData.map(w => w.source))];
   let filterHtml = '<span class="filter-btn active" onclick="filterWatch(this,\'\')">全部(' + watchlistData.length + ')</span>';
@@ -259,7 +261,7 @@ function filterWatch(el, source) {
   const logicDiv = document.getElementById('w-logic');
   if (source && selectionLogic[source]) {
     const logic = selectionLogic[source];
-    document.getElementById('w-logic-title').textContent = '🎯 ' + source + ' — ' + (logic.description || '');
+    document.getElementById('w-logic-title').textContent = '🎯 ' + source + ' - ' + (logic.description || '');
     document.getElementById('w-logic-desc').textContent = '策略: ' + (logic.strategy || '');
     const criteria = logic.criteria || [];
     document.getElementById('w-logic-criteria').innerHTML = criteria.map(c => '• ' + c).join('<br>');
@@ -283,7 +285,7 @@ function renderWatchlist(list) {
         </span>
         <span class="price">¥${w.price.toFixed(2)}<div class="sub ${cls(w.pct_today)}">${fmt(w.pct_today)}%</div></span>
         <span class="today ${sinceCls}" style="font-size:11px">加入以来<br>${sinceText}</span>
-        <span class="pnl" style="font-size:10px;color:var(--gray)">买①¥${(w.buy_zone||0).toFixed(1)}<br>买②¥${(w.buy_strong||0).toFixed(1)}</span>
+        <span class="pnl" style="font-size:10px;color:var(--gray)">买1¥${(w.buy_zone||0).toFixed(1)}<br>买2¥${(w.buy_strong||0).toFixed(1)}</span>
       </div>
     </div>`;
   });
@@ -323,10 +325,145 @@ async function loadStats() {
   const data = await res.json();
   const w = data.week_trades;
   document.getElementById('stats-cards').innerHTML = `
-    <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">¥${w.buy_amount.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">¥${w.sell_amount.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${w.buy_amount.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${w.sell_amount.toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
   `;
+}
+
+let equityChart = null;
+async function loadEquityCurve() {
+  try {
+    const res = await fetch('/api/equity_curve');
+    const data = await res.json();
+    
+    if (!data.dates || data.dates.length === 0) {
+      // 没有数据时显示提示
+      const chartDom = document.getElementById('equity-chart');
+      chartDom.style.display = 'flex';
+      chartDom.style.alignItems = 'center';
+      chartDom.style.justifyContent = 'center';
+      chartDom.style.color = 'var(--gray)';
+      chartDom.style.fontSize = '13px';
+      chartDom.innerHTML = '⚠️ 暂无数据，明天开始积累';
+      return;
+    }
+    
+    // 初始化 ECharts
+    const chartDom = document.getElementById('equity-chart');
+    chartDom.style.display = 'block';
+    chartDom.innerHTML = '';
+    
+    if (!equityChart) {
+      equityChart = echarts.init(chartDom);
+    }
+    
+    const option = {
+      title: {
+        text: '近30天收益率走势',
+        left: 'center',
+        textStyle: {
+          fontSize: 14,
+          color: '#1f2937',
+          fontWeight: 600
+        }
+      },
+      tooltip: {
+        trigger: 'axis',
+        formatter: function(params) {
+          let result = params[0].axisValue + '<br/>';
+          params.forEach(p => {
+            result += p.marker + p.seriesName + ': ' + p.value + '%<br/>';
+          });
+          return result;
+        }
+      },
+      legend: {
+        data: ['收益率', '基准线'],
+        bottom: 0,
+        textStyle: { fontSize: 11 }
+      },
+      grid: {
+        left: '50',
+        right: '20',
+        top: '40',
+        bottom: '35',
+        containLabel: false
+      },
+      xAxis: {
+        type: 'category',
+        data: data.dates,
+        axisLabel: {
+          fontSize: 10,
+          formatter: function(value) {
+            // 只显示月-日
+            return value.slice(5);
+          }
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: '%',
+        nameTextStyle: { fontSize: 10 },
+        axisLabel: {
+          fontSize: 10,
+          formatter: '{value}%'
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#e4e8ee'
+          }
+        }
+      },
+      series: [
+        {
+          name: '收益率',
+          type: 'line',
+          data: data.returns,
+          smooth: true,
+          lineStyle: {
+            color: '#1a73e8',
+            width: 2
+          },
+          itemStyle: {
+            color: '#1a73e8'
+          },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(26, 115, 232, 0.3)' },
+              { offset: 1, color: 'rgba(26, 115, 232, 0.05)' }
+            ])
+          }
+        },
+        {
+          name: '基准线',
+          type: 'line',
+          data: data.benchmark,
+          lineStyle: {
+            color: '#9ca3af',
+            width: 1,
+            type: 'dashed'
+          },
+          itemStyle: {
+            color: '#9ca3af'
+          },
+          symbol: 'none'
+        }
+      ]
+    };
+    
+    equityChart.setOption(option);
+    
+    // 响应式调整
+    window.addEventListener('resize', function() {
+      if (equityChart) {
+        equityChart.resize();
+      }
+    });
+    
+  } catch(e) {
+    console.error('Failed to load equity curve:', e);
+  }
 }
 
 async function refresh() {
@@ -341,6 +478,9 @@ async function refresh() {
     renderSummary('s-summary', sData.account);
     renderPositions(sData.positions, 's-list', 's-count');
     document.getElementById('time').textContent = sData.updated_at;
+
+    // 加载收益率曲线
+    await loadEquityCurve();
   } catch(e) { console.error(e); }
 }
 

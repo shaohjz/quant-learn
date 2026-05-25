@@ -197,6 +197,18 @@ def api_trades():
     trades = get_trades(1, 30)
     return jsonify({'trades': trades})
 
+@app.route('/api/stock_trades/<code>')
+def api_stock_trades(code):
+    """查询单只股票的交易历史"""
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute(
+        "SELECT trade_date, trade_time, direction, quantity, price, amount FROM sim_trades WHERE stock_code=? ORDER BY created_at DESC LIMIT 20",
+        (code,)
+    ).fetchall()
+    conn.close()
+    return jsonify({'trades': [dict(r) for r in rows]})
+
 @app.route('/')
 def index():
     return send_from_directory(str(ROOT / 'web' / 'templates'), 'index.html')

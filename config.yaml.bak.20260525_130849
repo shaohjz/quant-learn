@@ -1,0 +1,259 @@
+# config.yaml — 量化交易系统配置（单一真源 / 2026-05-22 重构）
+#
+# 推荐用法：把账户敏感配置放到 config.local.yaml（已加入 .gitignore），
+# config.local.yaml 会覆盖本文件的同名字段。
+#
+# 设计原则：
+#   - 持仓 / 现金 / 阈值规则均以本文件为准，所有脚本统一读这里
+#   - 真实账户（real）由用户手动同步，仅监控告警；
+#     学习账户（learn）由 vqlearn 自动下单
+#   - 数据库 sim_live_mirror.db 是运行时镜像，不是真源；
+#     用 scripts/sync_real_position.py 来同步真实交易
+
+
+# ========== 双账户 ==========
+accounts:
+  learn:
+    account_id: 1                # 数据库 sim_account.id
+    account_name: live_mirror
+    initial_cash: 100000.00      # 学习账户初始资金 10 万
+    auto_trade: true             # vqlearn 实盘策略自动下单
+    max_total_value: 100000.00   # 总资产硬上限（含市值），达上限不再买入
+    description: "vqlearn 量化策略自学习账户，自动下单"
+
+  real:
+    account_id: 2
+    account_name: real_portfolio
+    initial_cash: 25000.00       # 用户实际初始资金（约略，用于历史对比）
+    auto_trade: false            # 仅监控告警，绝不下单
+    description: "用户实际持仓镜像，由 scripts/sync_real_position.py 维护"
+
+
+# ========== 真实持仓（snapshot — 数据库为权威，本块仅用于规则匹配/便于审计） ==========
+# 注：实际数量/成本/现价 以 sim_positions(account_id=2) 为准；
+#     这里只描述【告警规则】，让告警脚本知道每只股的止损/止盈/观察阈值。
+real_portfolio_rules:
+  "600330":
+    name: 天通股份
+    rules:
+      stop_loss:    { trigger: 27.94, dir: below, msg: "🚨 天通股份跌破 MA20×0.97 (27.94)！止损线" }
+      half_out:     { trigger: 32.00, dir: above, msg: "✅ 回到 32 回本线！建议挂卖 200 股 @32.00" }
+      take_profit:  { trigger: 33.92, dir: above, msg: "🎉 天通股份涨至 33.92！(MA20+2ATR)，建议止盈" }
+
+  "002453":
+    name: 华软科技
+    rules:
+      stop_loss_tight: { trigger: 5.69, dir: below, msg: "⚠️ 华软科技跌破 MA20×0.98 (5.69)！接近止损线" }
+      stop_loss:       { trigger: 5.80, dir: below, msg: "🚨 跌破 5.80！硬止损卖出 300 股" }
+      half_out:        { trigger: 6.80, dir: above, msg: "📈 涨到 6.80！建议挂卖 150 股" }
+      take_profit:     { trigger: 7.44, dir: above, msg: "🎉 华软科技涨至 7.44！(成本×1.15 或 MA20+2ATR)，建议止盈" }
+
+  "603601":
+    name: 再升科技
+    rules:
+      stop_loss:        { trigger: 16.31, dir: below, msg: "🚨 再升科技跌破 MA20×0.97 (16.31)！止损线" }
+      hard_stop:        { trigger: 15.00, dir: below, msg: "🚨🚨 再升科技跌破 15.00！硬止损（-15.8%）必须卖 100 股" }
+      take_profit_half: { trigger: 19.89, dir: above, msg: "🎉 再升科技涨至 19.89！(MA20+2ATR)，建议止盈" }
+      take_profit:      { trigger: 21.00, dir: above, msg: "🎉🎉 涨到 21.00！题材股高位，清仓 100 股" }
+
+
+# ========== 观察池（不持仓，触发买入提醒）==========
+# metadata 字段说明：
+#   source            来源（玄鉴录/涛哥推荐/量化首推/自选/...）
+#   recommended_by    推荐人（个人名，source 为个人推荐时填）
+#   added_at          加入日期
+#   added_price       加入时价格（复盘参考）
+#   added_reason      加入理由
+#   tags              标签列表（行业/主题）
+#   notes             备注
+watchlist:
+  "002156":
+    name: 通富微电
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐量化首选
+    tags: [半导体, 封装测试]
+    rules:
+      buy_zone:   { trigger: 60.04, dir: below, msg: "💰 通富微电跌至 60.04！接近 MA10(60.04)，试探建仓" }
+      buy_strong: { trigger: 56.04, dir: below, msg: "💰💰 通富微电跌至 56.04！回踩 MA20(56.04)，优质建仓区" }
+
+  "002709":
+    name: 天赐材料
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [锂电池, 新能源材料]
+    rules:
+      buy_zone:   { trigger: 57.33, dir: below, msg: "💰 天赐材料跌至 57.33！接近 MA10(57.33)，试探建仓" }
+      buy_strong: { trigger: 57.05, dir: below, msg: "💰💰 天赐材料跌至 57.05！回踩 MA20(57.05)，优质建仓区" }
+
+  "002149":
+    name: 西部材料
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [有色金属, 钛材]
+    rules:
+      buy_zone:   { trigger: 71.63, dir: below, msg: "💰 西部材料跌至 71.63！接近 MA10(71.63)，试探建仓" }
+      buy_strong: { trigger: 67.70, dir: below, msg: "💰💰 西部材料跌至 67.7！回踩 MA20(67.7)，优质建仓区" }
+
+  "605006":
+    name: 山东玻纤
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [玻纤, 新材料]
+    rules:
+      buy_zone:    { trigger: 15.33, dir: below, msg: "💰 山东玻纤跌至 15.33！接近 MA10(15.33)，试探建仓" }
+      buy_strong:  { trigger: 13.61, dir: below, msg: "💰💰 山东玻纤跌至 13.61！回踩 MA20(13.61)，优质建仓区" }
+      trend_break: { trigger: 11.49, dir: below, msg: "⚠️ 山东玻纤破 11.49！跌破 MA20-1.5ATR，趋势可能反转" }
+
+  "603757":
+    name: 大元泵业
+    enabled: true
+    source: 玄鉴录
+    added_at: 2026-05-19
+    added_reason: 玄鉴录推荐
+    tags: [机械设备, 泵阀]
+    rules:
+      buy_zone:    { trigger: 61.81, dir: below, msg: "💰 大元泵业跌至 61.81！接近 MA10(61.81)，试探建仓" }
+      buy_strong:  { trigger: 56.85, dir: below, msg: "💰💰 大元泵业跌至 56.85！回踩 MA20(56.85)，优质建仓区" }
+      trend_break: { trigger: 50.13, dir: below, msg: "⚠️ 大元泵业破 50.13！跌破 MA20-1.5ATR，趋势可能反转" }
+
+  # ========== 2026-05-22 涛哥推荐三只 ==========
+  "000725":
+    name: 京东方A
+    enabled: true
+    source: 涛哥推荐
+    recommended_by: 涛哥
+    added_at: 2026-05-22
+    added_price: 5.16
+    added_reason: 5/22 涨停 +10.02%，摸顶 4.69 启动；面板/存储/AI 硬件复苏龙头
+    tags: [面板, 半导体, 央企]
+    notes: "当前涨停，不追高。等回踩前高 4.69 附近不破才买"
+    rules:
+      buy_zone:   { trigger: 4.36, dir: below, msg: "💰 京东方A跌至 4.36！接近 MA10(4.36)，试探建仓" }
+      buy_strong: { trigger: 4.27, dir: below, msg: "💰💰 京东方A跌至 4.27！回踩 MA20(4.27)，优质建仓区" }
+
+  "600309":
+    name: 万华化学
+    enabled: true
+    source: 涛哥推荐
+    recommended_by: 涛哥
+    added_at: 2026-05-22
+    added_price: 78.00
+    added_reason: 化工龙头高位回调，近 60 日高 94.32 低 75.01，在 MA20/MA60 下方整理
+    tags: [化工, 白马, 龙头]
+    notes: "当前 MA60 下方，右侧交易，等回调到位"
+    rules:
+      buy_zone:   { trigger: 80.78, dir: below, msg: "💰 万华化学跌至 80.78！接近 MA10(80.78)，试探建仓" }
+      buy_strong: { trigger: 84.46, dir: below, msg: "💰💰 万华化学跌至 84.46！回踩 MA20(84.46)，优质建仓区" }
+
+  "601728":
+    name: 中国电信
+    enabled: true
+    source: 涛哥推荐
+    recommended_by: 涛哥
+    added_at: 2026-05-22
+    added_price: 6.16
+    added_reason: 央企运营商，今日 -2.99% 跌破 MA20 (6.19)，接近 MA60 5.96 主趋势线
+    tags: [运营商, 央企, 高股息]
+    notes: "防御型、稳健型选手，适合低吸"
+    rules:
+      buy_zone:   { trigger: 6.42, dir: below, msg: "💰 中国电信跌至 6.42！接近 MA10(6.42)，试探建仓" }
+      buy_strong: { trigger: 6.20, dir: below, msg: "💰💰 中国电信跌至 6.2！回踩 MA20(6.2)，优质建仓区" }
+
+
+# ========== 2026-05-25 用户手动加入 ==========
+  "002290":
+    name: 禾盛新材
+    enabled: true
+    source: 用户指定
+    added_at: 2026-05-25
+    added_price: 99.13
+    added_reason: 用户观察，当前高位震荡(MA20=89.06)，等回调MA10附近再入
+    tags: [新材料, 薄膜]
+    rules:
+      buy_zone:    { trigger: 95.58, dir: below, msg: "💰 禾盛新材跌至 95.58！接近 MA10(95.58)，试探建仓" }
+      buy_strong:  { trigger: 89.06, dir: below, msg: "💰💰 禾盛新材跌至 89.06！回踩 MA20(89.06)，优质建仓区" }
+      trend_break: { trigger: 77.38, dir: below, msg: "⚠️ 禾盛新材破 77.38！跌破 MA20-1.5ATR，趋势可能反转" }
+
+  "600186":
+    name: 莲花控股
+    enabled: true
+    source: 用户指定
+    added_at: 2026-05-25
+    added_price: 12.93
+    added_reason: 今日涨停+10.04%，不追高，等回踩确认
+    tags: [食品, 味精, 重组]
+    rules:
+      buy_zone:    { trigger: 10.74, dir: below, msg: "💰 莲花控股跌至 10.74！接近 MA10(10.74)，试探建仓" }
+      buy_strong:  { trigger: 10.42, dir: below, msg: "💰💰 莲花控股跌至 10.42！回踩 MA20(10.42)，优质建仓区" }
+      trend_break: { trigger: 9.10, dir: below, msg: "⚠️ 莲花控股破 9.1！跌破 MA20-1.5ATR，趋势可能反转" }
+
+  "603256":
+    name: 宏和科技
+    enabled: true
+    source: 用户指定
+    added_at: 2026-05-25
+    added_price: 170.20
+    added_reason: 今日+6.80%创新高，不追高，等回踩MA5/MA10
+    tags: [电子材料, 玻纤布]
+    rules:
+      buy_zone:    { trigger: 143.84, dir: below, msg: "💰 宏和科技跌至 143.84！接近 MA10(143.84)，试探建仓" }
+      buy_strong:  { trigger: 131.92, dir: below, msg: "💰💰 宏和科技跌至 131.92！回踩 MA20(131.92)，优质建仓区" }
+      trend_break: { trigger: 115.31, dir: below, msg: "⚠️ 宏和科技破 115.31！跌破 MA20-1.5ATR，趋势可能反转" }
+
+# ========== 巨力索具（已清仓但保留观察）==========
+# 如不需要可整段删掉
+legacy_watch:
+  "002342":
+    name: 巨力索具
+    enabled: false              # 默认禁用，需要再开
+    note: "5/19 暴跌后清仓"
+
+
+# ========== 风控（学习账户用） ==========
+risk:
+  max_position_pct: 0.60        # 单只股票最大仓位
+  max_daily_trades: 5           # 每日最大交易笔数
+  stop_loss_pct: -0.08          # 止损线
+  take_profit_pct: 0.15         # 止盈线
+
+
+# ========== 费用模型 ==========
+fees:
+  commission_rate: 0.00025      # 佣金万 2.5（现行国金 mini-QMT 默认）
+  min_commission: 5.0           # 最低佣金 5 元
+  stamp_tax_rate: 0.0005        # 印花税千 0.5（2023.8 起减半，现行）
+  unit_size: 100                # 交易单位（A 股 100 股）
+
+
+# ========== 推送通知 ==========
+notifier:
+  enabled: true
+  # webhook URL 写到 config.local.yaml 不入库
+
+
+# ========== 交易模式 ==========
+broker:
+  mode: "sim"                   # sim / live
+  sim:
+    slippage: 0.0               # 模拟盘滑点
+  live:
+    # qmt_path / qmt_account 通过环境变量 QMT_USERDATA_MINI / QMT_ACCOUNT_ID 注入
+    session_id: 123456
+
+
+# ========== 旧字段兼容（逐步淘汰） ==========
+# 兼容老脚本读取 account.initial_cash / account.account_id
+account:
+  initial_cash: 100000          # = accounts.learn.initial_cash
+  account_id: 1                 # = accounts.learn.account_id
+
+# 兼容老脚本读取 stock_pool（已废弃，统一从 real_portfolio_rules + watchlist 读）
+stock_pool: []

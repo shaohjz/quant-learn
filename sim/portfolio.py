@@ -21,6 +21,7 @@ from sim.config import load_config
 
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT / 'data' / 'sim_live_mirror.db'
+CONFIG_AUTO_PATH = ROOT / 'config_auto.yaml'
 
 
 # ============================================================
@@ -111,24 +112,84 @@ def load_real_holdings_rules() -> dict[str, dict]:
     return out
 
 
-def load_watchlist_rules(include_disabled: bool = False) -> dict[str, dict]:
-    """返回 {code: {'name': str, 'rules': [...], 'strategy': ...}}"""
+def load_config_auto() -> dict:
+    """加载 config_auto.yaml（自动管理的观察池）"""
+    if not CONFIG_AUTO_PATH.exists():
+        return {"auto_discovered": {}, "cooldown": {}}
+    try:
+        import yaml
+        with open(CONFIG_AUTO_PATH, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {"auto_discovered": {}, "cooldown": {}}
+    except Exception:
+        return {"auto_discovered": {}, "cooldown": {}}
+
+def load_watchlist_rules(include_disabled: bool = False, category: str = None) -> dict[str, dict]:
+    """返回 {code: {'name': str, 'rules': [...], 'category': ...}}
+    
+    Args:
+        include_disabled: 是否包含 enabled=False 的股票
+        category: 'user_manual' | 'auto_discovered' | None（None = 全部）
+    """
     cfg = load_config()
-    src = cfg.get('watchlist', {}) or {}
+    watchlist = cfg.get('watchlist', {}) or {}
+    
+    # 加载 config_auto.yaml
+    cfg_auto = load_config_auto()
+    
+    # 检测是否为新结构（有 user_manual / auto_discovered）
+    is_new_structure = 'user_manual' in watchlist or 'auto_discovered' in watchlist
+    
     out = {}
-    for code, body in src.items():
-        if not include_disabled and body.get('enabled', True) is False:
-            continue
-        entry = {
-            'name': body.get('name', ''),
-            'rules': _normalize_rules_block(body.get('rules', {})),
-        }
-        # 透传 metadata 字段（strategy/source/tags 等）
-        for k in ('strategy', 'source', 'recommended_by', 'tags', 'added_at',
-                  'added_price', 'added_reason', 'notes'):
-            if k in body:
-                entry[k] = body[k]
-        out[str(code)] = entry
+    
+    if is_new_structure:
+        # 新结构：分层观察列表
+        categories_to_load = []
+        if category is None:
+            categories_to_load = ['user_manual', 'auto_discovered']
+        elif category in ('user_manual', 'auto_discovered'):
+            categories_to_load = [category]
+        
+        for cat in categories_to_load:
+            if cat == 'user_manual':
+                # user_manual 从 config.yaml 读
+                src = watchlist.get(cat, {}) or {}
+            else:
+                # auto_discovered 从 config_auto.yaml 读
+                src = cfg_auto.get('auto_discovered', {}) or {}
+            
+            for code, body in src.items():
+                if not include_disabled and body.get('enabled', True) is False:
+                    continue
+                entry = {
+                    'name': body.get('name', ''),
+                    'rules': _normalize_rules_block(body.get('rules', {})),
+                    'category': cat,  # 标记分类
+                }
+                # 透传 metadata 字段
+                for k in ('strategy', 'source', 'recommended_by', 'tags', 'added_at',
+                          'added_price', 'added_reason', 'notes', 'discovery_score',
+                          'last_alert_at', 'alert_count', 'max_inactive_days', 'signal_type'):
+                    if k in body:
+                        entry[k] = body[k]
+                out[str(code)] = entry
+    else:
+        # 旧结构（向后兼容）：扁平 watchlist，默认视为 user_manual
+        src = watchlist
+        for code, body in src.items():
+            if not include_disabled and body.get('enabled', True) is False:
+                continue
+            entry = {
+                'name': body.get('name', ''),
+                'rules': _normalize_rules_block(body.get('rules', {})),
+                'category': 'user_manual',  # 旧结构默认为用户手动
+            }
+            # 透传 metadata 字段
+            for k in ('strategy', 'source', 'recommended_by', 'tags', 'added_at',
+                      'added_price', 'added_reason', 'notes'):
+                if k in body:
+                    entry[k] = body[k]
+            out[str(code)] = entry
+    
     return out
 
 
@@ -195,6 +256,155 @@ def all_codes_to_subscribe() -> list[str]:
     for code in load_watchlist_rules().keys():
         codes.add(code)
     return sorted(codes)
+
+
+# ============================================================
+# 观察池更新操作（2026-05-25 新增）
+# ============================================================
+
+def update_watchlist_alert(code: str, category: str = 'auto_discovered'):
+    """更新观察池股票的告警时间（触发阈值时调用）
+    
+    Args:
+        code: 股票代码
+        category: 'user_manual' | 'auto_discovered'
+    """
+    from datetime import date
+    import sqlite3
+    
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
+    today = date.today().isoformat()
+    
+    # 更新 watchlist_history 的 last_alert_at 和 alert_count
+    c.execute("""
+        UPDATE watchlist_history
+        SET last_alert_at = ?,
+            alert_count = alert_count + 1
+        WHERE code = ? AND category = ? AND removed_at IS NULL
+    """, (today, code, category))
+    
+    conn.commit()
+    conn.close()
+
+
+def add_to_watchlist(code: str, name: str, category: str, **kwargs):
+    """添加股票到观察池（同时更新 config.yaml/config_auto.yaml 和 watchlist_history）
+    
+    Args:
+        code: 股票代码
+        name: 股票名称
+        category: 'user_manual' | 'auto_discovered'
+        **kwargs: 其他元数据（source, added_reason, discovery_score, rules 等）
+    """
+    import yaml
+    import sqlite3
+    import json
+    from datetime import date
+    
+    if category == 'user_manual':
+        # user_manual 写入 config.yaml
+        cfg = load_config()
+        if 'watchlist' not in cfg:
+            cfg['watchlist'] = {'user_manual': {}, 'auto_discovered': {}}
+        if 'user_manual' not in cfg['watchlist']:
+            cfg['watchlist']['user_manual'] = {}
+        
+        cfg['watchlist']['user_manual'][code] = {
+            'name': name,
+            'enabled': True,
+            **kwargs
+        }
+        
+        with open(ROOT / 'config.yaml', 'w', encoding='utf-8') as f:
+            yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    
+    else:
+        # auto_discovered 写入 config_auto.yaml
+        cfg_auto = load_config_auto()
+        if 'auto_discovered' not in cfg_auto:
+            cfg_auto['auto_discovered'] = {}
+        
+        cfg_auto['auto_discovered'][code] = {
+            'name': name,
+            'enabled': True,
+            **kwargs
+        }
+        
+        with open(CONFIG_AUTO_PATH, 'w', encoding='utf-8') as f:
+            yaml.dump(cfg_auto, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    
+    # 2. 更新 watchlist_history
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
+    today = date.today().isoformat()
+    
+    metadata = json.dumps({
+        'tags': kwargs.get('tags', []),
+        'signal_type': kwargs.get('signal_type', ''),
+    }, ensure_ascii=False)
+    
+    c.execute("""
+        INSERT OR IGNORE INTO watchlist_history
+        (code, name, category, added_at, added_by, added_reason, discovery_score, metadata)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        code, name, category, today,
+        kwargs.get('added_by', 'system'),
+        kwargs.get('added_reason', ''),
+        kwargs.get('discovery_score', 0),
+        metadata
+    ))
+    
+    conn.commit()
+    conn.close()
+
+
+def remove_from_watchlist(code: str, category: str, reason: str):
+    """从观察池移除股票（同时更新 config.yaml/config_auto.yaml 和 watchlist_history）
+    
+    Args:
+        code: 股票代码
+        category: 'user_manual' | 'auto_discovered'
+        reason: 移除原因（inactive_N_days / trend_broken / user_delete）
+    """
+    import yaml
+    import sqlite3
+    from datetime import date
+    
+    if category == 'user_manual':
+        # user_manual 从 config.yaml 删除
+        cfg = load_config()
+        if 'watchlist' in cfg and 'user_manual' in cfg['watchlist']:
+            if code in cfg['watchlist']['user_manual']:
+                del cfg['watchlist']['user_manual'][code]
+        
+        with open(ROOT / 'config.yaml', 'w', encoding='utf-8') as f:
+            yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    
+    else:
+        # auto_discovered 从 config_auto.yaml 删除
+        cfg_auto = load_config_auto()
+        if 'auto_discovered' in cfg_auto:
+            if code in cfg_auto['auto_discovered']:
+                del cfg_auto['auto_discovered'][code]
+        
+        with open(CONFIG_AUTO_PATH, 'w', encoding='utf-8') as f:
+            yaml.dump(cfg_auto, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    
+    # 2. 更新 watchlist_history
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
+    today = date.today().isoformat()
+    
+    c.execute("""
+        UPDATE watchlist_history
+        SET removed_at = ?, removed_reason = ?
+        WHERE code = ? AND category = ? AND removed_at IS NULL
+    """, (today, reason, code, category))
+    
+    conn.commit()
+    conn.close()
 
 
 # ============================================================

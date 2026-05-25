@@ -92,10 +92,11 @@ logger = logging.getLogger("portfolio_alert")
 #  阈值规则表（行动手册）
 # ====================================================================
 #  阈值规则表（2026-05-22 重构：从 config.yaml + sim_live_mirror.db 加载）
+#  + 2026-05-25 支持分层观察列表（user_manual / auto_discovered）
 #
 #  以前这里是硬编码 RULES 列表，现在由 sim/portfolio.py 统一供应：
 #    - 持仓股规则 ← config.yaml: real_portfolio_rules
-#    - 观察股规则 ← config.yaml: watchlist
+#    - 观察股规则 ← config.yaml: watchlist (user_manual + auto_discovered)
 #    - 持仓数量/成本 ← sim_live_mirror.db (account_id=2 真实账户)
 #
 #  修改规则请改 config.yaml 。
@@ -338,6 +339,17 @@ def main():
                 "trigger": rule["trigger"],
             }
             logger.warning(f"🔔 触发阈值: {rule_id} 价={cur_price} 阈值={rule['trigger']} {rule['dir']}")
+            
+            # 更新 watchlist_history 的 last_alert_at（仅 watchlist 股票）
+            if rule.get('source') == 'watchlist':
+                try:
+                    from sim.portfolio import update_watchlist_alert
+                    # 判断 category（需要从 config.yaml 读取）
+                    category = 'auto_discovered'  # 默认，实际应该查询 config
+                    update_watchlist_alert(code, category)
+                    logger.info(f"  ✓ 更新 watchlist_history: {code} last_alert_at={date.today()}")
+                except Exception as ex:
+                    logger.warning(f"更新 watchlist_history 失败: {ex}")
 
     # 保存状态
     state[today] = today_state

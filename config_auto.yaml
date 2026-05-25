@@ -1,0 +1,9 @@
+# config_auto.yaml — 系统自动管理的观察池配置
+# 此文件由 intraday_scanner.py / cleanup_watchlist.py 自动维护
+# 不要手动编辑，程序会自由 yaml.dump()
+
+# ========== 自动发现观察池 ==========
+auto_discovered: {}
+
+# ========== 冷却期管理 ==========
+cooldown: {}

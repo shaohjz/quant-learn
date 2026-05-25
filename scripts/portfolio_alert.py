@@ -181,8 +181,33 @@ def calc_trade_plan(code: str, entry_price: float, triggered_rule: dict, all_rul
         f"├ 止盈①：¥{take_profit_1:.2f}（+15%）\n"
         f"├ 止盈②：¥{take_profit_2:.2f}（+25%）\n"
         f"├ 盈亏比：{rr_label}\n"
-        f"└ 仓位建议：{shares} 股 ≈ ¥{cost:,.0f}"
     )
+    
+    # 概率估算（基于历史数据）
+    try:
+        from calc_probability import calc_expected_trade
+        prob = calc_expected_trade(code, entry_price, tp_pct=0.15, sl_pct=abs(stop_pct)/100, hold_days=10)
+        if prob:
+            plan += (
+                f"├ 止盈概率：{prob['p_tp']*100:.0f}% | 止损概率：{prob['p_sl']*100:.0f}%\n"
+                f"├ 期望收益：{prob['expected_pct']:+.2f}%"
+            )
+            if prob['expected_pct'] >= 3:
+                plan += " ⭐ 优秀"
+            elif prob['expected_pct'] >= 1.5:
+                plan += " ✅ 可行"
+            elif prob['expected_pct'] >= 0:
+                plan += " ❓ 一般"
+            else:
+                plan += " ⚠️ 负期望，建议观望"
+            plan += "\n"
+            if prob['kelly_pct'] > 0:
+                kelly_amt = int(TOTAL_CAPITAL * prob['kelly_pct'] / (entry_price * LOT_SIZE)) * LOT_SIZE * entry_price
+                plan += f"├ Kelly仓位：{prob['kelly_pct']*100:.1f}%（≈¥{kelly_amt:,.0f}）\n"
+    except Exception:
+        pass  # 概率计算失败不影响主流程
+    
+    plan += f"└ 仓位建议：{shares} 股 ≈ ¥{cost:,.0f}"
     return plan
 
 

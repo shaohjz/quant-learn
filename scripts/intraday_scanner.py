@@ -125,57 +125,114 @@ def in_trade_hours(now: datetime = None) -> bool:
 # ====================================================================
 #  股票池
 # ====================================================================
+UNIVERSE_CACHE = ROOT / "data" / "universe_cache.json"
+
 def get_universe():
-    """获取股票池：沪深300 + 中证500"""
-    import akshare as ak
-    codes = set()
-    try:
-        df_300 = ak.index_stock_cons(symbol="000300")
-        codes.update(df_300["品种代码"].astype(str).tolist())
-        logger.info(f"沪深300: {len(df_300)} 只")
-    except Exception as e:
-        logger.warning(f"拉沪深300 失败: {e}")
+    """获取股票池：从本地缓存读取（由 BaoStock 每周生成）"""
+    if UNIVERSE_CACHE.exists():
+        try:
+            data = json.loads(UNIVERSE_CACHE.read_text(encoding='utf-8'))
+            codes = data.get('codes', [])
+            if len(codes) > 100:
+                logger.info(f"股票池(缓存): {len(codes)} 只")
+                return codes
+        except Exception:
+            pass
     
+    # 缓存不存在时尝试 BaoStock 拉取
     try:
-        df_500 = ak.index_stock_cons(symbol="000905")
-        codes.update(df_500["品种代码"].astype(str).tolist())
-        logger.info(f"中证500: {len(df_500)} 只")
+        import baostock as bs
+        bs.login()
+        codes = set()
+        rs = bs.query_hs300_stocks()
+        while rs.error_code == '0' and rs.next():
+            codes.add(rs.get_row_data()[1].replace('sh.','').replace('sz.',''))
+        rs = bs.query_zz500_stocks()
+        while rs.error_code == '0' and rs.next():
+            codes.add(rs.get_row_data()[1].replace('sh.','').replace('sz.',''))
+        bs.logout()
+        logger.info(f"股票池(BaoStock): {len(codes)} 只")
+        # 保存缓存
+        UNIVERSE_CACHE.write_text(json.dumps({
+            'codes': sorted(codes), 'updated': datetime.now().isoformat(), 'count': len(codes)
+        }, ensure_ascii=False), encoding='utf-8')
+        return sorted(codes)
     except Exception as e:
-        logger.warning(f"拉中证500 失败: {e}")
-    
-    return sorted(codes)
+        logger.error(f"BaoStock 拉取失败: {e}")
+        return []
 
 # ====================================================================
 #  实时行情拉取
 # ====================================================================
 def fetch_all_realtime():
-    """拉取全市场实时行情（优先东财，失败后新浪）"""
-    import akshare as ak
-    last_err = None
-    for attempt in range(3):
+    """拉取全市场实时行情（纯新浪HTTP，不依赖akshare）"""
+    import re as _re
+    import requests
+    import pandas as pd
+    
+    universe = get_universe()
+    if not universe:
+        raise RuntimeError("股票池为空")
+    
+    # 转新浪代码格式
+    sina_codes = []
+    for code in universe:
+        if code.startswith(('60', '68', '11', '5')):
+            sina_codes.append('sh' + code)
+        else:
+            sina_codes.append('sz' + code)
+    
+    # 批量拉取（每批 80 只）
+    all_data = []
+    headers = {'Referer': 'https://finance.sina.com.cn'}
+    batch_size = 80
+    
+    for i in range(0, len(sina_codes), batch_size):
+        batch = sina_codes[i:i+batch_size]
+        url = 'https://hq.sinajs.cn/list=' + ','.join(batch)
         try:
-            df = ak.stock_zh_a_spot_em()
-            if df is not None and len(df) > 0:
-                return df
+            r = requests.get(url, headers=headers, timeout=15)
+            r.encoding = 'gbk'
+            for line in r.text.strip().split('\n'):
+                m = _re.search(r'hq_str_(s[hz])(\d+)="(.+?)"', line)
+                if not m:
+                    continue
+                code = m.group(2)
+                parts = m.group(3).split(',')
+                if len(parts) < 10 or not parts[3]:
+                    continue
+                try:
+                    price = float(parts[3])
+                    yclose = float(parts[2])
+                    high = float(parts[4])
+                    low = float(parts[5])
+                    volume = float(parts[8])
+                    amount = float(parts[9])
+                except (ValueError, IndexError):
+                    continue
+                if price <= 0 or yclose <= 0:
+                    continue
+                all_data.append({
+                    '代码': code,
+                    '名称': parts[0],
+                    '最新价': price,
+                    '昨收': yclose,
+                    '最高': high,
+                    '最低': low,
+                    '涨跌幅': (price - yclose) / yclose * 100,
+                    '成交量': volume,
+                    '成交额': amount,
+                })
         except Exception as e:
-            last_err = e
-            time.sleep(1.0 * (attempt + 1))
-    logger.warning(f"东财失败: {last_err}，切新浪")
-    try:
-        df = ak.stock_zh_a_spot()
-        if df is not None and len(df) > 0:
-            df = df.rename(columns={
-                "code": "代码", "symbol": "代码",
-                "name": "名称",
-                "trade": "最新价", "price": "最新价",
-                "changepercent": "涨跌幅", "pct_chg": "涨跌幅",
-                "amount": "成交额",
-            })
-            df["代码"] = df["代码"].astype(str).str.replace(r"^(sh|sz|bj)", "", regex=True)
-            return df
-    except Exception as e:
-        logger.error(f"新浪也失败: {e}")
-    raise RuntimeError("东财和新浪实时行情接口均失败")
+            logger.warning(f"新浪批次 {i//batch_size} 失败: {e}")
+            time.sleep(0.3)
+    
+    if not all_data:
+        raise RuntimeError("新浪实时行情拉取失败")
+    
+    df = pd.DataFrame(all_data)
+    logger.info(f"实时行情(新浪): {len(df)} 条")
+    return df
 
 def get_kline(code: str, days: int = 30, retries: int = 3):
     """拉单只 K 线（带重试）"""
@@ -523,10 +580,30 @@ def main():
     filtered = filter_universe(universe, spot_df)
     logger.info(f"过滤后剩余: {len(filtered)} 只")
     
-    # Step 4: 拉 K 线 + 异动识别（多线程）
+    # Step 4: 两阶段异动识别
+    #   第一阶段：纯用实时行情粗筛候选（涨幅+量比+成交额）
+    #   第二阶段：只对候选拉K线做精确判断
     results = []
     start_t = time.time()
     
+    # 第一阶段：粗筛（涨幅 1-7% + 量比高 + 成交额大）
+    candidates = []
+    for item in filtered:
+        pct = item['pct']
+        amount = item['amount']
+        # 基本条件：涨幅1-7% 且 成交额 > 2亿
+        if 1 <= pct <= 7 and amount >= 2e8:
+            candidates.append(item)
+        # 跌幅反弹：之前大跌今日反弹3-6%
+        elif 3 <= pct <= 6 and amount >= 1.5e8:
+            candidates.append(item)
+    
+    # 按成交额降序，取前 40 只
+    candidates.sort(key=lambda x: x['amount'], reverse=True)
+    candidates = candidates[:40]
+    logger.info(f"粗筛候选: {len(candidates)} 只（从 {len(filtered)} 只中）")
+    
+    # 第二阶段：只对候选拉K线
     def process_one(item):
         code = item["code"]
         try:
@@ -539,13 +616,13 @@ def main():
             logger.debug(f"{code} 处理失败: {e}")
         return None
     
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        futures = {ex.submit(process_one, item): item for item in filtered}
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = {ex.submit(process_one, item): item for item in candidates}
         done = 0
         for f in as_completed(futures):
             done += 1
-            if done % 50 == 0:
-                logger.info(f"进度 {done}/{len(filtered)}, 已耗时 {time.time()-start_t:.0f}s")
+            if done % 10 == 0:
+                logger.info(f"进度 {done}/{len(candidates)}, 已耗时 {time.time()-start_t:.0f}s")
             r = f.result()
             if r and r['score'] >= 60:  # 过滤低分
                 results.append(r)

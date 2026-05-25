@@ -261,6 +261,15 @@ def api_watchlist():
     
     return jsonify({'watchlist': result, 'updated_at': datetime.now().strftime('%H:%M:%S')})
 
+@app.route('/api/selection_logic')
+def api_selection_logic():
+    """获取选股逻辑说明"""
+    logic_path = ROOT / 'docs' / 'selection_logic.yaml'
+    if logic_path.exists():
+        data = yaml.safe_load(logic_path.read_text(encoding='utf-8'))
+        return jsonify(data.get('stock_selection_logic', {}))
+    return jsonify({})
+
 # ====================================================================
 #  API: 单股交易历史
 # ====================================================================

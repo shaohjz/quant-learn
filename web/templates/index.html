@@ -97,6 +97,11 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 <div id="panel-watch" class="hidden">
   <h2>观察列表 <span class="badge" id="w-count">0</span></h2>
   <div class="filter-bar" id="w-filters"></div>
+  <div id="w-logic" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;display:none">
+    <div style="color:var(--blue);font-weight:600;margin-bottom:4px" id="w-logic-title"></div>
+    <div style="color:var(--gray)" id="w-logic-desc"></div>
+    <div style="color:var(--text);margin-top:4px" id="w-logic-criteria"></div>
+  </div>
   <div id="w-list"></div>
 </div>
 
@@ -236,11 +241,32 @@ async function loadWatchlist() {
   renderWatchlist(watchlistData);
 }
 
+let selectionLogic = {};
+async function loadSelectionLogic() {
+  try {
+    const res = await fetch('/api/selection_logic');
+    selectionLogic = await res.json();
+  } catch(e) {}
+}
+loadSelectionLogic();
+
 function filterWatch(el, source) {
   document.querySelectorAll('#w-filters .filter-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const filtered = source ? watchlistData.filter(w => w.source === source) : watchlistData;
   renderWatchlist(filtered);
+  // 展示选股逻辑
+  const logicDiv = document.getElementById('w-logic');
+  if (source && selectionLogic[source]) {
+    const logic = selectionLogic[source];
+    document.getElementById('w-logic-title').textContent = '🎯 ' + source + ' — ' + (logic.description || '');
+    document.getElementById('w-logic-desc').textContent = '策略: ' + (logic.strategy || '');
+    const criteria = logic.criteria || [];
+    document.getElementById('w-logic-criteria').innerHTML = criteria.map(c => '• ' + c).join('<br>');
+    logicDiv.style.display = 'block';
+  } else {
+    logicDiv.style.display = 'none';
+  }
 }
 
 function renderWatchlist(list) {

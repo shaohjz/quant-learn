@@ -330,29 +330,113 @@ def api_position_notes(code):
 @app.route('/api/stats')
 def api_stats():
     # 近7天交易统计
-    since = (date.today() - timedelta(days=7)).isoformat()
-    trades = query_db(
+    since_week = (date.today() - timedelta(days=7)).isoformat()
+    week_trades = query_db(
         "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=1 AND trade_date >= ?",
-        (since,)
+        (since_week,)
     )
-    buy_count = sum(1 for t in trades if t['direction'] == 'BUY')
-    sell_count = sum(1 for t in trades if t['direction'] == 'SELL')
-    buy_amount = sum(t.get('amount', 0) or 0 for t in trades if t['direction'] == 'BUY')
-    sell_amount = sum(t.get('amount', 0) or 0 for t in trades if t['direction'] == 'SELL')
+    week_buy_count = sum(1 for t in week_trades if t['direction'] == 'BUY')
+    week_sell_count = sum(1 for t in week_trades if t['direction'] == 'SELL')
+    week_buy_amount = sum(t.get('amount', 0) or 0 for t in week_trades if t['direction'] == 'BUY')
+    week_sell_amount = sum(t.get('amount', 0) or 0 for t in week_trades if t['direction'] == 'SELL')
     
-    # 胜率(有盈利的卖出 / 总卖出)
-    all_sells = query_db(
-        "SELECT stock_code, price as sell_price FROM sim_trades WHERE account_id=1 AND direction='SELL' ORDER BY created_at DESC LIMIT 20"
+    # 本月交易统计
+    since_month = date.today().replace(day=1).isoformat()
+    month_trades = query_db(
+        "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=1 AND trade_date >= ?",
+        (since_month,)
     )
+    month_buy_count = sum(1 for t in month_trades if t['direction'] == 'BUY')
+    month_sell_count = sum(1 for t in month_trades if t['direction'] == 'SELL')
+    month_buy_amount = sum(t.get('amount', 0) or 0 for t in month_trades if t['direction'] == 'BUY')
+    month_sell_amount = sum(t.get('amount', 0) or 0 for t in month_trades if t['direction'] == 'SELL')
+    
+    # 总交易统计
+    all_trades = query_db("SELECT id, trade_date, direction, price, stock_code FROM sim_trades WHERE account_id=1")
+    total_trades = len(all_trades)
+    
+    # 计算胜率：需要匹配买卖对
+    # 简化：按股票代码匹配最近买入和卖出，判断盈亏
+    win_count = 0
+    total_closed = 0
+    
+    # 获取所有卖出交易
+    sell_trades = query_db(
+        "SELECT stock_code, price, trade_date FROM sim_trades WHERE account_id=1 AND direction='SELL' ORDER BY trade_date"
+    )
+    
+    for sell in sell_trades:
+        # 找到该股票在卖出前的最后买入价格
+        buy_records = query_db(
+            "SELECT price FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='BUY' AND trade_date <= ? ORDER BY trade_date DESC LIMIT 1",
+            (sell['stock_code'], sell['trade_date'])
+        )
+        if buy_records:
+            avg_cost = buy_records[0]['price']
+            total_closed += 1
+            if sell['price'] > avg_cost:
+                win_count += 1
+    
+    win_rate = round(win_count / total_closed * 100, 1) if total_closed > 0 else 0
+    
+    # 计算平均持仓天数
+    hold_days_list = []
+    for sell in sell_trades:
+        buy_records = query_db(
+            "SELECT trade_date FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='BUY' AND trade_date <= ? ORDER BY trade_date DESC LIMIT 1",
+            (sell['stock_code'], sell['trade_date'])
+        )
+        if buy_records:
+            try:
+                buy_date = datetime.strptime(buy_records[0]['trade_date'], '%Y-%m-%d').date()
+                sell_date = datetime.strptime(sell['trade_date'], '%Y-%m-%d').date()
+                hold_days_list.append((sell_date - buy_date).days)
+            except:
+                pass
+    
+    avg_hold_days = round(sum(hold_days_list) / len(hold_days_list), 1) if hold_days_list else 0
+    
+    # 最大单笔盈利/亏损
+    max_profit_trade = {'code': '', 'pnl': 0}
+    max_loss_trade = {'code': '', 'pnl': 0}
+    
+    for sell in sell_trades:
+        buy_records = query_db(
+            "SELECT price, quantity FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='BUY' AND trade_date <= ? ORDER BY trade_date DESC LIMIT 1",
+            (sell['stock_code'], sell['trade_date'])
+        )
+        if buy_records:
+            # 获取卖出数量
+            sell_qty = query_db(
+                "SELECT quantity FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='SELL' AND trade_date=? LIMIT 1",
+                (sell['stock_code'], sell['trade_date'])
+            )
+            if sell_qty:
+                qty = sell_qty[0]['quantity']
+                pnl = (sell['price'] - buy_records[0]['price']) * qty
+                if pnl > max_profit_trade['pnl']:
+                    max_profit_trade = {'code': sell['stock_code'], 'pnl': round(pnl, 2)}
+                if pnl < max_loss_trade['pnl']:
+                    max_loss_trade = {'code': sell['stock_code'], 'pnl': round(pnl, 2)}
     
     return jsonify({
+        'total_trades': total_trades,
+        'win_rate': win_rate,
+        'avg_hold_days': avg_hold_days,
+        'max_profit_trade': max_profit_trade,
+        'max_loss_trade': max_loss_trade,
         'week_trades': {
-            'buy_count': buy_count,
-            'sell_count': sell_count,
-            'buy_amount': round(buy_amount, 0),
-            'sell_amount': round(sell_amount, 0),
+            'buy_count': week_buy_count,
+            'sell_count': week_sell_count,
+            'buy_amount': round(week_buy_amount, 0),
+            'sell_amount': round(week_sell_amount, 0),
         },
-        'total_trades': len(query_db("SELECT id FROM sim_trades WHERE account_id=1")),
+        'month_trades': {
+            'buy_count': month_buy_count,
+            'sell_count': month_sell_count,
+            'buy_amount': round(month_buy_amount, 0),
+            'sell_amount': round(month_sell_amount, 0),
+        },
     })
 
 # ====================================================================

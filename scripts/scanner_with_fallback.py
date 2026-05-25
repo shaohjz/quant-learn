@@ -8,7 +8,7 @@
 背景：AKShare 在云桌面（21.214.59.210）被东财限流，2026-05-24 起失败率 100%。
 """
 from __future__ import annotations
-import sys, subprocess, time
+import sys, subprocess, time, os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -16,7 +16,7 @@ PY = sys.executable
 
 PRIMARY = ROOT / "scripts" / "morning_scanner.py"
 FALLBACK = ROOT / "scripts" / "scanner_lite.py"
-TIMEOUT_PRIMARY = 120  # 秒
+TIMEOUT_PRIMARY = int(os.environ.get("SCANNER_PRIMARY_TIMEOUT", "120"))  # 秒
 
 
 def try_primary() -> bool:
@@ -29,10 +29,10 @@ def try_primary() -> bool:
         )
         return p.returncode == 0
     except subprocess.TimeoutExpired:
-        print("[scanner-fallback] ⏰ 主路径超时（多半是 AKShare 卡住），切 fallback", flush=True)
+        print("[scanner-fallback] 主路径超时（多半是 AKShare 卡住），切 fallback", flush=True)
         return False
     except Exception as e:
-        print(f"[scanner-fallback] ❌ 主路径异常: {e}", flush=True)
+        print(f"[scanner-fallback] 主路径异常: {e}", flush=True)
         return False
 
 
@@ -48,14 +48,15 @@ def try_fallback() -> bool:
 def main():
     t0 = time.time()
     if try_primary():
-        print(f"[scanner-fallback] ✅ 主路径成功，用时 {time.time()-t0:.1f}s", flush=True)
+        print(f"[scanner-fallback] 主路径成功，用时 {time.time()-t0:.1f}s", flush=True)
         sys.exit(0)
     if try_fallback():
-        print(f"[scanner-fallback] ✅ 降级路径成功，用时 {time.time()-t0:.1f}s", flush=True)
+        print(f"[scanner-fallback] 降级路径成功，用时 {time.time()-t0:.1f}s", flush=True)
         sys.exit(0)
-    print(f"[scanner-fallback] ❌ 两条路径都失败，用时 {time.time()-t0:.1f}s", flush=True)
+    print(f"[scanner-fallback] 两条路径都失败，用时 {time.time()-t0:.1f}s", flush=True)
     sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
+

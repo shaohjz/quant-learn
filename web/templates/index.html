@@ -446,10 +446,18 @@ async function loadStats() {
   const res = await fetch('/api/stats');
   const data = await res.json();
   const w = data.week_trades;
+  const m = data.month_trades;
+  
   document.getElementById('stats-cards').innerHTML = `
+    <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
+    <div class="stat-card"><div class="label">胜率</div><div class="value ${data.win_rate >= 50 ? 'pos' : 'neg'}">${data.win_rate}%</div></div>
+    <div class="stat-card"><div class="label">平均持仓</div><div class="value">${data.avg_hold_days}天</div></div>
+    <div class="stat-card"><div class="label">最大单笔盈利</div><div class="value pos">￥${data.max_profit_trade.pnl}</div><div style="font-size:11px;color:var(--gray)">${data.max_profit_trade.code}</div></div>
+    <div class="stat-card"><div class="label">最大单笔亏损</div><div class="value neg">￥${data.max_loss_trade.pnl}</div><div style="font-size:11px;color:var(--gray)">${data.max_loss_trade.code}</div></div>
     <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${w.buy_amount.toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${w.sell_amount.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
+    <div class="stat-card"><div class="label">本月买入</div><div class="value">${m.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${m.buy_amount.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">本月卖出</div><div class="value">${m.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${m.sell_amount.toLocaleString()}</div></div>
   `;
 }
 
@@ -679,6 +687,8 @@ async function refresh() {
     if (!rData.error) {
       renderSummary('r-summary', rData.account);
       renderPositions(rData.positions, 'r-list', 'r-count');
+      // 渲染饼图
+      renderPieChart(rData.positions, rData.account.cash, rData.account.total_asset);
     }
     renderSummary('s-summary', sData.account);
     renderPositions(sData.positions, 's-list', 's-count');

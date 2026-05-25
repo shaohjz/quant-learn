@@ -18,7 +18,8 @@
 
 | ID | 标题 | 严重级别 | 状态 | 关联需求 | 负责人 |
 |---|---|---|---|---|---|
-| BUG-001 | REQ-003统计API返回JSON不完整/异常 | S1 | open | REQ-003 | 研发 |
+| BUG-001 | REQ-003统计API返回JSON不完整/异常 | S1 | verified | REQ-003 | 主agent |
+| BUG-002 | scanner fallback 在 Windows GBK 输出下因 Emoji 打印崩溃 | S1 | verified | 无 | 每日闭环 |
 
 ## 流程
 1. 测试发现问题 → 写 `pm/bugs/BUG-XXX.md`，状态 `open`

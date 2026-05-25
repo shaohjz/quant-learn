@@ -680,6 +680,10 @@ def main():
     else:
         print(f"✓ {now.strftime('%H:%M')} 无新异动")
         logger.info("无新异动")
+        # 无异动也推送简短通知
+        if not args.no_webhook:
+            no_msg = f"✅ 盘中扫描 ({now.strftime('%H:%M')}) | {len(filtered)} 只过滤→{len(candidates)} 只候选→未发现符合条件的异动"
+            push_webhook(no_msg)
     
     logger.info(f"=== 盘中异动扫描 结束 ===\n")
     return 0

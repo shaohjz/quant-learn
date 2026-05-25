@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # 调用方设 set_active_account(2) 可切换；但 execute_trade 会拒绝真实账户下单。
 # ============================================================
 _ACCOUNT_ID: int = int(os.environ.get('SIM_ACCOUNT_ID', '1'))
-_LEARN_MAX_TOTAL: float = 100000.0  # 学习账户总额上限（现金+持仓市值）
+_LEARN_MAX_TOTAL: float = 200000.0  # 学习账户总额上限（现金+持仓市值，放宽到20万避免卡上限）
 
 
 def set_active_account(account_id: int) -> None:
@@ -96,7 +96,7 @@ def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, 
 LOT_SIZE = 100
 
 # 默认每次买入的金额上限（避免一把梭）
-DEFAULT_BUY_BUDGET = 2000  # 单次试探买不超过 2000 元
+DEFAULT_BUY_BUDGET = 10000  # 单次买入预算（单只约总资金 5-10%）
 
 # 费率
 COMMISSION_RATE = 0.00025  # 万2.5
@@ -303,13 +303,13 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     if action.startswith('BUY'):
         # 预算
         if action == 'BUY_LIGHT':
-            budget = min(DEFAULT_BUY_BUDGET, cash * 0.5)  # 用一半现金或 2000 较小者
+            budget = min(DEFAULT_BUY_BUDGET, cash * 0.3)  # 试探: 1万或现金30%取小
         else:  # BUY_HEAVY
-            budget = min(DEFAULT_BUY_BUDGET * 2, cash * 0.8)
+            budget = min(DEFAULT_BUY_BUDGET * 2, cash * 0.5)  # 加仓: 2万或现金50%取小
         
         if budget < cur_price * LOT_SIZE * 1.001:  # 至少够买 1 手 + 手续费
             return {'action': action, 'success': False,
-                    'message': f'现金不足 {cash:.2f}，无法买 {code} 1 手 ({cur_price*LOT_SIZE:.2f})', 'trade': None}
+                    'message': f'现金不足，需要 {cur_price*LOT_SIZE:.0f}，预算只有 {budget:.0f}（现金 {cash:.0f}）', 'trade': None}
         
         # 买多少手
         max_lots = int(budget / (cur_price * LOT_SIZE * 1.001))

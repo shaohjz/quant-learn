@@ -72,6 +72,20 @@ def push_webhook(content: str):
         logger.error(f"推送失败: {e}")
         return False
 
+
+def save_push_history(phase: str, content: str, push_type: str = 'advisor'):
+    """保存推送记录到数据库"""
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.execute(
+            "INSERT INTO push_history (push_type, phase, content) VALUES (?,?,?)",
+            (f"{push_type}_{phase}", phase, content)
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
 # ====================================================================
 #  实时行情
 # ====================================================================
@@ -491,6 +505,9 @@ def main():
     
     content = generators[phase]()
     print(content)
+    
+    # 保存推送历史
+    save_push_history(phase, content)
     
     if not args.no_webhook:
         if push_webhook(content):

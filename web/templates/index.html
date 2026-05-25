@@ -5,77 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📊 量化仪表盘</title>
 <style>
-:root { --bg: #0d1117; --card: #161b22; --border: #21262d; --blue: #58a6ff; --green: #3fb950; --red: #f85149; --gray: #8b949e; --text: #c9d1d9; }
+:root { --bg: #0d1117; --card: #161b22; --border: #21262d; --blue: #58a6ff; --green: #3fb950; --red: #f85149; --gray: #8b949e; --text: #c9d1d9; --yellow: #d29922; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .container { max-width: 1200px; margin: 0 auto; padding: 15px; }
 .header { text-align: center; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
 .header h1 { font-size: 20px; color: var(--blue); }
 .header .sub { font-size: 12px; color: var(--gray); margin-top: 4px; }
-
-/* Tabs */
 .tabs { display: flex; gap: 0; margin-bottom: 15px; background: var(--card); border-radius: 8px; overflow: hidden; }
 .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 13px; color: var(--gray); border-bottom: 2px solid transparent; transition: all 0.2s; }
 .tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(88,166,255,0.05); }
-.tab:hover { color: var(--text); }
-
-/* Summary cards */
 .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
 .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
 .stat-card .label { font-size: 11px; color: var(--gray); }
 .stat-card .value { font-size: 18px; font-weight: 600; margin-top: 4px; }
-.stat-card .change { font-size: 11px; margin-top: 2px; }
-
-/* Stock list */
-.section-title { font-size: 14px; color: var(--gray); margin: 12px 0 8px; display: flex; align-items: center; gap: 8px; }
-.section-title .badge { background: var(--blue); color: #000; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
-
 .stock-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; overflow: hidden; transition: border-color 0.2s; }
 .stock-item:hover { border-color: var(--blue); }
 .stock-item.open { border-color: var(--blue); }
-
-.stock-header { display: grid; grid-template-columns: 70px 1fr 80px 90px 100px 30px; align-items: center; padding: 10px 12px; cursor: pointer; gap: 8px; }
+.stock-header { display: grid; grid-template-columns: 70px 1fr 80px 80px 100px 30px; align-items: center; padding: 10px 12px; cursor: pointer; gap: 8px; }
 .stock-header .code { font-size: 12px; color: var(--gray); font-family: monospace; }
 .stock-header .name { font-weight: 600; font-size: 14px; }
-.stock-header .name .tags { font-size: 10px; color: var(--gray); font-weight: normal; }
+.stock-header .name .sub { font-size: 11px; color: var(--gray); font-weight: normal; }
 .stock-header .price { text-align: right; font-family: monospace; font-size: 14px; }
 .stock-header .today { text-align: right; font-size: 13px; font-weight: 600; }
 .stock-header .pnl { text-align: right; font-size: 12px; }
 .stock-header .arrow { color: var(--gray); font-size: 10px; transition: transform 0.2s; }
 .stock-item.open .arrow { transform: rotate(180deg); }
-
 .stock-body { display: none; padding: 0 12px 12px; border-top: 1px solid var(--border); }
 .stock-item.open .stock-body { display: block; }
-
 .stock-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; font-size: 12px; }
-.stock-info .info-row { display: flex; justify-content: space-between; padding: 3px 0; }
-.stock-info .info-label { color: var(--gray); }
-
+.info-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.info-label { color: var(--gray); }
 .trade-history { margin-top: 10px; }
-.trade-history .title { font-size: 12px; color: var(--gray); margin-bottom: 6px; }
-.trade-row { display: grid; grid-template-columns: 100px 40px 50px 70px 70px; font-size: 11px; padding: 4px 0; border-bottom: 1px solid var(--border); gap: 5px; }
+.trade-history .title { font-size: 12px; color: var(--gray); margin-bottom: 6px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.trade-row { font-size: 11px; padding: 5px 0; border-bottom: 1px solid var(--border); }
 .trade-row:last-child { border-bottom: none; }
-
-/* Watchlist */
-.watch-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; padding: 10px 12px; display: grid; grid-template-columns: 70px 1fr 70px 70px 90px; align-items: center; gap: 8px; }
-.watch-item .source { font-size: 10px; color: var(--gray); background: rgba(88,166,255,0.1); padding: 2px 5px; border-radius: 3px; }
-.watch-item .since { font-size: 11px; }
-.watch-item .triggers { font-size: 10px; color: var(--gray); }
-
+.trade-row .ctx { font-size: 10px; color: var(--gray); margin-top: 2px; padding-left: 10px; }
 .pos { color: var(--green); }
 .neg { color: var(--red); }
 .hidden { display: none; }
-
-/* Footer */
-.footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray); border-top: 1px solid var(--border); margin-top: 20px; }
 .btn { background: var(--card); color: var(--blue); border: 1px solid var(--blue); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
 .btn:hover { background: var(--blue); color: #000; }
-
+h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.badge { background: var(--blue); color: #000; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+.footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray); }
+/* Filter bar */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.filter-btn { padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--gray); }
+.filter-btn.active { background: var(--blue); color: #000; border-color: var(--blue); }
+/* Push history */
+.push-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; padding: 10px 12px; cursor: pointer; }
+.push-item:hover { border-color: var(--blue); }
+.push-item .push-header { display: flex; justify-content: space-between; font-size: 12px; }
+.push-item .push-header .type { color: var(--blue); }
+.push-item .push-header .time { color: var(--gray); }
+.push-item .push-content { display: none; margin-top: 8px; font-size: 11px; white-space: pre-wrap; color: var(--gray); line-height: 1.5; max-height: 300px; overflow-y: auto; }
+.push-item.open .push-content { display: block; }
 @media (max-width: 768px) {
-  .stock-header { grid-template-columns: 60px 1fr 65px 70px 30px; }
+  .stock-header { grid-template-columns: 60px 1fr 65px 60px 30px; }
   .stock-header .pnl { display: none; }
-  .watch-item { grid-template-columns: 60px 1fr 60px 70px; }
-  .watch-item .triggers { display: none; }
 }
 </style>
 </head>
@@ -83,48 +71,59 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
 <div class="container">
 <div class="header">
   <h1>📊 QuantLearn 仪表盘</h1>
-  <div class="sub">更新 <span id="time">-</span> | <button class="btn" onclick="refresh()">刷新</button> | 自动30s</div>
+  <div class="sub">更新 <span id="time">-</span> | <button class="btn" onclick="refresh()">🔄 刷新</button></div>
 </div>
 
 <div class="tabs">
   <div class="tab active" onclick="switchTab(this,'real')">💼 实盘</div>
-  <div class="tab" onclick="switchTab(this,'sim')">🧪 模拟盘</div>
-  <div class="tab" onclick="switchTab(this,'watch')">👀 观察列表</div>
+  <div class="tab" onclick="switchTab(this,'sim')">🧪 模拟</div>
+  <div class="tab" onclick="switchTab(this,'watch')">👀 观察</div>
+  <div class="tab" onclick="switchTab(this,'history')">📋 日报</div>
   <div class="tab" onclick="switchTab(this,'stats')">📊 统计</div>
 </div>
 
-<!-- 实盘 -->
 <div id="panel-real">
   <div class="summary" id="r-summary"></div>
-  <div class="section-title">持仓明细 <span class="badge" id="r-count">0</span> <span style="font-size:11px;color:var(--gray)">点击展开详情</span></div>
+  <h2>持仓 <span class="badge" id="r-count">0</span> <span style="font-size:11px;color:var(--gray)">点击展开</span></h2>
   <div id="r-list"></div>
 </div>
 
-<!-- 模拟盘 -->
 <div id="panel-sim" class="hidden">
   <div class="summary" id="s-summary"></div>
-  <div class="section-title">持仓明细 <span class="badge" id="s-count">0</span></div>
+  <h2>持仓 <span class="badge" id="s-count">0</span></h2>
   <div id="s-list"></div>
 </div>
 
-<!-- 观察列表 -->
 <div id="panel-watch" class="hidden">
-  <div class="section-title">观察列表 <span class="badge" id="w-count">0</span></div>
+  <h2>观察列表 <span class="badge" id="w-count">0</span></h2>
+  <div class="filter-bar" id="w-filters"></div>
   <div id="w-list"></div>
 </div>
 
-<!-- 统计 -->
+<div id="panel-history" class="hidden">
+  <h2>操作日报 & 盘中提醒</h2>
+  <div class="filter-bar">
+    <span class="filter-btn active" onclick="filterHistory(this,'')">全部</span>
+    <span class="filter-btn" onclick="filterHistory(this,'pre')">盘前</span>
+    <span class="filter-btn" onclick="filterHistory(this,'auction')">竞价</span>
+    <span class="filter-btn" onclick="filterHistory(this,'intraday')">盘中</span>
+    <span class="filter-btn" onclick="filterHistory(this,'closing')">尾盘</span>
+    <span class="filter-btn" onclick="filterHistory(this,'review')">复盘</span>
+    <span class="filter-btn" onclick="filterHistory(this,'trigger')">告警</span>
+  </div>
+  <div id="h-list"></div>
+</div>
+
 <div id="panel-stats" class="hidden">
   <div class="summary" id="stats-cards"></div>
 </div>
 
-<div class="footer">QuantLearn 量化学习系统 | 新浪实时行情 | github.com/jizhouhu/quant-learn</div>
+<div class="footer">QuantLearn 量化学习 | 不依赖LLM，纯规则+统计驱动</div>
 </div>
 
 <script>
 const fmt = n => n >= 0 ? '+' + n.toFixed(2) : n.toFixed(2);
 const cls = n => n >= 0 ? 'pos' : 'neg';
-const money = n => '¥' + Math.abs(n).toLocaleString(undefined, {maximumFractionDigits:0});
 
 function switchTab(el, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -132,146 +131,183 @@ function switchTab(el, tab) {
   el.classList.add('active');
   document.getElementById('panel-' + tab).classList.remove('hidden');
   if (tab === 'watch') loadWatchlist();
+  if (tab === 'history') loadHistory('');
   if (tab === 'stats') loadStats();
 }
 
+function toggleItem(el) { el.classList.toggle('open'); }
+
 function toggleStock(el) {
   el.classList.toggle('open');
-  if (el.classList.contains('open')) {
-    const code = el.dataset.code;
-    const detail = el.querySelector('.trade-history');
-    if (!detail.dataset.loaded) {
-      loadStockTrades(code, detail);
-    }
+  if (el.classList.contains('open') && !el.dataset.loaded) {
+    loadStockDetail(el.dataset.code, el.querySelector('.stock-body'));
+    el.dataset.loaded = '1';
   }
 }
 
-async function loadStockTrades(code, container) {
-  container.innerHTML = '<div style="color:var(--gray);font-size:11px">加载中...</div>';
+async function loadStockDetail(code, container) {
+  container.innerHTML = '<div style="color:var(--gray);font-size:11px;padding:10px">加载中...</div>';
   try {
-    const res = await fetch('/api/stock_trades/' + code);
-    const data = await res.json();
-    if (data.trades && data.trades.length > 0) {
-      let html = '<div class="title">交易记录</div>';
-      data.trades.forEach(t => {
+    const [tRes, nRes] = await Promise.all([
+      fetch('/api/stock_trades/' + code),
+      fetch('/api/position_notes/' + code)
+    ]);
+    const tData = await tRes.json();
+    const nData = await nRes.json();
+    
+    let html = '<div class="stock-info"><div>';
+    // 持仓笔记
+    if (nData.notes && nData.notes.length) {
+      nData.notes.forEach(n => {
+        const typeMap = {buy_reason:'买入理由', sell_reason:'卖出理由', hold_logic:'持有逻辑', target:'目标', stop_loss:'止损'};
+        html += `<div class="info-row"><span class="info-label">${typeMap[n.note_type]||n.note_type}</span><span>${n.content}</span></div>`;
+      });
+    }
+    html += '</div><div></div></div>';
+    
+    // 交易记录
+    html += '<div class="trade-history"><div class="title">交易记录</div>';
+    if (tData.trades && tData.trades.length) {
+      tData.trades.forEach(t => {
         const c = t.direction === 'BUY' ? 'pos' : 'neg';
         const d = t.direction === 'BUY' ? '买入' : '卖出';
         html += `<div class="trade-row">
-          <span>${t.trade_date} ${t.trade_time||''}</span>
-          <span class="${c}">${d}</span>
-          <span>${t.quantity}股</span>
-          <span>@${t.price.toFixed(2)}</span>
-          <span>${t.signal_reason||''}</span>
+          <span class="${c}">${d}</span> ${t.quantity}股 @¥${t.price.toFixed(2)} | ${t.trade_date} ${t.trade_time||''}
+          ${t.signal_reason ? '<div class="ctx">📝 ' + t.signal_reason + '</div>' : ''}
+          ${t.trade_context ? '<div class="ctx">🎯 策略: ' + (t.trade_context.strategy||'') + ' | ' + (t.trade_context.rule_level||'') + ' | ' + (t.trade_context.buy_type||t.trade_context.sell_reason||'') + '</div>' : ''}
         </div>`;
       });
-      container.innerHTML = html;
     } else {
-      container.innerHTML = '<div style="color:var(--gray);font-size:11px">暂无交易记录</div>';
+      html += '<div style="color:var(--gray);font-size:11px">暂无交易记录</div>';
     }
-    container.dataset.loaded = '1';
+    html += '</div>';
+    container.innerHTML = html;
   } catch(e) {
-    container.innerHTML = '<div style="color:var(--red);font-size:11px">加载失败</div>';
+    container.innerHTML = '<div style="color:var(--red);font-size:11px;padding:10px">加载失败</div>';
   }
 }
 
-function renderSummary(containerId, acc) {
+function renderSummary(id, acc) {
   const items = [
-    { label: '总资产', value: money(acc.total_asset), cls: '' },
-    { label: '可用现金', value: money(acc.cash), cls: '' },
-    { label: '仓位', value: (acc.position_pct||0) + '%', cls: '' },
-    { label: '总收益率', value: fmt(acc.total_return_pct) + '%', cls: cls(acc.total_return_pct) },
+    {label:'总资产', value:'¥'+acc.total_asset.toLocaleString()},
+    {label:'现金', value:'¥'+acc.cash.toLocaleString()},
+    {label:'仓位', value:(acc.position_pct||0)+'%'},
+    {label:'总收益率', value:fmt(acc.total_return_pct)+'%', cls:cls(acc.total_return_pct)},
   ];
-  document.getElementById(containerId).innerHTML = items.map(i =>
-    `<div class="stat-card"><div class="label">${i.label}</div><div class="value ${i.cls}">${i.value}</div></div>`
+  document.getElementById(id).innerHTML = items.map(i =>
+    `<div class="stat-card"><div class="label">${i.label}</div><div class="value ${i.cls||''}">${i.value}</div></div>`
   ).join('');
 }
 
-function renderPositions(positions, containerId, countId) {
+function renderPositions(positions, listId, countId) {
   document.getElementById(countId).textContent = positions.length;
-  if (!positions.length) {
-    document.getElementById(containerId).innerHTML = '<div style="color:var(--gray);padding:20px;text-align:center">暂无持仓</div>';
-    return;
-  }
   let html = '';
   positions.forEach(p => {
-    const todayCls = cls(p.pct_today);
-    const pnlCls = cls(p.pnl_pct);
     html += `<div class="stock-item" data-code="${p.code}" onclick="toggleStock(this)">
       <div class="stock-header">
         <span class="code">${p.code}</span>
-        <span class="name">${p.name} <span class="tags">${p.quantity}股 @${p.avg_cost.toFixed(2)}</span></span>
+        <span class="name">${p.name}<div class="sub">${p.quantity}股 @${p.avg_cost.toFixed(2)} | ${p.buy_reason||''}</div></span>
         <span class="price">¥${p.current_price.toFixed(2)}</span>
-        <span class="today ${todayCls}">${fmt(p.pct_today)}%</span>
-        <span class="pnl ${pnlCls}">${p.pnl>=0?'+':''}${p.pnl.toFixed(0)} (${fmt(p.pnl_pct)}%)</span>
+        <span class="today ${cls(p.pct_today)}">${fmt(p.pct_today)}%</span>
+        <span class="pnl ${cls(p.pnl_pct)}">${p.pnl>=0?'+':''}${p.pnl.toFixed(0)} (${fmt(p.pnl_pct)}%)</span>
         <span class="arrow">▼</span>
       </div>
-      <div class="stock-body">
-        <div class="stock-info">
-          <div><div class="info-row"><span class="info-label">成本价</span><span>¥${p.avg_cost.toFixed(3)}</span></div>
-               <div class="info-row"><span class="info-label">市值</span><span>¥${p.market_value.toFixed(0)}</span></div>
-               <div class="info-row"><span class="info-label">今日最高</span><span>¥${(p.high||0).toFixed(2)}</span></div></div>
-          <div><div class="info-row"><span class="info-label">浮盈</span><span class="${pnlCls}">${p.pnl>=0?'+':''}¥${p.pnl.toFixed(0)}</span></div>
-               <div class="info-row"><span class="info-label">成交额</span><span>${((p.amount||0)/10000).toFixed(0)}万</span></div>
-               <div class="info-row"><span class="info-label">买入逻辑</span><span>${p.buy_reason||'-'}</span></div></div>
-        </div>
-        <div class="trade-history"></div>
+      <div class="stock-body"></div>
+    </div>`;
+  });
+  document.getElementById(listId).innerHTML = html || '<div style="color:var(--gray);padding:20px;text-align:center">暂无持仓</div>';
+}
+
+let watchlistData = [];
+async function loadWatchlist() {
+  const res = await fetch('/api/watchlist');
+  const data = await res.json();
+  watchlistData = data.watchlist || [];
+  document.getElementById('w-count').textContent = watchlistData.length;
+  
+  // 提取所有来源用于筛选
+  const sources = [...new Set(watchlistData.map(w => w.source))];
+  let filterHtml = '<span class="filter-btn active" onclick="filterWatch(this,\'\')">全部(' + watchlistData.length + ')</span>';
+  sources.forEach(s => {
+    const count = watchlistData.filter(w => w.source === s).length;
+    filterHtml += `<span class="filter-btn" onclick="filterWatch(this,'${s}')">${s}(${count})</span>`;
+  });
+  document.getElementById('w-filters').innerHTML = filterHtml;
+  renderWatchlist(watchlistData);
+}
+
+function filterWatch(el, source) {
+  document.querySelectorAll('#w-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = source ? watchlistData.filter(w => w.source === source) : watchlistData;
+  renderWatchlist(filtered);
+}
+
+function renderWatchlist(list) {
+  let html = '';
+  list.forEach(w => {
+    const cat = w.category === 'auto_discovered' ? '🤖' : '👤';
+    const sinceCls = w.since_pct !== null ? cls(w.since_pct) : '';
+    const sinceText = w.since_pct !== null ? fmt(w.since_pct) + '%' : '-';
+    html += `<div class="stock-item" style="cursor:default">
+      <div class="stock-header" style="grid-template-columns:70px 1fr 70px 70px 90px">
+        <span class="code">${w.code} ${cat}</span>
+        <span class="name">${w.name}<div class="sub">${w.source} | ${w.added_at} | ${w.added_reason||''}</div>
+          ${w.tags&&w.tags.length?'<div class="sub">🏷 '+w.tags.join(', ')+'</div>':''}
+        </span>
+        <span class="price">¥${w.price.toFixed(2)}<div class="sub ${cls(w.pct_today)}">${fmt(w.pct_today)}%</div></span>
+        <span class="today ${sinceCls}" style="font-size:11px">加入以来<br>${sinceText}</span>
+        <span class="pnl" style="font-size:10px;color:var(--gray)">买①¥${(w.buy_zone||0).toFixed(1)}<br>买②¥${(w.buy_strong||0).toFixed(1)}</span>
       </div>
     </div>`;
   });
-  document.getElementById(containerId).innerHTML = html;
+  document.getElementById('w-list').innerHTML = html || '<div style="color:var(--gray);padding:20px">暂无</div>';
 }
 
-async function loadWatchlist() {
+async function loadHistory(phase) {
+  const url = phase ? '/api/push_history?phase=' + phase + '&limit=30' : '/api/push_history?limit=30';
   try {
-    const res = await fetch('/api/watchlist');
+    const res = await fetch(url);
     const data = await res.json();
-    const list = data.watchlist || [];
-    document.getElementById('w-count').textContent = list.length;
-    
+    const list = data.history || [];
     let html = '';
-    list.forEach(w => {
-      const todayCls = cls(w.pct_today);
-      const sinceCls = w.since_pct !== null ? cls(w.since_pct) : '';
-      const sinceText = w.since_pct !== null ? fmt(w.since_pct) + '%' : '-';
-      const cat = w.category === 'auto_discovered' ? '🤖' : '👤';
-      html += `<div class="watch-item">
-        <span class="code" style="font-family:monospace;font-size:12px">${w.code}</span>
-        <span>
-          <div style="font-weight:600;font-size:13px">${w.name} ${cat}</div>
-          <div style="font-size:10px;color:var(--gray)">${w.added_reason || w.source} | ${w.added_at}</div>
-          ${w.tags && w.tags.length ? '<div style="font-size:10px;color:var(--gray)">标签: '+w.tags.join(', ')+'</div>' : ''}
-        </span>
-        <span class="price" style="text-align:right;font-size:13px">¥${w.price.toFixed(2)}<br><span class="${todayCls}" style="font-size:11px">${fmt(w.pct_today)}%</span></span>
-        <span class="since ${sinceCls}" style="text-align:right">加入以来<br>${sinceText}</span>
-        <span class="triggers">买①¥${(w.buy_zone||0).toFixed(1)}<br>买②¥${(w.buy_strong||0).toFixed(1)}</span>
+    if (!list.length) {
+      html = '<div style="color:var(--gray);padding:20px;text-align:center">暂无推送记录<br><span style="font-size:11px">明天开盘后会自动积累</span></div>';
+    }
+    list.forEach(h => {
+      const typeMap = {advisor_pre:'☀️盘前', advisor_auction:'🔔竞价', advisor_intraday:'📊盘中', advisor_closing:'🌅尾盘', advisor_review:'📝复盘', alert_trigger:'⚠️告警'};
+      const label = typeMap[h.push_type] || h.push_type;
+      html += `<div class="push-item" onclick="toggleItem(this)">
+        <div class="push-header"><span class="type">${label}</span><span class="time">${h.created_at}</span></div>
+        <div class="push-content">${h.content}</div>
       </div>`;
     });
-    document.getElementById('w-list').innerHTML = html || '<div style="color:var(--gray);padding:20px">暂无观察股</div>';
+    document.getElementById('h-list').innerHTML = html;
   } catch(e) { console.error(e); }
+}
+
+function filterHistory(el, phase) {
+  document.querySelectorAll('#panel-history .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadHistory(phase);
 }
 
 async function loadStats() {
-  try {
-    const res = await fetch('/api/stats');
-    const data = await res.json();
-    const w = data.week_trades;
-    document.getElementById('stats-cards').innerHTML = `
-      <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div class="change">¥${w.buy_amount.toLocaleString()}</div></div>
-      <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div class="change">¥${w.sell_amount.toLocaleString()}</div></div>
-      <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
-    `;
-  } catch(e) { console.error(e); }
+  const res = await fetch('/api/stats');
+  const data = await res.json();
+  const w = data.week_trades;
+  document.getElementById('stats-cards').innerHTML = `
+    <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">¥${w.buy_amount.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">¥${w.sell_amount.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
+  `;
 }
 
 async function refresh() {
   try {
-    const [rRes, sRes] = await Promise.all([
-      fetch('/api/real_portfolio'),
-      fetch('/api/portfolio')
-    ]);
+    const [rRes, sRes] = await Promise.all([fetch('/api/real_portfolio'), fetch('/api/portfolio')]);
     const rData = await rRes.json();
     const sData = await sRes.json();
-    
     if (!rData.error) {
       renderSummary('r-summary', rData.account);
       renderPositions(rData.positions, 'r-list', 'r-count');

@@ -267,10 +267,46 @@ def api_watchlist():
 @app.route('/api/stock_trades/<code>')
 def api_stock_trades(code):
     trades = query_db(
-        "SELECT trade_date, trade_time, direction, quantity, price, amount, signal_reason FROM sim_trades WHERE stock_code=? ORDER BY created_at DESC LIMIT 20",
+        "SELECT trade_date, trade_time, direction, quantity, price, amount, signal_reason, trade_context FROM sim_trades WHERE stock_code=? ORDER BY created_at DESC LIMIT 20",
         (code,)
     )
+    # 解析 trade_context JSON
+    import json as _json
+    for t in trades:
+        if t.get('trade_context'):
+            try:
+                t['trade_context'] = _json.loads(t['trade_context'])
+            except:
+                pass
     return jsonify({'trades': trades})
+
+@app.route('/api/push_history')
+def api_push_history():
+    """获取推送历史"""
+    limit = int(request.args.get('limit', 20)) if 'request' in dir() else 20
+    from flask import request as _req
+    limit = int(_req.args.get('limit', 20))
+    phase = _req.args.get('phase', '')
+    if phase:
+        rows = query_db(
+            "SELECT id, push_type, phase, content, created_at FROM push_history WHERE phase=? ORDER BY created_at DESC LIMIT ?",
+            (phase, limit)
+        )
+    else:
+        rows = query_db(
+            "SELECT id, push_type, phase, content, created_at FROM push_history ORDER BY created_at DESC LIMIT ?",
+            (limit,)
+        )
+    return jsonify({'history': rows})
+
+@app.route('/api/position_notes/<code>')
+def api_position_notes(code):
+    """获取持仓笔记/理由"""
+    notes = query_db(
+        "SELECT note_type, content, created_at FROM position_notes WHERE stock_code=? ORDER BY created_at DESC",
+        (code,)
+    )
+    return jsonify({'notes': notes})
 
 # ====================================================================
 #  API: 账户统计

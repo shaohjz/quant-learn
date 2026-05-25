@@ -215,21 +215,25 @@ def api_watchlist():
         
         # 计算从加入以来的涨跌
         added_at = str(info.get('added_at', ''))
-        # 用 buy_zone trigger 作为加入时的参考价
-        rules = info.get('rules', {})
-        ref_price = 0
-        if isinstance(rules, dict):
-            bz = rules.get('buy_zone', {})
-            if isinstance(bz, dict):
-                ref_price = bz.get('trigger', 0)
+        # 用加入时的实际股价作为参考价
+        ref_price = info.get('added_price', 0)
+        if not ref_price:
+            # fallback: 如果没有 added_price，用 buy_zone trigger
+            rules = info.get('rules', {})
+            if isinstance(rules, dict):
+                bz = rules.get('buy_zone', {})
+                if isinstance(bz, dict):
+                    ref_price = bz.get('trigger', 0)
         since_pct = round((price - ref_price) / ref_price * 100, 1) if ref_price > 0 and price > 0 else None
         
+        rules = info.get('rules', {})
         result.append({
             'code': code,
             'name': info.get('name', rt.get(code, {}).get('name', '')),
             'source': info.get('source', '手动添加'),
             'added_at': added_at,
             'added_reason': info.get('added_reason', ''),
+            'added_price': ref_price,
             'tags': info.get('tags', []),
             'price': round(price, 2),
             'pct_today': round(pct_today, 2),
@@ -244,16 +248,19 @@ def api_watchlist():
             continue
         price = rt.get(code, {}).get('price', 0)
         pct_today = rt.get(code, {}).get('pct', 0)
+        auto_ref = info.get('added_price', info.get('discovery_price', 0))
+        auto_since = round((price - auto_ref) / auto_ref * 100, 1) if auto_ref > 0 and price > 0 else None
         result.append({
             'code': code,
             'name': info.get('name', rt.get(code, {}).get('name', '')),
             'source': info.get('source', 'intraday_scanner'),
             'added_at': str(info.get('added_at', '')),
             'added_reason': info.get('added_reason', ''),
+            'added_price': auto_ref,
             'tags': [],
             'price': round(price, 2),
             'pct_today': round(pct_today, 2),
-            'since_pct': None,
+            'since_pct': auto_since,
             'category': 'auto_discovered',
             'buy_zone': info.get('buy_zone', 0),
             'buy_strong': info.get('buy_strong', 0),

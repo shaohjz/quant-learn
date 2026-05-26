@@ -319,14 +319,44 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     # ----- 买入 -----
     if action.startswith('BUY'):
         # 预算
+        # 获取持仓上限配置
+        try:
+            import yaml
+            from pathlib import Path
+            cfg_path = Path(__file__).resolve().parents[1] / "config.yaml"
+            cfg = yaml.safe_load(cfg_path.read_text(encoding='utf-8'))
+            max_pos_pct = cfg.get('risk', {}).get('max_position_pct', 0.15)
+        except Exception:
+            max_pos_pct = 0.15
+
+        import datetime
+        now_time = datetime.datetime.now().time()
+        morning_limit = datetime.time(10, 0)
+        is_early_morning = now_time < morning_limit
+
         if action == 'BUY_LIGHT':
-            budget = min(DEFAULT_BUY_BUDGET, cash * 0.3)  # 试探: 1万或现金30%取小
+            # 试探买入：总资金的 2% 或现金的 10%，取小
+            budget = min(100000 * 0.02, cash * 0.1)
         else:  # BUY_HEAVY
-            budget = min(DEFAULT_BUY_BUDGET * 2, cash * 0.5)  # 加仓: 2万或现金50%取小
+            # 加仓买入：总资金的 5% 或现金的 20%，取小
+            budget = min(100000 * 0.05, cash * 0.2)
+
+        # 方案B: 早盘大跌不急买，10:00 前强制限缩买入规模（砍半或更低）
+        if is_early_morning:
+            budget = budget * 0.5  # 早盘预算减半
+
+        # 检查买入后是否超个股最大仓位限制
+        cur_total = account.get('total_value', 100000.0)
+        current_pos_value = 0
+        if pos:
+            current_pos_value = pos['quantity'] * cur_price
         
+        if (current_pos_value + budget) > cur_total * max_pos_pct:
+            budget = cur_total * max_pos_pct - current_pos_value
+            
         if budget < cur_price * LOT_SIZE * 1.001:  # 至少够买 1 手 + 手续费
             return {'action': action, 'success': False,
-                    'message': f'现金不足，需要 {cur_price*LOT_SIZE:.0f}，预算只有 {budget:.0f}（现金 {cash:.0f}）', 'trade': None}
+                    'message': f'买入受限，需要 {cur_price*LOT_SIZE:.0f}，预算/额度剩余仅 {budget:.0f}（个股上限 {max_pos_pct*100}%）', 'trade': None}
         
         # 买多少手
         max_lots = int(budget / (cur_price * LOT_SIZE * 1.001))

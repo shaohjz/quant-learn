@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 PM 看板</title>
+<style>
+:root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+.header { margin-bottom: 20px; display: flex; justify-board: space-between; align-items: center; }
+.header h1 { font-size: 20px; color: var(--blue); }
+.nav-links a { color: var(--blue); text-decoration: none; font-size: 14px; font-weight: 500; margin-left: 15px;}
+.nav-links a:hover { text-decoration: underline; }
+.board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
+.column { flex: 1; min-width: 280px; max-width: 320px; background: #e5e7eb; border-radius: 8px; padding: 12px; }
+.column-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); display: flex; justify-content: space-between; }
+.column-title .count { background: #d1d5db; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+.task-card { background: var(--card); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); border-left: 4px solid var(--gray); font-size: 13px; }
+.task-card.priority-P0, .task-card.priority-S0 { border-left-color: var(--red); }
+.task-card.priority-P1, .task-card.priority-S1 { border-left-color: #f59e0b; }
+.task-card.priority-P2, .task-card.priority-S2 { border-left-color: var(--blue); }
+.task-id { font-family: monospace; font-weight: bold; color: var(--gray); font-size: 12px; margin-bottom: 4px; }
+.task-title { font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
+.task-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); }
+.badge { padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.badge.bug { background: #fee2e2; color: var(--red); }
+.badge.story { background: #e0e7ff; color: var(--blue); }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 QuantLearn 敏捷看板</h1>
+        <div class="nav-links">
+            <a href="/">🔙 返回大盘</a>
+        </div>
+    </div>
+    <div class="board" id="board">
+        <div class="column" id="col-pending">
+            <div class="column-title"><span>需求池 (Pending)</span><span class="count">0</span></div>
+            <div class="task-list"></div>
+        </div>
+        <div class="column" id="col-open">
+            <div class="column-title"><span>Bug池 (Open)</span><span class="count">0</span></div>
+            <div class="task-list"></div>
+        </div>
+        <div class="column" id="col-in_progress">
+            <div class="column-title"><span>开发中 (In Progress)</span><span class="count">0</span></div>
+            <div class="task-list"></div>
+        </div>
+        <div class="column" id="col-testing">
+            <div class="column-title"><span>待测试 (Testing / Fixed)</span><span class="count">0</span></div>
+            <div class="task-list"></div>
+        </div>
+        <div class="column" id="col-done">
+            <div class="column-title"><span>已完成 (Done / Verified)</span><span class="count">0</span></div>
+            <div class="task-list"></div>
+        </div>
+    </div>
+
+    <script>
+        async function loadTasks() {
+            try {
+                const res = await fetch('/api/pm_tasks');
+                const data = await res.json();
+                if(data.status !== 'ok') return;
+                
+                const cols = {
+                    'pending': document.querySelector('#col-pending .task-list'),
+                    'open': document.querySelector('#col-open .task-list'),
+                    'in_progress': document.querySelector('#col-in_progress .task-list'),
+                    'testing': document.querySelector('#col-testing .task-list'),
+                    'done': document.querySelector('#col-done .task-list')
+                };
+                
+                // 清空
+                Object.values(cols).forEach(el => el.innerHTML = '');
+                
+                let counts = { pending:0, open:0, in_progress:0, testing:0, done:0 };
+
+                data.tasks.forEach(task => {
+                    let colKey = 'pending';
+                    if (task.status === 'pending') colKey = 'pending';
+                    else if (['open', 'reopened'].includes(task.status)) colKey = 'open';
+                    else if (task.status === 'in_progress') colKey = 'in_progress';
+                    else if (['testing', 'fixed'].includes(task.status)) colKey = 'testing';
+                    else if (['done', 'verified'].includes(task.status)) colKey = 'done';
+
+                    counts[colKey]++;
+
+                    const card = document.createElement('div');
+                    card.className = `task-card priority-${task.priority}`;
+                    card.innerHTML = `
+                        <div class="task-id">${task.id} <span class="badge ${task.type}">${task.type}</span></div>
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-meta">
+                            <span>Pri: ${task.priority}</span>
+                            <span>${task.updated_at.split(' ')[0]}</span>
+                        </div>
+                    `;
+                    cols[colKey].appendChild(card);
+                });
+
+                // 更新计数
+                document.querySelector('#col-pending .count').textContent = counts.pending;
+                document.querySelector('#col-open .count').textContent = counts.open;
+                document.querySelector('#col-in_progress .count').textContent = counts.in_progress;
+                document.querySelector('#col-testing .count').textContent = counts.testing;
+                document.querySelector('#col-done .count').textContent = counts.done;
+
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        loadTasks();
+        setInterval(loadTasks, 10000); // 10秒刷新
+    </script>
+</body>
+</html>

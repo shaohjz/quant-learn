@@ -101,6 +101,33 @@ def cmd_list(args):
         for r in rows:
             print(f"[{r['id']}] ({r['status']}) [{r['priority']}] {r['title']}")
 
+def cmd_dedup(args):
+    """ 去重脚本 """
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title, type FROM tasks WHERE status IN ('pending', 'open')")
+        tasks = cursor.fetchall()
+        
+        seen_titles = {}
+        duplicates = []
+        for t in tasks:
+            title = t['title'].strip().lower()
+            if title in seen_titles:
+                duplicates.append(t['id'])
+            else:
+                seen_titles[title] = t['id']
+                
+        if not duplicates:
+            print("No duplicates found.")
+            return
+            
+        for dup_id in duplicates:
+            print(f"Removing duplicate task: {dup_id}")
+            cursor.execute("DELETE FROM tasks WHERE id=?", (dup_id,))
+        conn.commit()
+        print(f"Removed {len(duplicates)} duplicates.")
+
 def main():
     init_db()
     parser = argparse.ArgumentParser(description="QuantLearn PM CLI")
@@ -125,6 +152,9 @@ def main():
     p_list = subparsers.add_parser("list", help="List tasks")
     p_list.add_argument("--status", help="Filter by status")
     p_list.add_argument("--type", choices=["story", "bug"], help="Filter by type")
+    
+    # Dedup
+    p_dedup = subparsers.add_parser("dedup", help="Deduplicate pending tasks based on title")
 
     args = parser.parse_args()
     if args.command == "create":
@@ -133,6 +163,8 @@ def main():
         cmd_update(args)
     elif args.command == "list":
         cmd_list(args)
+    elif args.command == "dedup":
+        cmd_dedup(args)
     else:
         parser.print_help()
 

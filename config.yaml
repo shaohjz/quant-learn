@@ -307,6 +307,36 @@ watchlist:
           trigger: 115.31
           dir: below
           msg: ⚠️ 宏和科技破 115.31！跌破 MA20-1.5ATR，趋势可能反转
+    '002654':
+      name: 万润科技
+      enabled: true
+      source: 玄鉴录
+      added_at: 2026-05-26
+      added_reason: 玄鉴录推荐
+      rules:
+        buy_zone:
+          trigger: 17.4
+          dir: below
+          msg: 💰 万润科技跌至 17.40！接近 MA10(17.40)，试探建仓
+        buy_strong:
+          trigger: 16.01
+          dir: below
+          msg: 💰💰 万润科技跌至 16.01！回踩 MA20(16.01)，优质建仓区
+    '603005':
+      name: 晶方科技
+      enabled: true
+      source: 玄鉴录
+      added_at: 2026-05-26
+      added_reason: 玄鉴录推荐
+      rules:
+        buy_zone:
+          trigger: 35.28
+          dir: below
+          msg: 💰 晶方科技跌至 35.28！接近 MA10(35.28)，试探建仓
+        buy_strong:
+          trigger: 33.43
+          dir: below
+          msg: 💰💰 晶方科技跌至 33.43！回踩 MA20(33.43)，优质建仓区
   auto_discovered: {}
 legacy_watch:
   '002342':

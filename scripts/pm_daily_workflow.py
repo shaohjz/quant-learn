@@ -47,6 +47,19 @@ def apply_state_transitions():
     conn.close()
     return transitions
 
+def extract_daily_reflections():
+    """将 docs/reviews 下的复盘笔记提取到 sim_live_mirror.db 中"""
+    script_path = ROOT / 'scripts' / 'extract_reflections.py'
+    if not script_path.exists():
+        return
+        
+    try:
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        import extract_reflections
+        extract_reflections.extract_and_save_reflections()
+    except Exception as e:
+        print(f"Error extracting reflections: {e}")
+
 def generate_daily_report(transitions):
     today = date.today().isoformat()
     report_path = DAILY_DIR / f'{today}_workflow.md'
@@ -78,11 +91,28 @@ def generate_daily_report(transitions):
 
 def main():
     print('Starting Daily PM Workflow...')
+    
+    # 提取复盘笔记
+    print('Extracting review reflections...')
+    extract_daily_reflections()
+    
     transitions = apply_state_transitions()
     for t in transitions:
         print(f'Applied transition: {t}')
         
     generate_daily_report(transitions)
+    
+    # Run deduplication
+    try:
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        import pm_cli
+        class DummyArgs:
+            pass
+        args = DummyArgs()
+        pm_cli.cmd_dedup(args)
+    except Exception as e:
+        print(f"Error running dedup: {e}")
+
     print('Daily PM Workflow finished.')
 
 if __name__ == '__main__':

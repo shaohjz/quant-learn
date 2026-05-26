@@ -79,13 +79,34 @@ class ThresholdAlertStrategy(StrategyBase):
                 return Signal(action='SELL_HALF', rule_name='trend_break',
                               reason=f'price {price:.2f} ≤ trend_break {tb:.2f}')
 
+        # REQ-028 增加买入防接飞刀风控（右侧确认、大盘熔断、暴跌过滤）
+        # 1. 大盘熔断及连续暴跌防接飞刀目前在纯策略层不好获取大盘数据，需要改上层，这里先加右侧确认
+        # 右侧确认机制：支撑位跌破后，必须有止跌企稳迹象（如5分钟级别反弹或MACD金叉）才可买入。
+        # 这里用最近 2 根 K 线的收盘价不再创新低并且收红（收盘价 >= 开盘价）作为简单的右侧确认
+        right_side_confirmed = False
+        if len(bars) >= 2:
+            prev_close = float(bars.iloc[-2]['close'])
+            prev_low = float(bars.iloc[-2]['low'])
+            curr_low = float(bars.iloc[-1]['low'])
+            curr_open = float(bars.iloc[-1]['open'])
+            if curr_low >= prev_low and price >= curr_open:
+                right_side_confirmed = True
+
         # 买入（持仓 == 0 或加仓）
         if bs > 0 and price <= bs:
-            return Signal(action='BUY_HEAVY', rule_name='buy_strong',
-                          reason=f'price {price:.2f} ≤ buy_strong {bs:.2f}')
+            if right_side_confirmed:
+                return Signal(action='BUY_HEAVY', rule_name='buy_strong',
+                              reason=f'price {price:.2f} ≤ buy_strong {bs:.2f} (右侧确认)')
+            else:
+                return Signal(action='NO_ACTION', rule_name='buy_strong_wait',
+                              reason=f'price {price:.2f} ≤ buy_strong {bs:.2f} (等待右侧确认)')
         if bz > 0 and price <= bz:
-            return Signal(action='BUY_LIGHT', rule_name='buy_zone',
-                          reason=f'price {price:.2f} ≤ buy_zone {bz:.2f}')
+            if right_side_confirmed:
+                return Signal(action='BUY_LIGHT', rule_name='buy_zone',
+                              reason=f'price {price:.2f} ≤ buy_zone {bz:.2f} (右侧确认)')
+            else:
+                return Signal(action='NO_ACTION', rule_name='buy_zone_wait',
+                              reason=f'price {price:.2f} ≤ buy_zone {bz:.2f} (等待右侧确认)')
 
         return Signal(action='NO_ACTION', rule_name='', reason='无信号')
 

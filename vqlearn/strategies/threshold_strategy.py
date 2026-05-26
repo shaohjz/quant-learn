@@ -414,11 +414,44 @@ class ThresholdAlertStrategy(CtaTemplate):
                 self._try_sell('take_profit', self.take_profit, price, tick)
 
         # ---- 再看买入（当下） ----
+        # REQ-028: 右侧确认与暴跌过滤 (在实盘策略层添加过滤)
+        # 获取 5 分钟级别反弹或简单判断收红
+        right_side_confirmed = True
+        try:
+            from vqlearn.services.history_loader import load_history
+            from datetime import timedelta
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
+            bars = load_history(self.code, start_date, end_date)
+            if not bars.empty and len(bars) >= 1:
+                prev_low = float(bars.iloc[-1]['low'])
+                if price < prev_low:  # 盘中跌破昨日最低价，且目前还在跌
+                    # 简单右侧确认：价格必须高于今日开盘价，或者盘中产生 1% 以上反弹
+                    tick_open = tick.open_price if tick.open_price > 0 else float(bars.iloc[-1]['close'])
+                    if price < tick_open and (price / tick.low_price - 1) < 0.01:
+                        right_side_confirmed = False
+        except Exception as e:
+            self.write_log(f"右侧确认检查异常: {e}")
+
+        # 大盘情绪熔断 (假设大盘指数代码为 000001.SH 或 399001.SZ，这里简化实现为如果能获取到大盘跌幅则判断，暂以 try_buy 中拦截或直接在这里简单控制)
+        # TODO: 后续可接入真实的全局大盘情绪判断，这里先放一个桩
+        market_panic = False
+
+        if market_panic:
+            self.write_log(f"⚠️ 大盘情绪熔断，暂停抄底: {self.vt_symbol}")
+            return
+
         # buy_strong 优先于 buy_zone（深的优先）
         if self.buy_strong > 0 and price <= self.buy_strong:
-            self._try_buy('buy_strong', self.buy_strong, price, tick)
+            if right_side_confirmed:
+                self._try_buy('buy_strong', self.buy_strong, price, tick)
+            else:
+                self.write_log(f"⏳ [{self.vt_symbol}] {price:.2f} ≤ buy_strong {self.buy_strong:.2f}，等待右侧确认")
         elif self.buy_zone > 0 and price <= self.buy_zone:
-            self._try_buy('buy_zone', self.buy_zone, price, tick)
+            if right_side_confirmed:
+                self._try_buy('buy_zone', self.buy_zone, price, tick)
+            else:
+                self.write_log(f"⏳ [{self.vt_symbol}] {price:.2f} ≤ buy_zone {self.buy_zone:.2f}，等待右侧确认")
 
     # ----- shadow 多策略跳踪（不下单，仅记录虚拟信号）-----
     def _maybe_run_shadow(self, price: float) -> None:

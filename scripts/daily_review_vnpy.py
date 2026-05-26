@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import sys
 import yaml
 from datetime import date
@@ -150,10 +151,84 @@ def fetch_qmt_snapshot(day: str, allow_qmt: bool = True) -> dict:
 
 
 # ============================================================
+# 资金口径变更检测
+# ============================================================
+def _parse_money(value: str) -> Optional[float]:
+    """从 Markdown 表格单元格中解析金额，忽略逗号、空格和告警符号。"""
+    if not value:
+        return None
+    m = re.search(r"-?[0-9][0-9,]*(?:\.[0-9]+)?", value)
+    if not m:
+        return None
+    return float(m.group(0).replace(",", ""))
+
+
+def _extract_report_initial_cash(report_path: Path, account_label: str) -> Optional[float]:
+    """从历史复盘 Markdown 的账户概览表中提取指定账户初始资金。"""
+    try:
+        for line in report_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 4 and cells[0] == account_label:
+                return _parse_money(cells[2])
+    except OSError as e:
+        logger.warning("读取历史复盘失败 %s: %s", report_path, e)
+    return None
+
+
+def _previous_initial_cash_mismatch(day: str, account_label: str, current: float,
+                                    reports_dir: Path | None = None) -> Optional[dict]:
+    """查找目标日期之前最近一份与当前 initial_cash 不同的报告。"""
+    reports_dir = reports_dir or (ROOT / "docs" / "reviews")
+    if not reports_dir.exists():
+        return None
+
+    candidates = []
+    for p in reports_dir.glob("*.md"):
+        stem = p.stem
+        if stem >= day:
+            continue
+        cash = _extract_report_initial_cash(p, account_label)
+        if cash is not None and abs(float(cash) - current) > 0.01:
+            candidates.append({"day": stem, "path": p, "initial_cash": cash})
+    if not candidates:
+        return None
+    return sorted(candidates, key=lambda x: x["day"])[-1]
+
+
+def detect_capital_basis_changes(day: str, sim_snap: dict, qmt_snap: dict,
+                                 reports_dir: Path | None = None) -> list[dict]:
+    """检测同一报告账户在跨日报告中的 initial_cash 是否跳变。"""
+    checks = [
+        ("sim 25000", sim_snap.get("account")),
+        ("QMT mini 90072426", qmt_snap.get("account")),
+    ]
+    changes = []
+    for label, acc in checks:
+        if not acc or not acc.get("initial_cash"):
+            continue
+        current = float(acc.get("initial_cash") or 0)
+        prev = _previous_initial_cash_mismatch(day, label, current, reports_dir)
+        if not prev:
+            continue
+        previous = float(prev["initial_cash"])
+        changes.append({
+            "account": label,
+            "current": current,
+            "previous": previous,
+            "previous_day": prev["day"],
+            "previous_path": str(prev["path"]),
+        })
+    return changes
+
+
+# ============================================================
 # Markdown 报告
 # ============================================================
-def render_markdown(day: str, sim_snap: dict, qmt_snap: dict) -> str:
+def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
+                    reports_dir: Path | None = None) -> str:
     lines = [f"# 双账户复盘 {day}", ""]
+    basis_changes = detect_capital_basis_changes(day, sim_snap, qmt_snap, reports_dir)
+    changed_accounts = {c["account"] for c in basis_changes}
 
     # ---- 概览 ----
     lines.append("## 一、账户概览")
@@ -165,14 +240,29 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict) -> str:
             return f"| {name} | {source} | - | - | - | - |"
         ret = ((acc.get("total_value", 0) / (acc.get("initial_cash") or 1)) - 1) * 100 \
             if acc.get("initial_cash") else 0.0
-        return (f"| {name} | {source} | {acc.get('initial_cash', 0):,.0f} "
+        initial_text = f"{acc.get('initial_cash', 0):,.0f}"
+        ret_text = f"{ret:+.2f}%"
+        if name in changed_accounts:
+            initial_text += " ⚠️"
+            ret_text += "（当前口径）"
+        return (f"| {name} | {source} | {initial_text} "
                 f"| {acc.get('cash', 0):,.2f} | {acc.get('total_value', 0):,.2f} "
-                f"| {ret:+.2f}% |")
+                f"| {ret_text} |")
 
     lines.append(_fmt_acc("sim 25000", Path(sim_snap.get('db_path', '')).name, sim_snap.get("account")))
     lines.append(_fmt_acc("QMT mini 90072426", qmt_snap.get("source", "?"),
                           qmt_snap.get("account")))
     lines.append("")
+
+    if basis_changes:
+        lines.append("### ⚠️ 资金口径变更提示")
+        for c in basis_changes:
+            lines.append(
+                f"- {c['account']} 初始资金从 {c['previous_day']} 的 "
+                f"¥{c['previous']:,.0f} 变为当前 ¥{c['current']:,.0f}；"
+                "跨日收益率/总资产对比已暂停解释，请仅按当前资金口径阅读本日报告。"
+            )
+        lines.append("")
 
     # ---- 持仓对比 ----
     lines.append("## 二、持仓对比")

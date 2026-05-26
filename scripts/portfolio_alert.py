@@ -345,6 +345,36 @@ def main():
                         msg = msg.replace("💰💰", "⚠️💰💰", 1) if "💰💰" in msg else msg.replace("💰", "⚠️💰", 1)
                     msg += plan
             
+            # REQ-018: 单票止损止盈预警和建议
+            if rule['source'] == 'real' and rule['level'] in ('stop_loss', 'stop_loss_tight', 'hard_stop'):
+                # 检查持仓亏损情况
+                try:
+                    from sim.portfolio import load_real_holdings
+                    holdings = load_real_holdings()
+                    for h in holdings:
+                        if h['code'] == code:
+                            if h['pnl_pct'] <= -0.15:
+                                msg += f"\n🚨 警告：该票当前已浮亏 {h['pnl_pct']*100:.1f}%，超过15%红线！建议立即执行纪律平仓！"
+                            elif h['pnl_pct'] <= -0.08:
+                                msg += f"\n⚠️ 提示：该票当前浮亏 {h['pnl_pct']*100:.1f}%，已达8%止损区，请酌情减仓或平仓！"
+                            break
+                except Exception as ex:
+                    logger.warning(f"附加止损提示异常: {ex}")
+
+            elif rule['source'] == 'real' and rule['level'] in ('take_profit', 'take_profit_half', 'half_out'):
+                try:
+                    from sim.portfolio import load_real_holdings
+                    holdings = load_real_holdings()
+                    for h in holdings:
+                        if h['code'] == code:
+                            if h['pnl_pct'] >= 0.20:
+                                msg += f"\n🎉 恭喜：该票当前已浮盈 {h['pnl_pct']*100:.1f}%，建议分批止盈锁定利润！"
+                            elif h['pnl_pct'] >= 0.10:
+                                msg += f"\n📈 提示：该票当前浮盈 {h['pnl_pct']*100:.1f}%，可考虑卖出半仓落袋为安。"
+                            break
+                except Exception as ex:
+                    logger.warning(f"附加止盈提示异常: {ex}")
+            
             # 虚拟下单（全自动模式 A）
             try:
                 from sim_executor import execute_trade

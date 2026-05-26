@@ -414,9 +414,13 @@ class ThresholdAlertStrategy(CtaTemplate):
                 self._try_sell('take_profit', self.take_profit, price, tick)
 
         # ---- 再看买入（当下） ----
-        # REQ-028: 右侧确认与暴跌过滤 (在实盘策略层添加过滤)
-        # 获取 5 分钟级别反弹或简单判断收红
+        # REQ-028 / BUG-010: 买入防接飞刀风控
+        # 1) 右侧确认：跌破昨日低点后，必须站回开盘价或从日内低点反弹 >= 1%。
+        # 2) 大盘熔断：主要指数跌幅 > 1% 或全市场下跌家数 > 80% 时暂停抄底。
+        # 3) 开盘暴跌过滤：开盘跌幅 > 5% + 放量 + 砸穿支撑，当日坚决不买。
         right_side_confirmed = True
+        prev_close = 0.0
+        support_level = self.trend_break or self.buy_strong or self.buy_zone
         try:
             from vqlearn.services.history_loader import load_history
             from datetime import timedelta
@@ -424,22 +428,34 @@ class ThresholdAlertStrategy(CtaTemplate):
             start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
             bars = load_history(self.code, start_date, end_date)
             if not bars.empty and len(bars) >= 1:
-                prev_low = float(bars.iloc[-1]['low'])
+                last_bar = bars.iloc[-1]
+                prev_low = float(last_bar['low'])
+                prev_close = float(last_bar['close'])
+                support_level = self.trend_break or float(last_bar.get('low', 0) or 0) or support_level
                 if price < prev_low:  # 盘中跌破昨日最低价，且目前还在跌
                     # 简单右侧确认：价格必须高于今日开盘价，或者盘中产生 1% 以上反弹
-                    tick_open = tick.open_price if tick.open_price > 0 else float(bars.iloc[-1]['close'])
-                    if price < tick_open and (price / tick.low_price - 1) < 0.01:
+                    tick_open = tick.open_price if getattr(tick, 'open_price', 0) > 0 else prev_close
+                    tick_low = tick.low_price if getattr(tick, 'low_price', 0) > 0 else price
+                    if price < tick_open and (price / max(tick_low, 0.01) - 1) < 0.01:
                         right_side_confirmed = False
         except Exception as e:
             self.write_log(f"右侧确认检查异常: {e}")
 
-        # 大盘情绪熔断 (假设大盘指数代码为 000001.SH 或 399001.SZ，这里简化实现为如果能获取到大盘跌幅则判断，暂以 try_buy 中拦截或直接在这里简单控制)
-        # TODO: 后续可接入真实的全局大盘情绪判断，这里先放一个桩
-        market_panic = False
-
-        if market_panic:
-            self.write_log(f"⚠️ 大盘情绪熔断，暂停抄底: {self.vt_symbol}")
-            return
+        try:
+            from vqlearn.services.buy_risk_guard import evaluate_buy_risk_guard
+            risk_decision = evaluate_buy_risk_guard(
+                code=self.code,
+                tick=tick,
+                prev_close=prev_close,
+                support_level=support_level,
+                avg_vol_5d=getattr(self, 'avg_vol_5d', None),
+            )
+            if risk_decision.blocked:
+                self.write_log(f"⚠️ [{self.vt_symbol}] {risk_decision.reason}，暂停抄底买入")
+                return
+        except Exception as e:
+            # 风控模块异常不应让策略崩溃，但必须显式记日志，便于盘后验收。
+            self.write_log(f"买入风控检查异常: {e}")
 
         # buy_strong 优先于 buy_zone（深的优先）
         if self.buy_strong > 0 and price <= self.buy_strong:

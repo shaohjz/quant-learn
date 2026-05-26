@@ -5,7 +5,7 @@
 import sys, json, sqlite3, re
 from pathlib import Path
 from datetime import datetime, date, timedelta
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, render_template_string
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -486,6 +486,23 @@ def api_equity_curve():
 @app.route('/')
 def index():
     return send_from_directory(str(ROOT / 'web' / 'templates'), 'index.html')
+
+@app.route('/api/pm_tasks')
+def api_pm_tasks():
+    pm_db = ROOT / "data" / "pm.db"
+    try:
+        with sqlite3.connect(pm_db) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM tasks ORDER BY priority ASC, updated_at DESC")
+            tasks = [dict(r) for r in cursor.fetchall()]
+            return jsonify({'status': 'ok', 'tasks': tasks})
+    except Exception as e:
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+
+@app.route('/pm')
+def pm_board():
+    return send_from_directory(str(ROOT / 'web' / 'templates'), 'pm.html')
 
 if __name__ == '__main__':
     print("🚀 启动持仓仪表盘 http://0.0.0.0:8080")

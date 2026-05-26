@@ -110,16 +110,21 @@ def get_sina_prices(codes):
             parts = m.group(3).split(',')
             if len(parts) >= 10 and parts[3]:
                 code = m.group(2)
+                current_price = float(parts[3])
+                yclose = float(parts[2])
+                if current_price == 0 and yclose > 0:
+                    current_price = yclose
+                pct = round((current_price - yclose) / yclose * 100, 2) if yclose > 0 else 0.0
                 prices[code] = {
                     'name': parts[0],
-                    'price': float(parts[3]),
+                    'price': current_price,
                     'open': float(parts[1]),
-                    'yclose': float(parts[2]),
+                    'yclose': yclose,
                     'high': float(parts[4]),
                     'low': float(parts[5]),
                     'volume': float(parts[8]),
                     'amount': float(parts[9]),
-                    'pct': round((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100, 2) if float(parts[2]) > 0 else 0,
+                    'pct': pct,
                 }
     return prices
 

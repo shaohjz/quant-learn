@@ -60,13 +60,18 @@ def fetch_sina_realtime(codes: list) -> dict:
         # 提取纯数字代码
         code = sina_sym[2:]
         try:
+            current_price = float(parts[3]) if parts[3] else 0
+            yclose = float(parts[2]) if parts[2] else 0
+            if current_price == 0 and yclose > 0:
+                current_price = yclose
+
             result[code] = {
                 "name": parts[0],
                 "open": float(parts[1]) if parts[1] else 0,
                 "high": float(parts[4]) if parts[4] else 0,
                 "low": float(parts[5]) if parts[5] else 0,
-                "price": float(parts[3]) if parts[3] else 0,
-                "yesterday_close": float(parts[2]) if parts[2] else 0,
+                "price": current_price,
+                "yesterday_close": yclose,
                 "volume": float(parts[8]) if parts[8] else 0,
                 "amount": float(parts[9]) if parts[9] else 0,
                 "date": parts[30],

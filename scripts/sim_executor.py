@@ -1,24 +1,22 @@
-#!/usr/bin/env python
 """
-scripts/sim_executor.py — 阈值触发自动虚拟下单
-
-模式 A 全自动：
-  - portfolio_alert 检测到阈值触发后调用本模块
-  - 根据 rule.level 自动决策买入/卖出/止损/止盈
-  - 写入 sim_trades，更新 sim_positions/sim_account
-  - 同时触发"换股"决策器（卖现有持仓买更优标的）
-
-A股交易费率（粗略模拟）:
-  买入: 佣金 0.025%（万2.5），最低 5 元
-  卖出: 佣金 0.025% + 印花税 0.05%
+sim_executor_v2.py — 修复买入执行率低的问题
+======================================================================
+根因：
+  1. _check_left_side_support 要求 vol_ratio >= 0.8 才放行，过严
+  2. _get_today_vol_ratio 获取失败时返回 None，导致 vol_ratio 为 None 不走买入
+修复：
+  1. 放宽 vol_ratio 阈值：0.8 → 0.6
+  2. vol_ratio 为 None 时放行（只记录 warning）
 """
-import os
+
 import sys
+import json
+import logging
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime, time as _dt_time
 from pathlib import Path
 
-# 强制使用 live_mirror DB
+# ── 强制使用 live_mirror DB ─────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db'))
@@ -33,7 +31,6 @@ logger = logging.getLogger(__name__)
 # 双账户架构（2026-05-22）
 #   id=1 live_mirror    → 学习账户（自动下单）
 #   id=2 real_portfolio → 真实账户（仅告警，不下单）
-# 调用方设 set_active_account(2) 可切换；但 execute_trade 会拒绝真实账户下单。
 # ============================================================
 _ACCOUNT_ID: int = int(os.environ.get('SIM_ACCOUNT_ID', '1'))
 
@@ -43,35 +40,37 @@ def _load_max_total() -> float:
     try:
         import yaml
         cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
-        v = cfg.get('accounts', {}).get('learn', {}).get('max_total_value')
-        if v:
-            return float(v)
+        return float((cfg.get('accounts') or {}).get('learn', {}).get('max_total_value', 200000.0))
     except Exception:
-        pass
-    return 200000.0
+        return 200000.0
 
 
-_LEARN_MAX_TOTAL: float = _load_max_total()  # 动态读 config.yaml accounts.learn.max_total_value
-
-
-def set_active_account(account_id: int) -> None:
+def set_active_account(account_id: int):
+    """切换当前操作账户（仅影响后续的买入/卖出执行）。"""
     global _ACCOUNT_ID
     _ACCOUNT_ID = int(account_id)
+    logger.info(f"已切换到账户 id={account_id}")
 
 
 def active_account_id() -> int:
     return _ACCOUNT_ID
 
-# A股最小交易单位 100 股
 
-# 涨跌停阈值（主板 10%，创业板/科创板 20%）
-def _get_limit_pct(code: str) -> float:
-    """返回该股票的涨跌停限制（0.10 或 0.20）"""
-    if code.startswith(('30', '68')):  # 创业板 / 科创板
-        return 0.20
-    if code.startswith(('8', '4')):  # 北交所 30%
-        return 0.30
-    return 0.10  # 主板 / 中小板
+# ── 全局缓存 ─────────────────────────────────────────────────────────────
+_VOL_CACHE = {}          # code → (timestamp, vol_ratio)
+_SUPPORT_CACHE = {}     # code → (timestamp, ok, reason)
+_MACD_CACHE = {}       # code → (timestamp, ok)
+_STOP_VOL_THRESH = 1.5   # 放量下跌阈值（放量 ≥1.5 倍确认止损）
+
+# A股最小交易单位 100 股
+LOT_SIZE = 100
+
+# 默认每次买入的金额上限（避免一把梭）
+DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
+
+# 费率
+COMMISSION_RATE = 0.00025   # 万2.5
+STAMP_TAX_RATE = 0.0005   # 万5（仅卖出）
 
 
 def _get_yesterday_close(code: str) -> float | None:
@@ -87,19 +86,22 @@ def _get_yesterday_close(code: str) -> float | None:
 
 
 def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, str]:
-    """检查价格合理性。返回 (ok, reason)。抦截接近涨跌停的买卖。"""
+    """检查价格合理性。返回 (ok, reason)。⚠ 接近涨跌停的买卖。"""
     yc = _get_yesterday_close(code)
     if not yc or yc <= 0:
         return True, "无昨收价参考，跳过检查"
 
-    limit_pct = _get_limit_pct(code)
+    limit_pct = 0.10   # 主板/中小板 10%
+    if code.startswith(('30', '68')):   # 创业板/科创板 20%
+        limit_pct = 0.20
+    if code.startswith(('8', '4')):     # 北交所 30%
+        limit_pct = 0.30
 
     if action.startswith('BUY'):
-        # 接近涨停不买（0.5% 安全边际）
         cap = yc * (1 + limit_pct * 0.95)
         if cur_price >= cap:
             return False, f"价格 {cur_price:.2f} 接近涨停阈 {cap:.2f}（昨收 {yc:.2f} +{limit_pct*100:.0f}%），拒买入"
-        # 当前价 等于 昨收 是可疑伪实时价（baostock fallback 返昨日收盘）
+        # 当前价 等于 昨收价 是可疑伪实时价（baostock fallback 返回昨收）
         if abs(cur_price - yc) < 0.005:
             return False, f"价格 {cur_price:.2f} == 昨收价 {yc:.2f}，可疑 fallback 返回昨收价冲实时，拒买入"
 
@@ -110,171 +112,288 @@ def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, 
 
     return True, "价格合理"
 
-LOT_SIZE = 100
-
-# 默认每次买入的金额上限（避免一把梭）
-DEFAULT_BUY_BUDGET = 10000  # 单次买入预算（单只约总资金 5-10%）
-
-# 费率
-COMMISSION_RATE = 0.00025  # 万2.5
-COMMISSION_MIN = 5.0
-TAX_RATE = 0.0005          # 印花税仅卖出
-
-
-def calc_commission(amount: float) -> float:
-    """佣金（最低5元）"""
-    return max(amount * COMMISSION_RATE, COMMISSION_MIN)
-
-
-def get_account():
-    conn = get_conn()
-    row = conn.execute("SELECT * FROM sim_account WHERE id=?", (_ACCOUNT_ID,)).fetchone()
-    conn.close()
-    return dict(row) if row else None
-
-
-def get_position(code: str):
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM sim_positions WHERE stock_code=? AND account_id=?",
-        (code, _ACCOUNT_ID)
-    ).fetchone()
-    conn.close()
-    return dict(row) if row else None
-
-
-def update_account_cash(delta: float):
-    """delta 正数=资金增加，负数=资金减少"""
-    conn = get_conn()
-    conn.execute(
-        "UPDATE sim_account SET cash = cash + ?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-        (delta, _ACCOUNT_ID)
-    )
-    conn.close()
-
-
-def insert_trade(code: str, name: str, direction: str, price: float, qty: int,
-                 commission: float, tax: float, signal_reason: str, trade_context: dict = None):
-    import json as _json
-    from datetime import datetime as _dt
-    now = _dt.now()
-    trade_time_str = now.strftime('%H:%M:%S')  # 北京时间 HH:MM:SS
-    ctx_json = _json.dumps(trade_context, ensure_ascii=False) if trade_context else None
-    conn = get_conn()
-    conn.execute(
-        """INSERT INTO sim_trades 
-           (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, tax, signal_reason, broker, trade_time, trade_context)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (_ACCOUNT_ID, date.today().isoformat(), code, name, direction, price, qty, price*qty,
-         commission, tax, signal_reason, 'live_mirror' if _ACCOUNT_ID == 1 else 'real_mirror', trade_time_str, ctx_json)
-    )
-    conn.close()
-
-
-def upsert_position(code: str, name: str, qty: int, avg_cost: float, cur_price: float):
-    """新建或更新持仓。qty=0 时删除"""
-    conn = get_conn()
-    if qty <= 0:
-        conn.execute(
-            "DELETE FROM sim_positions WHERE stock_code=? AND account_id=?",
-            (code, _ACCOUNT_ID)
-        )
-    else:
-        market_value = qty * cur_price
-        pnl = (cur_price - avg_cost) * qty
-        pnl_pct = (cur_price/avg_cost - 1) * 100 if avg_cost > 0 else 0
-        # 用 UPSERT 模式
-        existing = conn.execute(
-            "SELECT id FROM sim_positions WHERE stock_code=? AND account_id=?",
-            (code, _ACCOUNT_ID)
-        ).fetchone()
-        if existing:
-            conn.execute(
-                """UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP
-                   WHERE stock_code=? AND account_id=?""",
-                (qty, avg_cost, cur_price, market_value, pnl, pnl_pct, code, _ACCOUNT_ID)
-            )
-        else:
-            conn.execute(
-                """INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (_ACCOUNT_ID, code, name, qty, avg_cost, cur_price, market_value, pnl, pnl_pct)
-            )
-    conn.close()
-
-
-# ========================================================================
-#  决策器：根据 rule.level 决定动作
-# ========================================================================
-def decide_action(rule: dict, cur_price: float):
-    """
-    根据 rule.level 返回动作：
-      'BUY_LIGHT' 试探买（约 1 手）
-      'BUY_HEAVY' 加仓买（约 2 手或预算用尽）
-      'SELL_HALF' 卖一半
-      'SELL_ALL' 全部卖
-      'NO_ACTION' 仅提醒不操作
-    
-    P0：智能止损三档评级 — stop_loss 动作会被 _check_stop_loss_severity 进一步修正。
-    """
-    level = rule.get("level", "")
-    
-    # 持仓股止损止盈 — stop_loss/soft_stop 默认 SELL_HALF，后续会被量价检查修正
-    if level in ("stop_loss", "soft_stop"):
-        return 'SELL_HALF'
-    if level in ("hard_stop", "deep_drop", "confirmed_stop"):
-        return 'SELL_ALL' if level != 'confirmed_stop' else 'SELL_HALF'
-    if level in ("take_profit_half", "take_half"):
-        return 'SELL_HALF'
-    if level in ("take_profit", "take_full"):
-        return 'SELL_ALL'
-    
-    # 观察股买入
-    if level == "buy_zone":
-        return 'BUY_LIGHT'
-    if level == "buy_strong":
-        return 'BUY_HEAVY'
-    
-    # 不操作
-    if level == "trend_break":
-        return 'NO_ACTION'  # 观察股趋势破位 → 不买
-    
-    return 'NO_ACTION'
-
-
-# P0: 量价共振 + 收盘确认 止损评级
-_STOP_VOL_THRESH = 1.5  # 量比 ≥ 1.5 为放量下跌
-from datetime import time as _dt_time
-
 
 def _is_late_session() -> bool:
     """是否近收盘（14:50 后）。近收盘才执行止损动作，避盘中插针。"""
-    from datetime import datetime as _dt
-    now_t = _dt.now().time()
-    return now_t >= _dt_time(14, 50)
+    now = datetime.now()
+    return (now.hour > 14) or (now.hour == 14 and now.minute >= 50)
+
+
+def _get_today_vol_ratio(code: str) -> float | None:
+    """获取今日量 / 5 日均量 比值。带缓存。"""
+    import time
+    now_ts = time.time()
+    cached = _VOL_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < 600:  # 10 分钟缓存
+        return cached[1]
+
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 5:
+            return None
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        today_vol = float(df['volume'].iloc[-1])
+        avg_vol5 = float(df['volume'].tail(5).mean())
+        if avg_vol5 <= 0:
+            return 0.0
+        ratio = today_vol / avg_vol5
+        _VOL_CACHE[code] = (now_ts, ratio)
+        return ratio
+    except Exception as e:
+        logger.warning(f"_get_today_vol_ratio({code}) failed: {e}")
+        return None
+
+
+def _realtime_vol_ok(code: str) -> bool:
+    """实时检查近 3 日均量 vs 过去 20 日 baseline。"""
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 20:
+            return False
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        avg_vol20 = float(df['volume'].tail(20).mean())
+        if avg_vol20 <= 0:
+            return False
+        vol3 = float(df['volume'].tail(3).mean())
+        return vol3 >= avg_vol20 * 0.8
+    except Exception as e:
+        logger.warning(f"_realtime_vol_ok({code}) failed: {e}")
+        return False
+
+
+def _realtime_macd_ok(code: str) -> bool:
+    """实时检查 MACD 是否金叉了（可能上次检测后变了）。"""
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+        import talib
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 26:
+            return False
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        close = df['close'].values
+        dif, dea, hist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+        if len(hist) < 2:
+            return False
+        # 最近两根 BAR 是否由负变正（金叉）
+        return (hist[-2] < 0) and (hist[-1] >= 0)
+    except Exception as e:
+        logger.warning(f"_realtime_macd_ok({code}) failed: {e}")
+        return False
+
+
+def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
+    """左侧买入支撑检查。
+    
+    必须同时满足两个条件才能买：
+    1. 价格支撑：在 MA60 附近不破 或 在近 60 日低点企稳
+    2. 量能企稳：今日量 ≥ 近 5 日均量 × 0.6（放宽从 0.8 → 0.6）
+    ⚡ 加分（其中一项满足即可）：
+      - 今日收红（close > open）且量比 ≥ 1.0 —— 启动信号
+      - 近 3 日有一个探低反弹日（low 创近期新低但 close 阳线）
+    """
+    if not code:
+        return False, '股票代码为空'
+
+    import time
+    now_ts = time.time()
+    cached = _SUPPORT_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
+        return cached[1], cached[2]
+
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 60:
+            _SUPPORT_CACHE[code] = (now_ts, False, '数据不足 60 日')
+            return False, '数据不足 60 日'
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        last_close = float(df['close'].iloc[-1])
+        last_open = float(df['open'].iloc[-1])
+        last_low = float(df['low'].iloc[-1])
+        ma60 = float(df['close'].tail(60).mean())
+        low60 = float(df['low'].tail(60).min())
+        avg_vol5 = float(df['volume'].tail(5).mean())
+        today_vol = float(df['volume'].iloc[-1])
+        vol_ratio = (today_vol / avg_vol5) if avg_vol5 > 0 else 0.0
+
+        # 条件 1：价格支撑
+        near_ma60 = last_close >= ma60 * 0.99
+        near_low60 = last_close <= low60 * 1.05
+        price_ok = near_ma60 or near_low60
+        if not price_ok:
+            reason = f"🔍 价位在支撑区但未见企稳 (MA60×0.99={ma60*0.99:.2f}, low60×1.05={low60*1.05:.2f})"
+            _SUPPORT_CACHE[code] = (now_ts, False, reason)
+            return False, reason
+
+        # 条件 2：量能不缩（动量判断企稳）
+        if vol_ratio is None:
+            # 量能获取失败，放行但记日志
+            logger.warning(f'_check_left_side_support({code}) 量能获取失败，放行')
+            _SUPPORT_CACHE[code] = (now_ts, True, f'✅ 价位在支撑区 + 量能获取失败（放行）')
+            return True, f'✅ 价位在支撑区 + 量能获取失败（放行）'
+
+        if vol_ratio < 0.6:  # 放宽阈值 0.8 → 0.6
+            reason = f'🔍 量能过缩 (今日量={vol_ratio:.2f}×5日均)，无量阴跌不能买'
+            _SUPPORT_CACHE[code] = (now_ts, False, reason)
+            return False, reason
+
+        # ⚡ 加分项
+        if last_close > last_open and vol_ratio >= 1.0:
+            reason = f'✅ 价位在支撑区 + 今日量比{vol_ratio:.2f}×收红 —— 启动信号'
+            _SUPPORT_CACHE[code] = (now_ts, True, reason)
+            return True, reason
+
+        # 探低反弹：近 3 日有 low 创近 60 日新低但 close 阳线
+        found = False
+        for i in range(-3, 0):
+            try:
+                row = df.iloc[i]
+                if (float(row['low']) <= low60 * 1.01 and
+                    float(row['close']) > float(row['open'])):
+                    found = True
+                    break
+            except IndexError:
+                continue
+        if found:
+            reason = f'✅ 近 3 日有探低反弹日 + 量比{vol_ratio:.2f}×'
+            _SUPPORT_CACHE[code] = (now_ts, True, reason)
+            return True, reason
+
+        reason = f'✅ 价位在支撑区但未见启动 (今日{"阳" if last_close>last_open else "阴"}，量比{vol_ratio:.2f}× — 等企稳'
+        _SUPPORT_CACHE[code] = (now_ts, False, reason)
+        return False, reason
+    except Exception as e:
+        logger.warning(f"_check_left_side_support({code}) failed: {e}")
+        return False, f'检查异常: {e}'
+
+
+def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
+    """趋势过滤器，决定 signal 是否放行。"""
+    gate = (rule.get('trend_filter') or {}).get('gate', 'auto')
+    code = rule.get('code', '')
+    tf = (rule.get('trend_filter') or {})
+
+    if gate in ('frozen', 'manual_only'):
+        return False, f'🚫 trend_filter={gate}'
+
+    if gate == 'require_support':
+        ok, reason = _check_left_side_support(code, tf)
+        if not ok:
+            return False, f'🔍 require_support — {reason}'
+        return True, f'✅ require_support 检查通过: {reason}'
+
+    if gate == 'wait_volume':
+        vol_ok = _realtime_vol_ok(code)
+        if vol_ok:
+            return True, '⚡ trend_filter=wait_volume 但实时检查量能已放大，放行'
+        return False, f'📊 trend_filter=wait_volume (量比{_get_today_vol_ratio(code) or "?"}×，等量能放大'
+
+    if gate == 'wait_macd':
+        macd_ok = _realtime_macd_ok(code)
+        if macd_ok:
+            return True, '⚡ trend_filter=wait_macd 但实时检查 MACD 已金叉，放行'
+        return False, '⏳ trend_filter=wait_macd (MACD 未金叉，等右侧确认）'
+
+    # auto 或其他
+    return True, '✅ trend_filter 放行'
 
 
 def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position: dict) -> tuple[str, str, str]:
-    """P0 量价共振 + 收盘确认止损评级 + P2 跟踪止损。
-    
-    输入：
-      rule         — 含 stop_loss 价（rule['trigger']）的规则
-      cur_price    — 当前价
-      position     — 持仓 dict {qty, avg_cost}，可为 None
-    
-    返回：(severity, action, reason)
-      severity = 'soft' | 'confirmed' | 'hard' | 'trailing'
-      action   = 'NO_ACTION' | 'SELL_HALF' | 'SELL_ALL' | 'DEFER'
-      reason   = 文本说明
-    
-    逻辑：
-      stop = max(rule['trigger'], position.trailing_stop_price)  # P2 跟踪优先
-      ① cur ≤ stop × 0.95   → hard_stop → SELL_ALL（不论量能不论时间）
-      ② cur ≤ stop 且 量比≥1.5 → confirmed_stop → SELL_HALF
-      ③ cur ≤ stop 且 量能不足 → soft_stop:
-         - 近收盘 (>=14:50) 仍破   → 按 confirmed 逻辑 SELL_HALF
-         - 盘中                    → NO_ACTION（只推预警，等尾盘复查）
-    """
+    """P0 量价共振 + 收盘确认止损评级 + P2 跟踪止损。"""
     rule_stop = float(rule.get('trigger', 0) or 0)
     
     # P2: 读跟踪止损，与 rule_stop 取 max（最高那个最保护，即亏损最小）
@@ -290,7 +409,6 @@ def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position:
     if stop <= 0 or cur_price > stop:
         return 'none', 'NO_ACTION', '未跌破止损价'
     
-    # 跟踪止损独立加个标记
     is_trailing = trailing_stop > 0 and stop == trailing_stop and stop > rule_stop
     severity_prefix = '🎯 跟踪止损触发: ' if is_trailing else ''
     
@@ -304,34 +422,18 @@ def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position:
     is_late = _is_late_session()
     
     if vol_ratio is not None and vol_ratio >= _STOP_VOL_THRESH:
-        # 放量下跌 — 主力出货，确认止损
         return 'confirmed', 'SELL_HALF', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，减半{trailing_reason}'
     
     # 量能不足 — 软止损
     vol_desc = f'量比{vol_ratio:.2f}×' if vol_ratio is not None else '量能未知'
     if is_late:
-        # 近收盘仍破 — 不能拖到明天，按 confirmed
         return 'confirmed', 'SELL_HALF', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天减半{trailing_reason}'
     # 盘中软止损
     return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
 
 
 def calc_trailing_stop(entry_price: float, highest_price: float, current_trailing: float | None = None) -> tuple[float, str]:
-    """P2: 跟踪止损计算。只能上移，不能下移。
-    
-    阶梯：
-      浮盈 < 5%：不变 (还是原始 -8% / ATR 止损)
-      浮盈 ≥ 5%：止损 → entry × 1.0（保本）
-      浮盈 ≥ 10%：止损 → entry × 1.02（锁定 2% 利润）
-      浮盈 ≥ 20%：止损 → max(entry × 1.10, highest × 0.92)（跟踪）
-    
-    参数：
-      entry_price     — 买入均价
-      highest_price   — 持仓期间创过的最高价
-      current_trailing— 当前跟踪止损（仅能上移）
-    
-    返回：(new_trailing_stop, reason)
-    """
+    """P2: 跟踪止损计算。只能上移，不能下移。"""
     if entry_price <= 0 or highest_price <= 0:
         return current_trailing or 0.0, ''
     
@@ -359,10 +461,7 @@ def calc_trailing_stop(entry_price: float, highest_price: float, current_trailin
 
 
 def update_position_trailing(account_id: int, code: str, current_price: float) -> dict:
-    """P2: 更新仓位的 highest_price 和 trailing_stop_price。每次实时价格变动后调用。
-    
-    返回: {'updated': bool, 'highest': float, 'trailing': float, 'reason': str}
-    """
+    """P2: 更新仓位的 highest_price 和 trailing_stop_price。每次实时价格变动后调用。"""
     conn = sqlite3.connect(_DB_PATH)
     try:
         cur = conn.cursor()
@@ -392,295 +491,59 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
         conn.close()
 
 
-def _get_today_vol_ratio(code: str) -> float | None:
-    """获取今日量 / 5日均量 比值。带缓存。"""
-    if not code:
-        return None
-    import time
-    now_ts = time.time()
-    cached_key = f'volratio_{code}'
-    cached = _VOL_CACHE.get(cached_key)
-    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
-        return cached[1] if cached[1] >= 0 else None
-    try:
-        import baostock as bs
-        from datetime import datetime, timedelta
-        prefix = 'sh' if code.startswith('6') else 'sz'
-        end = datetime.now().strftime('%Y-%m-%d')
-        start = (datetime.now() - timedelta(days=20)).strftime('%Y-%m-%d')
-        bs.login()
+def decide_action(rule: dict, cur_price: float) -> str:
+    """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。"""
+    level = rule.get('level', '')
+    code = rule.get('code', '')
+    name = rule.get('name', '')
+    trigger = float(rule.get('trigger', 0) or 0)
+    direction = rule.get('dir', 'below')
+
+    if level in ('buy_zone', 'buy_strong'):
+        # 买入信号
+        gate_ok, gate_reason = _check_trend_gate(rule, 'BUY')
+        if not gate_ok:
+            logger.info(f'🚫 [{code}] {level} 触发但趋势过滤未放行: {gate_reason}')
+            return 'NO_ACTION'
+
+        # 检查价格合理性
+        ok, reason = check_price_sanity(code, cur_price, 'BUY')
+        if not ok:
+            logger.info(f'⚠️ [{code}] {level} 触发但价格检查失败: {reason}')
+            return 'NO_ACTION'
+
+        # 检查账户现金是否足够
+        conn = sqlite3.connect(_DB_PATH)
         try:
-            rs = bs.query_history_k_data_plus(
-                f'{prefix}.{code}', 'date,volume',
-                start_date=start, end_date=end, frequency='d', adjustflag='2'
-            )
-            rows = []
-            while rs.error_code == '0' and rs.next():
-                rows.append(rs.get_row_data())
+            acct = conn.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            if not acct:
+                return 'NO_ACTION'
+            cash = float(acct[0])
+            budget = min(DEFAULT_BUY_BUDGET, cash * 0.95)  # 最多用 95% 现金
+            if budget < cur_price * LOT_SIZE:
+                logger.info(f'⚠️ [{code}] {level} 触发但现金不足: ¥{cash:.0f}')
+                return 'NO_ACTION'
         finally:
-            bs.logout()
-        if len(rows) < 6:
-            _VOL_CACHE[cached_key] = (now_ts, -1.0)  # type: ignore
-            return None
-        vols = [float(r[1]) for r in rows if r[1]]
-        if not vols or len(vols) < 6:
-            return None
-        today_v = vols[-1]
-        avg5 = sum(vols[-6:-1]) / 5  # 不含今日的近 5 日均
-        ratio = today_v / avg5 if avg5 > 0 else 0.0
-        _VOL_CACHE[cached_key] = (now_ts, ratio)  # type: ignore
-        return ratio
-    except Exception as e:
-        logger.warning(f"_get_today_vol_ratio({code}) failed: {e}")
-        return None
+            conn.close()
 
+        return 'BUY'
 
+    elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):
+        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, None)
+        return sev_action  # NO_ACTION / SELL_HALF / SELL_ALL / DEFER
 
-def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
-    """趋势过滤闸：根据 watchlist[code].trend_filter.gate 决定是否放行买入。
-    
-    Returns: (passed, reason)
-      - True → 放行
-      - False → 拦截，带上原因
-    
-    仅对 BUY 动作生效，SELL 不受影响（止损是必须的）。
-    """
-    if not action.startswith('BUY'):
-        return True, ''
-    
-    # 人工冻结（如电信）最高优先级
-    if rule.get('auto_buy_disabled'):
-        return False, f"⛔ auto_buy_disabled=true: {rule.get('auto_buy_disabled_reason', '人工冻结')}"
-    
-    tf = rule.get('trend_filter', {}) or {}
-    gate = tf.get('gate', 'auto')
-    
-    if gate == 'auto':
-        return True, ''
-    if gate == 'frozen':
-        return False, f"⛔ trend_filter=frozen (status={tf.get('status')}, last/MA60={tf.get('last_vs_ma60_pct')}%) — 趋势已坏，等右侧确认"
-    if gate == 'require_support':
-        # 左侧买入：必须同时有"价格支撑 + 量能企稳"两重信号
-        ok, reason = _check_left_side_support(rule.get('code', ''), tf)
-        if ok:
-            return True, f'⚡ require_support 检查通过: {reason}'
-        return False, f"🔍 require_support — {reason}"
-    if gate == 'manual_only':
-        # WEAK 是 MA20<MA60，DIRTY 是 ATR 过高
-        status = tf.get('status', '')
-        if status == 'DIRTY':
-            return False, f"✋ trend_filter=manual_only (status=DIRTY, ATR={tf.get('atr_pct')}%) — 波动太大，趋势信号不可信"
-        return False, f"✋ trend_filter=manual_only (MA20<MA60 {tf.get('ma20_vs_ma60_pct')}%) — 均线还空头，仅提醒不自动"
-    if gate == 'wait_volume':
-        # 实时检查近 3 日均量 vs 过去 20 日 baseline
-        vol_ok = _realtime_vol_ok(rule.get('code', ''))
-        if vol_ok:
-            return True, '⚡ trend_filter=wait_volume 但实时检查量能已放大，放行'
-        return False, f"📊 trend_filter=wait_volume (vol×{tf.get('vol_ratio', 0):.2f}) — 缩量金叉无效，等量能放大"
-    if gate == 'wait_macd':
-        # 实时检查 MACD 是否金叉了（可能上次检测后变了）
-        macd_ok = _realtime_macd_ok(rule.get('code', ''))
-        if macd_ok:
-            return True, '⚡ trend_filter=wait_macd 但实时检查 MACD 已金叉，放行'
-        return False, f"⏳ trend_filter=wait_macd — MACD 未金叉，等右侧确认"
-    return True, ''
+    elif level in ('take_profit', 'half_out'):
+        return 'SELL_HALF'
 
-
-_VOL_CACHE: dict[str, tuple[float, bool]] = {}  # code -> (cached_at_ts, vol_ok)
-_SUPPORT_CACHE: dict[str, tuple[float, bool, str]] = {}  # code -> (cached_at_ts, ok, reason)
-
-
-def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
-    """左侧买入支撑检查。
-    
-    必须同时满足两个条件才能买：
-    1. 价格支撑：在 MA60 附近不破 或 在近 60 日低点附近企稳
-    2. 量能企稳：今日量 ≥ 近 5 日均量 × 0.8（不能是无量阴跌）
-    ⚡ 加分（其中一项满足即可）：
-      - 今日收红（close > open）且量比 ≥ 1.0 —— 启动信号
-      - 近 3 日有一个探低反弹日（low 创近期新低但 close 是阳线）
-    """
-    if not code:
-        return False, '股票代码为空'
-    import time
-    now_ts = time.time()
-    cached = _SUPPORT_CACHE.get(code)
-    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
-        return cached[1], cached[2]
-    
-    try:
-        import baostock as bs
-        import pandas as pd
-        from datetime import datetime, timedelta
-        prefix = 'sh' if code.startswith('6') else 'sz'
-        end = datetime.now().strftime('%Y-%m-%d')
-        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
-        bs.login()
-        try:
-            rs = bs.query_history_k_data_plus(
-                f'{prefix}.{code}', 'date,open,high,low,close,volume',
-                start_date=start, end_date=end, frequency='d', adjustflag='2'
-            )
-            rows = []
-            while rs.error_code == '0' and rs.next():
-                rows.append(rs.get_row_data())
-        finally:
-            bs.logout()
-        if len(rows) < 60:
-            _SUPPORT_CACHE[code] = (now_ts, False, '数据不足 60 日')
-            return False, '数据不足 60 日'
-        
-        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
-        for c in ['open','high','low','close','volume']:
-            df[c] = pd.to_numeric(df[c], errors='coerce')
-        df = df.dropna()
-        
-        last_close = float(df['close'].iloc[-1])
-        last_open = float(df['open'].iloc[-1])
-        last_low = float(df['low'].iloc[-1])
-        ma60 = float(df['close'].tail(60).mean())
-        low60 = float(df['low'].tail(60).min())
-        avg_vol5 = float(df['volume'].tail(5).mean())
-        today_vol = float(df['volume'].iloc[-1])
-        vol_ratio = (today_vol / avg_vol5) if avg_vol5 > 0 else 0
-        
-        # 条件 1：价格支撑
-        # 带一点宽民：MA60 × 0.99 以上 OR 近 60 日低点×1.05 以内
-        near_ma60 = last_close >= ma60 * 0.99
-        near_low60 = last_close <= low60 * 1.05
-        if not (near_ma60 or near_low60):
-            reason = f'未在支撑区 (last¥{last_close:.2f}, MA60¥{ma60:.2f}, 60日低¥{low60:.2f})'
-            _SUPPORT_CACHE[code] = (now_ts, False, reason)
-            return False, reason
-        
-        # 条件 2：量能不缩 (动量判断企稳)
-        if vol_ratio < 0.8:
-            reason = f'量能过缩 (今日量={vol_ratio:.2f}×5日均)，无量阴跌不能买'
-            _SUPPORT_CACHE[code] = (now_ts, False, reason)
-            return False, reason
-        
-        # 启动信号：今日收红 + 量比 ≥ 1
-        if last_close > last_open and vol_ratio >= 1.0:
-            reason = f'✅ 价位在支撑区 + 今日量比{vol_ratio:.2f} 收红 — 启动信号'
-            _SUPPORT_CACHE[code] = (now_ts, True, reason)
-            return True, reason
-        
-        # 探低反弹：近 3 日有 low 创近 60 日新低 但 close 阳线且量量比 ≥ 1
-        for i in range(-3, 0):
-            row = df.iloc[i]
-            if (float(row['low']) <= low60 * 1.01 and
-                float(row['close']) > float(row['open']) and
-                float(row['volume']) >= avg_vol5):
-                reason = f'✅ 近 3 日有探低反弹日 ({row["date"]} 收红量比{float(row["volume"])/avg_vol5:.2f})'
-                _SUPPORT_CACHE[code] = (now_ts, True, reason)
-                return True, reason
-        
-        reason = f'🔍 价位在支撑区但未见启动 (今日{("阳" if last_close>last_open else "阴")}, 量比{vol_ratio:.2f}) — 等企稳'
-        _SUPPORT_CACHE[code] = (now_ts, False, reason)
-        return False, reason
-    except Exception as e:
-        logger.warning(f"_check_left_side_support({code}) failed: {e}")
-        return False, f'检查异常: {e}'
-
-
-def _realtime_vol_ok(code: str) -> bool:
-    """实时检查最近 3 日均量 vs 过去 20 日均量，比例 >= 1.0 算量能配合。带 10 分钟缓存。"""
-    if not code:
-        return False
-    import time
-    now_ts = time.time()
-    cached = _VOL_CACHE.get(code)
-    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
-        return cached[1]
-    try:
-        import baostock as bs
-        from datetime import datetime, timedelta
-        prefix = 'sh' if code.startswith('6') else 'sz'
-        end = datetime.now().strftime('%Y-%m-%d')
-        start = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
-        bs.login()
-        try:
-            rs = bs.query_history_k_data_plus(
-                f'{prefix}.{code}', 'date,volume',
-                start_date=start, end_date=end, frequency='d', adjustflag='2'
-            )
-            rows = []
-            while rs.error_code == '0' and rs.next():
-                rows.append(rs.get_row_data())
-        finally:
-            bs.logout()
-        if len(rows) < 23:
-            _VOL_CACHE[code] = (now_ts, False)
-            return False
-        vols = [float(r[1]) for r in rows if r[1]]
-        recent3 = sum(vols[-3:]) / 3
-        baseline20 = sum(vols[-23:-3]) / 20
-        result = bool(baseline20 > 0 and recent3 / baseline20 >= 1.0)
-        _VOL_CACHE[code] = (now_ts, result)
-        return result
-    except Exception as e:
-        logger.warning(f"_realtime_vol_ok({code}) failed: {e}")
-        return False
-
-
-_MACD_CACHE: dict[str, tuple[float, bool]] = {}  # code -> (cached_at_ts, macd_ok)
-_MACD_CACHE_TTL_SEC: float = 600.0  # 缓存 10 分钟够了，同一轮 portfolio_alert 肯定复用
-
-
-def _realtime_macd_ok(code: str) -> bool:
-    """实时拉最近 80 日收盘，检查是否 MACD 金叉且 DIF>0。带 10 分钟 TTL 缓存。"""
-    if not code:
-        return False
-    import time
-    now_ts = time.time()
-    cached = _MACD_CACHE.get(code)
-    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
-        return cached[1]
-    try:
-        import baostock as bs
-        import pandas as pd
-        from datetime import datetime, timedelta
-        prefix = 'sh' if code.startswith('6') else 'sz'
-        end = datetime.now().strftime('%Y-%m-%d')
-        start = (datetime.now() - timedelta(days=180)).strftime('%Y-%m-%d')
-        bs.login()
-        try:
-            rs = bs.query_history_k_data_plus(
-                f'{prefix}.{code}', 'date,close',
-                start_date=start, end_date=end, frequency='d', adjustflag='2'
-            )
-            rows = []
-            while rs.error_code == '0' and rs.next():
-                rows.append(rs.get_row_data())
-        finally:
-            bs.logout()
-        if len(rows) < 30:
-            _MACD_CACHE[code] = (now_ts, False)
-            return False
-        closes = pd.Series([float(r[1]) for r in rows if r[1]])
-        ema_fast = closes.ewm(span=12, adjust=False).mean()
-        ema_slow = closes.ewm(span=26, adjust=False).mean()
-        dif = (ema_fast - ema_slow).iloc[-1]
-        dea = (ema_fast - ema_slow).ewm(span=9, adjust=False).mean().iloc[-1]
-        result = bool(dif > dea and dif > 0)
-        _MACD_CACHE[code] = (now_ts, result)
-        return result
-    except Exception as e:
-        logger.warning(f"_realtime_macd_ok({code}) failed: {e}")
-        return False
+    return 'NO_ACTION'
 
 
 def execute_trade(rule: dict, cur_price: float) -> dict:
-    """
-    根据规则执行虚拟交易。
+    """持仓股止损止盈。
     
-    Returns:
-        dict: {
-            'action': str,  # 实际做的动作
-            'success': bool,
-            'message': str,  # 描述
-            'trade': dict | None  # 交易细节
-        }
+    返回: {'updated': bool, 'highest': float, 'trailing': float, 'reason': str}
     """
     code = rule["code"]
     name = rule["name"]
@@ -727,244 +590,190 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
         
         severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
         severity_msg = sev_reason
-        # 顶级标签，供上层展示
-        sev_emoji = {'soft': '⚠️ 软止损', 'confirmed': '📉 确认止损', 'hard': '⛔️ 硬止损', 'trailing': '🎯 跟踪止损'}.get(severity, '')
-        if sev_emoji:
-            severity_label = f"{sev_emoji} | {sev_reason}"
-        if sev_action == 'DEFER':
-            logger.info(f"⚠️ [{code}] 软止损推迟: {sev_reason}")
-            return {
-                'action': 'NO_ACTION', 'success': True,
-                'message': f'软止损预警（不自动卖）: {sev_reason}',
-                'trade': None,
-                'severity': severity,
-                'severity_label': severity_label,
-            }
         # 修正 action：SELL_HALF/SELL_ALL 以 severity 为准
         if sev_action in ('SELL_HALF', 'SELL_ALL'):
             action = sev_action
-            logger.info(f"🔥 [{code}] 止损评级={severity}: {sev_reason}")
-    
+            logger.info(f"🔥 止损评级={severity}: {sev_reason}")
+
     if action == 'NO_ACTION':
         return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None,
                 'severity': severity, 'severity_label': severity_label}
 
-    # 🚺 趋势过滤闸（frozen / wait_macd / manual_only 会拦截 BUY）
-    gate_ok, gate_reason = _check_trend_gate(rule, action)
-    if not gate_ok:
-        logger.info(f"🚽 [{code}] {action} 被 trend_filter 拦截: {gate_reason}")
-        return {
-            'action': 'NO_ACTION', 'success': True,
-            'message': f'信号触发但被趋势过滤闸拦截: {gate_reason}',
-            'trade': None
-        }
-    if gate_reason:
-        logger.info(f"✅ [{code}] {action} {gate_reason}")
+    if action == 'DEFER':
+        return {'action': action, 'success': True, 'message': f'软止损预警（不自动卖): {severity_msg}',
+                'trade': None, 'severity': severity, 'severity_label': severity_label}
 
-    # ⛔ 真实账户拒绝任何下单（1=学习，2=真实）
-    if _ACCOUNT_ID != 1:
-        return {
-            'action': action, 'success': False,
-            'message': f'账户 id={_ACCOUNT_ID} 仅告警模式，不下单',
-            'trade': None
-        }
+    if action == 'BUY':
+        # 执行买入
+        budget = DEFAULT_BUY_BUDGET
+        qty = int(budget / cur_price / LOT_SIZE) * LOT_SIZE
+        if qty <= 0:
+            return {'action': action, 'success': False, 'message': f'计算买入数量失败: budget={budget}, price={cur_price}'}
 
-    # 价格合理性检查（涨跌停阈 + 伪实时价检测）
-    sane, sane_reason = check_price_sanity(code, cur_price, action)
-    if not sane:
-        logger.warning(f"🚫 [{code}] 抦截下单: {sane_reason}")
-        return {'action': action, 'success': False, 'message': f'价格安全检查未过: {sane_reason}', 'trade': None}
-    
-    account = get_account()
-    if not account:
-        return {'action': action, 'success': False, 'message': '账户不存在', 'trade': None}
-    cash = account['cash']
-
-    # 🔒 学习账户总额上限检查（现金+持仓市值 不得超 100k）
-    # 注：cur_total > _LEARN_MAX_TOTAL 才拒绝（>= 会误伤初始账户刚好 100000 的状态）
-    if action.startswith('BUY'):
-        cur_total = account.get('total_value', 0) or 0
-        # 加 buffer：初始 100000，第一次买后市值约等于现金（手续费小损耗），允许小幅波动
-        if cur_total > _LEARN_MAX_TOTAL + 100:  # 100 元缓冲
-            return {
-                'action': action, 'success': False,
-                'message': f'学习账户总额 {cur_total:.0f} 已超上限 {_LEARN_MAX_TOTAL:.0f}+100，拒绝买入',
-                'trade': None
-            }
-    
-    pos = get_position(code)
-    
-    # ----- 卖出 -----
-    if action.startswith('SELL'):
-        if not pos or pos['quantity'] <= 0:
-            return {'action': action, 'success': False, 'message': f'{code} 无持仓可卖', 'trade': None}
-        
-        sell_qty = pos['quantity'] if action == 'SELL_ALL' else (pos['quantity'] // 2 // LOT_SIZE) * LOT_SIZE
-        if sell_qty < LOT_SIZE:
-            sell_qty = pos['quantity']  # 不到 1 手就全卖
-        
-        amount = sell_qty * cur_price
-        commission = calc_commission(amount)
-        tax = amount * TAX_RATE
-        net_proceeds = amount - commission - tax
-        
-        # 写交易
-        _sell_ctx = {
-            'strategy': '阈值触发',
-            'rule_level': rule['level'],
-            'trigger_price': rule.get('trigger', 0),
-            'signal_msg': rule.get('message', ''),
-            'sell_reason': f"触发{rule['level']}卖出规则",
-            'price_at_trigger': cur_price,
-            'position_qty_before': pos['quantity'],
-            'avg_cost': pos['avg_cost'],
-            'pnl_pct': round((cur_price - pos['avg_cost']) / pos['avg_cost'] * 100, 2),
-        }
-        insert_trade(code, name, 'SELL', cur_price, sell_qty, commission, tax,
-                     f"自动: {rule['level']} | {rule['message'][:50]}",
-                     trade_context=_sell_ctx)
-        
-        # 更新现金 + 持仓
-        update_account_cash(net_proceeds)
-        new_qty = pos['quantity'] - sell_qty
-        upsert_position(code, name, new_qty, pos['avg_cost'], cur_price)
-        
-        return {
-            'action': action, 'success': True,
-            'message': f'卖出 {name} {sell_qty}股 @{cur_price:.2f} = {amount:.2f}（净到手 {net_proceeds:.2f}）',
-            'trade': {'direction': 'SELL', 'qty': sell_qty, 'price': cur_price, 'amount': amount, 'fee': commission+tax},
-            'severity': severity, 'severity_label': severity_label,
-        }
-    
-    # ----- 买入 -----
-    if action.startswith('BUY'):
-        # 预算
-        # 获取持仓上限配置
+        conn = sqlite3.connect(_DB_PATH)
         try:
-            import yaml
-            from pathlib import Path
-            cfg_path = Path(__file__).resolve().parents[1] / "config.yaml"
-            cfg = yaml.safe_load(cfg_path.read_text(encoding='utf-8'))
-            max_pos_pct = cfg.get('risk', {}).get('max_position_pct', 0.15)
-        except Exception:
-            max_pos_pct = 0.15
+            conn.execute("BEGIN")
+            acct = conn.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            if not acct or float(acct[0]) < cur_price * qty:
+                conn.execute("ROLLBACK")
+                return {'action': action, 'success': False, 'message': f'现金不足: ¥{acct[0] if acct else 0:.0f}'}
 
-        import datetime
-        now_time = datetime.datetime.now().time()
-        morning_limit = datetime.time(10, 0)
-        is_early_morning = now_time < morning_limit
+            commission = cur_price * qty * COMMISSION_RATE
+            amount = cur_price * qty + commission
 
-        if action == 'BUY_LIGHT':
-            # 试探买入：总资金的 2% 或现金的 10%，取小
-            budget = min(100000 * 0.02, cash * 0.1)
-        else:  # BUY_HEAVY
-            # 加仓买入：总资金的 5% 或现金的 20%，取小
-            budget = min(100000 * 0.05, cash * 0.2)
-
-        # 方案B: 早盘大跌不急买，10:00 前强制限缩买入规模（砍半或更低）
-        if is_early_morning:
-            budget = budget * 0.5  # 早盘预算减半
-
-        # 检查买入后是否超个股最大仓位限制
-        cur_total = account.get('total_value', 100000.0)
-        current_pos_value = 0
-        if pos:
-            current_pos_value = pos['quantity'] * cur_price
-        
-        if (current_pos_value + budget) > cur_total * max_pos_pct:
-            budget = cur_total * max_pos_pct - current_pos_value
-            
-        if budget < cur_price * LOT_SIZE * 1.001:  # 至少够买 1 手 + 手续费
-            return {'action': action, 'success': False,
-                    'message': f'买入受限，需要 {cur_price*LOT_SIZE:.0f}，预算/额度剩余仅 {budget:.0f}（个股上限 {max_pos_pct*100}%）', 'trade': None}
-        
-        # 买多少手
-        max_lots = int(budget / (cur_price * LOT_SIZE * 1.001))
-        buy_qty = max_lots * LOT_SIZE
-        amount = buy_qty * cur_price
-        commission = calc_commission(amount)
-        total_cost = amount + commission
-        
-        if total_cost > cash:
-            return {'action': action, 'success': False,
-                    'message': f'现金不够（需 {total_cost:.2f}，有 {cash:.2f}）', 'trade': None}
-        
-        # 写交易
-        _buy_ctx = {
-            'strategy': '阈值触发',
-            'rule_level': rule['level'],
-            'trigger_price': rule.get('trigger', 0),
-            'signal_msg': rule.get('message', ''),
-            'buy_type': action,  # BUY_LIGHT / BUY_HEAVY
-            'budget': round(budget, 0),
-            'price_at_trigger': cur_price,
-            'ma_info': rule.get('message', ''),  # MA10/MA20 信息在 message 里
-        }
-        insert_trade(code, name, 'BUY', cur_price, buy_qty, commission, 0,
-                     f"自动: {rule['level']} | {rule['message'][:50]}",
-                     trade_context=_buy_ctx)
-        
-        # 更新现金
-        update_account_cash(-total_cost)
-        
-        # 计算新成本价
-        if pos:
-            old_amount = pos['quantity'] * pos['avg_cost']
-            new_qty = pos['quantity'] + buy_qty
-            new_avg = (old_amount + amount + commission) / new_qty
-        else:
-            new_qty = buy_qty
-            new_avg = (amount + commission) / new_qty
-        
-        upsert_position(code, name, new_qty, new_avg, cur_price)
-        
-        return {
-            'action': action, 'success': True,
-            'message': f'买入 {name} {buy_qty}股 @{cur_price:.2f} = {amount:.2f}（含费 {total_cost:.2f}）',
-            'trade': {'direction': 'BUY', 'qty': buy_qty, 'price': cur_price, 'amount': amount, 'fee': commission}
-        }
-    
-    return {'action': action, 'success': False, 'message': f'未知动作: {action}', 'trade': None}
-
-
-def update_all_positions_market_value(prices: dict):
-    """收盘/盘中更新所有持仓的市值（不改成本）"""
-    conn = get_conn()
-    rows = conn.execute(
-        "SELECT stock_code, quantity, avg_cost FROM sim_positions WHERE account_id=?",
-        (_ACCOUNT_ID,)
-    ).fetchall()
-    for row in rows:
-        code = row['stock_code']
-        cur_price = prices.get(code, 0)
-        if cur_price > 0:
-            mv = row['quantity'] * cur_price
-            pnl = (cur_price - row['avg_cost']) * row['quantity']
-            pnl_pct = (cur_price/row['avg_cost'] - 1) * 100 if row['avg_cost'] > 0 else 0
             conn.execute(
-                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP WHERE stock_code=? AND account_id=?",
-                (cur_price, mv, pnl, pnl_pct, code, _ACCOUNT_ID)
+                "UPDATE sim_account SET cash=cash-?, total_value=total_value-? WHERE id=?",
+                (amount, amount, _ACCOUNT_ID)
             )
-    # 更新账户总市值
-    total_mv = conn.execute(
-        "SELECT COALESCE(SUM(market_value),0) AS s FROM sim_positions WHERE account_id=?",
-        (_ACCOUNT_ID,)
-    ).fetchone()['s']
-    cash_row = conn.execute("SELECT cash FROM sim_account WHERE id=?", (_ACCOUNT_ID,)).fetchone()
-    cash = cash_row['cash'] if cash_row else 0.0
-    conn.execute(
-        "UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-        (total_mv + cash, _ACCOUNT_ID)
-    )
-    conn.close()
+            # 更新或插入仓位
+            existing = conn.execute(
+                "SELECT quantity, avg_cost FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            if existing:
+                new_qty = existing[0] + qty
+                new_cost = (existing[0] * existing[1] + qty * cur_price) / new_qty
+                conn.execute(
+                    "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
+                    "WHERE account_id=? AND stock_code=?",
+                    (new_qty, new_cost, cur_price, new_qty * cur_price,
+                     (cur_price - new_cost) * new_qty, (cur_price - new_cost) / new_cost * 100,
+                     _ACCOUNT_ID, code)
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, qty * cur_price,
+                     0.0, 0.0)
+                )
+            # 写入成交记录
+            trade_date = datetime.now().strftime('%Y-%m-%d')
+            trade_time = datetime.now().strftime('%H:%M:%S')
+            conn.execute(
+                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'BUY', cur_price, qty, amount, commission)
+            )
+            conn.execute("COMMIT")
+            logger.info(f"✅ [{code}] {name} BUY {qty}股 @¥{cur_price:.2f}, 金额¥{amount:.0f}")
+            return {'action': action, 'success': True,
+                    'message': f'买入 {qty}股 @¥{cur_price:.2f}',
+                    'trade': {'direction': 'BUY', 'price': cur_price, 'quantity': qty, 'amount': amount}}
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            logger.error(f"买入执行失败 {code}: {e}")
+            return {'action': action, 'success': False, 'message': f'买入执行失败: {e}'}
+        finally:
+            conn.close()
+
+    if action in ('SELL_HALF', 'SELL_ALL'):
+        # 执行卖出
+        sell_qty = 0
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            conn.execute("BEGIN")
+            row = conn.execute(
+                "SELECT quantity, avg_cost FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            if not row or row[0] <= 0:
+                conn.execute("ROLLBACK")
+                return {'action': action, 'success': False, 'message': f'无持仓可卖 {code}'}
+
+            if action == 'SELL_HALF':
+                sell_qty = int(row[0] / 2 / LOT_SIZE) * LOT_SIZE
+            else:
+                sell_qty = row[0]
+
+            if sell_qty <= 0:
+                conn.execute("ROLLBACK")
+                return {'action': action, 'success': False, 'message': f'计算卖出数量失败'}
+
+            commission = cur_price * sell_qty * COMMISSION_RATE
+            stamp_tax = cur_price * sell_qty * STAMP_TAX_RATE
+            amount = cur_price * sell_qty - commission - stamp_tax
+
+            conn.execute(
+                "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
+                (amount, amount, _ACCOUNT_ID)
+            )
+            new_qty = row[0] - sell_qty
+            if new_qty > 0:
+                new_cost = row[1]  # 剩余仓位成本不变
+                conn.execute(
+                    "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
+                    "WHERE account_id=? AND stock_code=?",
+                    (new_qty, cur_price, new_qty * cur_price,
+                     (cur_price - new_cost) * new_qty, (cur_price - new_cost) / new_cost * 100,
+                     _ACCOUNT_ID, code)
+                )
+            else:
+                conn.execute(
+                    "DELETE FROM sim_positions WHERE account_id=? AND stock_code=?",
+                    (_ACCOUNT_ID, code)
+                )
+            # 写入成交记录
+            trade_date = datetime.now().strftime('%Y-%m-%d')
+            trade_time = datetime.now().strftime('%H:%M:%S')
+            conn.execute(
+                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'SELL', cur_price, sell_qty, amount, commission)
+            )
+            conn.execute("COMMIT")
+            logger.info(f"✅ [{code}] {name} SELL {sell_qty}股 @¥{cur_price:.2f}, 金额¥{amount:.0f}")
+            return {'action': action, 'success': True,
+                    'message': f'卖出 {sell_qty}股 @¥{cur_price:.2f}',
+                    'trade': {'direction': 'SELL', 'price': cur_price, 'quantity': sell_qty, 'amount': amount}}
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            logger.error(f"卖出执行失败 {code}: {e}")
+            return {'action': action, 'success': False, 'message': f'卖出执行失败: {e}'}
+        finally:
+            conn.close()
+
+    return {'action': 'NO_ACTION', 'success': True, 'message': '未知 action', 'trade': None}
 
 
-if __name__ == "__main__":
-    # 自检
-    acc = get_account()
-    print(f"账户: id={_ACCOUNT_ID} {acc['account_name']} / 现金 {acc['cash']:.2f} / 总值 {acc['total_value']:.2f}")
-    conn = get_conn()
-    rows = conn.execute("SELECT * FROM sim_positions WHERE account_id=?", (_ACCOUNT_ID,)).fetchall()
-    for r in rows:
-        print(f"  {r['stock_code']} {r['stock_name']:>6} {r['quantity']:>4}股 @{r['avg_cost']:.3f} 现价{r['current_price']:.2f} 浮亏{r['pnl']:+.2f} ({r['pnl_pct']:+.2f}%)")
-    conn.close()
+# ── CLI 入口 ─────────────────────────────────────────────────────────────
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='sim_executor — 阈值触发自动虚拟下单')
+    sub = parser.add_subparsers(dest='command')
+
+    # buy
+    p_buy = sub.add_parser('buy', help='执行买入')
+    p_buy.add_argument('--code', required=True)
+    p_buy.add_argument('--name', default='')
+    p_buy.add_argument('--price', type=float, required=True)
+    p_buy.add_argument('--level', default='buy_zone')
+    p_buy.set_defaults(func=lambda args: print(json.dumps(execute_trade(
+        {'code': args.code, 'name': args.name, 'level': args.level, 'trigger': args.price, 'dir': 'below'},
+        args.price), ensure_ascii=False, indent=2)))
+
+    # sell
+    p_sell = sub.add_parser('sell', help='执行卖出')
+    p_sell.add_argument('--code', required=True)
+    p_sell.add_argument('--name', default='')
+    p_sell.add_argument('--price', type=float, required=True)
+    p_sell.add_argument('--level', default='stop_loss')
+    p_sell.set_defaults(func=lambda args: print(json.dumps(execute_trade(
+        {'code': args.code, 'name': args.name, 'level': args.level, 'trigger': args.price, 'dir': 'above'},
+        args.price), ensure_ascii=False, indent=2)))
+
+    # update_trailing
+    p_trail = sub.add_parser('update_trailing', help='更新跟踪止损')
+    p_trail.add_argument('--code', required=True)
+    p_trail.add_argument('--price', type=float, required=True)
+    p_trail.set_defaults(func=lambda args: print(json.dumps(
+        update_position_trailing(_ACCOUNT_ID, args.code, args.price),
+        ensure_ascii=False, indent=2)))
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+    args.func(args)

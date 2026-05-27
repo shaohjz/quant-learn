@@ -2,35 +2,25 @@ __pycache__/
 *.pyc
 output/*.png
 *.db
+*.db-journal
 .env
-data/sim.db
-data/sim.db-journal
-data/sim.db-wal
-data/sim.db-shm
-__pycache__/
-*.pyc
-.idea/
-.vscode/
-output/*.png
-config.local.yaml
-.env
-
 data/trade_dates.json
+data/cache/
+data/cache-wal/
+output/intraday_log.jsonl
+output/portfolio_analysis.json
+vnpy_xtquant_main.zip
 
 # 周末清理：不入库的内容
 *_archive/
 scripts/_archive/
 data/_archive/
-data/cache/
-# 这些状态文件以前误 track 进库，现在恢复忽略
-output/intraday_log.jsonl
-output/portfolio_analysis.json
-
-.venv/
-output/
+output/intraday_*.json
+output/portfolio_*.json
 research/
 memory/
 decision/
 docs/
-vnpy_xtquant_main.zip
 
+# 让 output/wealth_manager_report*.md 不被忽略
+!output/wealth_manager_report*.md

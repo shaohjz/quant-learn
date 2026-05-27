@@ -262,7 +262,17 @@ def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
     if gate == 'frozen':
         return False, f"⛔ trend_filter=frozen (status={tf.get('status')}, last/MA60={tf.get('last_vs_ma60_pct')}%) — 趋势已坏，等右侧确认"
     if gate == 'manual_only':
+        # WEAK 是 MA20<MA60，DIRTY 是 ATR 过高
+        status = tf.get('status', '')
+        if status == 'DIRTY':
+            return False, f"✋ trend_filter=manual_only (status=DIRTY, ATR={tf.get('atr_pct')}%) — 波动太大，趋势信号不可信"
         return False, f"✋ trend_filter=manual_only (MA20<MA60 {tf.get('ma20_vs_ma60_pct')}%) — 均线还空头，仅提醒不自动"
+    if gate == 'wait_volume':
+        # 实时检查近 3 日均量 vs 过去 20 日 baseline
+        vol_ok = _realtime_vol_ok(rule.get('code', ''))
+        if vol_ok:
+            return True, '⚡ trend_filter=wait_volume 但实时检查量能已放大，放行'
+        return False, f"📊 trend_filter=wait_volume (vol×{tf.get('vol_ratio', 0):.2f}) — 缩量金叉无效，等量能放大"
     if gate == 'wait_macd':
         # 实时检查 MACD 是否金叉了（可能上次检测后变了）
         macd_ok = _realtime_macd_ok(rule.get('code', ''))
@@ -270,6 +280,49 @@ def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
             return True, '⚡ trend_filter=wait_macd 但实时检查 MACD 已金叉，放行'
         return False, f"⏳ trend_filter=wait_macd — MACD 未金叉，等右侧确认"
     return True, ''
+
+
+_VOL_CACHE: dict[str, tuple[float, bool]] = {}  # code -> (cached_at_ts, vol_ok)
+
+
+def _realtime_vol_ok(code: str) -> bool:
+    """实时检查最近 3 日均量 vs 过去 20 日均量，比例 >= 1.0 算量能配合。带 10 分钟缓存。"""
+    if not code:
+        return False
+    import time
+    now_ts = time.time()
+    cached = _VOL_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
+        return cached[1]
+    try:
+        import baostock as bs
+        from datetime import datetime, timedelta
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while rs.error_code == '0' and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+        if len(rows) < 23:
+            _VOL_CACHE[code] = (now_ts, False)
+            return False
+        vols = [float(r[1]) for r in rows if r[1]]
+        recent3 = sum(vols[-3:]) / 3
+        baseline20 = sum(vols[-23:-3]) / 20
+        result = bool(baseline20 > 0 and recent3 / baseline20 >= 1.0)
+        _VOL_CACHE[code] = (now_ts, result)
+        return result
+    except Exception as e:
+        logger.warning(f"_realtime_vol_ok({code}) failed: {e}")
+        return False
 
 
 _MACD_CACHE: dict[str, tuple[float, bool]] = {}  # code -> (cached_at_ts, macd_ok)

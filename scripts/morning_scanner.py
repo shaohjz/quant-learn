@@ -158,6 +158,7 @@ def calc_factors(code: str, hist_df, spot_row):
     ma5 = c.tail(5).mean()
     ma10 = c.tail(10).mean()
     ma20 = c.tail(20).mean()
+    ma60 = c.tail(60).mean() if len(c) >= 60 else None  # ⚡ 加 MA60
     avg_vol5 = v.tail(5).mean()
     today_vol = float(v.iloc[-1])
     high20 = h.tail(20).max()
@@ -211,6 +212,30 @@ def calc_factors(code: str, hist_df, spot_row):
     
     total = trend_score + breakout_score + vol_score + zone_score
     
+    # ⚡ 因子 5：趋势质量奖惩 (MA60 + ATR)
+    # 不是在原总分上加，而是作为乘法修正系数调整最终得分
+    trend_quality_mult = 1.0
+    if ma60 is not None:
+        ma60 = float(ma60)
+        # last < MA60 → 趋势坏，得分减半
+        if last < ma60:
+            trend_quality_mult *= 0.5
+        # MA20 < MA60 → 均线还空头，得分 ×0.7
+        elif ma20 < ma60:
+            trend_quality_mult *= 0.7
+    
+    # ATR / 价格过高 → 波动太大，不适合趋势交易
+    if len(c) >= 14:
+        # 简易 ATR：近 14 日 high-low 均值
+        atr = (h.tail(14).astype(float) - hist_df['最低'].tail(14).astype(float)).mean()
+        atr_pct = float(atr / last * 100) if last > 0 else 0.0
+        if atr_pct > 8.0:
+            trend_quality_mult *= 0.6  # 高波动股减 40%
+    else:
+        atr_pct = 0.0
+    
+    total = total * trend_quality_mult
+    
     return {
         "code": code,
         "price": last,
@@ -218,8 +243,11 @@ def calc_factors(code: str, hist_df, spot_row):
         "ma5": ma5,
         "ma10": ma10,
         "ma20": ma20,
+        "ma60": float(ma60) if ma60 is not None else None,
         "vol_ratio": vol_ratio,
-        "score": total,
+        "atr_pct": atr_pct,
+        "trend_quality_mult": trend_quality_mult,
+        "score": round(total, 1),
         "factors": {
             "trend": trend_score,
             "breakout": breakout_score,

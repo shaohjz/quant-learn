@@ -1,13 +1,20 @@
 """
-\u626b\u63cf\u5168 watchlist \u80a1\u7968\u7684\u8d8b\u52bf\u5065\u5eb7\u72b6\u6001\uff1a
-- MA20 vs MA60 \u662f\u5426\u591a\u5934\u6392\u5217
-- last vs MA60 \u662f\u5426\u7ad9\u4e0a
-- MACD \u662f\u5426\u91d1\u53c9\uff08DIF > DEA \u4e14 DIF > 0 \u4e3a\u53f3\u4fa7\u786e\u8ba4\uff09
+扫描全 watchlist 股票的趋势健康状态。
 
-\u8f93\u51fa\u4e09\u6863\u5206\u7c7b\uff1a
-- HEALTHY: \u591a\u5934\u6392\u5217 + last \u4e0a MA60 + MACD\u91d1\u53c9 \u2192 buy \u4fe1\u53f7\u53ef\u7528
-- WEAK:    last \u4e0a MA60 \u4f46 MA20 \u4e0b MA60 \u6216 MACD \u672a\u91d1\u53c9 \u2192 buy \u4fe1\u53f7\u8c28\u614e
-- BROKEN:  last \u4e0b MA60 \u2192 \u51bb\u7ed3 buy \u4fe1\u53f7\uff0c\u7b49\u53f3\u4fa7\u786e\u8ba4
+判据（5 个维度）：
+  1. MA20 vs MA60 是否多头排列
+  2. last vs MA60 是否站上
+  3. MACD 是否金叉（DIF > DEA 且 DIF > 0 为右侧确认）
+  4. ⚡ 量能：MACD 金叉/将金叉时，最近 3 日均量 vs 过去 20 日均量（>1.0 才算有效金叉）
+  5. ⚡ 波动率：ATR(14) / 收盘价 < 8%（避免在剧烈波动股上信任 MA60）
+
+输出五档分类：
+- HEALTHY: 多头排列 + last 上 MA60 + MACD金叉 + 量能放大 + 波动率正常 → buy 信号最可信
+- OK:      多头排列 + MACD金叉但 DIF<0 OR 量能不放大 → buy 可用但保守
+- CAUTION: 均线多头但 MACD 未金叉 → 等右侧确认
+- WEAK:    last 上 MA60 但 MA20 < MA60 → 均线还空头
+- BROKEN:  last 下 MA60 → 冻结 buy 信号
+- DIRTY:   ATR/价格 > 8% 或样本不足 → 数据脏，trend_filter 不可信
 """
 import baostock as bs
 import pandas as pd
@@ -27,7 +34,7 @@ def fetch_kline(code: str, days: int = 90):
     start = (datetime.now() - timedelta(days=days*2)).strftime('%Y-%m-%d')
     rs = bs.query_history_k_data_plus(
         code_with_prefix(code),
-        'date,close',
+        'date,open,high,low,close,volume',
         start_date=start, end_date=end,
         frequency='d', adjustflag='2'
     )
@@ -35,7 +42,8 @@ def fetch_kline(code: str, days: int = 90):
     while rs.error_code == '0' and rs.next():
         rows.append(rs.get_row_data())
     df = pd.DataFrame(rows, columns=rs.fields)
-    df['close'] = pd.to_numeric(df['close'], errors='coerce')
+    for col in ['open', 'high', 'low', 'close', 'volume']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
     return df.dropna()
 
 
@@ -47,11 +55,22 @@ def calc_macd(closes: pd.Series, fast=12, slow=26, signal=9):
     return dif, dea
 
 
+def calc_atr(df: pd.DataFrame, period: int = 14):
+    """真实波幅。最近 period 日的 max(high-low, |high-prev_close|, |low-prev_close|) 平均"""
+    high, low, close = df['high'], df['low'], df['close']
+    tr1 = high - low
+    tr2 = (high - close.shift(1)).abs()
+    tr3 = (low - close.shift(1)).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    return tr.rolling(period).mean()
+
+
 def analyze(code: str, name: str):
     df = fetch_kline(code, days=90)
     if len(df) < 60:
         return None
     closes = df['close']
+    volumes = df['volume']
     last = float(closes.iloc[-1])
     ma10 = float(closes.rolling(10).mean().iloc[-1])
     ma20 = float(closes.rolling(20).mean().iloc[-1])
@@ -60,22 +79,41 @@ def analyze(code: str, name: str):
     dif_now, dea_now = float(dif.iloc[-1]), float(dea.iloc[-1])
     dif_prev, dea_prev = float(dif.iloc[-2]), float(dea.iloc[-2])
 
-    # MACD \u91d1\u53c9\u5224\u65ad
-    macd_golden = dif_now > dea_now  # \u591a\u5934
-    macd_just_crossed = (dif_now > dea_now) and (dif_prev <= dea_prev)  # \u4eca\u65e5\u521a\u91d1\u53c9
-    dif_above_zero = dif_now > 0  # \u5f3a\u52bf\u533a\uff08\u96f6\u8f74\u4e0a\u65b9\uff09
+    # MACD 状态
+    macd_golden = dif_now > dea_now
+    macd_just_crossed = (dif_now > dea_now) and (dif_prev <= dea_prev)
+    dif_above_zero = dif_now > 0
 
-    # \u8d8b\u52bf\u5206\u7c7b
-    if last < ma60:
-        status = 'BROKEN'  # \u8df3\u7834 MA60
+    # ⚡ 量能确认：最近 3 日均量 vs 过去 20 日均量（剔除最近 3 日）
+    vol_recent3 = float(volumes.iloc[-3:].mean())
+    vol_baseline20 = float(volumes.iloc[-23:-3].mean()) if len(volumes) >= 23 else float(volumes.iloc[:-3].mean())
+    vol_ratio = (vol_recent3 / vol_baseline20) if vol_baseline20 > 0 else 0.0
+    vol_confirmed = vol_ratio >= 1.0  # 不缩量
+    vol_strong = vol_ratio >= 1.3      # 明显放量
+
+    # ⚡ ATR 波动率
+    atr_series = calc_atr(df, 14)
+    atr14 = float(atr_series.iloc[-1]) if not atr_series.iloc[-1] != atr_series.iloc[-1] else 0.0  # NaN check
+    atr_pct = (atr14 / last * 100) if last > 0 else 0.0
+    is_dirty = atr_pct > 8.0 or len(df) < 60  # 波动太大数据不可信
+
+    # 趋势分类
+    if is_dirty:
+        status = 'DIRTY'
+    elif last < ma60:
+        status = 'BROKEN'
     elif ma20 < ma60:
-        status = 'WEAK'    # last \u4e0a MA60 \u4f46\u5747\u7ebf\u8fd8\u662f\u7a7a\u5934\u6392\u5217
+        status = 'WEAK'
+    elif macd_golden and dif_above_zero and vol_confirmed:
+        # ⚡ 升级：必须 量能配合 才能算 HEALTHY
+        status = 'HEALTHY'
     elif macd_golden and dif_above_zero:
-        status = 'HEALTHY' # \u591a\u5934\u6392\u5217 + MACD \u53cc\u5934\u4e0a
+        # 金叉但量能不配 → OK
+        status = 'OK_NO_VOL'
     elif macd_golden:
-        status = 'OK'      # \u5747\u7ebf\u591a\u5934\u4f46 MACD \u8fd8\u5728 0 \u4e0b
+        status = 'OK'  # 金叉但 DIF < 0
     else:
-        status = 'CAUTION' # \u5747\u7ebf\u591a\u5934\u4f46 MACD \u672a\u91d1\u53c9
+        status = 'CAUTION'
 
     return {
         'code': code, 'name': name,
@@ -87,6 +125,12 @@ def analyze(code: str, name: str):
         'macd_golden': macd_golden,
         'macd_just_crossed': macd_just_crossed,
         'dif_above_zero': dif_above_zero,
+        'vol_ratio': round(vol_ratio, 2),
+        'vol_confirmed': vol_confirmed,
+        'vol_strong': vol_strong,
+        'atr14': round(atr14, 3),
+        'atr_pct': round(atr_pct, 2),
+        'is_dirty': is_dirty,
         'status': status,
     }
 
@@ -108,32 +152,36 @@ def main():
                     r['source'] = info.get('source', '')
                     r['auto_buy_disabled'] = info.get('auto_buy_disabled', False)
                     results.append(r)
-                    print(f"  {r['status']:8s} {code} {r['name']:6s} last={r['last']:>7.2f} "
-                          f"MA60={r['ma60']:>7.2f} (last/ma60 {r['last_vs_ma60_pct']:+.1f}%) "
-                          f"DIF={r['dif']:.2f} DEA={r['dea']:.2f} {'\u91d1\u53c9' if r['macd_golden'] else '\u6b7b\u53c9'}"
-                          f"{' \u26a1\u4eca\u91d1\u53c9' if r['macd_just_crossed'] else ''}"
-                          f"{' (\u51bb\u7ed3\u4e2d)' if r['auto_buy_disabled'] else ''}")
+                    vol_tag = f"vol×{r['vol_ratio']:.1f}"
+                    atr_tag = f"ATR{r['atr_pct']:.1f}%"
+                    print(f"  {r['status']:10s} {code} {r['name']:6s} last={r['last']:>7.2f} "
+                          f"MA60={r['ma60']:>7.2f} ({r['last_vs_ma60_pct']:+.1f}%) "
+                          f"DIF={r['dif']:.2f} {'金叉' if r['macd_golden'] else '死叉'} "
+                          f"{vol_tag} {atr_tag}"
+                          f"{' ⚡今金叉' if r['macd_just_crossed'] else ''}"
+                          f"{' (冻结)' if r['auto_buy_disabled'] else ''}")
             except Exception as e:
                 print(f"  ERROR {code}: {e}")
     finally:
         bs.logout()
 
-    # \u5206\u6863\u6c47\u603b
+    # 分档汇总
     print('\n=== Summary ===')
     by_status = {}
     for r in results:
         by_status.setdefault(r['status'], []).append(r)
-    for status in ['HEALTHY', 'OK', 'CAUTION', 'WEAK', 'BROKEN']:
+    for status in ['HEALTHY', 'OK', 'OK_NO_VOL', 'CAUTION', 'WEAK', 'BROKEN', 'DIRTY']:
         items = by_status.get(status, [])
         if items:
-            print(f'\n[{status}] ({len(items)} \u53ea):')
+            print(f'\n[{status}] ({len(items)} 只):')
             for r in items:
-                tag = ' \u26a1\u521a\u91d1\u53c9' if r['macd_just_crossed'] else ''
-                disabled = ' \u26a0disabled' if r['auto_buy_disabled'] else ''
-                print(f"  {r['code']} {r['name']:6s} | last \u00a5{r['last']:.2f} | MA60 \u00a5{r['ma60']:.2f} "
-                      f"({r['last_vs_ma60_pct']:+.1f}%) | DIF {r['dif']:+.3f}{tag}{disabled}")
+                tag = ' ⚡刚金叉' if r['macd_just_crossed'] else ''
+                disabled = ' ⚠disabled' if r['auto_buy_disabled'] else ''
+                print(f"  {r['code']} {r['name']:6s} | last ¥{r['last']:.2f} | MA60 ¥{r['ma60']:.2f} "
+                      f"({r['last_vs_ma60_pct']:+.1f}%) | DIF {r['dif']:+.3f} | "
+                      f"vol×{r['vol_ratio']:.2f} | ATR {r['atr_pct']:.2f}%{tag}{disabled}")
 
-    # \u8f93\u51fa JSON \u4f9b\u811a\u672c\u5904\u7406
+    # 输出 JSON
     from datetime import date as _date
     out = Path(r'C:\Users\Administrator\.openclaw\workspace\quant-learn\output') / f'trend_health_{_date.today().isoformat()}.json'
     out.parent.mkdir(parents=True, exist_ok=True)

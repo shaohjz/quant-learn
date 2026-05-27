@@ -184,6 +184,7 @@ def parse_alert_rules(cfg):
                         'added_reason': info.get('added_reason', ''),
                         'tags': info.get('tags', []),
                         'auto_buy_disabled': info.get('auto_buy_disabled', False),
+                        'trend_filter': info.get('trend_filter', {}),  # ⚡ 透传 trend_filter
                     })
     return rules
 
@@ -313,11 +314,26 @@ def gen_pre_market(sim_positions, rules, cfg, auto_cfg):
     lines.append("\n🎯 今日关键价位:")
     buy_rules = [r for r in rules if 'buy' in r['level']]
     shown = set()
-    for r in sorted(buy_rules, key=lambda x: x['trigger']):
+    # 按 trend_filter gate 分组：auto 在前，其他后面
+    gate_priority = {'auto': 0, 'wait_volume': 1, 'wait_macd': 2, 'manual_only': 3, 'frozen': 4}
+    def _key(r):
+        gate = (r.get('trend_filter') or {}).get('gate', 'auto')
+        return (gate_priority.get(gate, 9), r['trigger'])
+    
+    for r in sorted(buy_rules, key=_key):
         if r['code'] in shown:
             continue
         shown.add(r['code'])
-        lines.append(f"  • {r['code']} {r['name']:6s} 触发¥{r['trigger']:.2f} ({r['level']})")
+        tf = r.get('trend_filter') or {}
+        gate = tf.get('gate', 'auto')
+        gate_tag = {
+            'auto': '✅',
+            'wait_volume': f"📊等量",
+            'wait_macd': '⏳等MACD',
+            'manual_only': f"✋{'高ATR' if tf.get('status') == 'DIRTY' else '均线空'}",
+            'frozen': '⛔冻结',
+        }.get(gate, '')
+        lines.append(f"  • {r['code']} {r['name']:6s} 触发¥{r['trigger']:.2f} ({r['level']}) [{gate_tag}]")
     
     # 止损价位
     lines.append("\n🚨 止损线:")
@@ -362,17 +378,30 @@ def gen_auction(sim_positions, rules):
         if code in rt:
             price = rt[code]['price']
             if price <= r['trigger']:
-                triggered.append((code, r['name'], price, r['trigger'], r['level']))
+                triggered.append((code, r['name'], price, r['trigger'], r['level'], r.get('trend_filter') or {}))
             elif price <= r['trigger'] * 1.02:
-                close_to.append((code, r['name'], price, r['trigger'], r['level']))
+                close_to.append((code, r['name'], price, r['trigger'], r['level'], r.get('trend_filter') or {}))
     
+    def _gate_tag(tf):
+        gate = tf.get('gate', 'auto')
+        return {
+            'auto': '✅可买',
+            'wait_volume': '📊等量',
+            'wait_macd': '⏳等MACD',
+            'manual_only': '✋仅提醒',
+            'frozen': '⛔冻结',
+        }.get(gate, '')
+
     if triggered:
-        for code, name, price, trigger, level in triggered:
-            lines.append(f"  🔥 {code} {name} ¥{price:.2f} ≤ ¥{trigger:.2f} ({level}) → 开盘确认后建仓")
+        for code, name, price, trigger, level, tf in triggered:
+            tag = _gate_tag(tf)
+            note = '→ 开盘确认后建仓' if tf.get('gate', 'auto') == 'auto' else f'→ [{tag}] sim_executor 拦截，需人工判断'
+            lines.append(f"  🔥 {code} {name} ¥{price:.2f} ≤ ¥{trigger:.2f} ({level}) {note}")
     if close_to:
-        for code, name, price, trigger, level in close_to:
+        for code, name, price, trigger, level, tf in close_to:
             gap = (price - trigger) / trigger * 100
-            lines.append(f"  📍 {code} {name} ¥{price:.2f} (距触发{gap:.1f}%) → 密切关注")
+            tag = _gate_tag(tf)
+            lines.append(f"  📍 {code} {name} ¥{price:.2f} (距触发{gap:.1f}%) [{tag}]")
     if not triggered and not close_to:
         lines.append("  ✅ 暂无接近触发的观察股")
     
@@ -462,6 +491,10 @@ def gen_intraday(sim_positions, rules):
         held = any(p['stock_code'] == code for p in sim_positions)
         ctx = get_stock_context(code, rules_by_code.get(code, []), d['price'])
         
+        # ⚡ trend_filter 状态标签
+        tf = r.get('trend_filter', {}) or {}
+        gate = tf.get('gate', 'auto')
+        
         warn = []
         if ctx['trend_break'] and d['price'] <= ctx['trend_break']:
             warn.append(f"⚠️ 同时破 trend_break({ctx['trend_break']:.2f})—折价别接")
@@ -477,13 +510,44 @@ def gen_intraday(sim_positions, rules):
         else:
             level_meaning = r['level']
         
-        emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
+        # 根据 gate 选择 emoji + 拼标签
+        gate_label = ''
+        if gate == 'auto':
+            emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
+        elif gate == 'frozen':
+            emoji = "⛔"
+            gate_label = f" [⛔冻结 status={tf.get('status')} last/MA60={tf.get('last_vs_ma60_pct')}%]"
+        elif gate == 'manual_only':
+            emoji = "✋"
+            if tf.get('status') == 'DIRTY':
+                gate_label = f" [✋仅提醒 ATR={tf.get('atr_pct')}% 趋势不可信]"
+            else:
+                gate_label = f" [✋仅提醒 MA20<MA60 {tf.get('ma20_vs_ma60_pct')}%]"
+        elif gate == 'wait_macd':
+            emoji = "⏳"
+            gate_label = f" [⏳等MACD金叉]"
+        elif gate == 'wait_volume':
+            emoji = "📊"
+            gate_label = f" [📊等量能放大 vol×{tf.get('vol_ratio', 0):.2f}]"
+        else:
+            emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
+        
         lines.append(
-            f"  {emoji} {code} {r['name']} ¥{d['price']:.2f} ≤ ¥{r['trigger']:.2f} ({r['level']}) 今日{d['pct']:+.1f}%"
+            f"  {emoji} {code} {r['name']} ¥{d['price']:.2f} ≤ ¥{r['trigger']:.2f} ({r['level']}) 今日{d['pct']:+.1f}%{gate_label}"
         )
         lines.append(f"     ↳ 💡 含义: {level_meaning}")
         if r.get('source'):
             lines.append(f"     ↳ 🔖 来源: {r['source']}")
+        # gate 不是 auto 时加提示
+        if gate != 'auto':
+            gate_explain = {
+                'frozen': "⛔ sim_executor 已拦截，需人工判断是否手动买",
+                'manual_only': "✋ sim_executor 不会自动买，欲入则手动下单",
+                'wait_macd': "⏳ 实时复查 MACD 金叉才会自动买",
+                'wait_volume': "📊 实时复查量能放大才会自动买",
+            }.get(gate, '')
+            if gate_explain:
+                lines.append(f"     ↳ {gate_explain}")
         if warn:
             lines.append(f"     ↳ {' | '.join(warn)}")
         action_count += 1

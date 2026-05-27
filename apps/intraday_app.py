@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Tuple
 
 from vnpy.event import EventEngine
-from vnpy.trader.engine import MainEngine
+from vnpy.trader.engine import MainEngine, OmsEngine
 from vnpy_ctastrategy import CtaStrategyApp
 
 from gateways import QmtGateway
@@ -41,6 +41,7 @@ def build_main_engine(connect: bool = True, dry_run: bool = True) -> Tuple[MainE
 
     event_engine = EventEngine()
     main_engine = MainEngine(event_engine)
+    main_engine.add_engine(OmsEngine)
     main_engine.add_gateway(QmtGateway)
     main_engine.add_app(CtaStrategyApp)
 

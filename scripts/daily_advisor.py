@@ -179,8 +179,28 @@ def parse_alert_rules(cfg):
                         'level': level_name,
                         'trigger': rule_info.get('trigger', 0),
                         'direction': rule_info.get('dir', 'below'),
+                        'msg': rule_info.get('msg', ''),
+                        'source': info.get('source', ''),
+                        'added_reason': info.get('added_reason', ''),
+                        'tags': info.get('tags', []),
+                        'auto_buy_disabled': info.get('auto_buy_disabled', False),
                     })
     return rules
+
+
+def get_stock_context(code: str, rules_for_code: list, cur_price: float) -> dict:
+    """汇总一只股的所有阈值 → 计算 MA 位置参考、距离、是否同时破位等"""
+    ctx = {'ma10': None, 'ma20': None, 'trend_break': None, 'all_levels': []}
+    for r in rules_for_code:
+        ctx['all_levels'].append(r['level'])
+        # 从 msg 中提取 MA 信息，启发式
+        if r['level'] == 'buy_zone':
+            ctx['ma10'] = r['trigger']  # 约定：buy_zone = MA10
+        elif r['level'] == 'buy_strong':
+            ctx['ma20'] = r['trigger']  # 约定：buy_strong = MA20
+        elif r['level'] == 'trend_break':
+            ctx['trend_break'] = r['trigger']
+    return ctx
 
 # ====================================================================
 #  实盘持仓分析
@@ -234,14 +254,19 @@ def gen_real_section(rt_prices, phase=''):
         
         if price <= stop_8:
             lines.append(f"  🚨 {p['name']}: 触止损¥{stop_8:.2f}！建议立即卖出")
+            lines.append(f"     ↳ 💡 原因: 机械止损线=成本¥{cost:.3f}×0.92（不超 8% 亏损），现价{price:.3f}跳下")
         elif pnl_pct >= 25:
             lines.append(f"  🎯 {p['name']}: 盈利{pnl_pct:+.1f}%达止盈②，建议清仓")
+            lines.append(f"     ↳ 💡 原因: 盈利超 25%，锁定全部利润")
         elif pnl_pct >= 15:
             lines.append(f"  🎯 {p['name']}: 盈利{pnl_pct:+.1f}%达止盈①，建议减半仓({qty//2}股)")
+            lines.append(f"     ↳ 💡 原因: 盈利达 15%首止盈位，减仓锁一半利润")
         elif pnl_pct > 8:
             lines.append(f"  📈 {p['name']}: 盈利{pnl_pct:+.1f}%，上移止损至成本价")
+            lines.append(f"     ↳ 💡 原因: 盈利超 8%，改拉高止损不再赔成本")
         elif pnl_pct < -5:
             lines.append(f"  ⚠️ {p['name']}: 亏{pnl_pct:.1f}%，关注止损¥{stop_8:.2f}")
+            lines.append(f"     ↳ 💡 原因: 距 8% 机械止损线({cost:.3f}×0.92={stop_8:.2f})还 {(price-stop_8)/stop_8*100:+.1f}%，跳下需减仓")
         elif phase == 'closing' and abs(pct_today) > 3:
             if pct_today > 3:
                 lines.append(f"  ⚡ {p['name']}: 尾盘拉升{pct_today:+.1f}%，可减仓1/3锁利润")
@@ -368,35 +393,100 @@ def gen_intraday(sim_positions, rules):
     # 实盘
     lines.append(gen_real_section(rt, 'intraday'))
     
-    # 模拟盘信号
-    lines.append("\n🧪 模拟盘信号:")
+    # 模拟盘信号 — 每条附带 原因 + 数据依据
+    acc = get_account()
+    sim_total = sum(p['quantity'] * p.get('current_price', p.get('avg_cost', 0)) for p in sim_positions) + acc.get('cash', 0)
+    lines.append(f"\n🧪 模拟盘信号（live_mirror 组合视角 · 总资¥{sim_total:,.0f} · 现金¥{acc.get('cash',0):,.0f}）:")
     action_count = 0
+    
+    # 按 code 分组 rules，方便查同一只股的所有阈值
+    rules_by_code = {}
+    for r in rules:
+        rules_by_code.setdefault(r['code'], []).append(r)
+    
+    # === 持仓股的止损 / 止盈 信号 ===
     for p in sim_positions:
         code = p['stock_code']
         cost = p['avg_cost']
         if code not in rt:
             continue
-        price = rt[code]['price']
+        d = rt[code]
+        price = d['price']
         pnl_pct = (price - cost) / cost * 100
-        stop = cost * 0.92
+        stop = cost * 0.92  # 8% 机械止损
+        ctx = get_stock_context(code, rules_by_code.get(code, []), price)
         
         if price <= stop:
-            lines.append(f"  🚨 止损! {code} {rt[code]['name']} ¥{price:.2f} ≤ ¥{stop:.2f}")
+            # 止损 — 附带原因
+            extra = []
+            if ctx['ma20']:
+                ma20_gap = (price - ctx['ma20']) / ctx['ma20'] * 100
+                if ma20_gap < 0:
+                    extra.append(f"距 MA20({ctx['ma20']:.2f}) 还跟 {ma20_gap:.1f}%")
+            if ctx['trend_break'] and price <= ctx['trend_break']:
+                extra.append(f"同时破 trend_break({ctx['trend_break']:.2f}) ⚠️趋势失效")
+            extra_str = " | ".join(extra) if extra else ""
+            lines.append(
+                f"  🚨 止损 {code} {d['name']} ¥{price:.2f} ≤ 止损线¥{stop:.2f}(成本×0.92) | 浮亏{pnl_pct:+.1f}% 今日{d['pct']:+.1f}%"
+            )
+            if extra_str:
+                lines.append(f"     ↳ {extra_str}")
+            lines.append(f"     ↳ 💡 原因: 机械止损线=成本×0.92（不超 8% 亏损），现价已跳下。建议减半仓 {p['quantity']//2} 股")
             action_count += 1
         elif pnl_pct >= 15:
-            lines.append(f"  🎯 止盈! {code} {rt[code]['name']} +{pnl_pct:.1f}% → 减半仓")
+            lines.append(
+                f"  🎯 止盈 {code} {d['name']} ¥{price:.2f} 浮盈{pnl_pct:+.1f}% 今日{d['pct']:+.1f}%"
+            )
+            lines.append(f"     ↳ 💡 原因: 浮盈达 15%，减半仓 {p['quantity']//2} 股锁利")
             action_count += 1
     
-    # 买入信号
+    # === 买入信号 — 附带原因 ===
+    # 同一只股多个 buy 规则只取优先级最高的（buy_strong > buy_zone），避免刷屏
+    triggered_buys = {}  # code -> best rule
     for r in rules:
         if 'buy' not in r['level']:
             continue
+        if r.get('auto_buy_disabled'):
+            continue
         code = r['code']
-        if code in rt and rt[code]['price'] <= r['trigger']:
-            held = any(p['stock_code'] == code for p in sim_positions)
-            if not held:
-                lines.append(f"  💰 买入信号 {code} {r['name']} ¥{rt[code]['price']:.2f} ≤ ¥{r['trigger']:.2f} ({r['level']})")
-                action_count += 1
+        if code not in rt:
+            continue
+        if rt[code]['price'] > r['trigger']:
+            continue
+        priority = {'buy_strong': 2, 'buy_zone': 1}.get(r['level'], 0)
+        if code not in triggered_buys or priority > triggered_buys[code][0]:
+            triggered_buys[code] = (priority, r)
+    
+    for code, (_, r) in triggered_buys.items():
+        d = rt[code]
+        held = any(p['stock_code'] == code for p in sim_positions)
+        ctx = get_stock_context(code, rules_by_code.get(code, []), d['price'])
+        
+        warn = []
+        if ctx['trend_break'] and d['price'] <= ctx['trend_break']:
+            warn.append(f"⚠️ 同时破 trend_break({ctx['trend_break']:.2f})—折价别接")
+        if d['pct'] < -3:
+            warn.append(f"⚠️ 今日跌幅{d['pct']:+.1f}% 偏深")
+        if held:
+            warn.append("📍 已有持仓（不加仓）")
+        
+        if r['level'] == 'buy_zone':
+            level_meaning = "MA10 附近 → 试探建仓"
+        elif r['level'] == 'buy_strong':
+            level_meaning = "MA20 优质建仓区"
+        else:
+            level_meaning = r['level']
+        
+        emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
+        lines.append(
+            f"  {emoji} {code} {r['name']} ¥{d['price']:.2f} ≤ ¥{r['trigger']:.2f} ({r['level']}) 今日{d['pct']:+.1f}%"
+        )
+        lines.append(f"     ↳ 💡 含义: {level_meaning}")
+        if r.get('source'):
+            lines.append(f"     ↳ 🔖 来源: {r['source']}")
+        if warn:
+            lines.append(f"     ↳ {' | '.join(warn)}")
+        action_count += 1
     
     if action_count == 0:
         lines.append("  ✅ 暂无操作信号")

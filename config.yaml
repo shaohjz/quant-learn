@@ -229,6 +229,15 @@ watchlist:
       - 高股息
       notes: 防御型、稳健型选手，适合低吸
       rules:
+        trend_watch:
+          trigger: 5.96
+          dir: below
+          msg: ⚠️ 中国电信跌破 5.96 (MA60关键支撑)！趋势恐实质性走坏，仅警示
+        right_side_confirm:
+          trigger: 6.3
+          dir: above
+          msg: ✅ 中国电信站上 6.30 (MA20上方有效)！可考虑解除自动买入冻结
+      rules_backup_2026-05-27:
         buy_zone:
           trigger: 6.42
           dir: below
@@ -237,6 +246,9 @@ watchlist:
           trigger: 6.2
           dir: below
           msg: 💰💰 中国电信跌至 6.2！回踩 MA20(6.2)，优质建仓区
+      auto_buy_disabled: true
+      auto_buy_disabled_reason: '5/27: 趋势未企稳(MA20下方震荡)，暂停自动建仓，等右侧确认后人工恢复'
+      auto_buy_disabled_at: '2026-05-27'
     002290:
       name: 禾盛新材
       enabled: true

@@ -168,7 +168,8 @@ def load_watchlist_rules(include_disabled: bool = False, category: str = None) -
                 # 透传 metadata 字段
                 for k in ('strategy', 'source', 'recommended_by', 'tags', 'added_at',
                           'added_price', 'added_reason', 'notes', 'discovery_score',
-                          'last_alert_at', 'alert_count', 'max_inactive_days', 'signal_type'):
+                          'last_alert_at', 'alert_count', 'max_inactive_days', 'signal_type',
+                          'trend_filter', 'auto_buy_disabled', 'auto_buy_disabled_reason'):
                     if k in body:
                         entry[k] = body[k]
                 out[str(code)] = entry
@@ -240,11 +241,18 @@ def load_all_alert_rules(include_watchlist: bool = True) -> list[dict]:
     if include_watchlist:
         for code, body in load_watchlist_rules().items():
             for r in body['rules']:
-                out.append({
+                rule_dict = {
                     'code': code, 'name': body['name'], 'level': r['level'],
                     'trigger': r['trigger'], 'dir': r['dir'],
                     'message': r['msg'], 'source': 'watchlist',
-                })
+                }
+                # 透传 trend_filter / auto_buy_disabled—供 sim_executor 检查
+                if 'trend_filter' in body:
+                    rule_dict['trend_filter'] = body['trend_filter']
+                if body.get('auto_buy_disabled'):
+                    rule_dict['auto_buy_disabled'] = True
+                    rule_dict['auto_buy_disabled_reason'] = body.get('auto_buy_disabled_reason', '')
+                out.append(rule_dict)
     return out
 
 

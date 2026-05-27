@@ -438,6 +438,39 @@ def main():
                 print(f"  {s}")
 
         print("\n✅ config.yaml 已更新完毕")
+        
+        # ============================================================
+        # 5/27 新增：阈值校准后紧接着重算 trend_filter（MA60 + MACD 趋势闸）
+        # ============================================================
+        try:
+            print("\n" + "=" * 60)
+            print("🔄 趋势过滤闸重算 (trend_filter)")
+            print("=" * 60)
+            import subprocess
+            scripts_dir = Path(__file__).parent
+            r1 = subprocess.run(
+                [sys.executable, str(scripts_dir / 'trend_health_check.py')],
+                cwd=str(scripts_dir.parent), capture_output=True, text=True, encoding='utf-8'
+            )
+            if r1.returncode == 0:
+                print("✅ trend_health_check 完成")
+                r2 = subprocess.run(
+                    [sys.executable, str(scripts_dir / 'apply_trend_filter.py')],
+                    cwd=str(scripts_dir.parent), capture_output=True, text=True, encoding='utf-8'
+                )
+                if r2.returncode == 0:
+                    print("✅ apply_trend_filter 完成")
+                    # 只打印最后的汇总部分
+                    if r2.stdout:
+                        for line in r2.stdout.splitlines()[-25:]:
+                            print(line)
+                else:
+                    print(f"⚠️ apply_trend_filter 失败: {r2.stderr[:300]}")
+            else:
+                print(f"⚠️ trend_health_check 失败: {r1.stderr[:300]}")
+        except Exception as ex:
+            print(f"⚠️ trend_filter 重算异常（不影响阈值校准）: {ex}")
+        
         return 0
 
     finally:

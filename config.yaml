@@ -2,10 +2,10 @@ accounts:
   learn:
     account_id: 1
     account_name: live_mirror
-    initial_cash: 100000.0
+    initial_cash: 200000.0
     auto_trade: true
-    max_total_value: 100000.0
-    description: vqlearn 量化策略自学习账户，自动下单
+    max_total_value: 200000.0
+    description: vqlearn 量化策略自学习账户，自动下单（5/27 充值至 20 万）
   real:
     account_id: 2
     account_name: real_portfolio
@@ -87,6 +87,15 @@ watchlist:
           dir: below
           msg: 💰💰 通富微电跌至 56.04！回踩 MA20(56.04)，优质建仓区
       added_price: 58.86
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 75.39
+        ma60: 50.08
+        last_vs_ma60_pct: 50.5
+        ma20_vs_ma60_pct: 16.8
+        macd_golden: true
+        updated_at: '2026-05-27'
     002709:
       name: 天赐材料
       enabled: true
@@ -106,6 +115,15 @@ watchlist:
           dir: below
           msg: 💰💰 天赐材料跌至 57.05！回踩 MA20(57.05)，优质建仓区
       added_price: 54.44
+      trend_filter:
+        gate: wait_macd
+        status: CAUTION
+        last: 51.99
+        ma60: 49.28
+        last_vs_ma60_pct: 5.5
+        ma20_vs_ma60_pct: 16.2
+        macd_golden: false
+        updated_at: '2026-05-27'
     002149:
       name: 西部材料
       enabled: true
@@ -125,6 +143,15 @@ watchlist:
           dir: below
           msg: 💰💰 西部材料跌至 67.7！回踩 MA20(67.7)，优质建仓区
       added_price: 68.24
+      trend_filter:
+        gate: wait_macd
+        status: CAUTION
+        last: 63.6
+        ma60: 55.61
+        last_vs_ma60_pct: 14.4
+        ma20_vs_ma60_pct: 22.2
+        macd_golden: false
+        updated_at: '2026-05-27'
     '605006':
       name: 山东玻纤
       enabled: true
@@ -148,6 +175,15 @@ watchlist:
           dir: below
           msg: ⚠️ 山东玻纤破 11.49！跌破 MA20-1.5ATR，趋势可能反转
       added_price: 14.9
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 17.92
+        ma60: 11.16
+        last_vs_ma60_pct: 60.5
+        ma20_vs_ma60_pct: 27.5
+        macd_golden: true
+        updated_at: '2026-05-27'
     '603757':
       name: 大元泵业
       enabled: true
@@ -171,6 +207,15 @@ watchlist:
           dir: below
           msg: ⚠️ 大元泵业破 50.13！跌破 MA20-1.5ATR，趋势可能反转
       added_price: 63.66
+      trend_filter:
+        gate: wait_macd
+        status: CAUTION
+        last: 55.47
+        ma60: 51.01
+        last_vs_ma60_pct: 8.7
+        ma20_vs_ma60_pct: 12.5
+        macd_golden: false
+        updated_at: '2026-05-27'
     '000725':
       name: 京东方A
       enabled: true
@@ -193,6 +238,15 @@ watchlist:
           trigger: 4.27
           dir: below
           msg: 💰💰 京东方A跌至 4.27！回踩 MA20(4.27)，优质建仓区
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 5.77
+        ma60: 4.23
+        last_vs_ma60_pct: 36.4
+        ma20_vs_ma60_pct: 3.9
+        macd_golden: true
+        updated_at: '2026-05-27'
     '600309':
       name: 万华化学
       enabled: true
@@ -207,6 +261,24 @@ watchlist:
       - 龙头
       notes: 当前 MA60 下方，右侧交易，等回调到位
       rules:
+        right_side_confirm:
+          trigger: 86.49
+          dir: above
+          msg: ✅ 万华化学站上 86.49 (MA60×1.02)！右侧确认信号，可考虑解冻
+        trend_break_warn:
+          trigger: 80.55
+          dir: below
+          msg: ⚠️ 万华化学跳破 80.55 (MA60×0.95)！趋势实质走坏
+      trend_filter:
+        gate: frozen
+        status: BROKEN
+        last: 77.58
+        ma60: 84.79
+        last_vs_ma60_pct: -8.5
+        ma20_vs_ma60_pct: -1.6
+        macd_golden: false
+        updated_at: '2026-05-27'
+      rules_backup_2026-05-27:
         buy_zone:
           trigger: 80.78
           dir: below
@@ -272,6 +344,15 @@ watchlist:
           trigger: 77.38
           dir: below
           msg: ⚠️ 禾盛新材破 77.38！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 99.8
+        ma60: 73.86
+        last_vs_ma60_pct: 35.1
+        ma20_vs_ma60_pct: 24.5
+        macd_golden: true
+        updated_at: '2026-05-27'
     '600186':
       name: 莲花控股
       enabled: true
@@ -296,6 +377,15 @@ watchlist:
           trigger: 9.1
           dir: below
           msg: ⚠️ 莲花控股破 9.1！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 13.19
+        ma60: 8.26
+        last_vs_ma60_pct: 59.8
+        ma20_vs_ma60_pct: 31.1
+        macd_golden: true
+        updated_at: '2026-05-27'
     '603256':
       name: 宏和科技
       enabled: true
@@ -319,6 +409,15 @@ watchlist:
           trigger: 115.31
           dir: below
           msg: ⚠️ 宏和科技破 115.31！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 183.9
+        ma60: 98.49
+        last_vs_ma60_pct: 86.7
+        ma20_vs_ma60_pct: 41.4
+        macd_golden: true
+        updated_at: '2026-05-27'
     '002654':
       name: 万润科技
       enabled: true
@@ -334,6 +433,15 @@ watchlist:
           trigger: 16.01
           dir: below
           msg: 💰💰 万润科技跌至 16.01！回踩 MA20(16.01)，优质建仓区
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 16.8
+        ma60: 15.14
+        last_vs_ma60_pct: 11.0
+        ma20_vs_ma60_pct: 6.4
+        macd_golden: true
+        updated_at: '2026-05-27'
     '603005':
       name: 晶方科技
       enabled: true
@@ -349,6 +457,15 @@ watchlist:
           trigger: 33.43
           dir: below
           msg: 💰💰 晶方科技跌至 33.43！回踩 MA20(33.43)，优质建仓区
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 45.1
+        ma60: 31.04
+        last_vs_ma60_pct: 45.3
+        ma20_vs_ma60_pct: 9.9
+        macd_golden: true
+        updated_at: '2026-05-27'
     '301120':
       name: 新特电气
       enabled: true
@@ -361,6 +478,28 @@ watchlist:
       - 绿电
       - 电力
       rules:
+        trend_break:
+          trigger: 18.93
+          dir: below
+          msg: ⚠️ 新特电气破 18.93！跌破 MA20-1.5ATR，趋势可能反转
+        right_side_confirm:
+          trigger: 23.44
+          dir: above
+          msg: ✅ 新特电气站上 23.44 (MA60×1.02)！右侧确认信号，可考虑解冻
+        trend_break_warn:
+          trigger: 21.83
+          dir: below
+          msg: ⚠️ 新特电气跳破 21.83 (MA60×0.95)！趋势实质走坏
+      trend_filter:
+        gate: frozen
+        status: BROKEN
+        last: 22.8
+        ma60: 22.98
+        last_vs_ma60_pct: -0.8
+        ma20_vs_ma60_pct: -6.9
+        macd_golden: true
+        updated_at: '2026-05-27'
+      rules_backup_2026-05-27:
         buy_zone:
           trigger: 22.54
           dir: below
@@ -369,10 +508,6 @@ watchlist:
           trigger: 21.38
           dir: below
           msg: 💰💰 新特电气跌至 21.38！回踩 MA20(21.38)，优质建仓区
-        trend_break:
-          trigger: 18.93
-          dir: below
-          msg: ⚠️ 新特电气破 18.93！跌破 MA20-1.5ATR，趋势可能反转
     '301179':
       name: 泽宇智能
       enabled: true
@@ -397,6 +532,15 @@ watchlist:
           trigger: 23.46
           dir: below
           msg: ⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: wait_macd
+        status: CAUTION
+        last: 24.9
+        ma60: 24.55
+        last_vs_ma60_pct: 1.4
+        ma20_vs_ma60_pct: 2.7
+        macd_golden: false
+        updated_at: '2026-05-27'
     '600021':
       name: 上海电力
       enabled: true
@@ -421,6 +565,15 @@ watchlist:
           trigger: 16.62
           dir: below
           msg: ⚠️ 上海电力破 16.62！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: manual_only
+        status: WEAK
+        last: 20.39
+        ma60: 18.92
+        last_vs_ma60_pct: 7.8
+        ma20_vs_ma60_pct: -5.7
+        macd_golden: true
+        updated_at: '2026-05-27'
     '000600':
       name: 建投能源
       enabled: true
@@ -445,6 +598,15 @@ watchlist:
           trigger: 9.26
           dir: below
           msg: ⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 10.48
+        ma60: 9.61
+        last_vs_ma60_pct: 9.1
+        ma20_vs_ma60_pct: 3.1
+        macd_golden: true
+        updated_at: '2026-05-27'
     '002067':
       name: 景兴纸业
       enabled: true
@@ -469,6 +631,15 @@ watchlist:
           trigger: 4.65
           dir: below
           msg: ⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: manual_only
+        status: WEAK
+        last: 5.41
+        ma60: 5.07
+        last_vs_ma60_pct: 6.7
+        ma20_vs_ma60_pct: -1.8
+        macd_golden: true
+        updated_at: '2026-05-27'
     000899:
       name: 赣能股份
       enabled: true
@@ -481,6 +652,28 @@ watchlist:
       - 绿电
       - 电力
       rules:
+        trend_break:
+          trigger: 12.52
+          dir: below
+          msg: ⚠️ 赣能股份破 12.52！跌破 MA20-1.5ATR，趋势可能反转
+        right_side_confirm:
+          trigger: 13.79
+          dir: above
+          msg: ✅ 赣能股份站上 13.79 (MA60×1.02)！右侧确认信号，可考虑解冻
+        trend_break_warn:
+          trigger: 12.84
+          dir: below
+          msg: ⚠️ 赣能股份跳破 12.84 (MA60×0.95)！趋势实质走坏
+      trend_filter:
+        gate: frozen
+        status: BROKEN
+        last: 12.83
+        ma60: 13.52
+        last_vs_ma60_pct: -5.1
+        ma20_vs_ma60_pct: -2.1
+        macd_golden: false
+        updated_at: '2026-05-27'
+      rules_backup_2026-05-27:
         buy_zone:
           trigger: 13.29
           dir: below
@@ -489,10 +682,6 @@ watchlist:
           trigger: 13.23
           dir: below
           msg: 💰💰 赣能股份跌至 13.23！回踩 MA20(13.23)，优质建仓区
-        trend_break:
-          trigger: 12.52
-          dir: below
-          msg: ⚠️ 赣能股份破 12.52！跌破 MA20-1.5ATR，趋势可能反转
     001896:
       name: 豫能控股
       enabled: true
@@ -517,6 +706,15 @@ watchlist:
           trigger: 15.09
           dir: below
           msg: ⚠️ 豫能控股破 15.09！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: wait_macd
+        status: CAUTION
+        last: 16.55
+        ma60: 15.46
+        last_vs_ma60_pct: 7.0
+        ma20_vs_ma60_pct: 5.3
+        macd_golden: false
+        updated_at: '2026-05-27'
     '600310':
       name: 广西能源
       enabled: true
@@ -541,6 +739,15 @@ watchlist:
           trigger: 4.96
           dir: below
           msg: ⚠️ 广西能源破 4.96！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 5.53
+        ma60: 4.92
+        last_vs_ma60_pct: 12.5
+        ma20_vs_ma60_pct: 7.1
+        macd_golden: true
+        updated_at: '2026-05-27'
     '601222':
       name: 林洋能源
       enabled: true
@@ -565,6 +772,15 @@ watchlist:
           trigger: 5.98
           dir: below
           msg: ⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 6.32
+        ma60: 6.28
+        last_vs_ma60_pct: 0.6
+        ma20_vs_ma60_pct: 0.0
+        macd_golden: true
+        updated_at: '2026-05-27'
     '600863':
       name: 华能蒙电
       enabled: true
@@ -589,6 +805,15 @@ watchlist:
           trigger: 4.37
           dir: below
           msg: ⚠️ 华能蒙电破 4.37！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: manual_only
+        status: WEAK
+        last: 6.1
+        ma60: 5.07
+        last_vs_ma60_pct: 20.4
+        ma20_vs_ma60_pct: -0.6
+        macd_golden: true
+        updated_at: '2026-05-27'
     '601991':
       name: 大唐发电
       enabled: true
@@ -613,6 +838,15 @@ watchlist:
           trigger: 3.87
           dir: below
           msg: ⚠️ 大唐发电破 3.87！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 7.16
+        ma60: 4.78
+        last_vs_ma60_pct: 49.9
+        ma20_vs_ma60_pct: 29.2
+        macd_golden: true
+        updated_at: '2026-05-27'
     '603693':
       name: 江苏新能
       enabled: true
@@ -637,6 +871,15 @@ watchlist:
           trigger: 14.51
           dir: below
           msg: ⚠️ 江苏新能破 14.51！跌破 MA20-1.5ATR，趋势可能反转
+      trend_filter:
+        gate: auto
+        status: HEALTHY
+        last: 17.87
+        ma60: 15.27
+        last_vs_ma60_pct: 17.0
+        ma20_vs_ma60_pct: 5.5
+        macd_golden: true
+        updated_at: '2026-05-27'
   auto_discovered: {}
 legacy_watch:
   '002342':

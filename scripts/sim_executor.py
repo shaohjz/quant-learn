@@ -34,7 +34,22 @@ logger = logging.getLogger(__name__)
 # 调用方设 set_active_account(2) 可切换；但 execute_trade 会拒绝真实账户下单。
 # ============================================================
 _ACCOUNT_ID: int = int(os.environ.get('SIM_ACCOUNT_ID', '1'))
-_LEARN_MAX_TOTAL: float = 200000.0  # 学习账户总额上限（现金+持仓市值，放宽到20万避免卡上限）
+
+
+def _load_max_total() -> float:
+    """从 config.yaml 读取学习账户总额上限，默认 200000。"""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
+        v = cfg.get('accounts', {}).get('learn', {}).get('max_total_value')
+        if v:
+            return float(v)
+    except Exception:
+        pass
+    return 200000.0
+
+
+_LEARN_MAX_TOTAL: float = _load_max_total()  # 动态读 config.yaml accounts.learn.max_total_value
 
 
 def set_active_account(account_id: int) -> None:
@@ -223,6 +238,87 @@ def decide_action(rule: dict, cur_price: float):
     return 'NO_ACTION'
 
 
+def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
+    """趋势过滤闸：根据 watchlist[code].trend_filter.gate 决定是否放行买入。
+    
+    Returns: (passed, reason)
+      - True → 放行
+      - False → 拦截，带上原因
+    
+    仅对 BUY 动作生效，SELL 不受影响（止损是必须的）。
+    """
+    if not action.startswith('BUY'):
+        return True, ''
+    
+    # 人工冻结（如电信）最高优先级
+    if rule.get('auto_buy_disabled'):
+        return False, f"⛔ auto_buy_disabled=true: {rule.get('auto_buy_disabled_reason', '人工冻结')}"
+    
+    tf = rule.get('trend_filter', {}) or {}
+    gate = tf.get('gate', 'auto')
+    
+    if gate == 'auto':
+        return True, ''
+    if gate == 'frozen':
+        return False, f"⛔ trend_filter=frozen (status={tf.get('status')}, last/MA60={tf.get('last_vs_ma60_pct')}%) — 趋势已坏，等右侧确认"
+    if gate == 'manual_only':
+        return False, f"✋ trend_filter=manual_only (MA20<MA60 {tf.get('ma20_vs_ma60_pct')}%) — 均线还空头，仅提醒不自动"
+    if gate == 'wait_macd':
+        # 实时检查 MACD 是否金叉了（可能上次检测后变了）
+        macd_ok = _realtime_macd_ok(rule.get('code', ''))
+        if macd_ok:
+            return True, '⚡ trend_filter=wait_macd 但实时检查 MACD 已金叉，放行'
+        return False, f"⏳ trend_filter=wait_macd — MACD 未金叉，等右侧确认"
+    return True, ''
+
+
+_MACD_CACHE: dict[str, tuple[float, bool]] = {}  # code -> (cached_at_ts, macd_ok)
+_MACD_CACHE_TTL_SEC: float = 600.0  # 缓存 10 分钟够了，同一轮 portfolio_alert 肯定复用
+
+
+def _realtime_macd_ok(code: str) -> bool:
+    """实时拉最近 80 日收盘，检查是否 MACD 金叉且 DIF>0。带 10 分钟 TTL 缓存。"""
+    if not code:
+        return False
+    import time
+    now_ts = time.time()
+    cached = _MACD_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
+        return cached[1]
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=180)).strftime('%Y-%m-%d')
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,close',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while rs.error_code == '0' and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+        if len(rows) < 30:
+            _MACD_CACHE[code] = (now_ts, False)
+            return False
+        closes = pd.Series([float(r[1]) for r in rows if r[1]])
+        ema_fast = closes.ewm(span=12, adjust=False).mean()
+        ema_slow = closes.ewm(span=26, adjust=False).mean()
+        dif = (ema_fast - ema_slow).iloc[-1]
+        dea = (ema_fast - ema_slow).ewm(span=9, adjust=False).mean().iloc[-1]
+        result = bool(dif > dea and dif > 0)
+        _MACD_CACHE[code] = (now_ts, result)
+        return result
+    except Exception as e:
+        logger.warning(f"_realtime_macd_ok({code}) failed: {e}")
+        return False
+
+
 def execute_trade(rule: dict, cur_price: float) -> dict:
     """
     根据规则执行虚拟交易。
@@ -241,6 +337,18 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     
     if action == 'NO_ACTION':
         return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None}
+
+    # 🚺 趋势过滤闸（frozen / wait_macd / manual_only 会拦截 BUY）
+    gate_ok, gate_reason = _check_trend_gate(rule, action)
+    if not gate_ok:
+        logger.info(f"🚽 [{code}] {action} 被 trend_filter 拦截: {gate_reason}")
+        return {
+            'action': 'NO_ACTION', 'success': True,
+            'message': f'信号触发但被趋势过滤闸拦截: {gate_reason}',
+            'trade': None
+        }
+    if gate_reason:
+        logger.info(f"✅ [{code}] {action} {gate_reason}")
 
     # ⛔ 真实账户拒绝任何下单（1=学习，2=真实）
     if _ACCOUNT_ID != 1:

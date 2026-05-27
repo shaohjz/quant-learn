@@ -51,7 +51,7 @@ def main():
     wm = cfg['watchlist']['user_manual']
 
     print(f'Total watchlist: {len(wm)}\n')
-    summary = {'auto': [], 'wait_volume': [], 'wait_macd': [], 'manual_only': [], 'frozen': [], 'skipped': []}
+    summary = {'auto': [], 'require_support': [], 'wait_volume': [], 'wait_macd': [], 'manual_only': [], 'frozen': [], 'skipped': []}
 
     for code, info in wm.items():
         # 跳过手动 disabled 的（如电信）
@@ -110,14 +110,15 @@ def main():
     print('=' * 70)
     print('整改总结')
     print('=' * 70)
-    for gate in ['auto', 'wait_volume', 'wait_macd', 'manual_only', 'frozen']:
+    for gate in ['auto', 'require_support', 'wait_volume', 'wait_macd', 'manual_only', 'frozen']:
         items = summary[gate]
         gate_desc = {
-            'auto':        '✅ auto         — 健康多头 + MACD金叉 + 量能配合，正常自动买入',
-            'wait_volume': '📊 wait_volume  — 金叉但缩量，等量能放大（暂时拦截）',
-            'wait_macd':   '⏳ wait_macd    — 均线多头但 MACD 未金叉，等右侧确认',
-            'manual_only': '✋ manual_only  — 均线还空头 或 ATR过高，仅提醒不自动',
-            'frozen':      '⛔ frozen       — last<MA60 趋势已坏，冻结买入 加右侧确认',
+            'auto':            '✅ auto            — 健康多头 + MACD金叉 + 量能配合，正常自动买入',
+            'require_support': '🔍 require_support — 左侧低吸，需价位在支撑区 + 量能企稳+启动信号才买',
+            'wait_volume':     '📊 wait_volume     — 金叉但缩量，等量能放大（暂时拦截）',
+            'wait_macd':       '⏳ wait_macd       — 均线多头但 MACD 未金叉，等右侧确认',
+            'manual_only':     '✋ manual_only     — 均线还空头 或 ATR过高，仅提醒不自动',
+            'frozen':          '⛔ frozen          — last<MA60 趋势已坏，冻结买入 加右侧确认',
         }[gate]
         print(f'\n{gate_desc} ({len(items)}只):')
         for code, name, h in items:

@@ -315,7 +315,7 @@ def gen_pre_market(sim_positions, rules, cfg, auto_cfg):
     buy_rules = [r for r in rules if 'buy' in r['level']]
     shown = set()
     # 按 trend_filter gate 分组：auto 在前，其他后面
-    gate_priority = {'auto': 0, 'wait_volume': 1, 'wait_macd': 2, 'manual_only': 3, 'frozen': 4}
+    gate_priority = {'auto': 0, 'require_support': 1, 'wait_volume': 2, 'wait_macd': 3, 'manual_only': 4, 'frozen': 5}
     def _key(r):
         gate = (r.get('trend_filter') or {}).get('gate', 'auto')
         return (gate_priority.get(gate, 9), r['trigger'])
@@ -328,6 +328,7 @@ def gen_pre_market(sim_positions, rules, cfg, auto_cfg):
         gate = tf.get('gate', 'auto')
         gate_tag = {
             'auto': '✅',
+            'require_support': '🔍需支撑',
             'wait_volume': f"📊等量",
             'wait_macd': '⏳等MACD',
             'manual_only': f"✋{'高ATR' if tf.get('status') == 'DIRTY' else '均线空'}",
@@ -386,6 +387,7 @@ def gen_auction(sim_positions, rules):
         gate = tf.get('gate', 'auto')
         return {
             'auto': '✅可买',
+            'require_support': '🔍需支撑',
             'wait_volume': '📊等量',
             'wait_macd': '⏳等MACD',
             'manual_only': '✋仅提醒',
@@ -514,6 +516,9 @@ def gen_intraday(sim_positions, rules):
         gate_label = ''
         if gate == 'auto':
             emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
+        elif gate == 'require_support':
+            emoji = "🔍"
+            gate_label = f" [🔍需支撑+量能 MA60¥{tf.get('ma60', 0):.2f}]"
         elif gate == 'frozen':
             emoji = "⛔"
             gate_label = f" [⛔冻结 status={tf.get('status')} last/MA60={tf.get('last_vs_ma60_pct')}%]"
@@ -542,6 +547,7 @@ def gen_intraday(sim_positions, rules):
         if gate != 'auto':
             gate_explain = {
                 'frozen': "⛔ sim_executor 已拦截，需人工判断是否手动买",
+                'require_support': "🔍 价位在支撑区且今日量能企稳+启动信号才会自动买（左侧低吸）",
                 'manual_only': "✋ sim_executor 不会自动买，欲入则手动下单",
                 'wait_macd': "⏳ 实时复查 MACD 金叉才会自动买",
                 'wait_volume': "📊 实时复查量能放大才会自动买",

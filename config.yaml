@@ -323,18 +323,30 @@ watchlist:
           trigger: 6.3
           dir: above
           msg: ✅ 中国电信站上 6.30 (MA20上方有效)！可考虑解除自动买入冻结
-      rules_backup_2026-05-27:
-        buy_zone:
+        buy_zone: &id001
           trigger: 6.42
           dir: below
-          msg: 💰 中国电信跌至 6.42！接近 MA10(6.42)，试探建仓
-        buy_strong:
+          msg: 'CT droped to 6.42, require_support: need price near support (MA60=5.98
+            or 60d-low=5.59) + today not shrinking-volume'
+        buy_strong: &id002
           trigger: 6.2
           dir: below
-          msg: 💰💰 中国电信跌至 6.2！回踩 MA20(6.2)，优质建仓区
-      auto_buy_disabled: true
-      auto_buy_disabled_reason: '5/27: 趋势未企稳(MA20下方震荡)，暂停自动建仓，等右侧确认后人工恢复'
-      auto_buy_disabled_at: '2026-05-27'
+          msg: 'CT droped to 6.2, require_support: need price in support zone + ignition
+            signal (red bar with vol_ratio>=1)'
+      rules_backup_2026-05-27:
+        buy_zone: *id001
+        buy_strong: *id002
+      trend_filter:
+        gate: require_support
+        status: CAUTION
+        last: 6.08
+        ma60: 5.98
+        last_vs_ma60_pct: 1.6
+        macd_golden: false
+        updated_at: '2026-05-27'
+        note: 'left-side low-buy locked: need price near MA60 or 60d-low + volume
+          floor + ignition'
+        gate_locked: true
     002290:
       name: 禾盛新材
       enabled: true

@@ -261,6 +261,12 @@ def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
         return True, ''
     if gate == 'frozen':
         return False, f"⛔ trend_filter=frozen (status={tf.get('status')}, last/MA60={tf.get('last_vs_ma60_pct')}%) — 趋势已坏，等右侧确认"
+    if gate == 'require_support':
+        # 左侧买入：必须同时有"价格支撑 + 量能企稳"两重信号
+        ok, reason = _check_left_side_support(rule.get('code', ''), tf)
+        if ok:
+            return True, f'⚡ require_support 检查通过: {reason}'
+        return False, f"🔍 require_support — {reason}"
     if gate == 'manual_only':
         # WEAK 是 MA20<MA60，DIRTY 是 ATR 过高
         status = tf.get('status', '')
@@ -283,6 +289,100 @@ def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
 
 
 _VOL_CACHE: dict[str, tuple[float, bool]] = {}  # code -> (cached_at_ts, vol_ok)
+_SUPPORT_CACHE: dict[str, tuple[float, bool, str]] = {}  # code -> (cached_at_ts, ok, reason)
+
+
+def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
+    """左侧买入支撑检查。
+    
+    必须同时满足两个条件才能买：
+    1. 价格支撑：在 MA60 附近不破 或 在近 60 日低点附近企稳
+    2. 量能企稳：今日量 ≥ 近 5 日均量 × 0.8（不能是无量阴跌）
+    ⚡ 加分（其中一项满足即可）：
+      - 今日收红（close > open）且量比 ≥ 1.0 —— 启动信号
+      - 近 3 日有一个探低反弹日（low 创近期新低但 close 是阳线）
+    """
+    if not code:
+        return False, '股票代码为空'
+    import time
+    now_ts = time.time()
+    cached = _SUPPORT_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
+        return cached[1], cached[2]
+    
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while rs.error_code == '0' and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+        if len(rows) < 60:
+            _SUPPORT_CACHE[code] = (now_ts, False, '数据不足 60 日')
+            return False, '数据不足 60 日'
+        
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+        
+        last_close = float(df['close'].iloc[-1])
+        last_open = float(df['open'].iloc[-1])
+        last_low = float(df['low'].iloc[-1])
+        ma60 = float(df['close'].tail(60).mean())
+        low60 = float(df['low'].tail(60).min())
+        avg_vol5 = float(df['volume'].tail(5).mean())
+        today_vol = float(df['volume'].iloc[-1])
+        vol_ratio = (today_vol / avg_vol5) if avg_vol5 > 0 else 0
+        
+        # 条件 1：价格支撑
+        # 带一点宽民：MA60 × 0.99 以上 OR 近 60 日低点×1.05 以内
+        near_ma60 = last_close >= ma60 * 0.99
+        near_low60 = last_close <= low60 * 1.05
+        if not (near_ma60 or near_low60):
+            reason = f'未在支撑区 (last¥{last_close:.2f}, MA60¥{ma60:.2f}, 60日低¥{low60:.2f})'
+            _SUPPORT_CACHE[code] = (now_ts, False, reason)
+            return False, reason
+        
+        # 条件 2：量能不缩 (动量判断企稳)
+        if vol_ratio < 0.8:
+            reason = f'量能过缩 (今日量={vol_ratio:.2f}×5日均)，无量阴跌不能买'
+            _SUPPORT_CACHE[code] = (now_ts, False, reason)
+            return False, reason
+        
+        # 启动信号：今日收红 + 量比 ≥ 1
+        if last_close > last_open and vol_ratio >= 1.0:
+            reason = f'✅ 价位在支撑区 + 今日量比{vol_ratio:.2f} 收红 — 启动信号'
+            _SUPPORT_CACHE[code] = (now_ts, True, reason)
+            return True, reason
+        
+        # 探低反弹：近 3 日有 low 创近 60 日新低 但 close 阳线且量量比 ≥ 1
+        for i in range(-3, 0):
+            row = df.iloc[i]
+            if (float(row['low']) <= low60 * 1.01 and
+                float(row['close']) > float(row['open']) and
+                float(row['volume']) >= avg_vol5):
+                reason = f'✅ 近 3 日有探低反弹日 ({row["date"]} 收红量比{float(row["volume"])/avg_vol5:.2f})'
+                _SUPPORT_CACHE[code] = (now_ts, True, reason)
+                return True, reason
+        
+        reason = f'🔍 价位在支撑区但未见启动 (今日{("阳" if last_close>last_open else "阴")}, 量比{vol_ratio:.2f}) — 等企稳'
+        _SUPPORT_CACHE[code] = (now_ts, False, reason)
+        return False, reason
+    except Exception as e:
+        logger.warning(f"_check_left_side_support({code}) failed: {e}")
+        return False, f'检查异常: {e}'
 
 
 def _realtime_vol_ok(code: str) -> bool:

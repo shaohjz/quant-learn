@@ -448,21 +448,58 @@ def gen_intraday(sim_positions, rules):
         ctx = get_stock_context(code, rules_by_code.get(code, []), price)
         
         if price <= stop:
-            # 止损 — 附带原因
+            # P0: 调用三档评级（量价共振 + 收盘确认）
+            sev_label = ''
+            sev_reason = ''
+            sev_advice = ''
+            try:
+                from sim_executor import _check_stop_loss_severity, _is_late_session, _get_today_vol_ratio
+                trigger_rule = {'trigger': stop, 'level': 'stop_loss'}
+                position = {
+                    'quantity': p['quantity'], 'avg_cost': cost,
+                    'highest_price': p.get('highest_price') or cost,
+                    'trailing_stop_price': p.get('trailing_stop_price') or 0,
+                }
+                sev, sev_act, sev_reason = _check_stop_loss_severity(code, trigger_rule, price, position)
+                if sev == 'soft':
+                    sev_label = '⚠️ 软止损（盘中预警）'
+                    sev_advice = '量能未放大，不自动卖。等 14:50 后复查：若仍破 → 减半；反包→震仓考验'
+                elif sev == 'confirmed':
+                    sev_label = '📉 确认止损（量能证实）'
+                    sev_advice = f'赋量下跌或近收盘仍破 → 减半仓 {p["quantity"]//2} 股'
+                elif sev == 'hard':
+                    sev_label = '⛔️ 硬止损（倍破 5%）'
+                    sev_advice = f'深度下跌，不留情全卖 {p["quantity"]} 股'
+                vr = _get_today_vol_ratio(code)
+                vr_str = f'量比{vr:.2f}×' if vr is not None else '量能未知'
+                late_str = '近收盘' if _is_late_session() else '盘中'
+            except Exception as ex:
+                logger.warning(f"daily_advisor 调 _check_stop_loss_severity 异常: {ex}")
+                vr_str, late_str = '量能未知', ''
+            
+            # 双重上下文：原有 ma20/trend_break + P0 量价
             extra = []
             if ctx['ma20']:
                 ma20_gap = (price - ctx['ma20']) / ctx['ma20'] * 100
                 if ma20_gap < 0:
-                    extra.append(f"距 MA20({ctx['ma20']:.2f}) 还跟 {ma20_gap:.1f}%")
+                    extra.append(f"距 MA20({ctx['ma20']:.2f}) 还跌 {ma20_gap:.1f}%")
             if ctx['trend_break'] and price <= ctx['trend_break']:
                 extra.append(f"同时破 trend_break({ctx['trend_break']:.2f}) ⚠️趋势失效")
-            extra_str = " | ".join(extra) if extra else ""
+            extra.append(f"{late_str} | {vr_str}")
+            extra_str = " | ".join(extra)
+            
+            head = sev_label or '🚨 止损'
             lines.append(
-                f"  🚨 止损 {code} {d['name']} ¥{price:.2f} ≤ 止损线¥{stop:.2f}(成本×0.92) | 浮亏{pnl_pct:+.1f}% 今日{d['pct']:+.1f}%"
+                f"  {head} {code} {d['name']} ¥{price:.2f} ≤ 止损线¥{stop:.2f}(成本×0.92) | 浮亏{pnl_pct:+.1f}% 今日{d['pct']:+.1f}%"
             )
             if extra_str:
                 lines.append(f"     ↳ {extra_str}")
-            lines.append(f"     ↳ 💡 原因: 机械止损线=成本×0.92（不超 8% 亏损），现价已跳下。建议减半仓 {p['quantity']//2} 股")
+            if sev_reason:
+                lines.append(f"     ↳ 📊 评级: {sev_reason}")
+            if sev_advice:
+                lines.append(f"     ↳ 💡 建议: {sev_advice}")
+            else:
+                lines.append(f"     ↳ 💡 原因: 机械止损线=成本×0.92（不超 8% 亏损），现价已跳下。建议减半仓 {p['quantity']//2} 股")
             action_count += 1
         elif pnl_pct >= 15:
             lines.append(

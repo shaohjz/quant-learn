@@ -337,6 +337,294 @@ watchlist:
           trigger: 33.43
           dir: below
           msg: 💰💰 晶方科技跌至 33.43！回踩 MA20(33.43)，优质建仓区
+    '301120':
+      name: 新特电气
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 22.8
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 22.54
+          dir: below
+          msg: 💰 新特电气跌至 22.54！接近 MA10(22.54)，试探建仓
+        buy_strong:
+          trigger: 21.38
+          dir: below
+          msg: 💰💰 新特电气跌至 21.38！回踩 MA20(21.38)，优质建仓区
+        trend_break:
+          trigger: 18.93
+          dir: below
+          msg: ⚠️ 新特电气破 18.93！跌破 MA20-1.5ATR，趋势可能反转
+    '301179':
+      name: 泽宇智能
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 24.9
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 25.83
+          dir: below
+          msg: 💰 泽宇智能跌至 25.83！接近 MA10(25.83)，试探建仓
+        buy_strong:
+          trigger: 25.21
+          dir: below
+          msg: 💰💰 泽宇智能跌至 25.21！回踩 MA20(25.21)，优质建仓区
+        trend_break:
+          trigger: 23.46
+          dir: below
+          msg: ⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
+    '600021':
+      name: 上海电力
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 20.39
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 18.11
+          dir: below
+          msg: 💰 上海电力跌至 18.11！接近 MA10(18.11)，试探建仓
+        buy_strong:
+          trigger: 17.84
+          dir: below
+          msg: 💰💰 上海电力跌至 17.84！回踩 MA20(17.84)，优质建仓区
+        trend_break:
+          trigger: 16.62
+          dir: below
+          msg: ⚠️ 上海电力破 16.62！跌破 MA20-1.5ATR，趋势可能反转
+    '000600':
+      name: 建投能源
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 10.48
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 10.17
+          dir: below
+          msg: 💰 建投能源跌至 10.17！接近 MA10(10.17)，试探建仓
+        buy_strong:
+          trigger: 9.9
+          dir: below
+          msg: 💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区
+        trend_break:
+          trigger: 9.26
+          dir: below
+          msg: ⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转
+    '002067':
+      name: 景兴纸业
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 5.41
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 5.09
+          dir: below
+          msg: 💰 景兴纸业跌至 5.09！接近 MA10(5.09)，试探建仓
+        buy_strong:
+          trigger: 4.98
+          dir: below
+          msg: 💰💰 景兴纸业跌至 4.98！回踩 MA20(4.98)，优质建仓区
+        trend_break:
+          trigger: 4.65
+          dir: below
+          msg: ⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
+    000899:
+      name: 赣能股份
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 12.83
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 13.29
+          dir: below
+          msg: 💰 赣能股份跌至 13.29！接近 MA10(13.29)，试探建仓
+        buy_strong:
+          trigger: 13.23
+          dir: below
+          msg: 💰💰 赣能股份跌至 13.23！回踩 MA20(13.23)，优质建仓区
+        trend_break:
+          trigger: 12.52
+          dir: below
+          msg: ⚠️ 赣能股份破 12.52！跌破 MA20-1.5ATR，趋势可能反转
+    001896:
+      name: 豫能控股
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 16.55
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 16.12
+          dir: below
+          msg: 💰 豫能控股跌至 16.12！接近 MA10(16.12)，试探建仓
+        buy_strong:
+          trigger: 16.28
+          dir: below
+          msg: 💰💰 豫能控股跌至 16.28！回踩 MA20(16.28)，优质建仓区
+        trend_break:
+          trigger: 15.09
+          dir: below
+          msg: ⚠️ 豫能控股破 15.09！跌破 MA20-1.5ATR，趋势可能反转
+    '600310':
+      name: 广西能源
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 5.53
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 5.31
+          dir: below
+          msg: 💰 广西能源跌至 5.31！接近 MA10(5.31)，试探建仓
+        buy_strong:
+          trigger: 5.26
+          dir: below
+          msg: 💰💰 广西能源跌至 5.26！回踩 MA20(5.26)，优质建仓区
+        trend_break:
+          trigger: 4.96
+          dir: below
+          msg: ⚠️ 广西能源破 4.96！跌破 MA20-1.5ATR，趋势可能反转
+    '601222':
+      name: 林洋能源
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 6.32
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 6.41
+          dir: below
+          msg: 💰 林洋能源跌至 6.41！接近 MA10(6.41)，试探建仓
+        buy_strong:
+          trigger: 6.28
+          dir: below
+          msg: 💰💰 林洋能源跌至 6.28！回踩 MA20(6.28)，优质建仓区
+        trend_break:
+          trigger: 5.98
+          dir: below
+          msg: ⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
+    '600863':
+      name: 华能蒙电
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 6.1
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 5.34
+          dir: below
+          msg: 💰 华能蒙电跌至 5.34！接近 MA10(5.34)，试探建仓
+        buy_strong:
+          trigger: 5.04
+          dir: below
+          msg: 💰💰 华能蒙电跌至 5.04！回踩 MA20(5.04)，优质建仓区
+        trend_break:
+          trigger: 4.37
+          dir: below
+          msg: ⚠️ 华能蒙电破 4.37！跌破 MA20-1.5ATR，趋势可能反转
+    '601991':
+      name: 大唐发电
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 7.16
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 7.48
+          dir: below
+          msg: 💰 大唐发电跌至 7.48！接近 MA10(7.48)，试探建仓
+        buy_strong:
+          trigger: 6.17
+          dir: below
+          msg: 💰💰 大唐发电跌至 6.17！回踩 MA20(6.17)，优质建仓区
+        trend_break:
+          trigger: 3.87
+          dir: below
+          msg: ⚠️ 大唐发电破 3.87！跌破 MA20-1.5ATR，趋势可能反转
+    '603693':
+      name: 江苏新能
+      enabled: true
+      source: 泛舟财海(@Blazing_Sun1)
+      recommended_by: 泛舟财海
+      added_at: '2026-05-27'
+      added_price: 17.87
+      added_reason: 泛舟财海推荐绿色电力板块
+      tags:
+      - 绿电
+      - 电力
+      rules:
+        buy_zone:
+          trigger: 16.78
+          dir: below
+          msg: 💰 江苏新能跌至 16.78！接近 MA10(16.78)，试探建仓
+        buy_strong:
+          trigger: 16.11
+          dir: below
+          msg: 💰💰 江苏新能跌至 16.11！回踩 MA20(16.11)，优质建仓区
+        trend_break:
+          trigger: 14.51
+          dir: below
+          msg: ⚠️ 江苏新能破 14.51！跌破 MA20-1.5ATR，趋势可能反转
   auto_discovered: {}
 legacy_watch:
   '002342':

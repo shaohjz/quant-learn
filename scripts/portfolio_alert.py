@@ -212,12 +212,20 @@ def calc_trade_plan(code: str, entry_price: float, triggered_rule: dict, all_rul
 
 
 def get_rr_ratio_for_rule(code: str, entry_price: float, all_rules: list) -> float:
-    """快速计算盈亏比，用于决定消息前缀"""
+    """快速计算盈亏比，用于决定消息前缀。P1: 优先 ATR 止损。"""
     stop_loss = None
+    # P1: 优先从 trend_filter.atr_stop_pct 取动态止损
     for r in all_rules:
-        if r['code'] == code and 'trend_break' in r['level']:
-            stop_loss = r['trigger']
-            break
+        if r['code'] == code:
+            tf = r.get('trend_filter') or {}
+            if tf.get('atr_stop_pct'):
+                stop_loss = round(entry_price * (1 - float(tf['atr_stop_pct']) / 100), 2)
+                break
+    if stop_loss is None:
+        for r in all_rules:
+            if r['code'] == code and 'trend_break' in r['level']:
+                stop_loss = r['trigger']
+                break
     if stop_loss is None or stop_loss <= 0:
         stop_loss = entry_price * 0.92
     
@@ -306,6 +314,28 @@ def main():
     state = load_state()
     today_state = state.get(today, {})
     logger.info(f"今日已推送阈值数: {len(today_state)}")
+    
+    # P2: 为所有学习账户持仓更新跟踪止损（钉住高点、抬高止损位）
+    try:
+        from sim_executor import update_position_trailing
+        import sqlite3
+        sim_db = ROOT / 'data' / 'sim_live_mirror.db'
+        if sim_db.exists():
+            conn = sqlite3.connect(sim_db)
+            held_codes = [(row[0], row[1]) for row in conn.execute(
+                "SELECT account_id, stock_code FROM sim_positions WHERE quantity > 0"
+            ).fetchall()]
+            conn.close()
+            trailing_updates = 0
+            for acc_id, code in held_codes:
+                cur_p = clean_prices.get(code, 0)
+                if cur_p > 0:
+                    res = update_position_trailing(acc_id, code, cur_p)
+                    if res.get('updated') and res.get('trailing'):
+                        trailing_updates += 1
+            logger.info(f"P2 跟踪止损更新了 {trailing_updates}/{len(held_codes)} 个仓位")
+    except Exception as e:
+        logger.warning(f"P2 跟踪止损更新异常: {e}")
 
     triggered_msgs = []
     checked_count = 0
@@ -379,9 +409,18 @@ def main():
             try:
                 from sim_executor import execute_trade
                 trade_result = execute_trade(rule, cur_price)
+                # P0: 智能止损三档评级 — 把 severity 上下文带进消息
+                sev = trade_result.get('severity')
+                sev_label = trade_result.get('severity_label') or ''
+                if sev_label:
+                    msg += f"\n{sev_label}"
                 if trade_result['success'] and trade_result['action'] != 'NO_ACTION':
                     msg += f"\n🤖 虚拟交易: {trade_result['message']}"
                     logger.warning(f"🤖 虚拟交易: {rule_id} → {trade_result['message']}")
+                elif trade_result['success'] and trade_result['action'] == 'NO_ACTION' and sev == 'soft':
+                    # 软止损（盘中）— 不下单只预警
+                    msg += f"\n⏸️ 软止损：盘中暂不卖，等尾盘再判断（{trade_result['message']}）"
+                    logger.warning(f"⚠️ 软止损推迟: {rule_id} → {trade_result['message']}")
                 elif not trade_result['success']:
                     msg += f"\n⚠️ 虚拟下单失败: {trade_result['message']}"
             except Exception as ex:

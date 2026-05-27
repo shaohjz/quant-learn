@@ -14,6 +14,7 @@ A股交易费率（粗略模拟）:
 """
 import os
 import sys
+import sqlite3
 from datetime import datetime, date
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db'))
+_DB_PATH = os.environ['QUANT_DB_PATH']
 
 from sim.db import get_conn
 
@@ -212,14 +214,16 @@ def decide_action(rule: dict, cur_price: float):
       'SELL_HALF' 卖一半
       'SELL_ALL' 全部卖
       'NO_ACTION' 仅提醒不操作
+    
+    P0：智能止损三档评级 — stop_loss 动作会被 _check_stop_loss_severity 进一步修正。
     """
     level = rule.get("level", "")
     
-    # 持仓股止损止盈
+    # 持仓股止损止盈 — stop_loss/soft_stop 默认 SELL_HALF，后续会被量价检查修正
     if level in ("stop_loss", "soft_stop"):
         return 'SELL_HALF'
-    if level in ("hard_stop", "deep_drop"):
-        return 'SELL_ALL'
+    if level in ("hard_stop", "deep_drop", "confirmed_stop"):
+        return 'SELL_ALL' if level != 'confirmed_stop' else 'SELL_HALF'
     if level in ("take_profit_half", "take_half"):
         return 'SELL_HALF'
     if level in ("take_profit", "take_full"):
@@ -236,6 +240,200 @@ def decide_action(rule: dict, cur_price: float):
         return 'NO_ACTION'  # 观察股趋势破位 → 不买
     
     return 'NO_ACTION'
+
+
+# P0: 量价共振 + 收盘确认 止损评级
+_STOP_VOL_THRESH = 1.5  # 量比 ≥ 1.5 为放量下跌
+from datetime import time as _dt_time
+
+
+def _is_late_session() -> bool:
+    """是否近收盘（14:50 后）。近收盘才执行止损动作，避盘中插针。"""
+    from datetime import datetime as _dt
+    now_t = _dt.now().time()
+    return now_t >= _dt_time(14, 50)
+
+
+def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position: dict) -> tuple[str, str, str]:
+    """P0 量价共振 + 收盘确认止损评级 + P2 跟踪止损。
+    
+    输入：
+      rule         — 含 stop_loss 价（rule['trigger']）的规则
+      cur_price    — 当前价
+      position     — 持仓 dict {qty, avg_cost}，可为 None
+    
+    返回：(severity, action, reason)
+      severity = 'soft' | 'confirmed' | 'hard' | 'trailing'
+      action   = 'NO_ACTION' | 'SELL_HALF' | 'SELL_ALL' | 'DEFER'
+      reason   = 文本说明
+    
+    逻辑：
+      stop = max(rule['trigger'], position.trailing_stop_price)  # P2 跟踪优先
+      ① cur ≤ stop × 0.95   → hard_stop → SELL_ALL（不论量能不论时间）
+      ② cur ≤ stop 且 量比≥1.5 → confirmed_stop → SELL_HALF
+      ③ cur ≤ stop 且 量能不足 → soft_stop:
+         - 近收盘 (>=14:50) 仍破   → 按 confirmed 逻辑 SELL_HALF
+         - 盘中                    → NO_ACTION（只推预警，等尾盘复查）
+    """
+    rule_stop = float(rule.get('trigger', 0) or 0)
+    
+    # P2: 读跟踪止损，与 rule_stop 取 max（最高那个最保护，即亏损最小）
+    trailing_stop = 0.0
+    trailing_reason = ''
+    if position and position.get('trailing_stop_price'):
+        trailing_stop = float(position['trailing_stop_price'])
+    
+    stop = max(rule_stop, trailing_stop)
+    if trailing_stop > 0 and stop == trailing_stop and trailing_stop > rule_stop:
+        trailing_reason = f' [跟踪止损¥{trailing_stop:.2f} 高于原¥{rule_stop:.2f}]'
+    
+    if stop <= 0 or cur_price > stop:
+        return 'none', 'NO_ACTION', '未跌破止损价'
+    
+    # 跟踪止损独立加个标记
+    is_trailing = trailing_stop > 0 and stop == trailing_stop and stop > rule_stop
+    severity_prefix = '🎯 跟踪止损触发: ' if is_trailing else ''
+    
+    # ① 硬止损 — stop × 0.95
+    if cur_price <= stop * 0.95:
+        deeper_pct = (cur_price - stop) / stop * 100
+        return 'hard', 'SELL_ALL', f'{severity_prefix}⛔️ 倒破 {abs(deeper_pct):.1f}% 进入硬止损区 (¥{cur_price:.2f} ≤ ¥{stop:.2f}×0.95=¥{stop*0.95:.2f})，清仓{trailing_reason}'
+    
+    # ②③ 取量能
+    vol_ratio = _get_today_vol_ratio(code)
+    is_late = _is_late_session()
+    
+    if vol_ratio is not None and vol_ratio >= _STOP_VOL_THRESH:
+        # 放量下跌 — 主力出货，确认止损
+        return 'confirmed', 'SELL_HALF', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，减半{trailing_reason}'
+    
+    # 量能不足 — 软止损
+    vol_desc = f'量比{vol_ratio:.2f}×' if vol_ratio is not None else '量能未知'
+    if is_late:
+        # 近收盘仍破 — 不能拖到明天，按 confirmed
+        return 'confirmed', 'SELL_HALF', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天减半{trailing_reason}'
+    # 盘中软止损
+    return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
+
+
+def calc_trailing_stop(entry_price: float, highest_price: float, current_trailing: float | None = None) -> tuple[float, str]:
+    """P2: 跟踪止损计算。只能上移，不能下移。
+    
+    阶梯：
+      浮盈 < 5%：不变 (还是原始 -8% / ATR 止损)
+      浮盈 ≥ 5%：止损 → entry × 1.0（保本）
+      浮盈 ≥ 10%：止损 → entry × 1.02（锁定 2% 利润）
+      浮盈 ≥ 20%：止损 → max(entry × 1.10, highest × 0.92)（跟踪）
+    
+    参数：
+      entry_price     — 买入均价
+      highest_price   — 持仓期间创过的最高价
+      current_trailing— 当前跟踪止损（仅能上移）
+    
+    返回：(new_trailing_stop, reason)
+    """
+    if entry_price <= 0 or highest_price <= 0:
+        return current_trailing or 0.0, ''
+    
+    profit_pct = (highest_price - entry_price) / entry_price * 100
+    
+    if profit_pct < 5.0:
+        new_stop = current_trailing or 0.0
+        reason = f'浮盈 {profit_pct:.1f}% < 5%, 跟踪止损未启动'
+    elif profit_pct < 10.0:
+        new_stop = round(entry_price * 1.0, 2)
+        reason = f'赚过 5% → 保本位 ¥{new_stop:.2f}'
+    elif profit_pct < 20.0:
+        new_stop = round(entry_price * 1.02, 2)
+        reason = f'赚过 10% → 锁 2% 利润 ¥{new_stop:.2f}'
+    else:
+        floor_a = entry_price * 1.10
+        floor_b = highest_price * 0.92
+        new_stop = round(max(floor_a, floor_b), 2)
+        reason = f'赚过 20% → 跟踪高点 max(entry×1.10, high×0.92) = ¥{new_stop:.2f}'
+    
+    # 只能上移不能下移
+    if current_trailing and current_trailing > new_stop:
+        return current_trailing, f'保持现跟踪位 ¥{current_trailing:.2f} (新计算 ¥{new_stop:.2f} 低于现位，不下移)'
+    return new_stop, reason
+
+
+def update_position_trailing(account_id: int, code: str, current_price: float) -> dict:
+    """P2: 更新仓位的 highest_price 和 trailing_stop_price。每次实时价格变动后调用。
+    
+    返回: {'updated': bool, 'highest': float, 'trailing': float, 'reason': str}
+    """
+    conn = sqlite3.connect(_DB_PATH)
+    try:
+        cur = conn.cursor()
+        row = cur.execute(
+            "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+            "FROM sim_positions WHERE account_id=? AND stock_code=?",
+            (account_id, code)
+        ).fetchone()
+        if not row or row[0] <= 0:
+            return {'updated': False, 'reason': '无持仓'}
+        qty, avg_cost, prev_high, prev_trailing = row
+        new_high = max(prev_high or avg_cost, current_price)
+        new_trailing, reason = calc_trailing_stop(avg_cost, new_high, prev_trailing)
+        cur.execute(
+            "UPDATE sim_positions SET highest_price=?, trailing_stop_price=? "
+            "WHERE account_id=? AND stock_code=?",
+            (new_high, new_trailing, account_id, code)
+        )
+        conn.commit()
+        return {
+            'updated': True,
+            'highest': new_high,
+            'trailing': new_trailing,
+            'reason': reason,
+        }
+    finally:
+        conn.close()
+
+
+def _get_today_vol_ratio(code: str) -> float | None:
+    """获取今日量 / 5日均量 比值。带缓存。"""
+    if not code:
+        return None
+    import time
+    now_ts = time.time()
+    cached_key = f'volratio_{code}'
+    cached = _VOL_CACHE.get(cached_key)
+    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
+        return cached[1] if cached[1] >= 0 else None
+    try:
+        import baostock as bs
+        from datetime import datetime, timedelta
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=20)).strftime('%Y-%m-%d')
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while rs.error_code == '0' and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+        if len(rows) < 6:
+            _VOL_CACHE[cached_key] = (now_ts, -1.0)  # type: ignore
+            return None
+        vols = [float(r[1]) for r in rows if r[1]]
+        if not vols or len(vols) < 6:
+            return None
+        today_v = vols[-1]
+        avg5 = sum(vols[-6:-1]) / 5  # 不含今日的近 5 日均
+        ratio = today_v / avg5 if avg5 > 0 else 0.0
+        _VOL_CACHE[cached_key] = (now_ts, ratio)  # type: ignore
+        return ratio
+    except Exception as e:
+        logger.warning(f"_get_today_vol_ratio({code}) failed: {e}")
+        return None
+
 
 
 def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
@@ -487,9 +685,69 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     code = rule["code"]
     name = rule["name"]
     action = decide_action(rule, cur_price)
+    severity = None
+    severity_label = ''
+    
+    # 🔥 P0+P2: 智能止损三档评级 + 跟踪止损 — 只对 stop_loss 类 level 作修正
+    stop_levels = {'stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'}
+    severity_msg = ''
+    if rule.get('level') in stop_levels:
+        # P2: 先拉仓位，拿 trailing_stop_price
+        position = None
+        try:
+            conn = sqlite3.connect(_DB_PATH)
+            row = conn.execute(
+                "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+                "FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            conn.close()
+            if row and row[0] > 0:
+                position = {
+                    'quantity': row[0],
+                    'avg_cost': row[1],
+                    'highest_price': row[2],
+                    'trailing_stop_price': row[3],
+                }
+                # P2: 先更新跟踪止损（钉住高点、抬高止损位）
+                update_position_trailing(_ACCOUNT_ID, code, cur_price)
+                # 重拉拿最新的 trailing_stop_price
+                conn = sqlite3.connect(_DB_PATH)
+                row2 = conn.execute(
+                    "SELECT highest_price, trailing_stop_price "
+                    "FROM sim_positions WHERE account_id=? AND stock_code=?",
+                    (_ACCOUNT_ID, code)
+                ).fetchone()
+                conn.close()
+                if row2:
+                    position['highest_price'] = row2[0]
+                    position['trailing_stop_price'] = row2[1]
+        except Exception as e:
+            logger.warning(f"拉仓位/更新跟踪失败 {code}: {e}")
+        
+        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
+        severity_msg = sev_reason
+        # 顶级标签，供上层展示
+        sev_emoji = {'soft': '⚠️ 软止损', 'confirmed': '📉 确认止损', 'hard': '⛔️ 硬止损', 'trailing': '🎯 跟踪止损'}.get(severity, '')
+        if sev_emoji:
+            severity_label = f"{sev_emoji} | {sev_reason}"
+        if sev_action == 'DEFER':
+            logger.info(f"⚠️ [{code}] 软止损推迟: {sev_reason}")
+            return {
+                'action': 'NO_ACTION', 'success': True,
+                'message': f'软止损预警（不自动卖）: {sev_reason}',
+                'trade': None,
+                'severity': severity,
+                'severity_label': severity_label,
+            }
+        # 修正 action：SELL_HALF/SELL_ALL 以 severity 为准
+        if sev_action in ('SELL_HALF', 'SELL_ALL'):
+            action = sev_action
+            logger.info(f"🔥 [{code}] 止损评级={severity}: {sev_reason}")
     
     if action == 'NO_ACTION':
-        return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None}
+        return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None,
+                'severity': severity, 'severity_label': severity_label}
 
     # 🚺 趋势过滤闸（frozen / wait_macd / manual_only 会拦截 BUY）
     gate_ok, gate_reason = _check_trend_gate(rule, action)
@@ -574,7 +832,8 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
         return {
             'action': action, 'success': True,
             'message': f'卖出 {name} {sell_qty}股 @{cur_price:.2f} = {amount:.2f}（净到手 {net_proceeds:.2f}）',
-            'trade': {'direction': 'SELL', 'qty': sell_qty, 'price': cur_price, 'amount': amount, 'fee': commission+tax}
+            'trade': {'direction': 'SELL', 'qty': sell_qty, 'price': cur_price, 'amount': amount, 'fee': commission+tax},
+            'severity': severity, 'severity_label': severity_label,
         }
     
     # ----- 买入 -----

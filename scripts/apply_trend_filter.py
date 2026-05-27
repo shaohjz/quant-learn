@@ -65,6 +65,12 @@ def main():
         h = health[code]
         gate = STATUS_TO_GATE[h['status']]
 
+        # ⚡ 如果用户手动设了 gate_locked=true，保持原 gate（如电信的 require_support）
+        existing_tf = info.get('trend_filter', {}) or {}
+        if existing_tf.get('gate_locked'):
+            gate = existing_tf.get('gate', gate)
+            print(f"  🔒 {code} {info.get('name','')} gate 锁定为 {gate}，不覆盖")
+
         info['trend_filter'] = {
             'gate': gate,
             'status': h['status'],
@@ -77,6 +83,19 @@ def main():
             'atr_pct': h.get('atr_pct'),
             'updated_at': date.today().isoformat(),
         }
+        
+        # P1: ATR 动态止损价 — 足以覆盖固定 -8%。裁裁到 [5%, 15%]
+        atr_pct = h.get('atr_pct') or 0.0
+        if atr_pct > 0:
+            atr_stop_pct = max(5.0, min(15.0, round(2 * atr_pct, 2)))
+            info['trend_filter']['atr_stop_pct'] = atr_stop_pct
+            info['trend_filter']['atr_stop_basis'] = f'2*ATR={2*atr_pct:.1f}% (裁到 [5,15])'
+        
+        # 保留手动字段 gate_locked / note
+        if existing_tf.get('gate_locked'):
+            info['trend_filter']['gate_locked'] = True
+        if existing_tf.get('note'):
+            info['trend_filter']['note'] = existing_tf['note']
 
         # frozen：移除 buy_zone/buy_strong + 加右侧确认
         if gate == 'frozen':

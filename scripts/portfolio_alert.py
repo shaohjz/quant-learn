@@ -43,13 +43,22 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 #  Webhook 推送配置
 # ====================================================================
 def _load_webhook():
-    """从 config.local.yaml 读 webhook URL，读不到返回 None"""
+    """从 config.yaml 读 notify.wecom_webhook，读不到返回 None"""
     try:
         import yaml
-        local_cfg = ROOT / "config.local.yaml"
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        url = (cfg.get('notify') or {}).get('wecom_webhook', '') or ''
+        if url:
+            return url
+    except Exception:
+        pass
+    # 兼容旧路径：config.local.yaml
+    try:
+        import yaml
+        local_cfg = ROOT / 'config.local.yaml'
         if local_cfg.exists():
-            data = yaml.safe_load(local_cfg.read_text(encoding="utf-8")) or {}
-            return (data.get("notifier") or {}).get("wecom_webhook")
+            data = yaml.safe_load(local_cfg.read_text(encoding='utf-8')) or {}
+            return (data.get('notifier') or {}).get('wecom_webhook', '') or ''
     except Exception:
         pass
     return None

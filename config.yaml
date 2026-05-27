@@ -12,6 +12,9 @@ accounts:
     initial_cash: 25000.0
     auto_trade: false
     description: 用户实际持仓镜像，由 scripts/sync_real_position.py 维护
+
+notify:
+  wecom_webhook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=20784b5b-ac44-421b-9d1f-edcf6d2c4a12'
 real_portfolio_rules:
   '600330':
     name: 天通股份

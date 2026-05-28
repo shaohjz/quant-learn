@@ -4,12 +4,12 @@ scripts/devops_watch.py — DevOps Agent 主脚本
   1. 检测 vqlearn 进程是否存活，挂了自动拉起
   2. 检测代码是否有新 commit 未生效（进程启动时间 < 最新 commit 时间），有则重启
   3. 检测 sim_executor 是否加载成功（读 vqlearn 日志最后 N 行）
-  4. 企微推送关键事件
+  4. ⚠️ 不再自己发企微通知！统一由 DevOps Agent (cron) 读输出后推送。
 
 用法：
-  python scripts/devops_watch.py           # 完整检查 + 自动修复
-  python scripts/devops_watch.py --dry-run  # 只打印，不操作
-  # Windows 计划任务每 30 分钟调一次
+  python scripts/devops_watch.py            # 完整检查 + 自动修复
+  python scripts/devops_watch.py --dry-run   # 只打印，不操作
+  # Windows 计划任务每 30 分钟调一次（由 DevOps-Agent cron 管理）
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import json
 import logging
 import subprocess
 import psutil  # type: ignore
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +29,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
+# 不再自己发通知，统一由 DevOps Agent 推送
+# 保留 WEBHOOK_URL 供未来扩展用
 WEBHOOK_URL: str | None = None
 try:
     cfg = (ROOT / "config.local.yaml").read_text(encoding="utf-8")
@@ -39,34 +41,20 @@ except Exception:
     pass
 
 
-def _notify(msg: str) -> None:
-    if not WEBHOOK_URL:
-        LOG.info(f"[notify-skipped] {msg}")
-        return
-    try:
-        import urllib.request, json as _json
-        body = _json.dumps({"msgtype": "markdown", "markdown": {"content": msg}}).encode("utf-8")
-        req = urllib.request.Request(
-            WEBHOOK_URL,
-            data=body,
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            LOG.info(f"[notify] sent: {resp.read()}")
-    except Exception as e:
-        LOG.warning(f"[notify] failed: {e}")
+def _log(msg: str) -> None:
+    """打印到日志，不自己发企微（由 Agent 统一推送）"""
+    LOG.info(f"[notify] {msg}")
 
 
 def _get_vqlearn_proc() -> list[dict]:
-    """返回正在跑的 vqlearn runner 进程列表（按我们的特征过滤）"""
+    """返回正在跑的 vqlearn runner 进程列表"""
     results = []
     for p in psutil.process_iter(["pid", "cmdline", "create_time"]):
         try:
             cmd = p.info["cmdline"] or []
-            if not cmd:  # 无命令行（系统进程），跳过
+            if not cmd:
                 continue
             cmd_str = " ".join(cmd)
-            # 匹配：python -m vqlearn.runners.run_paper_with_strategy
             if "python" in cmd[0].lower() and "vqlearn.runners.run_paper_with_strategy" in cmd_str:
                 results.append({
                     "pid": p.info["pid"],
@@ -89,8 +77,10 @@ def _get_latest_commit_time() -> float:
 
 
 def _restart_vqlearn(dry_run: bool = False) -> bool:
-    """杀旧进程，拉起新的。返回是否成功。"""
+    """杀所有旧进程，拉起新的。返回是否成功。"""
     procs = _get_vqlearn_proc()
+    if not procs:
+        LOG.info("[restart] no vqlearn process found, will start new one")
     for p in procs:
         pid = p["pid"]
         LOG.info(f"[restart] killing old vqlearn PID={pid}")
@@ -100,6 +90,10 @@ def _restart_vqlearn(dry_run: bool = False) -> bool:
             except Exception as e:
                 LOG.warning(f"[restart] kill PID={pid} failed: {e}")
 
+    # 等进程完全退出
+    import time; time.sleep(2)
+
+    # 只拉一个新进程
     bat = ROOT / "scripts" / "vqlearn_live_runner.bat"
     if not bat.exists():
         LOG.error(f"[restart] bat not found: {bat}")
@@ -107,7 +101,6 @@ def _restart_vqlearn(dry_run: bool = False) -> bool:
 
     LOG.info(f"[restart] starting {bat}")
     if not dry_run:
-        # 用 start 放到后台，不阻塞 devops 本身
         subprocess.Popen(
             f'cmd /c start /min "" "{bat}"',
             shell=True,
@@ -129,9 +122,7 @@ def _check_sim_executor_in_log() -> str | None:
         lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
         tail = lines[-50:]
         for line in reversed(tail):
-            if "sim_executor 未加载" in line or "sim_executor.*未加载" in line:
-                return line.strip()
-            if "_sim_execute_trade is None" in line:
+            if "sim_executor 未加载" in line or "_sim_execute_trade is None" in line:
                 return line.strip()
         # 反过来找 success 标记
         for line in tail:
@@ -157,7 +148,7 @@ def run(dry_run: bool = False) -> None:
         issues.append(msg)
         if not dry_run:
             _restart_vqlearn(dry_run=False)
-            _notify(f"## 🔄 DevOps 自动恢复\n\n**vqlearn 进程不存在，已自动重启。**\n- 时间: {datetime.now().strftime('%H:%M:%S')}")
+            _log(f"vqlearn 进程不存在，已自动重启")
     else:
         for p in procs:
             started = datetime.fromtimestamp(p["create_time"]).strftime("%m-%d %H:%M")
@@ -174,11 +165,10 @@ def run(dry_run: bool = False) -> None:
                 LOG.warning(msg)
                 issues.append(msg)
                 if not dry_run:
-                    _notify(
-                        f"## 🔄 DevOps 自动重启\n\n**检测到新代码提交，vqlearn 自动重启生效。**\n"
-                        f"- 进程启动时间: {datetime.fromtimestamp(proc_start_ts).strftime('%m-%d %H:%M')}\n"
-                        f"- 最新 commit: {datetime.fromtimestamp(latest_commit_ts).strftime('%m-%d %H:%M')}\n"
-                        f"- 时间差: {drift:.0f}s"
+                    _log(
+                        f"检测到新代码提交，vqlearn 自动重启生效。"
+                        f" 进程启动: {datetime.fromtimestamp(proc_start_ts).strftime('%m-%d %H:%M')}"
+                        f" | 最新 commit: {datetime.fromtimestamp(latest_commit_ts).strftime('%m-%d %H:%M')}"
                     )
                     _restart_vqlearn(dry_run=False)
                     break  # 重启一次就够了
@@ -190,12 +180,7 @@ def run(dry_run: bool = False) -> None:
         LOG.warning(msg)
         issues.append(msg)
         if not dry_run:
-            _notify(
-                f"## ❌ DevOps 严重告警\n\n**sim_executor 加载失败，买入信号无法执行！**\n\n"
-                f"```\n{err}\n```\n\n"
-                f"DevOps 将尝试重启 vqlearn 进程。\n"
-                f"时间: {datetime.now().strftime('%H:%M:%S')}"
-            )
+            _log(f"sim_executor 加载失败，买入信号无法执行！DevOps 将尝试重启 vqlearn 进程。")
             _restart_vqlearn(dry_run=False)
 
     # ---- 4. 进程重启后验证 ----
@@ -206,7 +191,7 @@ def run(dry_run: bool = False) -> None:
             LOG.info(f"[verify] restart OK, new PID={procs2[0]['pid']}")
         else:
             LOG.error("[verify] restart failed, process still not running!")
-            _notify("## ❌ DevOps 告警\n\n**vqlearn 重启后进程仍未拉起，请手动检查！**")
+            _log("vqlearn 重启后进程仍未拉起，请手动检查！")
 
     if not issues:
         LOG.info("[devops-watch] all checks passed")

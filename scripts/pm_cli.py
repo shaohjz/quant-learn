@@ -101,6 +101,35 @@ def cmd_list(args):
         for r in rows:
             print(f"[{r['id']}] ({r['status']}) [{r['priority']}] {r['title']}")
 
+def cmd_timeout_reset(args):
+    """ 将 in_progress 超过 N 小时的任务重置为 pending（超时保护）"""
+    import os
+    hours = args.hours if hasattr(args, 'hours') and args.hours else 6
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, title, status, updated_at FROM tasks WHERE status='in_progress'"
+        )
+        rows = cursor.fetchall()
+        now = datetime.now()
+        reset_count = 0
+        for r in rows:
+            try:
+                updated = datetime.strptime(r['updated_at'], "%Y-%m-%d %H:%M:%S")
+                diff_hours = (now - updated).total_seconds() / 3600
+                if diff_hours > hours:
+                    cursor.execute(
+                        "UPDATE tasks SET status='pending', updated_at=? WHERE id=?",
+                        (now.strftime("%Y-%m-%d %H:%M:%S"), r['id'])
+                    )
+                    print(f"⏰ Timeout reset: {r['id']} ({r['title']}) — in_progress for {diff_hours:.1f}h")
+                    reset_count += 1
+            except Exception as e:
+                print(f"Skip {r['id']}: {e}")
+        conn.commit()
+        print(f"Total reset: {reset_count} task(s)")
+
 def cmd_dedup(args):
     """ 去重脚本 """
     with sqlite3.connect(DB_PATH) as conn:
@@ -153,6 +182,10 @@ def main():
     p_list.add_argument("--status", help="Filter by status")
     p_list.add_argument("--type", choices=["story", "bug"], help="Filter by type")
     
+    # Timeout reset
+    p_timeout = subparsers.add_parser("timeout", help="Reset in_progress tasks stuck >N hours to pending")
+    p_timeout.add_argument("--hours", type=int, default=6, help="Timeout in hours (default 6)")
+
     # Dedup
     p_dedup = subparsers.add_parser("dedup", help="Deduplicate pending tasks based on title")
 
@@ -165,6 +198,8 @@ def main():
         cmd_list(args)
     elif args.command == "dedup":
         cmd_dedup(args)
+    elif args.command == "timeout":
+        cmd_timeout_reset(args)
     else:
         parser.print_help()
 

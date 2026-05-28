@@ -350,6 +350,49 @@ def main():
     checked_count = 0
     skipped_already = 0
     
+    # REQ-046: 自动检查严重浮亏个股并触发止损
+    try:
+        import sqlite3
+        from pathlib import Path
+        DB_PATH = Path(__file__).resolve().parents[1] / 'data' / 'sim_live_mirror.db'
+        
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        positions = conn.execute(
+            "SELECT account_id, stock_code, stock_name, quantity, avg_cost, current_price, pnl_pct "
+            "FROM sim_positions WHERE quantity > 0"
+        ).fetchall()
+        conn.close()
+        
+        for pos in positions:
+            pnl_pct = pos['pnl_pct'] or 0
+            # 浮亏超过 8% 自动触发止损
+            if pnl_pct <= -8.0 and pos['quantity'] > 0:
+                logger.warning(f"🚨 自动止损触发: {pos['stock_code']} 浮亏 {pnl_pct:.2f}%")
+                
+                # 构造止损 rule
+                rule = {
+                    'code': pos['stock_code'],
+                    'name': pos['stock_name'],
+                    'level': 'stop_loss',
+                    'trigger': pos['avg_cost'] * 0.92,
+                    'dir': 'below',
+                    'message': f'自动止损 (浮亏 {pnl_pct:.2f}%)',
+                    'source': 'auto'
+                }
+                
+                # 执行卖出
+                from sim_executor import execute_trade
+                result = execute_trade(rule, pos['current_price'])
+                
+                if result['success']:
+                    logger.info(f"✅ 自动止损成功: {result['message']}")
+                    triggered_msgs.append(f"🚨 自动止损: {pos['stock_code']} 浮亏 {pnl_pct:.2f}% → 已卖出")
+                else:
+                    logger.error(f"❌ 自动止损失败: {result['message']}")
+    except Exception as e:
+        logger.warning(f"自动止损检查异常: {e}")
+    
     for rule in RULES:
         code = rule["code"]
         rule_id = f"{code}_{rule['level']}"

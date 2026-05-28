@@ -492,8 +492,11 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
         conn.close()
 
 
-def decide_action(rule: dict, cur_price: float) -> str:
-    """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。"""
+def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
+    """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。
+    
+    REQ-048 修复：添加 position 参数，传递给 _check_stop_loss_severity()
+    """
     level = rule.get('level', '')
     code = rule.get('code', '')
     name = rule.get('name', '')
@@ -532,7 +535,9 @@ def decide_action(rule: dict, cur_price: float) -> str:
         return 'BUY'
 
     elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):
-        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, None)
+        # REQ-048 修复：传递 position 参数给 _check_stop_loss_severity()
+        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
+        logger.info(f'[{code}] 止损决策: severity={severity}, action={sev_action}')
         return sev_action  # NO_ACTION / SELL_HALF / SELL_ALL / DEFER
 
     elif level in ('take_profit', 'half_out'):

@@ -1,7 +1,8 @@
 import sys
+import json
 import sqlite3
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -186,6 +187,9 @@ def main():
     p_timeout = subparsers.add_parser("timeout", help="Reset in_progress tasks stuck >N hours to pending")
     p_timeout.add_argument("--hours", type=int, default=6, help="Timeout in hours (default 6)")
 
+    # Report
+    p_report = subparsers.add_parser("report", help="Generate hourly PM report (JSON)")
+
     # Dedup
     p_dedup = subparsers.add_parser("dedup", help="Deduplicate pending tasks based on title")
 
@@ -200,8 +204,59 @@ def main():
         cmd_dedup(args)
     elif args.command == "timeout":
         cmd_timeout_reset(args)
+    elif args.command == "report":
+        cmd_report(args)
     else:
         parser.print_help()
+
+
+def cmd_report(args):
+    """生成小时汇报 JSON（给 PM Agent 用）"""
+    now = datetime.now()
+    since = (now - timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # 任务统计
+    cur.execute("SELECT status, COUNT(*) as cnt FROM tasks GROUP BY status")
+    status_stats = {r['status']: r['cnt'] for r in cur.fetchall()}
+
+    # 最近 1h commit
+    try:
+        import subprocess
+        log_out = subprocess.check_output(
+            ['git', 'log', '--oneline', f'--since={since}'],
+            cwd=str(ROOT), stderr=subprocess.DEVNULL
+        ).decode('utf-8', errors='replace').strip()
+        commits = log_out.splitlines() if log_out else []
+    except Exception:
+        commits = []
+
+    # in_progress 超时检查（>3h）
+    cur.execute("SELECT id, title, updated_at FROM tasks WHERE status='in_progress'")
+    stuck = []
+    for r in cur.fetchall():
+        try:
+            upd = datetime.strptime(r['updated_at'], '%Y-%m-%d %H:%M:%S')
+            if (now - upd).total_seconds() > 10800:
+                stuck.append({'id': r['id'], 'title': r['title']})
+        except Exception:
+            pass
+
+    conn.close()
+
+    report = {
+        'time': now.strftime('%H:%M'),
+        'tasks': status_stats,
+        'recent_commits': commits[:5],
+        'stuck_tasks': stuck,
+        'pending_count': status_stats.get('pending', 0),
+    }
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+
+
 
 if __name__ == "__main__":
     main()

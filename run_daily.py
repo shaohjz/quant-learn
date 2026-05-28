@@ -22,6 +22,10 @@ from datetime import date as Date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# 确保所需目录存在（修复 BUG-006）
+from scripts.ensure_dirs import ensure_dirs
+ensure_dirs()
+
 from sim.db import init_tables
 from sim.signal_generator import generate_signals
 from sim.stock_pool import StockPool

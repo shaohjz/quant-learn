@@ -50,6 +50,21 @@ real_portfolio_rules:
         trigger: 7.44
         dir: above
         msg: 🎉 华软科技涨至 7.44！(成本×1.15 或 MA20+2ATR)，建议止盈
+  '603757':
+    name: 大元泵业
+    rules:
+      stop_loss_soft:
+        trigger: 55.0
+        dir: below
+        msg: ⚠️ 大元泵业跌破 55.00！浮亏约 -8%，接近止损线，密切关注
+      stop_loss:
+        trigger: 50.0
+        dir: below
+        msg: 🚨 大元泵业跌破 50.00！浮亏超 -10%，硬止损必须卖出
+      take_profit:
+        trigger: 65.0
+        dir: above
+        msg: 🎉 大元泵业涨至 65.00，回本线附近，可考虑减仓
   '603601':
     name: 再升科技
     rules:
@@ -1003,8 +1018,8 @@ legacy_watch:
     enabled: false
     note: 5/19 暴跌后清仓
 risk:
-  max_position_pct: 0.15
-  max_daily_trades: 5
+  max_position_pct: 0.20  # 提升单票仓位上限从15%到20%，提升资金利用率
+  max_daily_trades: 10     # 提升每日交易上限从5到10笔，匹配更激进的信号生成
   stop_loss_pct: -0.08
   take_profit_pct: 0.15
 fees:

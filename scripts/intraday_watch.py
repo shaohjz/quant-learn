@@ -270,6 +270,14 @@ def cmd_post():
     out = "\n".join(lines)
     print(out)
     _log({"mode": "post", "today_pnl": total_pnl_today, "overall_pnl": total_pnl_overall})
+    
+    # ✅ BUG-016 修复：推送收盘复盘报告
+    try:
+        from sim.notifier import send_markdown
+        send_markdown(out)
+    except Exception as e:
+        print(f"⚠️ 推送失败：{e}")
+    
     return out
 
 

@@ -9,6 +9,7 @@ sim_executor_v2.py — 修复买入执行率低的问题
   2. vol_ratio 为 None 时放行（只记录 warning）
 """
 
+import os
 import sys
 import json
 import logging

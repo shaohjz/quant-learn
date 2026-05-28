@@ -211,8 +211,8 @@ def render(results: list[dict]) -> str:
         f = r["factors"]
         lines.append(
             f"{i:<4}{r['code']:<8}{r['name'][:6]:<10}{r['price']:>7.2f} "
-            f"{r['pct_chg']:>+6.2f}% {r['score']:>5d}  "
-            f"{f['trend']:>4d}  {f['breakout']:>4d}  {f['volume']:>4d}  {f['zone']:>4d}"
+            f"{r['pct_chg']:>+6.2f}% {r['score']:>5.1f}  "
+            f"{f['trend']:>4.1f}  {f['breakout']:>4.1f}  {f['volume']:>4.1f}  {f['zone']:>4.1f}"
         )
     return "\n".join(lines)
 

@@ -24,3 +24,14 @@ docs/
 
 # 让 output/wealth_manager_report*.md 不被忽略
 !output/wealth_manager_report*.md
+
+# Python venv
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.pytest_cache/
+__pycache__/
+

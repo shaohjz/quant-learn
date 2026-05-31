@@ -9,8 +9,8 @@ sim_executor_v2.py — 修复买入执行率低的问题
   2. vol_ratio 为 None 时放行（只记录 warning）
 """
 
-import os
 import sys
+import os
 import json
 import logging
 import sqlite3
@@ -493,11 +493,8 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
         conn.close()
 
 
-def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
-    """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。
-    
-    REQ-048 修复：添加 position 参数，传递给 _check_stop_loss_severity()
-    """
+def decide_action(rule: dict, cur_price: float) -> str:
+    """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。"""
     level = rule.get('level', '')
     code = rule.get('code', '')
     name = rule.get('name', '')
@@ -541,7 +538,7 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
                 # 现金额买不起默认数量，尝试用全部现金买
                 max_qty = int(cash * 0.95 / cur_price / LOT_SIZE) * LOT_SIZE
                 if max_qty <= 0:
-                    logger.info(f'⚠️ [{code}] {level} 现金不足: ¥{cash:.0f} 不够买100股@¥{cur_price:.2f}')
+                    logger.info(f'⚠️ [{code}] {level} 现金不足: ¥{cash:.0f} 不够买100股@{cur_price:.2f}')
                     return 'NO_ACTION'
                 else:
                     logger.info(f'⚠️ [{code}] {level} 现金不足默认预算，改用全部现金买 {max_qty}股')
@@ -552,9 +549,7 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         return 'BUY'
 
     elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):
-        # REQ-048 修复：传递 position 参数给 _check_stop_loss_severity()
-        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
-        logger.info(f'[{code}] 止损决策: severity={severity}, action={sev_action}')
+        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, None)
         return sev_action  # NO_ACTION / SELL_HALF / SELL_ALL / DEFER
 
     elif level in ('take_profit', 'half_out'):

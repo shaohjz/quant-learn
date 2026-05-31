@@ -150,7 +150,8 @@ class QMTBroker(IBroker):
     # ---------- 下单 ----------
     def _place_order(self, side: OrderSide, stock_code: str, price: float,
                      quantity: int, stock_name: str, signal_reason: str,
-                     trade_date: Optional[Date]) -> OrderResult:
+                     trade_date: Optional[Date],
+                     signal_detail: dict = None) -> OrderResult:
         self._ensure_connected()
 
         # ---- DRY-RUN 分支 ----
@@ -221,6 +222,7 @@ class QMTBroker(IBroker):
                 "stock_code": stock_code,
                 "stock_name": stock_name,
                 "signal_reason": signal_reason,
+                "signal_detail": signal_detail,  # REQ-032
                 "submit_price": price,
                 "submit_quantity": quantity,
                 "trade_date": trade_date,
@@ -244,15 +246,19 @@ class QMTBroker(IBroker):
 
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
-            trade_date: Optional[Date] = None) -> OrderResult:
+            trade_date: Optional[Date] = None,
+            signal_detail: dict = None) -> OrderResult:
         return self._place_order(OrderSide.BUY, stock_code, price, quantity,
-                                 stock_name, signal_reason, trade_date)
+                                 stock_name, signal_reason, trade_date,
+                                 signal_detail)
 
     def sell(self, stock_code: str, price: float, quantity: int,
              stock_name: str = "", signal_reason: str = "",
-             trade_date: Optional[Date] = None) -> OrderResult:
+             trade_date: Optional[Date] = None,
+             signal_detail: dict = None) -> OrderResult:
         return self._place_order(OrderSide.SELL, stock_code, price, quantity,
-                                 stock_name, signal_reason, trade_date)
+                                 stock_name, signal_reason, trade_date,
+                                 signal_detail)
 
     def cancel(self, order_id: str) -> OrderResult:
         self._ensure_connected()
@@ -354,6 +360,7 @@ class QMTBroker(IBroker):
     def _on_trade_filled(self, trade) -> None:
         """成交回调：把成交流水写入 sim_trades，broker='qmt'"""
         try:
+            import json as _json
             order_id = str(trade.order_id)
             with self._meta_lock:
                 meta = self._order_meta.get(order_id, {})
@@ -373,12 +380,15 @@ class QMTBroker(IBroker):
             conn = get_conn()
             try:
                 cur = conn.cursor()
+                _detail = meta.get("signal_detail")
+                _detail_str = _json.dumps(_detail, ensure_ascii=False) if _detail else None
                 cur.execute(
                     """INSERT INTO sim_trades
                        (account_id, trade_date, stock_code, stock_name, side,
                         price, quantity, amount, commission, tax,
-                        signal_reason, broker, order_id, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        signal_reason, broker, order_id, created_at,
+                        signal_detail)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         self.local_account_id,
                         (meta.get("trade_date") or Date.today()).isoformat(),
@@ -390,6 +400,7 @@ class QMTBroker(IBroker):
                         "qmt",
                         order_id,
                         datetime.now().isoformat(),
+                        _detail_str,
                     ),
                 )
                 conn.commit()

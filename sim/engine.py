@@ -112,7 +112,8 @@ class SimEngine:
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
             trade_date: Date = None,
-            broker: str = "sim", broker_order_id: str = None) -> dict:
+            broker: str = "sim", broker_order_id: str = None,
+            signal_detail: dict = None) -> dict:
         """
         买入（佣金万3，最低5元）
         返回 {success, msg, amount, commission}
@@ -202,16 +203,36 @@ class SimEngine:
                 )
 
             # 3. 写交易记录
-            cur.execute(
-                "INSERT INTO sim_trades "
-                "(account_id, trade_date, stock_code, stock_name, direction, "
-                "price, quantity, amount, commission, tax, signal_reason, "
-                "broker, broker_order_id) "
-                "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?)",
-                (self.account_id, str(trade_date), stock_code, stock_name,
-                 round(price, 4), quantity, round(amount, 2),
-                 round(commission, 2), signal_reason, broker, broker_order_id),
-            )
+            import json as _json, sqlite3 as _sq
+            _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
+            # 动态检测 signal_detail 列是否存在（兼容旧表）
+            _cols = [r[1] for r in cur.execute('PRAGMA table_info(sim_trades)').fetchall()]
+            _has_detail = 'signal_detail' in _cols
+            if _has_detail:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id, signal_detail) "
+                    "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                          round(price, 4), quantity, round(amount, 2),
+                          round(commission, 2), signal_reason,
+                          broker, broker_order_id, _detail_str)
+            else:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id) "
+                    "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                          round(price, 4), quantity, round(amount, 2),
+                          round(commission, 2), signal_reason,
+                          broker, broker_order_id)
+            cur.execute(_sql, _params)
         finally:
             conn.close()
 
@@ -226,7 +247,8 @@ class SimEngine:
     def sell(self, stock_code: str, price: float, quantity: int,
              stock_name: str = "", signal_reason: str = "",
              trade_date: Date = None,
-             broker: str = "sim", broker_order_id: str = None) -> dict:
+             broker: str = "sim", broker_order_id: str = None,
+             signal_detail: dict = None) -> dict:
         """卖出（佣金万3最低5元 + 印花税千1）"""
         if quantity <= 0 or price <= 0:
             return {"success": False, "msg": "价格/数量无效"}
@@ -273,16 +295,18 @@ class SimEngine:
                 )
 
             # 3. 写交易记录
+            import json as _json
+            _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
             cur.execute(
                 "INSERT INTO sim_trades "
                 "(account_id, trade_date, stock_code, stock_name, direction, "
                 "price, quantity, amount, commission, tax, signal_reason, "
-                "broker, broker_order_id) "
-                "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?)",
+                "broker, broker_order_id, signal_detail) "
+                "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (self.account_id, str(trade_date), stock_code, stock_name,
                  round(price, 4), quantity, round(amount, 2),
                  round(commission, 2), round(tax, 2), signal_reason,
-                 broker, broker_order_id),
+                 broker, broker_order_id, _detail_str),
             )
         finally:
             conn.close()

@@ -155,10 +155,13 @@ def compute_realized_pnl(account_id: int, target_date: date):
 # =====================================
 # 3. nav 写入 + 计算
 # =====================================
-def write_daily_nav(account_id: int, target_date: date, account: dict, positions: list):
+def write_daily_nav(account_id: int, target_date: date, account: dict, positions: list, initial_cash: float | None = None):
     market_value = sum(p['market_value'] for p in positions)
     total_value = market_value + account['cash']
-    initial = account['initial_cash'] or 1
+    # 优先用传入的 initial_cash，否则从 account dict 取
+    if initial_cash is None:
+        initial_cash = account.get('initial_cash') or 100000.0
+    initial = initial_cash
     cumulative_return = (total_value / initial - 1) * 100
 
     c = get_conn()
@@ -207,16 +210,60 @@ def write_daily_nav(account_id: int, target_date: date, account: dict, positions
 # 4. 文本生成
 # =====================================
 def render_account_section(acct: dict, target_date: date) -> str:
+    lines = []
+    
+    # ── REQ-035: 资金口径一致性检测 ──────────────────────
+    try:
+        from sim.db import detect_cash_discrepancy
+        discrepancy = detect_cash_discrepancy(acct['id'])
+    except Exception:
+        discrepancy = None
+    # ──────────────────────────────────────────────────────────
+
     account = fetch_account(acct['id'])
+    # REQ-035: 用 config.yaml 的 initial_cash（而非数据库旧值）计算 nav
+    try:
+        from sim.config import get_account_config
+        cfg = get_account_config(acct['id'])
+        config_initial = cfg['initial_cash']
+    except Exception:
+        config_initial = (account or {}).get('initial_cash', 100000.0)
+
     if not account:
-        return ''
+        # 即使没有账户记录，也要输出口径警告（如果有）
+        if discrepancy:
+            lines.append(f"## {acct['icon']} {acct['name']}")
+            lines.append('')
+            lines.append('⚠️ **资金口径异常**：数据库无账户记录，但 config.yaml 中有配置')
+            lines.append('')
+        return '\n'.join(lines)
+
     positions = fetch_positions(acct['id'])
     trades = fetch_trades(acct['id'], target_date)
     realized = compute_realized_pnl(acct['id'], target_date)
-    nav = write_daily_nav(acct['id'], target_date, account, positions)
+    nav = write_daily_nav(acct['id'], target_date, account, positions, initial_cash=config_initial)
 
     realized_pnl = sum(r['pnl'] for r in realized)
     floating_pnl = sum(p['pnl'] for p in positions)
+
+    # 标题行（如有口径问题，加警告图标）
+    title_prefix = '⚠️ ' if discrepancy else ''
+    lines.append(f"## {title_prefix}{acct['icon']} {acct['name']}")
+    lines.append('')
+
+    # 口径不一致警告（放在最显眼的位置）
+    if discrepancy:
+        icon = '⚠️' if discrepancy['severity'] == 'warn' else '🚨'
+        lines.append(
+            f"{icon} **资金口径不一致！** "
+            f"config ¥{discrepancy['config_initial_cash']:,.0f} "
+            f"vs DB ¥{discrepancy['db_initial_cash']:,.0f} "
+            f"（差¥{discrepancy['diff']:+,.0f} / {discrepancy['diff_pct']*100:+.1f}%）"
+        )
+        lines.append('> PnL 计算以 **config.yaml** 为准，数据库值未同步。')
+        lines.append('> 修复：`from sim.db import sync_account_initial_cash; sync_account_initial_cash('
+                    + str(acct['id']) + ', source="config")`')
+        lines.append('')
 
     lines = []
     lines.append(f"## {acct['icon']} {acct['name']}")
@@ -246,8 +293,57 @@ def render_account_section(acct: dict, target_date: date) -> str:
                 f"(手续费 ¥{fee:.2f})"
             )
             if reason:
-                line += f"  _{reason}_"
+                line += f"  _{reason}_提供"
             lines.append(line)
+            # REQ-032: 展开 signal_detail
+            _detail_raw = t.get('signal_detail') or ''
+            if _detail_raw and isinstance(_detail_raw, str) and len(_detail_raw) > 10:
+                import json as _json
+                try:
+                    _detail = _json.loads(_detail_raw)
+                    _triggered = _detail.get('triggered_rules', [])
+                    _snap = _detail.get('indicators_snapshot', {})
+                    _ver = _detail.get('strategy_version', '')
+                    _lines = [f"  策略版本: {_ver}"] if _ver else []
+                    if _triggered:
+                        _lines.append("  触发规则:")
+                        for _r in _triggered:
+                            _cur = _r.get('current_value')
+                            _th = _r.get('threshold')
+                            _op = _r.get('operator', '?')
+                            _val = f"{_cur:.4f}" if isinstance(_cur, (int, float)) else str(_cur)
+                            _thr = f"{_th:.4f}" if isinstance(_th, (int, float)) else str(_th)
+                            _lines.append(f"    - {_r.get('rule', '')}: 当前值 {_val} {_op} 阈值 {_thr}")
+                    if _snap:
+                        _lines.append("  指标快照: " + ', '.join(
+                            f"{k}={v}" for k, v in _snap.items() if v is not None
+                        )[:200])
+                    _summary = ' | '.join(
+                        _r.get('rule', '')[:20] for _r in (_triggered or [])[:3]
+                    )
+                    lines.append('<details>')
+                    lines.append(f'<summary>📋 查看完整信号解释（{_summary or "触发详情"}）</summary>')
+                    for _l in _lines:
+                        lines.append(_l)
+                    lines.append('</details>')
+                except Exception:
+                    pass
+            elif _detail_raw and isinstance(_detail_raw, dict):
+                # 已经是 dict（测试场景）
+                _triggered = _detail_raw.get('triggered_rules', [])
+                _summary = ' | '.join(
+                    _r.get('rule', '')[:20] for _r in (_triggered or [])[:3]
+                )
+                lines.append('<details>')
+                lines.append(f'<summary>📋 查看完整信号解释（{_summary or "触发详情"}）</summary>')
+                for _r in (_triggered or [])[:5]:
+                    _cur = _r.get('current_value')
+                    _th = _r.get('threshold')
+                    _op = _r.get('operator', '?')
+                    _val = f"{_cur:.4f}" if isinstance(_cur, (int, float)) else str(_cur)
+                    _thr = f"{_th:.4f}" if isinstance(_th, (int, float)) else str(_th)
+                    lines.append(f"  - {_r.get('rule', '')}: 当前值 {_val} {_op} 阈值 {_thr}")
+                lines.append('</details>')
         lines.append('')
 
         if realized:

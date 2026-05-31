@@ -1,8 +1,8 @@
 """
 sim/db.py
-SQLite 持久层 — 跨平台、零配置、单文件。
+SQLite 持久层 - 跨平台、零配置、单文件。
 
-数据库路径默认在项目根目录的 data/sim.db，可通过环境变量 QUANT_DB_PATH 覆盖。
+数据库路径默认在项目根目录的 data/sim.db,可通过环境变量 QUANT_DB_PATH 覆盖。
 """
 import os
 import sqlite3
@@ -10,12 +10,12 @@ from contextlib import contextmanager
 from pathlib import Path
 
 
-# 默认数据库路径：项目根目录/data/sim.db
+# 默认数据库路径:项目根目录/data/sim.db
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _DEFAULT_DB = _PROJECT_ROOT / "data" / "sim.db"
 DB_PATH = Path(os.environ.get("QUANT_DB_PATH", str(_DEFAULT_DB)))
 
-# 默认初始资金（可通过环境变量覆盖）
+# 默认初始资金(可通过环境变量覆盖)
 DEFAULT_INITIAL_CASH = float(os.environ.get("QUANT_INITIAL_CASH", "10000"))
 
 
@@ -24,7 +24,7 @@ def _ensure_db_dir():
 
 
 def get_conn() -> sqlite3.Connection:
-    """获取一个 SQLite 连接（启用外键，使用 Row 工厂方便按列名取值）。"""
+    """获取一个 SQLite 连接(启用外键,使用 Row 工厂方便按列名取值)。"""
     _ensure_db_dir()
     conn = sqlite3.connect(str(DB_PATH), timeout=30, isolation_level=None)  # autocommit
     conn.row_factory = sqlite3.Row
@@ -35,7 +35,7 @@ def get_conn() -> sqlite3.Connection:
 
 @contextmanager
 def cursor():
-    """上下文管理器写法，少写几行 close。"""
+    """上下文管理器写法,少写几行 close。"""
     conn = get_conn()
     try:
         yield conn.cursor()
@@ -96,6 +96,7 @@ def init_tables():
                 signal_reason TEXT,
                 broker TEXT DEFAULT 'sim',  -- sim / qmt / ...
                 broker_order_id TEXT,       -- 实盘委托号
+                signal_detail TEXT,         -- REQ-032 完整信号解释（JSON）
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -122,7 +123,7 @@ def init_tables():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_trades_code ON sim_trades(stock_code)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_pos_code ON sim_positions(stock_code)")
 
-        # 订单记录（OmsEngine EVENT_ORDER 持久化）
+        # 订单记录(OmsEngine EVENT_ORDER 持久化)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS sim_orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,7 +147,7 @@ def init_tables():
             )
         """)
 
-        # 成交记录（OmsEngine EVENT_TRADE 持久化，比 sim_trades 更细粒度）
+        # 成交记录(OmsEngine EVENT_TRADE 持久化,比 sim_trades 更细粒度)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS sim_fills (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -179,7 +180,7 @@ def init_tables():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_fills_code ON sim_fills(stock_code)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_fills_order ON sim_fills(order_id)")
 
-        # 初始化默认账户（如果不存在）
+        # 初始化默认账户(如果不存在)
         cur.execute("SELECT id FROM sim_account WHERE id = 1")
         if not cur.fetchone():
             cur.execute(
@@ -187,7 +188,7 @@ def init_tables():
                 "VALUES (1, 'default', ?, ?, ?)",
                 (DEFAULT_INITIAL_CASH, DEFAULT_INITIAL_CASH, DEFAULT_INITIAL_CASH),
             )
-            print(f"  ✓ 默认账户已创建（初始资金 {DEFAULT_INITIAL_CASH:,.2f}）")
+            print(f"  ✓ 默认账户已创建(初始资金 {DEFAULT_INITIAL_CASH:,.2f})")
         else:
             print("  ✓ 默认账户已存在")
 
@@ -197,7 +198,7 @@ def init_tables():
 
 
 # ============================================================
-# sim_orders / sim_fills 持久化接口（OmsEngine 回放支撑）
+# sim_orders / sim_fills 持久化接口(OmsEngine 回放支撑)
 # ============================================================
 
 def insert_order(
@@ -218,7 +219,7 @@ def insert_order(
     strategy_name: str = "",
     signal_reason: str = "",
 ) -> int:
-    """写入一笔订单，返回 row id。"""
+    """写入一笔订单,返回 row id。"""
     conn = get_conn()
     try:
         cur = conn.cursor()
@@ -244,7 +245,7 @@ def update_order_by_broker_id(
     status: str | None = None,
     cancel_time=None,
 ):
-    """按 broker_order_id 更新订单成交数量/状态（EVENT_ORDER 推送时用）。"""
+    """按 broker_order_id 更新订单成交数量/状态(EVENT_ORDER 推送时用)。"""
     if traded is None and status is None and cancel_time is None:
         return
     conn = get_conn()
@@ -275,7 +276,7 @@ def update_order_by_order_id(
     status: str | None = None,
     cancel_time=None,
 ):
-    """按 order_id（vnpy 内部 id）更新。"""
+    """按 order_id(vnpy 内部 id)更新。"""
     if traded is None and status is None and cancel_time is None:
         return
     conn = get_conn()
@@ -316,7 +317,7 @@ def insert_fill(
     broker_trade_id: str = "",
     strategy_name: str = "",
 ) -> int:
-    """写入一笔成交记录，返回 row id。"""
+    """写入一笔成交记录,返回 row id。"""
     conn = get_conn()
     try:
         cur = conn.cursor()
@@ -337,7 +338,7 @@ def insert_fill(
 
 
 def fetch_orders(account_id: int = 1, day: str | None = None) -> list[dict]:
-    """读取订单列表，按 order_time 升序。day 格式 YYYY-MM-DD。"""
+    """读取订单列表,按 order_time 升序。day 格式 YYYY-MM-DD。"""
     conn = get_conn()
     conn.row_factory = sqlite3.Row
     try:
@@ -361,7 +362,7 @@ def fetch_orders(account_id: int = 1, day: str | None = None) -> list[dict]:
 
 
 def fetch_fills(account_id: int = 1, day: str | None = None) -> list[dict]:
-    """读取成交列表，按 trade_time 升序。"""
+    """读取成交列表,按 trade_time 升序。"""
     conn = get_conn()
     conn.row_factory = sqlite3.Row
     try:
@@ -385,9 +386,9 @@ def fetch_fills(account_id: int = 1, day: str | None = None) -> list[dict]:
 
 
 def fetch_order_fill_timeline(account_id: int = 1, day: str | None = None) -> list[dict]:
-    """订单+成交统一时间线（回放用）：按时间戳混合排序。
+    """订单+成交统一时间线(回放用):按时间戳混合排序。
 
-    每条记录带 type='order' 或 type='fill'，可直接用于前端回放。
+    每条记录带 type='order' 或 type='fill',可直接用于前端回放。
     """
     orders = fetch_orders(account_id, day)
     fills  = fetch_fills(account_id, day)
@@ -425,13 +426,13 @@ def fetch_order_fill_timeline(account_id: int = 1, day: str | None = None) -> li
 
 
 # ============================================================
-# OmsEngine 事件监听：注册到 vnpy EventEngine
+# OmsEngine 事件监听:注册到 vnpy EventEngine
 # ============================================================
 _oms_listeners_registered = False
 
 
 def _on_order(event):
-    """监听 EVENT_ORDER：将 vnpy OrderData 持久化到 sim_orders。"""
+    """监听 EVENT_ORDER:将 vnpy OrderData 持久化到 sim_orders。"""
     from vnpy.trader.object import OrderData
     order: OrderData = event.data
     # 映射 vnpy status -> 文本
@@ -448,7 +449,7 @@ def _on_order(event):
     broker_order_id = order.trade_id or order.vt_order_id or ""  # 实盘委托号
     status_str = status_map.get(str(order.status), str(order.status))
 
-    # 尝试更新已有记录（ORDER 事件会多次推送同一单）
+    # 尝试更新已有记录(ORDER 事件会多次推送同一单)
     conn = get_conn()
     try:
         cur = conn.cursor()
@@ -489,7 +490,7 @@ def _on_order(event):
 
 
 def _on_trade(event):
-    """监听 EVENT_TRADE：将 vnpy TradeData 持久化到 sim_fills。"""
+    """监听 EVENT_TRADE:将 vnpy TradeData 持久化到 sim_fills。"""
     from vnpy.trader.object import TradeData
     trade: TradeData = event.data
     vt_order_id = trade.vt_order_id or ""
@@ -499,7 +500,7 @@ def _on_trade(event):
     conn = get_conn()
     try:
         cur = conn.cursor()
-        # 去重：同一 broker_trade_id 不重复写入
+        # 去重:同一 broker_trade_id 不重复写入
         if broker_trade_id:
             cur.execute("SELECT id FROM sim_fills WHERE broker_trade_id=? LIMIT 1", (broker_trade_id,))
             if cur.fetchone():
@@ -531,7 +532,7 @@ def _now_str() -> str:
 
 
 def register_oms_listeners(event_engine):
-    """注册 EVENT_ORDER / EVENT_TRADE 监听（在 build_main_engine 后调用一次）。"""
+    """注册 EVENT_ORDER / EVENT_TRADE 监听(在 build_main_engine 后调用一次)。"""
     global _oms_listeners_registered
     if _oms_listeners_registered:
         return
@@ -542,14 +543,14 @@ def register_oms_listeners(event_engine):
 
 
 # ============================================================
-# 回放工具：按时间线重演订单/成交
+# 回放工具:按时间线重演订单/成交
 # ============================================================
 def replay_timeline(account_id: int = 1, day: str | None = None) -> str:
-    """生成可读的订单/成交回放文本（用于复盘报告）。"""
+    """生成可读的订单/成交回放文本(用于复盘报告)。"""
     timeline = fetch_order_fill_timeline(account_id, day)
     if not timeline:
-        return "（本日无订单/成交记录）"
-    lines = [f"📋 订单/成交回放（共 {len(timeline)} 条）"]
+        return "(本日无订单/成交记录)"
+    lines = [f"📋 订单/成交回放(共 {len(timeline)} 条)"]
     for i, ev in enumerate(timeline, 1):
         t = ev["time"] or "--:--:--"
         code = ev["stock_code"]
@@ -581,3 +582,144 @@ def replay_timeline(account_id: int = 1, day: str | None = None) -> str:
 
 if __name__ == "__main__":
     init_tables()
+
+
+# ============================================================
+# 账户资金口径检测与同步(REQ-035)
+# ============================================================
+def detect_cash_discrepancy(account_id: int = 1) -> dict | None:
+    """检测 config.yaml 与 sim_account 表的 initial_cash 是否一致。
+
+    返回 None 表示一致;返回 dict 表示不一致,含以下字段:
+      - account_id: 账户 ID
+      - config_initial_cash: config.yaml 中的值
+      - db_initial_cash: 数据库中的值
+      - diff: 差值(config - db)
+      - severity: 'warn'(差异 < 20%)或 'error'(差异 >= 20%)
+    """
+    try:
+        from sim.config import get_account_config
+    except ImportError:
+        # 独立运行时的兜底
+        import yaml
+        _ROOT = Path(__file__).resolve().parent.parent
+        cfg = yaml.safe_load(open(_ROOT / 'config.yaml', encoding='utf-8')) or {}
+        key = 'learn' if account_id == 1 else 'real'
+        config_cash = float((cfg.get('accounts') or {}).get(key, {}).get('initial_cash', 100000.0))
+    else:
+        acct_cfg = get_account_config(account_id)
+        config_cash = acct_cfg['initial_cash']
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT initial_cash FROM sim_account WHERE id = ?', (account_id,))
+        row = cur.fetchone()
+        db_cash = float(row['initial_cash']) if row else None
+    except Exception:
+        # 表不存在或其他 DB 错误 → 跳过检测
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    if db_cash is None:
+        # 数据库里没有这条记录,跳过
+        return None
+
+    if abs(config_cash - db_cash) < 0.01:
+        return None  # 一致
+
+    diff = config_cash - db_cash
+    pct = abs(diff / db_cash) if db_cash else 0
+    severity = 'error' if pct >= 0.20 else 'warn'
+
+    return {
+        'account_id': account_id,
+        'config_initial_cash': config_cash,
+        'db_initial_cash': db_cash,
+        'diff': diff,
+        'diff_pct': pct,
+        'severity': severity,
+    }
+
+
+def detect_all_accounts_discrepancy() -> list[dict]:
+    """检测所有账户(id=1,2)的资金口径一致性。"""
+    results = []
+    for aid in (1, 2):
+        r = detect_cash_discrepancy(aid)
+        if r:
+            results.append(r)
+    return results
+
+
+def sync_account_initial_cash(account_id: int = 1, source: str = 'config') -> bool:
+    """将 initial_cash 从 source（'config' 或 'db'）同步到另一端。
+    
+    - source='config': 用 config.yaml 的值覆盖数据库
+    - source='db':     用数据库的值覆盖 config.yaml（写入 config.local.yaml）
+    
+    返回 True 表示成功同步。
+    """
+    discrepancy = detect_cash_discrepancy(account_id)
+    if not discrepancy:
+        return False  # 本来就一致，无需同步
+
+    import yaml
+    from pathlib import Path as _Path
+    _PROJECT_ROOT = _Path(__file__).resolve().parent.parent
+
+    if source == 'config':
+        # config.yaml 为准，更新数据库
+        config_cash = discrepancy['config_initial_cash']
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute('UPDATE sim_account SET initial_cash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        (config_cash, account_id))
+            print(f"  ✓ account_id={account_id} initial_cash 已同步为 ¥{config_cash:,.2f}（来源: config.yaml）")
+            return True
+        finally:
+            conn.close()
+    elif source == 'db':
+        # 数据库为准，更新 config.local.yaml
+        db_cash = discrepancy['db_initial_cash']
+        key = 'learn' if account_id == 1 else 'real'
+        # 用 sim.config 的 _LOCAL_FILE（已被 monkeypatch 或用户配置）
+        try:
+            from sim.config import _LOCAL_FILE
+            local_file = _LOCAL_FILE
+        except ImportError:
+            local_file = _PROJECT_ROOT / 'config.local.yaml'
+        if local_file.exists():
+            local_cfg = yaml.safe_load(open(local_file, encoding='utf-8')) or {}
+        else:
+            local_cfg = {}
+        if 'accounts' not in local_cfg:
+            local_cfg['accounts'] = {}
+        if key not in local_cfg['accounts']:
+            local_cfg['accounts'][key] = {}
+        local_cfg['accounts'][key]['initial_cash'] = db_cash
+        with open(local_file, 'w', encoding='utf-8') as f:
+            yaml.dump(local_cfg, f, allow_unicode=True, default_flow_style=False)
+        print(f"  ✓ account_id={account_id} initial_cash 已同步为 ¥{db_cash:,.2f}（来源: 数据库，写入 config.local.yaml）")
+        return True
+    return False
+
+
+def format_discrepancy_warning(discrepancy: dict) -> str:
+    """将 discrepancy dict 格式化为人类可读的警告文本(用于复盘报告)。"""
+    icon = '⚠️' if discrepancy['severity'] == 'warn' else '🚨'
+    label = '模拟盘' if discrepancy['account_id'] == 1 else '实盘'
+    return (
+        f"{icon} **资金口径不一致 [{label}]**\n"
+        f"- config.yaml: ¥{discrepancy['config_initial_cash']:,.2f}\n"
+        f"- sim_account 表: ¥{discrepancy['db_initial_cash']:,.2f}\n"
+        f"- 差异: ¥{discrepancy['diff']:+,.2f} ({discrepancy['diff_pct']*100:+.1f}%)\n"
+        f"\n"
+        f"> PnL 计算以 config.yaml 为准。若需同步,可运行:\n"
+        f"> `python -c \"from sim.db import sync_account_initial_cash; sync_account_initial_cash({discrepancy['account_id']}, source='config')\"`"
+    )

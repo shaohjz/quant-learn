@@ -282,15 +282,36 @@ def main():
         if qmt_broker is None:
             qmt_results.append({"decision": d.__dict__, "skipped": "no broker"})
             continue
+        import datetime as _dt, json as _json
+        # REQ-032: 构造 signal_detail
+        _now = _dt.datetime.now().isoformat(timespec='seconds')
+        _triggered = []
+        if d.rule:
+            _triggered.append({"rule": d.rule, "indicator": d.rule,
+                                  "current_value": d.price, "threshold": None, "operator": "=="})
+        if d.confidence:
+            _triggered.append({"rule": "confidence", "indicator": "ai_confidence",
+                                  "current_value": d.confidence, "threshold": 0.5, "operator": ">="})
+        _detail = {
+            "signal": d.action,
+            "trigger_type": "fusion_engine",
+            "triggered_rules": _triggered,
+            "indicators_snapshot": {"price": round(d.price, 4) if d.price else None, "confidence": d.confidence},
+            "strategy_version": "fusion_engine.py/v1.0",
+            "price_snapshot": {"close": round(d.price, 4) if d.price else None},
+            "timestamp": _now,
+        }
         try:
             if d.action == "BUY":
                 r = qmt_broker.buy(d.stock_code, d.price, d.qty,
                                    stock_name=str((qlib_by_code.get(d.stock_code) or {}).get("name","")),
-                                   signal_reason=d.reason, trade_date=date.today())
+                                   signal_reason=d.reason, trade_date=date.today(),
+                                   signal_detail=_detail)
             else:
                 r = qmt_broker.sell(d.stock_code, d.price, d.qty,
                                     stock_name=str((qlib_by_code.get(d.stock_code) or {}).get("name","")),
-                                    signal_reason=d.reason, trade_date=date.today())
+                                    signal_reason=d.reason, trade_date=date.today(),
+                                    signal_detail=_detail)
             qmt_results.append({"decision": d.__dict__, "order": {
                 "success": r.success, "order_id": r.order_id, "msg": r.msg, "extra": r.extra
             }})

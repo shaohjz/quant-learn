@@ -16,6 +16,12 @@ sim/signal_generator.py
   3. 价格跌破10日均线
   4. KDJ死叉且J值>80
   5. 量能萎缩至20日均量的0.5倍以下
+
+changelog (REQ-032):
+  - generate_signals() 新增返回值 signal_detail（dict，JSON 可序列化）
+  - signal_detail 包含：trigger_type / triggered_rules / indicators_snapshot /
+    strategy_version / price_snapshot / timestamp
+  - 供 sim_trades.signal_detail 字段存储，复盘报告可展开查看完整理由
 """
 
 import pandas as pd
@@ -100,10 +106,21 @@ def generate_signals(stock_code: str, stock_name: str = "",
     返回:
     {
       code, name, signal, reasons, price, indicators,
-      risk_action, risk_reason
+      risk_action, risk_reason,
+      signal_detail   // 完整信号解释，供复盘展开查看（JSON 可序列化）
     }
-    signal: "BUY" | "SELL" | "HOLD"
+
+    signal_detail 结构：
+      - signal: BUY | SELL | HOLD
+      - trigger_type: 'risk' | 'tech_buy' | 'tech_sell' | 'none'
+      - triggered_rules: 触发规则列表（含指标名、当前值、阈值、operator）
+      - indicators_snapshot: 触发时指标完整快照
+      - strategy_version: 'signal_generator.py/v1.0'
+      - price_snapshot: {open, high, low, close, volume} 最新 K 线
+      - timestamp: ISO 格式时间戳
     """
+    import datetime as _dt
+
     df = _fetch_kline(stock_code, days=80)
     if df.empty or len(df) < 30:
         return {
@@ -113,6 +130,15 @@ def generate_signals(stock_code: str, stock_name: str = "",
             "reasons": ["数据不足"],
             "price": 0,
             "indicators": {},
+            "signal_detail": {
+                "signal": "HOLD",
+                "trigger_type": "none",
+                "triggered_rules": [],
+                "indicators_snapshot": {},
+                "strategy_version": "signal_generator.py/v1.0",
+                "price_snapshot": {},
+                "timestamp": _dt.datetime.now().isoformat(timespec='seconds'),
+            },
         }
 
     close = df["close"]
@@ -135,6 +161,13 @@ def generate_signals(stock_code: str, stock_name: str = "",
         return {
             "code": stock_code, "name": stock_name,
             "signal": "HOLD", "reasons": ["数据太少"], "price": 0, "indicators": {},
+            "signal_detail": {
+                "signal": "HOLD", "trigger_type": "none",
+                "triggered_rules": [], "indicators_snapshot": {},
+                "strategy_version": "signal_generator.py/v1.0",
+                "price_snapshot": {},
+                "timestamp": _dt.datetime.now().isoformat(timespec='seconds'),
+            },
         }
 
     latest_price = close.iloc[i]
@@ -150,9 +183,33 @@ def generate_signals(stock_code: str, stock_name: str = "",
         "MA5": round(sma5.iloc[i], 4),
         "MA10": round(sma10.iloc[i], 4),
         "MA20": round(sma20.iloc[i], 4) if pd.notna(sma20.iloc[i]) else None,
-        "VOL": volume.iloc[i],
+        "VOL": int(volume.iloc[i]) if pd.notna(volume.iloc[i]) else None,
         "VOL_MA20": round(vol_ma20.iloc[i], 0) if pd.notna(vol_ma20.iloc[i]) else None,
     }
+
+    _now = _dt.datetime.now().isoformat(timespec='seconds')
+    _strategy_ver = "signal_generator.py/v1.0"
+
+    def _build_detail(signal, trigger_type, triggered_rules, extra=None):
+        """构造 signal_detail 字典"""
+        d = {
+            "signal": signal,
+            "trigger_type": trigger_type,
+            "triggered_rules": triggered_rules,
+            "indicators_snapshot": indicators.copy(),
+            "strategy_version": _strategy_ver,
+            "price_snapshot": {
+                "open":  round(float(df["open"].iloc[i]), 4) if "open" in df.columns and pd.notna(df["open"].iloc[i]) else None,
+                "high":  round(float(df["high"].iloc[i]), 4) if "high" in df.columns and pd.notna(df["high"].iloc[i]) else None,
+                "low":   round(float(df["low"].iloc[i]), 4)  if "low" in df.columns  and pd.notna(df["low"].iloc[i])  else None,
+                "close": round(float(df["close"].iloc[i]), 4),
+                "volume": int(volume.iloc[i]) if pd.notna(volume.iloc[i]) else None,
+            },
+            "timestamp": _now,
+        }
+        if extra:
+            d.update(extra)
+        return d
 
     # ========== 风控检查（持仓时） ==========
     risk_action = None
@@ -177,6 +234,18 @@ def generate_signals(stock_code: str, stock_name: str = "",
                 risk_reason = f"移动止盈（峰值盈 {peak_pnl*100:.1f}%, 回撤 {pullback*100:.1f}%）"
 
     if risk_action:
+        _rules = [{
+            "rule": risk_reason,
+            "indicator": "pnl_pct",
+            "current_value": round(pnl_pct * 100, 2) if 'pnl_pct' in dir() else None,
+            "threshold": -8.0 if "止损" in risk_reason else 20.0,
+            "operator": "<=" if "止损" in risk_reason else ">=",
+        }]
+        # 修正 current_value（上面 pnl_pct 可能在闭包外不可见，重新算）
+        _avg_cost_r = (existing_position or {}).get("avg_cost", 0)
+        _pnl_pct_r = (latest_price - _avg_cost_r) / _avg_cost_r * 100 if _avg_cost_r > 0 else None
+        _rules[0]["current_value"] = round(_pnl_pct_r, 2) if _pnl_pct_r is not None else None
+        _detail = _build_detail(risk_action, "risk", _rules)
         return {
             "code": stock_code,
             "name": stock_name,
@@ -186,6 +255,7 @@ def generate_signals(stock_code: str, stock_name: str = "",
             "indicators": indicators,
             "risk_action": risk_action,
             "risk_reason": risk_reason,
+            "signal_detail": _detail,
         }
 
     # ========== 买入信号 ==========
@@ -240,15 +310,82 @@ def generate_signals(stock_code: str, stock_name: str = "",
         if volume.iloc[i] < vol_ma20.iloc[i] * 0.5:
             sell_signals.append(f"缩量({volume.iloc[i]/vol_ma20.iloc[i]:.2f}倍)")
 
+    # ========== 构造 triggered_rules ==========
+    _buy_rules = []
+    for bs_text in buy_signals:
+        _rule = {"rule": bs_text, "indicator": "", "current_value": None, "threshold": None, "operator": ""}
+        if "MACD金叉" in bs_text:
+            _rule["indicator"] = "MACD_DIF_vs_DEA"
+            _rule["current_value"] = round(float(dif.iloc[i] - dea.iloc[i]), 4)
+            _rule["threshold"] = 0.0
+            _rule["operator"] = ">"
+        elif "RSI" in bs_text:
+            _rule["indicator"] = "RSI"
+            _rule["current_value"] = round(float(rsi.iloc[i]), 2)
+            _rule["threshold"] = 30.0 if "超卖" in bs_text else 40.0
+            _rule["operator"] = ">="
+        elif "放量" in bs_text:
+            _ratio = round(float(volume.iloc[i] / vol_ma20.iloc[i]), 2) if pd.notna(vol_ma20.iloc[i]) and vol_ma20.iloc[i] > 0 else None
+            _rule["indicator"] = "VOL_ratio"
+            _rule["current_value"] = _ratio
+            _rule["threshold"] = 1.5
+            _rule["operator"] = ">"
+        elif "MA5" in bs_text:
+            _ratio = round(float(close.iloc[i] / sma5.iloc[i] - 1), 4) if pd.notna(sma5.iloc[i]) and sma5.iloc[i] > 0 else None
+            _rule["indicator"] = "close_vs_MA5"
+            _rule["current_value"] = _ratio
+            _rule["threshold"] = 0.0
+            _rule["operator"] = ">"
+        elif "KDJ金叉" in bs_text:
+            _rule["indicator"] = "K_vs_D"
+            _rule["current_value"] = round(float(K.iloc[i] - D.iloc[i]), 2)
+            _rule["threshold"] = 0.0
+            _rule["operator"] = ">"
+        _buy_rules.append(_rule)
+
+    _sell_rules = []
+    for ss_text in sell_signals:
+        _rule = {"rule": ss_text, "indicator": "", "current_value": None, "threshold": None, "operator": ""}
+        if "MACD死叉" in ss_text:
+            _rule["indicator"] = "MACD_DIF_vs_DEA"
+            _rule["current_value"] = round(float(dif.iloc[i] - dea.iloc[i]), 4)
+            _rule["threshold"] = 0.0
+            _rule["operator"] = "<"
+        elif "RSI" in ss_text:
+            _rule["indicator"] = "RSI"
+            _rule["current_value"] = round(float(rsi.iloc[i]), 2)
+            _rule["threshold"] = 70.0
+            _rule["operator"] = "<="
+        elif "MA10" in ss_text:
+            _ratio = round(float(close.iloc[i] / sma10.iloc[i] - 1), 4) if pd.notna(sma10.iloc[i]) and sma10.iloc[i] > 0 else None
+            _rule["indicator"] = "close_vs_MA10"
+            _rule["current_value"] = _ratio
+            _rule["threshold"] = 0.0
+            _rule["operator"] = "<"
+        elif "KDJ死叉" in ss_text:
+            _rule["indicator"] = "K_vs_D"
+            _rule["current_value"] = round(float(K.iloc[i] - D.iloc[i]), 2)
+            _rule["threshold"] = 0.0
+            _rule["operator"] = "<"
+        elif "缩量" in ss_text:
+            _ratio = round(float(volume.iloc[i] / vol_ma20.iloc[i]), 2) if pd.notna(vol_ma20.iloc[i]) and vol_ma20.iloc[i] > 0 else None
+            _rule["indicator"] = "VOL_ratio"
+            _rule["current_value"] = _ratio
+            _rule["threshold"] = 0.5
+            _rule["operator"] = "<"
+        _sell_rules.append(_rule)
+
     # ========== 决策 ==========
     has_position = existing_position and existing_position.get("quantity", 0) > 0
 
     if has_position and len(sell_signals) >= 2:
         signal = "SELL"
         reasons = sell_signals
+        _detail = _build_detail("SELL", "tech_sell", _sell_rules)
     elif not has_position and len(buy_signals) >= 3:
         signal = "BUY"
         reasons = buy_signals
+        _detail = _build_detail("BUY", "tech_buy", _buy_rules)
     else:
         signal = "HOLD"
         reasons = []
@@ -258,6 +395,7 @@ def generate_signals(stock_code: str, stock_name: str = "",
             reasons.append(f"卖出信号({len(sell_signals)}/2): {'+'.join(sell_signals)}")
         if not reasons:
             reasons.append("无明显信号")
+        _detail = _build_detail("HOLD", "none", [])
 
     return {
         "code": stock_code,
@@ -268,6 +406,7 @@ def generate_signals(stock_code: str, stock_name: str = "",
         "indicators": indicators,
         "risk_action": risk_action,
         "risk_reason": risk_reason,
+        "signal_detail": _detail,
     }
 
 
@@ -281,3 +420,4 @@ if __name__ == "__main__":
         print(f"{name}({code}) → 信号: {result['signal']}")
         print(f"原因: {', '.join(result['reasons'])}")
         print(f"指标: {result['indicators']}")
+        print(f"signal_detail keys: {list(result['signal_detail'].keys())}")

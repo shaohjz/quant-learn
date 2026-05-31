@@ -1,0 +1,18 @@
+{
+  "code": "600330",
+  "vt_symbol": "600330.SSE",
+  "start": "20200101",
+  "end": "20240101",
+  "bars": 970,
+  "trades": 0,
+  "total_return": 0.0,
+  "annual_return": 0.0,
+  "max_drawdown": 0.0,
+  "max_ddpercent": 0.0,
+  "sharpe_ratio": 0.0,
+  "total_commission": 0.0,
+  "closed_trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "win_rate": 0.0
+}

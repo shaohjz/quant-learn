@@ -1,0 +1,32 @@
+============================================================
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 449, in <module>
+    sys.exit(main() or 0)
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 291, in main
+    print("\U0001f4ca 每日盘前阈值自动校准 (BaoStock)")
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 0: illegal multibyte sequence
+============================================================
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 449, in <module>
+    sys.exit(main() or 0)
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 291, in main
+    print("\U0001f4ca 每日盘前阈值自动校准 (BaoStock)")
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 0: illegal multibyte sequence
+============================================================
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 482, in <module>
+    sys.exit(main() or 0)
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 291, in main
+    print("\U0001f4ca 每日盘前阈值自动校准 (BaoStock)")
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 0: illegal multibyte sequence
+============================================================
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 482, in <module>
+    sys.exit(main() or 0)
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_recalibrate.py", line 291, in main
+    print("\U0001f4ca 每日盘前阈值自动校准 (BaoStock)")
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 0: illegal multibyte sequence

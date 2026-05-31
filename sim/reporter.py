@@ -121,6 +121,11 @@ def generate_daily_report(trade_date: Date = None,
         lines.append("")
         lines.append("📋 今日无交易")
 
+    # 风控建议（REQ-026）
+    risk_section = generate_risk_suggestions(account_id, trade_date)
+    if risk_section:
+        lines.append(risk_section)
+
     # 当前持仓
     lines.append("")
     if positions:
@@ -138,6 +143,114 @@ def generate_daily_report(trade_date: Date = None,
 
     lines.append("")
     lines.append("— 模拟盘 · 仅供参考，不构成投资建议 —")
+
+    return "\n".join(lines)
+
+
+def generate_risk_suggestions(account_id: int = 1, trade_date=None) -> str:
+    """
+    针对严重浮亏个股自动生成风控建议，返回 Markdown 文本段落。
+    
+    风控等级：
+      - 轻度浮亏 (-5% ~ -8%):   提示关注，建议复盘
+      - 中度浮亏 (-8% ~ -10%):  触发软止损警告，建议减仓
+      - 重度浮亏 (-10% ~ -15%): 触发硬止损线，建议清仓
+      - 严重浮亏 (<-15%):       强制平仓警告
+    """
+    trade_date = trade_date or Date.today()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT stock_code, stock_name, quantity, avg_cost,
+                   current_price, market_value, pnl, pnl_pct
+            FROM sim_positions
+            WHERE account_id = ? AND quantity > 0
+            ORDER BY pnl_pct ASC
+        """, (account_id,))
+        positions = cur.fetchall()
+    finally:
+        conn.close()
+
+    if not positions:
+        return ""
+
+    # 分级统计
+    warning_positions = []   # -5% ~ -8%
+    soft_stop_positions = []  # -8% ~ -10%
+    hard_stop_positions = []  # -10% ~ -15%
+    force_stop_positions = [] # < -15%
+
+    for p in positions:
+        pnl_pct = float(p["pnl_pct"]) if p["pnl_pct"] else 0
+        if pnl_pct < -0.15:
+            force_stop_positions.append(p)
+        elif pnl_pct < -0.10:
+            hard_stop_positions.append(p)
+        elif pnl_pct < -0.08:
+            soft_stop_positions.append(p)
+        elif pnl_pct < -0.05:
+            warning_positions.append(p)
+
+    if not any([warning_positions, soft_stop_positions, hard_stop_positions, force_stop_positions]):
+        return ""
+
+    lines = []
+    lines.append("")
+    lines.append("⚠️ 风控建议")
+
+    def _fmt_pos(p):
+        code = p["stock_code"]
+        name = p["stock_name"]
+        pnl_pct = float(p["pnl_pct"])
+        avg_cost = float(p["avg_cost"])
+        cur_price = float(p["current_price"])
+        qty = int(p["quantity"])
+        pnl = float(p["pnl"])
+        return (code, name, pnl_pct, avg_cost, cur_price, qty, pnl)
+
+    if force_stop_positions:
+        lines.append("")
+        lines.append("🚨🚨 强制平仓线（浮亏 > 15%）")
+        for p in force_stop_positions:
+            code, name, pct, cost, price, qty, pnl = _fmt_pos(p)
+            lines.append(f"  ❌ {name}({code}) 浮亏 {pct*100:.1f}%")
+            lines.append(f"     成本¥{cost:.2f} → 现价¥{price:.2f}，持仓{qty}股，亏损¥{pnl:,.0f}")
+            lines.append(f"     🔴 建议：立即清仓止损，避免进一步亏损！")
+
+    if hard_stop_positions:
+        lines.append("")
+        lines.append("🚨 硬止损线（浮亏 10%~15%）")
+        for p in hard_stop_positions:
+            code, name, pct, cost, price, qty, pnl = _fmt_pos(p)
+            lines.append(f"  ⚠️ {name}({code}) 浮亏 {pct*100:.1f}%")
+            lines.append(f"     成本¥{cost:.2f} → 现价¥{price:.2f}，持仓{qty}股，亏损¥{pnl:,.0f}")
+            lines.append(f"     🔴 建议：执行硬止损，卖出全部持仓！")
+
+    if soft_stop_positions:
+        lines.append("")
+        lines.append("⚠️ 软止损警告（浮亏 8%~10%）")
+        for p in soft_stop_positions:
+            code, name, pct, cost, price, qty, pnl = _fmt_pos(p)
+            lines.append(f"  ⚡ {name}({code}) 浮亏 {pct*100:.1f}%")
+            lines.append(f"     成本¥{cost:.2f} → 现价¥{price:.2f}，持仓{qty}股，亏损¥{pnl:,.0f}")
+            lines.append(f"     💡 建议：考虑减仓50%止损，或设置更紧的止损线。")
+
+    if warning_positions:
+        lines.append("")
+        lines.append("🔔 浮亏观察（浮亏 5%~8%）")
+        for p in warning_positions:
+            code, name, pct, cost, price, qty, pnl = _fmt_pos(p)
+            lines.append(f"  👀 {name}({code}) 浮亏 {pct*100:.1f}%")
+            lines.append(f"     成本¥{cost:.2f} → 现价¥{price:.2f}，持仓{qty}股，亏损¥{pnl:,.0f}")
+            lines.append(f"     💡 建议：密切关注，若跌破8%触发软止损线。")
+
+    # 汇总
+    total_risk_count = len(warning_positions) + len(soft_stop_positions) + len(hard_stop_positions) + len(force_stop_positions)
+    if total_risk_count > 0:
+        lines.append("")
+        lines.append(f"📊 风控汇总：{total_risk_count} 只个股存在浮亏风险")
+        lines.append(f"   观察:{len(warning_positions)} | 软止损:{len(soft_stop_positions)} | 硬止损:{len(hard_stop_positions)} | 强制平仓:{len(force_stop_positions)}")
 
     return "\n".join(lines)
 

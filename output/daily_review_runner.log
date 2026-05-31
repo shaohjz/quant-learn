@@ -1,0 +1,193 @@
+2026-05-20 09:00:03,092 [INFO] === ��ʼ���� 2026-05-19 ===
+2026-05-20 09:00:03,113 [INFO] \u2713 �ѱ��浽����: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-19.md
+2026-05-20 09:00:06,875 [INFO] \u2713 iwiki д��ɹ�: ����ɹ�
+2026-05-20 09:00:07,230 [INFO] \u2713 ��΢Ⱥ���ͳɹ�
+
+=== �������: 2026-05-19 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 426, in <module>
+    main()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 420, in main
+    print(f"���ʲ�: \xa5{nav_info['total_value']:,.2f}")
+UnicodeEncodeError: 'gbk' codec can't encode character '\xa5' in position 5: illegal multibyte sequence
+2026-05-21 09:00:02,330 [INFO] === ��ʼ���� 2026-05-20 ===
+2026-05-21 09:00:02,356 [INFO] \u2713 �ѱ��浽����: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-20.md
+2026-05-21 09:00:07,333 [INFO] \u2713 iwiki д��ɹ�: ����ɹ�
+2026-05-21 09:00:07,585 [INFO] \u2713 ��΢Ⱥ���ͳɹ�
+
+=== �������: 2026-05-20 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 426, in <module>
+    main()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 420, in main
+    print(f"���ʲ�: \xa5{nav_info['total_value']:,.2f}")
+UnicodeEncodeError: 'gbk' codec can't encode character '\xa5' in position 5: illegal multibyte sequence
+2026-05-21 15:30:02,827 [INFO] === ��ʼ���� 2026-05-20 ===
+2026-05-21 15:30:09,036 [INFO] \u2713 �ѱ��浽����: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-20.md
+2026-05-21 15:30:14,045 [INFO] \u2713 iwiki д��ɹ�: ����ɹ�
+2026-05-21 15:30:14,261 [INFO] \u2713 ��΢Ⱥ���ͳɹ�
+
+=== 复盘完成: 2026-05-20 ===
+总资产: ¥22,333.14
+当日: -0.33% / 累计: -10.67%
+虚拟交易: 1 笔
+===== [2026/05/22 ���� 15:30:02.50] daily review START ===== 
+2026-05-22 15:30:02,999 [INFO] === ��ʼ���� 2026-05-22 ===
+2026-05-22 15:30:03,055 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-22.md
+2026-05-22 15:30:03,083 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-22_summary.md
+2026-05-22 15:30:03,539 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+
+======================================================================
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 420, in <module>
+    main()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 415, in main
+    print(summary)
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 2: illegal multibyte sequence
+===== [2026/05/22 ���� 15:30:03.63] daily review END   ===== 
+===== [2026/05/25 ��һ 15:30:01.78] daily review START ===== 
+2026-05-25 15:30:02,488 [INFO] === ��ʼ���� 2026-05-25 ===
+2026-05-25 15:30:02,535 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-25.md
+2026-05-25 15:30:02,562 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-25_summary.md
+2026-05-25 15:30:03,007 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+# 📊 2026/5/25 日复盘
+
+## 🤖 学习账户
+💰 ¥99,997 (-0.03% / 累计 -0.00%)
+📝 交易 4 笔（买 4 / 卖 0）
+- 🟢 买 中国电信 300股 @¥6.09
+- 🟢 买 中国电信 300股 @¥6.10
+- 🟢 买 中国电信 600股 @¥6.05
+- 🟢 买 大元泵业 100股 @¥61.66
+📦 持仓 4 只 浮动 -3.00
+  🟢 中国电信 1200股 → +0.58% (+42)
+  🔴 大元泵业 100股 → -1.25% (-77)
+  🟢 广西能源 200股 → +1.90% (+19)
+
+## 💼 真实账户
+💰 ¥25,028 (+0.00% / 累计 +0.11%)
+_当日无交易_
+📦 持仓 1 只 浮动 -62.10
+  🔴 华软科技 300股 → -3.20% (-62)
+
+
+======================================================================
+======================================================================
+===== [2026/05/25 ��һ 15:30:03.04] daily review END   ===== 
+===== [2026/05/26 �ܶ� 15:30:02.73] daily review START ===== 
+2026-05-26 15:30:03,274 [INFO] === ��ʼ���� 2026-05-26 ===
+2026-05-26 15:30:03,328 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-26.md
+2026-05-26 15:30:03,357 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-26_summary.md
+2026-05-26 15:30:03,860 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+# 📊 2026/5/26 日复盘
+
+## 🤖 学习账户
+💰 ¥98,644 (-1.35% / 累计 -1.36%)
+📝 交易 9 笔（买 9 / 卖 0）
+- 🟢 买 天赐材料 100股 @¥51.96
+- 🟢 买 天赐材料 300股 @¥51.96
+- 🟢 买 西部材料 100股 @¥68.04
+- 🟢 买 大元泵业 100股 @¥61.00
+- 🟢 买 万华化学 100股 @¥76.45
+📦 持仓 7 只 浮动 -1,356.00
+  🔴 天赐材料 500股 → -0.28% (-74)
+  🔴 中国电信 4100股 → -0.18% (-45)
+  🟢 万华化学 300股 → +1.37% (+314)
+
+## 💼 真实账户
+💰 ¥25,028 (+0.00% / 累计 +0.11%)
+_当日无交易_
+📦 持仓 1 只 浮动 -62.10
+  🔴 华软科技 300股 → -3.20% (-62)
+
+
+======================================================================
+======================================================================
+===== [2026/05/26 �ܶ� 15:30:03.90] daily review END   ===== 
+===== [2026/05/27 ���� 15:30:02.50] daily review START ===== 
+2026-05-27 15:30:02,969 [INFO] === ��ʼ���� 2026-05-27 ===
+2026-05-27 15:30:03,015 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-27.md
+2026-05-27 15:30:03,044 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-27_summary.md
+2026-05-27 15:30:03,502 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+# 📊 2026/5/27 日复盘
+
+## 🤖 学习账户
+💰 ¥197,682 (+100.40% / 累计 +97.68%)
+📝 交易 1 笔（买 1 / 卖 0）
+- 🟢 买 万润科技 100股 @¥17.31
+📦 持仓 8 只 浮动 -2,318.00
+  🟢 天赐材料 500股 → +2.11% (+551)
+  🔴 中国电信 4100股 → -1.99% (-496)
+  🔴 万华化学 300股 → -1.90% (-436)
+
+## 💼 真实账户
+💰 ¥25,028 (+0.00% / 累计 +0.11%)
+_当日无交易_
+📦 持仓 1 只 浮动 -62.10
+  🔴 华软科技 300股 → -3.20% (-62)
+
+
+======================================================================
+======================================================================
+===== [2026/05/27 ���� 15:30:03.54] daily review END   ===== 
+===== [2026/05/28 ���� 15:30:02.37] daily review START ===== 
+2026-05-28 15:30:02,953 [INFO] === ��ʼ���� 2026-05-28 ===
+2026-05-28 15:30:02,997 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-28.md
+2026-05-28 15:30:03,021 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-28_summary.md
+2026-05-28 15:30:03,507 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+# 📊 2026/5/28 日复盘
+
+## 🤖 学习账户
+💰 ¥197,645 (-0.02% / 累计 +97.64%)
+📝 交易 9 笔（买 7 / 卖 2）
+- 🟢 买 豫能控股 600股 @¥16.00
+- 🟢 买 林洋能源 1500股 @¥6.38
+- 🟢 买 泽宇智能 400股 @¥22.69
+- 🟢 买 景兴纸业 2000股 @¥4.99
+- 🟢 买 禾盛新材 100股 @¥94.60
+💵 实现盈亏 **-1,595.30** 😢
+📦 持仓 13 只 浮动 -737.50
+  🟢 天赐材料 500股 → +2.11% (+551)
+  🔴 中国电信 4100股 → -1.99% (-496)
+  🔴 万华化学 300股 → -1.90% (-436)
+
+## 💼 真实账户
+💰 ¥25,028 (+0.00% / 累计 +0.11%)
+_当日无交易_
+📦 持仓 1 只 浮动 -62.10
+  🔴 华软科技 300股 → -3.20% (-62)
+
+
+======================================================================
+======================================================================
+===== [2026/05/28 ���� 15:30:03.55] daily review END   ===== 
+===== [2026/05/29 ���� 15:30:02.33] daily review START ===== 
+2026-05-29 15:30:02,895 [INFO] === ��ʼ���� 2026-05-29 ===
+2026-05-29 15:30:02,940 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-29.md
+2026-05-29 15:30:02,965 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-05-29_summary.md
+2026-05-29 15:30:03,434 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+# 📊 2026/5/29 日复盘
+
+## 🤖 学习账户
+💰 ¥196,913 (-0.37% / 累计 +96.91%)
+📝 交易 5 笔（买 5 / 卖 0）
+- 🟢 买 万润科技 600股 @¥16.66
+- 🟢 买 大元泵业 100股 @¥58.50
+- 🟢 买 莲花控股 900股 @¥10.61
+- 🟢 买 万润科技 600股 @¥15.69
+- 🟢 买 林洋能源 1500股 @¥6.41
+📦 持仓 14 只 浮动 -1,458.50
+  🟢 天赐材料 500股 → +2.11% (+551)
+  🔴 中国电信 4100股 → -1.99% (-496)
+  🔴 万华化学 300股 → -1.90% (-436)
+
+## 💼 真实账户
+💰 ¥25,028 (+0.00% / 累计 +0.11%)
+_当日无交易_
+📦 持仓 1 只 浮动 -62.10
+  🔴 华软科技 300股 → -3.20% (-62)
+
+
+======================================================================
+======================================================================
+===== [2026/05/29 ���� 15:30:03.46] daily review END   ===== 

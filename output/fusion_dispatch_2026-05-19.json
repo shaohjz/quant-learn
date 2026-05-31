@@ -1,0 +1,886 @@
+{
+  "ts": "2026-05-19 16:05:20",
+  "trading_date": "2026-05-19",
+  "qmt_dry_run": true,
+  "send_webhook": false,
+  "pushed": false,
+  "schema_version": "2",
+  "model": "lightgbm-alpha158-csi300-v1",
+  "qmt_decisions": [
+    {
+      "stock_code": "001979",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 5500,
+      "price": 9.04,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "002311",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1000,
+      "price": 45.8,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600221",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 32800,
+      "price": 1.52,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600309",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 600,
+      "price": 79.5,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "601021",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1000,
+      "price": 45.58,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "601111",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 7300,
+      "price": 6.78,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "601633",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 2700,
+      "price": 18.45,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "601899",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1600,
+      "price": 31.16,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "603833",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1100,
+      "price": 41.98,
+      "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+      "confidence": 1.0,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "002607",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 19400,
+      "price": 2.57,
+      "reason": "AI BUY conf=0.99（CSI300 排名靠前）",
+      "confidence": 0.9907,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600115",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 12000,
+      "price": 4.15,
+      "reason": "AI BUY conf=0.97（CSI300 排名靠前）",
+      "confidence": 0.9693,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600900",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1800,
+      "price": 27.25,
+      "reason": "AI BUY conf=0.97（CSI300 排名靠前）",
+      "confidence": 0.9678,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "002555",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 2300,
+      "price": 21.12,
+      "reason": "AI BUY conf=0.95（CSI300 排名靠前）",
+      "confidence": 0.9532,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "002601",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 3000,
+      "price": 16.64,
+      "reason": "AI BUY conf=0.94（CSI300 排名靠前）",
+      "confidence": 0.9443,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "002463",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 400,
+      "price": 102.6,
+      "reason": "AI BUY conf=0.93（CSI300 排名靠前）",
+      "confidence": 0.9259,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600025",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 5000,
+      "price": 9.9,
+      "reason": "AI BUY conf=0.91（CSI300 排名靠前）",
+      "confidence": 0.905,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600009",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1900,
+      "price": 25.71,
+      "reason": "AI BUY conf=0.90（CSI300 排名靠前）",
+      "confidence": 0.8988,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "601698",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 1400,
+      "price": 34.32,
+      "reason": "AI BUY conf=0.90（CSI300 排名靠前）",
+      "confidence": 0.8957,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "600029",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 9300,
+      "price": 5.35,
+      "reason": "AI BUY conf=0.90（CSI300 排名靠前）",
+      "confidence": 0.8951,
+      "rule": "QLIB_BUY_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": false
+      }
+    },
+    {
+      "stock_code": "002709",
+      "action": "BUY",
+      "target_account": "qmt_sim",
+      "qty": 900,
+      "price": 53.87,
+      "reason": "价位进入 buy_zone（无 AI 信号，按原规则）",
+      "confidence": 0.55,
+      "rule": "BUY_ZONE_NO_AI",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": true,
+        "in_holdings": false
+      }
+    }
+  ],
+  "qmt_dropped": [],
+  "advisor_decisions": [
+    {
+      "stock_code": "002342",
+      "action": "SELL",
+      "target_account": "real_advisor",
+      "qty": 100,
+      "price": 15.74,
+      "reason": "触发 deep_drop ()",
+      "confidence": 0.85,
+      "rule": "STOP_LOSS",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": true,
+        "in_holdings": true
+      }
+    },
+    {
+      "stock_code": "603601",
+      "action": "SELL",
+      "target_account": "real_advisor",
+      "qty": 100,
+      "price": 17.99,
+      "reason": "AI SELL conf=0.61，清仓",
+      "confidence": 0.6136,
+      "rule": "QLIB_SELL_HIGH_CONF",
+      "sources": {
+        "has_qlib": true,
+        "has_alert": false,
+        "in_holdings": true
+      }
+    }
+  ],
+  "qmt_results": [
+    {
+      "decision": {
+        "stock_code": "001979",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 5500,
+        "price": 9.04,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522001",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "002311",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1000,
+        "price": 45.8,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522002",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600221",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 32800,
+        "price": 1.52,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522003",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600309",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 600,
+        "price": 79.5,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522004",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "601021",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1000,
+        "price": 45.58,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522005",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "601111",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 7300,
+        "price": 6.78,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522006",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "601633",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 2700,
+        "price": 18.45,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522007",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "601899",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1600,
+        "price": 31.16,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522008",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "603833",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1100,
+        "price": 41.98,
+        "reason": "AI BUY conf=1.00（CSI300 排名靠前）",
+        "confidence": 1.0,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522009",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "002607",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 19400,
+        "price": 2.57,
+        "reason": "AI BUY conf=0.99（CSI300 排名靠前）",
+        "confidence": 0.9907,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522010",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600115",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 12000,
+        "price": 4.15,
+        "reason": "AI BUY conf=0.97（CSI300 排名靠前）",
+        "confidence": 0.9693,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522011",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600900",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1800,
+        "price": 27.25,
+        "reason": "AI BUY conf=0.97（CSI300 排名靠前）",
+        "confidence": 0.9678,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522012",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "002555",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 2300,
+        "price": 21.12,
+        "reason": "AI BUY conf=0.95（CSI300 排名靠前）",
+        "confidence": 0.9532,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522013",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "002601",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 3000,
+        "price": 16.64,
+        "reason": "AI BUY conf=0.94（CSI300 排名靠前）",
+        "confidence": 0.9443,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522014",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "002463",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 400,
+        "price": 102.6,
+        "reason": "AI BUY conf=0.93（CSI300 排名靠前）",
+        "confidence": 0.9259,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522015",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600025",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 5000,
+        "price": 9.9,
+        "reason": "AI BUY conf=0.91（CSI300 排名靠前）",
+        "confidence": 0.905,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522016",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600009",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1900,
+        "price": 25.71,
+        "reason": "AI BUY conf=0.90（CSI300 排名靠前）",
+        "confidence": 0.8988,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522017",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "601698",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 1400,
+        "price": 34.32,
+        "reason": "AI BUY conf=0.90（CSI300 排名靠前）",
+        "confidence": 0.8957,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522018",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "600029",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 9300,
+        "price": 5.35,
+        "reason": "AI BUY conf=0.90（CSI300 排名靠前）",
+        "confidence": 0.8951,
+        "rule": "QLIB_BUY_HIGH_CONF",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": false,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522019",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    },
+    {
+      "decision": {
+        "stock_code": "002709",
+        "action": "BUY",
+        "target_account": "qmt_sim",
+        "qty": 900,
+        "price": 53.87,
+        "reason": "价位进入 buy_zone（无 AI 信号，按原规则）",
+        "confidence": 0.55,
+        "rule": "BUY_ZONE_NO_AI",
+        "sources": {
+          "has_qlib": true,
+          "has_alert": true,
+          "in_holdings": false
+        }
+      },
+      "order": {
+        "success": true,
+        "order_id": "DRY160522020",
+        "msg": "dry-run 伪委托（未真下单）",
+        "extra": {
+          "dry_run": true,
+          "submitted": false,
+          "filled": false
+        }
+      }
+    }
+  ]
+}

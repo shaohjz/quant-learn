@@ -1,0 +1,291 @@
+没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容
+2026-05-21 10:28:00.352 | INFO | MainEngine | 连接登录 -> AKSHARE
+2026-05-21 10:28:00.353 | INFO | AKSHARE | akshare gateway 启动（行情 only），轮询 5.0s
+2026-05-21 10:28:02.354 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600330', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.356 | INFO | AKSHARE | 订阅 600330.SSE (累计 1 只)
+2026-05-21 10:28:02.356 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002256', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.360 | INFO | AKSHARE | 订阅 002256.SZSE (累计 2 只)
+2026-05-21 10:28:02.361 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002453', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.362 | INFO | AKSHARE | 订阅 002453.SZSE (累计 3 只)
+2026-05-21 10:28:02.363 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603601', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.366 | INFO | AKSHARE | 订阅 603601.SSE (累计 4 只)
+2026-05-21 10:28:02.366 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002428', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.368 | INFO | AKSHARE | 订阅 002428.SZSE (累计 5 只)
+2026-05-21 10:28:02.369 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600130', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.371 | INFO | AKSHARE | 订阅 600130.SSE (累计 6 只)
+2026-05-21 10:28:02.372 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603178', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.373 | INFO | AKSHARE | 订阅 603178.SSE (累计 7 只)
+2026-05-21 10:28:02.374 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603986', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.376 | INFO | AKSHARE | 订阅 603986.SSE (累计 8 只)
+2026-05-21 10:28:02.378 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='301120', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.378 | INFO | AKSHARE | 订阅 301120.SZSE (累计 9 只)
+  📡 获取实时行情（新浪）...
+2026-05-21 10:28:02.381 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='301179', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.382 | INFO | AKSHARE | 订阅 301179.SZSE (累计 10 只)
+2026-05-21 10:28:02.383 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600021', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.384 | INFO | AKSHARE | 订阅 600021.SSE (累计 11 只)
+2026-05-21 10:28:02.385 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='000600', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.386 | INFO | AKSHARE | 订阅 000600.SZSE (累计 12 只)
+2026-05-21 10:28:02.389 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002067', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.389 | INFO | AKSHARE | 订阅 002067.SZSE (累计 13 只)
+2026-05-21 10:28:02.390 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='000899', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.391 | INFO | AKSHARE | 订阅 000899.SZSE (累计 14 只)
+2026-05-21 10:28:02.393 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='001896', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.394 | INFO | AKSHARE | 订阅 001896.SZSE (累计 15 只)
+2026-05-21 10:28:02.394 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600310', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.397 | INFO | AKSHARE | 订阅 600310.SSE (累计 16 只)
+2026-05-21 10:28:02.398 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='601222', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.399 | INFO | AKSHARE | 订阅 601222.SSE (累计 17 只)
+2026-05-21 10:28:02.401 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600863', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.401 | INFO | AKSHARE | 订阅 600863.SSE (累计 18 只)
+2026-05-21 10:28:02.403 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='605006', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.404 | INFO | AKSHARE | 订阅 605006.SSE (累计 19 只)
+2026-05-21 10:28:02.405 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603757', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:02.407 | INFO | AKSHARE | 订阅 603757.SSE (累计 20 只)
+2026-05-21 10:28:02.408 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002156', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.410 | INFO | AKSHARE | 订阅 002156.SZSE (累计 21 只)
+2026-05-21 10:28:02.410 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002709', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.411 | INFO | AKSHARE | 订阅 002709.SZSE (累计 22 只)
+2026-05-21 10:28:02.412 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002149', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:02.413 | INFO | AKSHARE | 订阅 002149.SZSE (累计 23 只)
+2026-05-21 10:28:02.414 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.415 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.415 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.415 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.417 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.417 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.417 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.418 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.418 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.419 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.419 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-21 10:28:02.420 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-21 10:28:02.420 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-21 10:28:02.422 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-21 10:28:02.422 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-21 10:28:02.422 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.422 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.424 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.424 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.425 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.425 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.425 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.427 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.427 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.428 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.428 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.429 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.430 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.430 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.430 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.431 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.431 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.432 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.432 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.433 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.434 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.434 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.434 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-21 10:28:02.436 | INFO | CtaStrategy | CTA策略引擎初始化成功
+2026-05-21 10:28:03.414 | INFO | CtaStrategy | thr_600330开始执行初始化
+2026-05-21 10:28:03.416 | INFO | CtaStrategy | [thr_600330]  策略初始化: 600330.SSE
+2026-05-21 10:28:03.417 | INFO | CtaStrategy | [thr_600330]    规则: buy_zone=0.0 buy_strong=0.0 trend_break=28.3 take_profit=35.0 auto=True
+2026-05-21 10:28:03.417 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600330', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.418 | INFO | AKSHARE | 订阅 600330.SSE (累计 23 只)
+2026-05-21 10:28:03.419 | INFO | CtaStrategy | thr_600330初始化完成
+2026-05-21 10:28:03.421 | INFO | CtaStrategy | thr_002256开始执行初始化
+2026-05-21 10:28:03.421 | INFO | CtaStrategy | [thr_002256]  策略初始化: 002256.SZSE
+2026-05-21 10:28:03.421 | INFO | CtaStrategy | [thr_002256]    规则: buy_zone=0.0 buy_strong=0.0 trend_break=4.71 take_profit=5.5 auto=True
+2026-05-21 10:28:03.422 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002256', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.424 | INFO | AKSHARE | 订阅 002256.SZSE (累计 23 只)
+2026-05-21 10:28:03.425 | INFO | CtaStrategy | thr_002256初始化完成
+2026-05-21 10:28:03.425 | INFO | CtaStrategy | thr_002453开始执行初始化
+2026-05-21 10:28:03.426 | INFO | CtaStrategy | [thr_002453]  策略初始化: 002453.SZSE
+2026-05-21 10:28:03.426 | INFO | CtaStrategy | [thr_002453]    规则: buy_zone=0.0 buy_strong=0.0 trend_break=5.95 take_profit=6.8 auto=True
+2026-05-21 10:28:03.426 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002453', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.428 | INFO | AKSHARE | 订阅 002453.SZSE (累计 23 只)
+2026-05-21 10:28:03.428 | INFO | CtaStrategy | thr_002453初始化完成
+2026-05-21 10:28:03.430 | INFO | CtaStrategy | thr_603601开始执行初始化
+2026-05-21 10:28:03.430 | INFO | CtaStrategy | [thr_603601]  策略初始化: 603601.SSE
+2026-05-21 10:28:03.432 | INFO | CtaStrategy | [thr_603601]    规则: buy_zone=0.0 buy_strong=0.0 trend_break=16.24 take_profit=19.5 auto=True
+2026-05-21 10:28:03.432 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603601', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.433 | INFO | AKSHARE | 订阅 603601.SSE (累计 23 只)
+2026-05-21 10:28:03.434 | INFO | CtaStrategy | thr_603601初始化完成
+2026-05-21 10:28:03.434 | INFO | CtaStrategy | thr_002428开始执行初始化
+2026-05-21 10:28:03.435 | INFO | CtaStrategy | [thr_002428]  策略初始化: 002428.SZSE
+2026-05-21 10:28:03.435 | INFO | CtaStrategy | [thr_002428]    规则: buy_zone=86.0 buy_strong=82.3 trend_break=75.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.435 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002428', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.437 | INFO | AKSHARE | 订阅 002428.SZSE (累计 23 只)
+2026-05-21 10:28:03.438 | INFO | CtaStrategy | thr_002428初始化完成
+2026-05-21 10:28:03.438 | INFO | CtaStrategy | thr_600130开始执行初始化
+2026-05-21 10:28:03.439 | INFO | CtaStrategy | [thr_600130]  策略初始化: 600130.SSE
+2026-05-21 10:28:03.439 | INFO | CtaStrategy | [thr_600130]    规则: buy_zone=5.8 buy_strong=5.5 trend_break=5.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.440 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600130', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.441 | INFO | AKSHARE | 订阅 600130.SSE (累计 23 只)
+2026-05-21 10:28:03.442 | INFO | CtaStrategy | thr_600130初始化完成
+2026-05-21 10:28:03.442 | INFO | CtaStrategy | thr_603178开始执行初始化
+2026-05-21 10:28:03.442 | INFO | CtaStrategy | [thr_603178]  策略初始化: 603178.SSE
+2026-05-21 10:28:03.444 | INFO | CtaStrategy | [thr_603178]    规则: buy_zone=21.0 buy_strong=20.0 trend_break=18.5 take_profit=0.0 auto=True
+2026-05-21 10:28:03.444 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603178', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.445 | INFO | AKSHARE | 订阅 603178.SSE (累计 23 只)
+2026-05-21 10:28:03.447 | INFO | CtaStrategy | thr_603178初始化完成
+2026-05-21 10:28:03.447 | INFO | CtaStrategy | thr_603986开始执行初始化
+2026-05-21 10:28:03.447 | INFO | CtaStrategy | [thr_603986]  策略初始化: 603986.SSE
+2026-05-21 10:28:03.449 | INFO | CtaStrategy | [thr_603986]    规则: buy_zone=400.0 buy_strong=375.0 trend_break=340.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.449 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603986', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.449 | INFO | AKSHARE | 订阅 603986.SSE (累计 23 只)
+2026-05-21 10:28:03.449 | INFO | CtaStrategy | thr_603986初始化完成
+2026-05-21 10:28:03.451 | INFO | CtaStrategy | thr_301120开始执行初始化
+2026-05-21 10:28:03.451 | INFO | CtaStrategy | [thr_301120]  策略初始化: 301120.SZSE
+2026-05-21 10:28:03.451 | INFO | CtaStrategy | [thr_301120]    规则: buy_zone=22.0 buy_strong=19.0 trend_break=17.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.454 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='301120', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.454 | INFO | AKSHARE | 订阅 301120.SZSE (累计 23 只)
+2026-05-21 10:28:03.455 | INFO | CtaStrategy | thr_301120初始化完成
+2026-05-21 10:28:03.455 | INFO | CtaStrategy | thr_301179开始执行初始化
+2026-05-21 10:28:03.457 | INFO | CtaStrategy | [thr_301179]  策略初始化: 301179.SZSE
+2026-05-21 10:28:03.457 | INFO | CtaStrategy | [thr_301179]    规则: buy_zone=25.0 buy_strong=22.0 trend_break=19.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.458 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='301179', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.459 | INFO | AKSHARE | 订阅 301179.SZSE (累计 23 只)
+2026-05-21 10:28:03.461 | INFO | CtaStrategy | thr_301179初始化完成
+2026-05-21 10:28:03.461 | INFO | CtaStrategy | thr_600021开始执行初始化
+2026-05-21 10:28:03.462 | INFO | CtaStrategy | [thr_600021]  策略初始化: 600021.SSE
+2026-05-21 10:28:03.462 | INFO | CtaStrategy | [thr_600021]    规则: buy_zone=17.5 buy_strong=16.5 trend_break=15.5 take_profit=0.0 auto=True
+2026-05-21 10:28:03.463 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600021', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.464 | INFO | AKSHARE | 订阅 600021.SSE (累计 23 只)
+2026-05-21 10:28:03.465 | INFO | CtaStrategy | thr_600021初始化完成
+2026-05-21 10:28:03.465 | INFO | CtaStrategy | thr_000600开始执行初始化
+2026-05-21 10:28:03.465 | INFO | CtaStrategy | [thr_000600]  策略初始化: 000600.SZSE
+2026-05-21 10:28:03.466 | INFO | CtaStrategy | [thr_000600]    规则: buy_zone=9.8 buy_strong=9.2 trend_break=8.8 take_profit=0.0 auto=True
+2026-05-21 10:28:03.466 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='000600', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.468 | INFO | AKSHARE | 订阅 000600.SZSE (累计 23 只)
+2026-05-21 10:28:03.469 | INFO | CtaStrategy | thr_000600初始化完成
+2026-05-21 10:28:03.469 | INFO | CtaStrategy | thr_002067开始执行初始化
+2026-05-21 10:28:03.469 | INFO | CtaStrategy | [thr_002067]  策略初始化: 002067.SZSE
+2026-05-21 10:28:03.470 | INFO | CtaStrategy | [thr_002067]    规则: buy_zone=4.95 buy_strong=4.7 trend_break=4.5 take_profit=0.0 auto=True
+2026-05-21 10:28:03.470 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002067', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.470 | INFO | AKSHARE | 订阅 002067.SZSE (累计 23 只)
+2026-05-21 10:28:03.473 | INFO | CtaStrategy | thr_002067初始化完成
+2026-05-21 10:28:03.473 | INFO | CtaStrategy | thr_000899开始执行初始化
+2026-05-21 10:28:03.475 | INFO | CtaStrategy | [thr_000899]  策略初始化: 000899.SZSE
+2026-05-21 10:28:03.475 | INFO | CtaStrategy | [thr_000899]    规则: buy_zone=13.0 buy_strong=12.2 trend_break=11.5 take_profit=0.0 auto=True
+2026-05-21 10:28:03.476 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='000899', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.477 | INFO | AKSHARE | 订阅 000899.SZSE (累计 23 只)
+2026-05-21 10:28:03.478 | INFO | CtaStrategy | thr_000899初始化完成
+2026-05-21 10:28:03.478 | INFO | CtaStrategy | thr_001896开始执行初始化
+2026-05-21 10:28:03.479 | INFO | CtaStrategy | [thr_001896]  策略初始化: 001896.SZSE
+2026-05-21 10:28:03.479 | INFO | CtaStrategy | [thr_001896]    规则: buy_zone=14.5 buy_strong=13.5 trend_break=12.8 take_profit=0.0 auto=True
+2026-05-21 10:28:03.480 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='001896', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.481 | INFO | AKSHARE | 订阅 001896.SZSE (累计 23 只)
+2026-05-21 10:28:03.482 | INFO | CtaStrategy | thr_001896初始化完成
+2026-05-21 10:28:03.482 | INFO | CtaStrategy | thr_600310开始执行初始化
+2026-05-21 10:28:03.482 | INFO | CtaStrategy | [thr_600310]  策略初始化: 600310.SSE
+2026-05-21 10:28:03.484 | INFO | CtaStrategy | [thr_600310]    规则: buy_zone=4.95 buy_strong=4.7 trend_break=4.5 take_profit=0.0 auto=True
+2026-05-21 10:28:03.485 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600310', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.486 | INFO | AKSHARE | 订阅 600310.SSE (累计 23 只)
+2026-05-21 10:28:03.486 | INFO | CtaStrategy | thr_600310初始化完成
+2026-05-21 10:28:03.487 | INFO | CtaStrategy | thr_601222开始执行初始化
+2026-05-21 10:28:03.487 | INFO | CtaStrategy | [thr_601222]  策略初始化: 601222.SSE
+2026-05-21 10:28:03.489 | INFO | CtaStrategy | [thr_601222]    规则: buy_zone=6.4 buy_strong=6.0 trend_break=5.7 take_profit=0.0 auto=True
+2026-05-21 10:28:03.489 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='601222', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.490 | INFO | AKSHARE | 订阅 601222.SSE (累计 23 只)
+2026-05-21 10:28:03.491 | INFO | CtaStrategy | thr_601222初始化完成
+2026-05-21 10:28:03.492 | INFO | CtaStrategy | thr_600863开始执行初始化
+2026-05-21 10:28:03.492 | INFO | CtaStrategy | [thr_600863]  策略初始化: 600863.SSE
+2026-05-21 10:28:03.493 | INFO | CtaStrategy | [thr_600863]    规则: buy_zone=5.2 buy_strong=4.9 trend_break=4.7 take_profit=0.0 auto=True
+2026-05-21 10:28:03.493 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='600863', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.495 | INFO | AKSHARE | 订阅 600863.SSE (累计 23 只)
+2026-05-21 10:28:03.496 | INFO | CtaStrategy | thr_600863初始化完成
+2026-05-21 10:28:03.496 | INFO | CtaStrategy | thr_605006开始执行初始化
+2026-05-21 10:28:03.497 | INFO | CtaStrategy | [thr_605006]  策略初始化: 605006.SSE
+2026-05-21 10:28:03.497 | INFO | CtaStrategy | [thr_605006]    规则: buy_zone=14.0 buy_strong=13.0 trend_break=12.2 take_profit=0.0 auto=True
+2026-05-21 10:28:03.498 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='605006', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.500 | INFO | AKSHARE | 订阅 605006.SSE (累计 23 只)
+2026-05-21 10:28:03.500 | INFO | CtaStrategy | thr_605006初始化完成
+2026-05-21 10:28:03.501 | INFO | CtaStrategy | thr_603757开始执行初始化
+2026-05-21 10:28:03.501 | INFO | CtaStrategy | [thr_603757]  策略初始化: 603757.SSE
+2026-05-21 10:28:03.503 | INFO | CtaStrategy | [thr_603757]    规则: buy_zone=62.0 buy_strong=58.0 trend_break=55.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.503 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='603757', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-21 10:28:03.503 | INFO | AKSHARE | 订阅 603757.SSE (累计 23 只)
+2026-05-21 10:28:03.505 | INFO | CtaStrategy | thr_603757初始化完成
+2026-05-21 10:28:03.505 | INFO | CtaStrategy | thr_002156开始执行初始化
+2026-05-21 10:28:03.507 | INFO | CtaStrategy | [thr_002156]  策略初始化: 002156.SZSE
+2026-05-21 10:28:03.507 | INFO | CtaStrategy | [thr_002156]    规则: buy_zone=60.0 buy_strong=56.0 trend_break=53.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.507 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002156', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.509 | INFO | AKSHARE | 订阅 002156.SZSE (累计 23 只)
+2026-05-21 10:28:03.510 | INFO | CtaStrategy | thr_002156初始化完成
+2026-05-21 10:28:03.511 | INFO | CtaStrategy | thr_002709开始执行初始化
+2026-05-21 10:28:03.511 | INFO | CtaStrategy | [thr_002709]  策略初始化: 002709.SZSE
+2026-05-21 10:28:03.512 | INFO | CtaStrategy | [thr_002709]    规则: buy_zone=56.0 buy_strong=53.0 trend_break=50.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.512 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002709', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.513 | INFO | AKSHARE | 订阅 002709.SZSE (累计 23 只)
+2026-05-21 10:28:03.514 | INFO | CtaStrategy | thr_002709初始化完成
+2026-05-21 10:28:03.515 | INFO | CtaStrategy | thr_002149开始执行初始化
+2026-05-21 10:28:03.515 | INFO | CtaStrategy | [thr_002149]  策略初始化: 002149.SZSE
+2026-05-21 10:28:03.515 | INFO | CtaStrategy | [thr_002149]    规则: buy_zone=67.0 buy_strong=64.0 trend_break=60.0 take_profit=0.0 auto=True
+2026-05-21 10:28:03.516 | INFO | MainEngine | 订阅行情 -> AKSHARE：SubscribeRequest(symbol='002149', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-21 10:28:03.518 | INFO | AKSHARE | 订阅 002149.SZSE (累计 23 只)
+2026-05-21 10:28:03.519 | INFO | CtaStrategy | thr_002149初始化完成
+2026-05-21 10:28:05.416 | INFO | CtaStrategy | [thr_600330]  策略启动: 600330.SSE
+2026-05-21 10:28:05.417 | INFO | CtaStrategy | [thr_002256]  策略启动: 002256.SZSE
+2026-05-21 10:28:05.418 | INFO | CtaStrategy | [thr_002453]  策略启动: 002453.SZSE
+2026-05-21 10:28:05.418 | INFO | CtaStrategy | [thr_603601]  策略启动: 603601.SSE
+2026-05-21 10:28:05.418 | INFO | CtaStrategy | [thr_002428]  策略启动: 002428.SZSE
+2026-05-21 10:28:05.419 | INFO | CtaStrategy | [thr_600130]  策略启动: 600130.SSE
+2026-05-21 10:28:05.419 | INFO | CtaStrategy | [thr_603178]  策略启动: 603178.SSE
+2026-05-21 10:28:05.420 | INFO | CtaStrategy | [thr_603986]  策略启动: 603986.SSE
+2026-05-21 10:28:05.420 | INFO | CtaStrategy | [thr_301120]  策略启动: 301120.SZSE
+2026-05-21 10:28:05.420 | INFO | CtaStrategy | [thr_301179]  策略启动: 301179.SZSE
+2026-05-21 10:28:05.422 | INFO | CtaStrategy | [thr_600021]  策略启动: 600021.SSE
+2026-05-21 10:28:05.422 | INFO | CtaStrategy | [thr_000600]  策略启动: 000600.SZSE
+2026-05-21 10:28:05.422 | INFO | CtaStrategy | [thr_002067]  策略启动: 002067.SZSE
+2026-05-21 10:28:05.423 | INFO | CtaStrategy | [thr_000899]  策略启动: 000899.SZSE
+2026-05-21 10:28:05.423 | INFO | CtaStrategy | [thr_001896]  策略启动: 001896.SZSE
+2026-05-21 10:28:05.425 | INFO | CtaStrategy | [thr_600310]  策略启动: 600310.SSE
+2026-05-21 10:28:05.425 | INFO | CtaStrategy | [thr_601222]  策略启动: 601222.SSE
+2026-05-21 10:28:05.425 | INFO | CtaStrategy | [thr_600863]  策略启动: 600863.SSE
+2026-05-21 10:28:05.427 | INFO | CtaStrategy | [thr_605006]  策略启动: 605006.SSE
+2026-05-21 10:28:05.428 | INFO | CtaStrategy | [thr_603757]  策略启动: 603757.SSE
+2026-05-21 10:28:05.428 | INFO | CtaStrategy | [thr_002156]  策略启动: 002156.SZSE
+2026-05-21 10:28:05.429 | INFO | CtaStrategy | [thr_002709]  策略启动: 002709.SZSE
+2026-05-21 10:28:05.429 | INFO | CtaStrategy | [thr_002149]  策略启动: 002149.SZSE
+  📡 获取实时行情（新浪）...
+2026-05-21 10:28:07.885 | INFO | CtaStrategy | [thr_603178]  🟢🟢 [buy_strong] 603178.SSE 19.97 <= buy_strong 20.00
+2026-05-21 10:28:07.885 | INFO | CtaStrategy | [thr_603178]  💰 [sim_executor] BUY_HEAVY → 买入 圣龙股份 100股 @19.97 = 1997.00（含费 2002.00）
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+2026-05-21 10:29:00.287 | INFO | CtaStrategy | [thr_603757]  🟢 [buy_zone] 603757.SSE 62.00 <= buy_zone 62.00
+2026-05-21 10:29:00.288 | INFO | CtaStrategy | [thr_603757]  ⚠️ [sim_executor] BUY_LIGHT失败: 现金不足 1995.75，无法买 603757 1 手 (6200.00)
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+  📡 获取实时行情（新浪）...
+2026-05-21 10:29:20.431 | INFO | CtaStrategy | [thr_600330]  策略停止: 600330.SSE
+2026-05-21 10:29:20.431 | INFO | CtaStrategy | [thr_002256]  策略停止: 002256.SZSE
+2026-05-21 10:29:20.434 | INFO | CtaStrategy | [thr_002453]  策略停止: 002453.SZSE
+2026-05-21 10:29:20.434 | INFO | CtaStrategy | [thr_603601]  策略停止: 603601.SSE
+2026-05-21 10:29:20.435 | INFO | CtaStrategy | [thr_002428]  策略停止: 002428.SZSE
+2026-05-21 10:29:20.437 | INFO | CtaStrategy | [thr_600130]  策略停止: 600130.SSE
+2026-05-21 10:29:20.438 | INFO | CtaStrategy | [thr_603178]  策略停止: 603178.SSE
+2026-05-21 10:29:20.438 | INFO | CtaStrategy | [thr_603986]  策略停止: 603986.SSE
+2026-05-21 10:29:20.441 | INFO | CtaStrategy | [thr_301120]  策略停止: 301120.SZSE
+2026-05-21 10:29:20.441 | INFO | CtaStrategy | [thr_301179]  策略停止: 301179.SZSE
+2026-05-21 10:29:20.442 | INFO | CtaStrategy | [thr_600021]  策略停止: 600021.SSE
+2026-05-21 10:29:20.444 | INFO | CtaStrategy | [thr_000600]  策略停止: 000600.SZSE
+2026-05-21 10:29:20.445 | INFO | CtaStrategy | [thr_002067]  策略停止: 002067.SZSE
+2026-05-21 10:29:20.447 | INFO | CtaStrategy | [thr_000899]  策略停止: 000899.SZSE
+2026-05-21 10:29:20.448 | INFO | CtaStrategy | [thr_001896]  策略停止: 001896.SZSE
+2026-05-21 10:29:20.449 | INFO | CtaStrategy | [thr_600310]  策略停止: 600310.SSE
+2026-05-21 10:29:20.449 | INFO | CtaStrategy | [thr_601222]  策略停止: 601222.SSE
+2026-05-21 10:29:20.452 | INFO | CtaStrategy | [thr_600863]  策略停止: 600863.SSE
+2026-05-21 10:29:20.453 | INFO | CtaStrategy | [thr_605006]  策略停止: 605006.SSE
+2026-05-21 10:29:20.455 | INFO | CtaStrategy | [thr_603757]  策略停止: 603757.SSE
+2026-05-21 10:29:20.456 | INFO | CtaStrategy | [thr_002156]  策略停止: 002156.SZSE
+2026-05-21 10:29:20.456 | INFO | CtaStrategy | [thr_002709]  策略停止: 002709.SZSE
+  📡 获取实时行情（新浪）...

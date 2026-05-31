@@ -446,9 +446,13 @@ class ThresholdAlertStrategy(CtaTemplate):
             risk_decision = evaluate_buy_risk_guard(
                 code=self.code,
                 tick=tick,
+                db_path=str(_ROOT / 'data' / 'sim_live_mirror.db'),
+                account_id=1,
                 prev_close=prev_close,
                 support_level=support_level,
                 avg_vol_5d=getattr(self, 'avg_vol_5d', None),
+                max_positions=6,
+                max_daily_new=2,
             )
             if risk_decision.blocked:
                 self.write_log(f"⚠️ [{self.vt_symbol}] {risk_decision.reason}，暂停抄底买入")

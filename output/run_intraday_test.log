@@ -1,0 +1,42 @@
+2026-05-19 17:07:48,602 [INFO] run_intraday | 启动 vnpy 主引擎 dry_run=True duration=25
+没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容
+2026-05-19 17:07:48.627 | INFO | MainEngine | 连接登录 -> QMT
+2026-05-19 17:07:48.750 | INFO | QMT | ✅ QMT trader 连接成功 acct=90072426 session=970525 dry_run=True
+2026-05-19 17:07:48,766 [INFO] run_intraday | cta_engine 初始化完成
+2026-05-19 17:07:48.766 | INFO | CtaStrategy | CTA策略引擎初始化成功
+2026-05-19 17:07:48,766 [INFO] run_intraday | 阈值策略将覆盖 10 只股票: ['002149', '002156', '002256', '002342', '002453', '002709', '600330', '603601', '603757', '605006']
+2026-05-19 17:07:48.767 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,767 [ERROR] run_intraday | 启动策略 alert_002149 失败: 'alert_002149'
+2026-05-19 17:07:48,767 [ERROR] run_intraday | 启动策略 alert_002156 失败: 'alert_002156'
+2026-05-19 17:07:48.767 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,767 [ERROR] run_intraday | 启动策略 alert_002256 失败: 'alert_002256'
+2026-05-19 17:07:48,767 [ERROR] run_intraday | 启动策略 alert_002342 失败: 'alert_002342'
+2026-05-19 17:07:48.768 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,768 [ERROR] run_intraday | 启动策略 alert_002453 失败: 'alert_002453'
+2026-05-19 17:07:48,768 [ERROR] run_intraday | 启动策略 alert_002709 失败: 'alert_002709'
+2026-05-19 17:07:48.768 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,768 [ERROR] run_intraday | 启动策略 alert_600330 失败: 'alert_600330'
+2026-05-19 17:07:48,768 [ERROR] run_intraday | 启动策略 alert_603601 失败: 'alert_603601'
+2026-05-19 17:07:48.768 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,768 [ERROR] run_intraday | 启动策略 alert_603757 失败: 'alert_603757'
+2026-05-19 17:07:48.768 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,770 [ERROR] run_intraday | 启动策略 alert_605006 失败: 'alert_605006'
+2026-05-19 17:07:48,770 [INFO] run_intraday | Fusion 策略覆盖 5 只: ['002149', '002156', '002709', '603757', '605006']
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,770 [WARNING] run_intraday | 启动 Fusion fusion_002149 失败（可继续）: 'fusion_002149'
+2026-05-19 17:07:48,770 [WARNING] run_intraday | 启动 Fusion fusion_002156 失败（可继续）: 'fusion_002156'
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,770 [WARNING] run_intraday | 启动 Fusion fusion_002709 失败（可继续）: 'fusion_002709'
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,770 [WARNING] run_intraday | 启动 Fusion fusion_603757 失败（可继续）: 'fusion_603757'
+2026-05-19 17:07:48,770 [WARNING] run_intraday | 启动 Fusion fusion_605006 失败（可继续）: 'fusion_605006'
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类ThresholdAlertStrategy
+2026-05-19 17:07:48,770 [INFO] run_intraday | ===== 引擎运行中 =====
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-19 17:07:48.770 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-19 17:07:48.771 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-19 17:07:48.771 | INFO | CtaStrategy | 创建策略失败，找不到策略类FusionStrategy
+2026-05-19 17:08:13,790 [INFO] run_intraday | 达到 --duration=25 秒，退出
+2026-05-19 17:08:13,790 [INFO] run_intraday | 关闭 main_engine ...
+2026-05-19 17:08:14,630 [INFO] run_intraday | 已关闭

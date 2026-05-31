@@ -8,6 +8,7 @@ sim/engine.py
 
 from datetime import date as Date
 from sim.db import get_conn
+from sim.config import risk_params
 
 
 # 费用常量（A 股个人投资者参数）
@@ -25,6 +26,32 @@ class SimEngine:
 
     def __init__(self, account_id: int = 1):
         self.account_id = account_id
+
+    def _count_new_positions_today(self, trade_date: str) -> int:
+        """统计今天新建的仓位数（首次买入某股票，非加仓）"""
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            # 找出今天账户内所有首次出现的持仓（即今天之前无持仓，今天有买入）
+            # 方法：统计今天有 BUY 交易、且在今天之前没有该 stock_code 持仓记录的股票数
+            cur.execute("""
+                SELECT COUNT(DISTINCT stock_code)
+                FROM sim_trades t
+                WHERE t.account_id = ?
+                  AND t.direction = 'BUY'
+                  AND t.trade_date = ?
+                  AND stock_code NOT IN (
+                      SELECT DISTINCT stock_code
+                      FROM sim_trades
+                      WHERE account_id = ?
+                        AND direction = 'BUY'
+                        AND trade_date < ?
+                  )
+            """, (self.account_id, trade_date, self.account_id, trade_date))
+            row = cur.fetchone()
+            return int(row[0]) if row else 0
+        finally:
+            conn.close()
 
     # ---------- 账户 ----------
     def get_account(self) -> dict:
@@ -94,6 +121,34 @@ class SimEngine:
         """
         if quantity <= 0 or price <= 0:
             return {"success": False, "msg": "价格/数量无效"}
+
+        # ---- REQ-038 硬上限检查 ----
+        risk = risk_params()
+
+        # 1) 总持仓数上限（含本次新建）
+        positions = self.get_positions()
+        existing_codes = {p["stock_code"] for p in positions}
+        if stock_code not in existing_codes:
+            # 本次是新建仓（非加仓），总持仓数会 +1
+            if len(existing_codes) >= risk.get("max_total_positions", 6):
+                return {
+                    "success": False,
+                    "msg": f"持仓数量达到硬上限 {risk.get('max_total_positions', 6)}，无法新建 {stock_code}",
+                }
+
+        # 2) 单日新建仓位数上限
+        trade_date = trade_date or Date.today()
+        new_positions_today = self._count_new_positions_today(str(trade_date))
+        if stock_code not in existing_codes:
+            # 只有新建仓（非加仓）才计入单日新建上限
+            if new_positions_today >= risk.get("max_daily_new_positions", 3):
+                return {
+                    "success": False,
+                    "msg": f"今日新建仓位已达上限 {risk.get('max_daily_new_positions', 3)}，无法新建 {stock_code}",
+                }
+
+        # 重置 trade_date（上面可能已赋值）
+        trade_date = trade_date or Date.today()
 
         # 数量向下取整到 100 股
         quantity = (quantity // 100) * 100

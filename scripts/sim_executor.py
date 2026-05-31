@@ -73,6 +73,37 @@ DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
 COMMISSION_RATE = 0.00025   # 万2.5
 STAMP_TAX_RATE = 0.0005   # 万5（仅卖出）
 
+# ── REQ-038 持仓数量硬上限（从 config.yaml 读取，缺省 6/2）─────────────────────
+def _load_risk_limits():
+    """从 config.yaml 读取风控上限，返回 (max_total, max_daily_new)."""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
+        risk = cfg.get('risk') or {}
+        max_total = int(risk.get('max_total_positions', 6))
+        max_daily = int(risk.get('max_daily_new_positions', 2))
+        return max_total, max_daily
+    except Exception:
+        return 6, 2
+
+MAX_TOTAL_POSITIONS, MAX_DAILY_NEW_POSITIONS = _load_risk_limits()
+
+
+# ── REQ-038 持仓数量硬上限（从 config.yaml 读取，缺省 6/2）─────────────────────
+def _load_risk_limits():
+    """从 config.yaml 读取风控上限，返回 (max_total, max_daily_new)."""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
+        risk = cfg.get('risk') or {}
+        max_total = int(risk.get('max_total_positions', 6))
+        max_daily = int(risk.get('max_daily_new_positions', 2))
+        return max_total, max_daily
+    except Exception:
+        return 6, 2
+
+MAX_TOTAL_POSITIONS, MAX_DAILY_NEW_POSITIONS = _load_risk_limits()
+
 
 def _get_yesterday_close(code: str) -> float | None:
     """从新浪拿 yesterday_close。失败返回 None。"""
@@ -549,6 +580,48 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         finally:
             conn.close()
 
+        # ── REQ-038 持仓数量硬上限检查 ─────────────────────────────────────
+        # 1) 总持仓数上限
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            total_pos = conn.execute(
+                "SELECT COUNT(*) FROM sim_positions WHERE account_id=? AND quantity > 0",
+                (_ACCOUNT_ID,)
+            ).fetchone()[0]
+        finally:
+            conn.close()
+        if total_pos >= MAX_TOTAL_POSITIONS:
+            reason = f'总持仓数({total_pos})≥上限({MAX_TOTAL_POSITIONS})，拒绝新建 {code}'
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'position_count_limit', 0, reason)
+            return 'NO_ACTION'
+
+        # 2) 单日新建仓位数上限（只限制"新买入"，已有仓位加仓不受影响）
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            # 检查是否已有持仓
+            existing = conn.execute(
+                "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            if not existing:
+                # 是新建仓位，检查今日已新建数量
+                from datetime import datetime
+                today = datetime.now().strftime('%Y-%m-%d')
+                new_today = conn.execute(
+                    "SELECT COUNT(DISTINCT stock_code) FROM sim_trades "
+                    "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+                    (_ACCOUNT_ID, today)
+                ).fetchone()[0]
+                if new_today >= MAX_DAILY_NEW_POSITIONS:
+                    reason = f'今日新建仓位({new_today})≥上限({MAX_DAILY_NEW_POSITIONS})，拒绝新建 {code}'
+                    logger.info(f'🚫 [{code}] {reason}')
+                    _write_review_decision(_ACCOUNT_ID, code, 'daily_new_position_limit', 0, reason)
+                    return 'NO_ACTION'
+        finally:
+            conn.close()
+
+        _write_review_decision(_ACCOUNT_ID, code, 'buy', 1, f'{level} 信号通过风控')
         return 'BUY'
 
     elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):

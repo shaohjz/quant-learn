@@ -1019,6 +1019,8 @@ legacy_watch:
     note: 5/19 暴跌后清仓
 risk:
   max_position_pct: 0.20  # 提升单票仓位上限从15%到20%，提升资金利用率
+  max_total_positions: 6    # 总持仓股票数硬上限（含原有持仓+本次新建）
+  max_daily_new_positions: 3  # 单日新建仓位数硬上限（REQ-038）
   max_daily_trades: 10     # 提升每日交易上限从5到10笔，匹配更激进的信号生成
   stop_loss_pct: -0.08
   take_profit_pct: 0.15

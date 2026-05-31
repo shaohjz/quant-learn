@@ -1,0 +1,133 @@
+2026-05-19 17:12:44,053 [INFO] run_intraday | 启动 vnpy 主引擎 dry_run=True duration=18
+没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容
+2026-05-19 17:12:44.090 | INFO | MainEngine | 连接登录 -> QMT
+2026-05-19 17:12:44.270 | INFO | QMT | ✅ QMT trader 连接成功 acct=90072426 session=970525 dry_run=True
+2026-05-19 17:12:44.281 | INFO | CtaStrategy | CTA策略引擎初始化成功
+2026-05-19 17:12:44,282 [INFO] run_intraday | cta_engine 初始化完成 已注册策略类: ['AtrRsiStrategy', 'BollChannelStrategy', 'DoubleMaStrategy', 'DualThrustStrategy', 'KingKeltnerStrategy', 'MultiSignalStrategy', 'MultiTimeframeStrategy', 'TestStrategy', 'TurtleSignalStrategy', 'ThresholdAlertStrategy', 'FusionStrategy']
+2026-05-19 17:12:44,282 [INFO] run_intraday | 阈值策略将覆盖 10 只股票: ['002149', '002156', '002256', '002342', '002453', '002709', '600330', '603601', '603757', '605006']
+2026-05-19 17:12:44,285 [INFO] run_intraday | ✅ 初始化策略 alert_002149 -> 002149.SZSE
+2026-05-19 17:12:44.285 | INFO | CtaStrategy | alert_002149开始执行初始化
+2026-05-19 17:12:44.378 | INFO | CtaStrategy | [alert_002149]  策略初始化 002149 命中规则数=2
+2026-05-19 17:12:44.378 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002149', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:44.378 | INFO | QMT | 📡 订阅 002149.SZ
+2026-05-19 17:12:44.378 | INFO | CtaStrategy | alert_002149初始化完成
+2026-05-19 17:12:44,378 [INFO] run_intraday | ✅ 初始化策略 alert_002156 -> 002156.SZSE
+2026-05-19 17:12:44.468 | INFO | CtaStrategy | alert_002156开始执行初始化
+2026-05-19 17:12:44.468 | INFO | CtaStrategy | [alert_002156]  策略初始化 002156 命中规则数=2
+2026-05-19 17:12:44.469 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002156', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:44.469 | INFO | QMT | 📡 订阅 002156.SZ
+2026-05-19 17:12:44.469 | INFO | CtaStrategy | alert_002156初始化完成
+2026-05-19 17:12:44,469 [INFO] run_intraday | ✅ 初始化策略 alert_002256 -> 002256.SZSE
+2026-05-19 17:12:44.548 | INFO | CtaStrategy | alert_002256开始执行初始化
+2026-05-19 17:12:44.550 | INFO | CtaStrategy | [alert_002256]  策略初始化 002256 命中规则数=3
+2026-05-19 17:12:44.550 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002256', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:44.550 | INFO | QMT | 📡 订阅 002256.SZ
+2026-05-19 17:12:44.550 | INFO | CtaStrategy | alert_002256初始化完成
+2026-05-19 17:12:44,551 [INFO] run_intraday | ✅ 初始化策略 alert_002342 -> 002342.SZSE
+2026-05-19 17:12:44.637 | INFO | CtaStrategy | alert_002342开始执行初始化
+2026-05-19 17:12:44.638 | INFO | CtaStrategy | [alert_002342]  策略初始化 002342 命中规则数=4
+2026-05-19 17:12:44.638 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002342', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:44.638 | INFO | QMT | 📡 订阅 002342.SZ
+2026-05-19 17:12:44.638 | INFO | CtaStrategy | alert_002342初始化完成
+2026-05-19 17:12:44,640 [INFO] run_intraday | ✅ 初始化策略 alert_002453 -> 002453.SZSE
+2026-05-19 17:12:44.721 | INFO | CtaStrategy | alert_002453开始执行初始化
+2026-05-19 17:12:44.723 | INFO | CtaStrategy | [alert_002453]  策略初始化 002453 命中规则数=4
+2026-05-19 17:12:44.723 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002453', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:44.723 | INFO | QMT | 📡 订阅 002453.SZ
+2026-05-19 17:12:44.723 | INFO | CtaStrategy | alert_002453初始化完成
+2026-05-19 17:12:44,724 [INFO] run_intraday | ✅ 初始化策略 alert_002709 -> 002709.SZSE
+2026-05-19 17:12:44.815 | INFO | CtaStrategy | alert_002709开始执行初始化
+2026-05-19 17:12:44.817 | INFO | CtaStrategy | [alert_002709]  策略初始化 002709 命中规则数=2
+2026-05-19 17:12:44.817 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002709', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:44.817 | INFO | QMT | 📡 订阅 002709.SZ
+2026-05-19 17:12:44.817 | INFO | CtaStrategy | alert_002709初始化完成
+2026-05-19 17:12:44,817 [INFO] run_intraday | ✅ 初始化策略 alert_600330 -> 600330.SSE
+2026-05-19 17:12:44.905 | INFO | CtaStrategy | alert_600330开始执行初始化
+2026-05-19 17:12:44.905 | INFO | CtaStrategy | [alert_600330]  策略初始化 600330 命中规则数=3
+2026-05-19 17:12:44.905 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='600330', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-19 17:12:44.907 | INFO | QMT | 📡 订阅 600330.SH
+2026-05-19 17:12:44.907 | INFO | CtaStrategy | alert_600330初始化完成
+2026-05-19 17:12:44,907 [INFO] run_intraday | ✅ 初始化策略 alert_603601 -> 603601.SSE
+2026-05-19 17:12:44.994 | INFO | CtaStrategy | alert_603601开始执行初始化
+2026-05-19 17:12:44.994 | INFO | CtaStrategy | [alert_603601]  策略初始化 603601 命中规则数=4
+2026-05-19 17:12:44.995 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='603601', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-19 17:12:44.995 | INFO | QMT | 📡 订阅 603601.SH
+2026-05-19 17:12:44,995 [INFO] run_intraday | ✅ 初始化策略 alert_603757 -> 603757.SSE
+2026-05-19 17:12:45.053 | INFO | CtaStrategy | alert_603601初始化完成
+2026-05-19 17:12:45.054 | INFO | CtaStrategy | alert_603757开始执行初始化
+2026-05-19 17:12:45.054 | INFO | CtaStrategy | [alert_603757]  策略初始化 603757 命中规则数=3
+2026-05-19 17:12:45.054 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='603757', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-19 17:12:45.054 | INFO | QMT | 📡 订阅 603757.SH
+2026-05-19 17:12:45.054 | INFO | CtaStrategy | alert_603757初始化完成
+2026-05-19 17:12:45,055 [INFO] run_intraday | ✅ 初始化策略 alert_605006 -> 605006.SSE
+2026-05-19 17:12:45,156 [INFO] run_intraday | Fusion 策略覆盖 5 只: ['002149', '002156', '002709', '603757', '605006']
+2026-05-19 17:12:45.156 | INFO | CtaStrategy | alert_605006开始执行初始化
+2026-05-19 17:12:45.156 | INFO | CtaStrategy | [alert_605006]  策略初始化 605006 命中规则数=3
+2026-05-19 17:12:45.156 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='605006', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-19 17:12:45.156 | INFO | QMT | 📡 订阅 605006.SH
+2026-05-19 17:12:45.157 | INFO | CtaStrategy | alert_605006初始化完成
+2026-05-19 17:12:45,157 [INFO] run_intraday | ✅ 初始化 Fusion fusion_002149 -> 002149.SZSE
+2026-05-19 17:12:45.157 | INFO | CtaStrategy | fusion_002149开始执行初始化
+2026-05-19 17:12:45.160 | INFO | CtaStrategy | [fusion_002149]  FusionStrategy 初始化 002149 持仓股=False qlib_signal=有
+2026-05-19 17:12:45,160 [INFO] run_intraday | ✅ 初始化 Fusion fusion_002156 -> 002156.SZSE
+2026-05-19 17:12:45.160 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002149', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:45.160 | INFO | CtaStrategy | fusion_002149初始化完成
+2026-05-19 17:12:45.161 | INFO | CtaStrategy | fusion_002156开始执行初始化
+2026-05-19 17:12:45.161 | INFO | CtaStrategy | [fusion_002156]  FusionStrategy 初始化 002156 持仓股=False qlib_signal=有
+2026-05-19 17:12:45.161 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002156', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:45,161 [INFO] run_intraday | ✅ 初始化 Fusion fusion_002709 -> 002709.SZSE
+2026-05-19 17:12:45.161 | INFO | CtaStrategy | fusion_002156初始化完成
+2026-05-19 17:12:45.161 | INFO | CtaStrategy | fusion_002709开始执行初始化
+2026-05-19 17:12:45.161 | INFO | CtaStrategy | [fusion_002709]  FusionStrategy 初始化 002709 持仓股=False qlib_signal=有
+2026-05-19 17:12:45.164 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='002709', exchange=<Exchange.SZSE: 'SZSE'>)
+2026-05-19 17:12:45.164 | INFO | CtaStrategy | fusion_002709初始化完成
+2026-05-19 17:12:45,164 [INFO] run_intraday | ✅ 初始化 Fusion fusion_603757 -> 603757.SSE
+2026-05-19 17:12:45.164 | INFO | CtaStrategy | fusion_603757开始执行初始化
+2026-05-19 17:12:45.167 | INFO | CtaStrategy | [fusion_603757]  FusionStrategy 初始化 603757 持仓股=False qlib_signal=有
+2026-05-19 17:12:45.167 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='603757', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-19 17:12:45,167 [INFO] run_intraday | ✅ 初始化 Fusion fusion_605006 -> 605006.SSE
+2026-05-19 17:12:45,168 [INFO] run_intraday | 等待 2 秒 init 完成...
+2026-05-19 17:12:45.168 | INFO | CtaStrategy | fusion_603757初始化完成
+2026-05-19 17:12:45.168 | INFO | CtaStrategy | fusion_605006开始执行初始化
+2026-05-19 17:12:45.168 | INFO | CtaStrategy | [fusion_605006]  FusionStrategy 初始化 605006 持仓股=False qlib_signal=有
+2026-05-19 17:12:45.168 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='605006', exchange=<Exchange.SSE: 'SSE'>)
+2026-05-19 17:12:45.168 | INFO | CtaStrategy | fusion_605006初始化完成
+2026-05-19 17:12:47.169 | INFO | CtaStrategy | [alert_002149]  策略启动
+2026-05-19 17:12:47,188 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002149 共 2 条规则
+2026-05-19 17:12:47,188 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002156 共 2 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 002149 共 2 条规则
+2026-05-19 17:12:47.188 | INFO | CtaStrategy | [alert_002156]  策略启动
+2026-05-19 17:12:47,188 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002256 共 3 条规则
+2026-05-19 17:12:47,188 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002342 共 4 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 002156 共 2 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 002256 共 3 条规则
+2026-05-19 17:12:47.188 | INFO | CtaStrategy | [alert_002256]  策略启动
+2026-05-19 17:12:47,188 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002453 共 4 条规则
+2026-05-19 17:12:47,188 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002709 共 2 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 002342 共 4 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 002453 共 4 条规则
+2026-05-19 17:12:47.188 | INFO | CtaStrategy | [alert_002342]  策略启动
+2026-05-19 17:12:47,189 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 600330 共 3 条规则
+2026-05-19 17:12:47,189 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 603601 共 4 条规则
+2026-05-19 17:12:47,189 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 603757 共 3 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 002709 共 2 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 600330 共 3 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 603601 共 4 条规则
+2026-05-19 17:12:47.189 | INFO | CtaStrategy | [alert_002453]  策略启动
+2026-05-19 17:12:47,189 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 605006 共 3 条规则
+2026-05-19 17:12:47,189 [INFO] run_intraday | ===== 引擎运行中 =====
+[dry-run wecom] 🟢 ThresholdAlert 启动 603757 共 3 条规则
+[dry-run wecom] 🟢 ThresholdAlert 启动 605006 共 3 条规则
+2026-05-19 17:12:47.189 | INFO | CtaStrategy | [alert_002709]  策略启动
+2026-05-19 17:12:47.189 | INFO | CtaStrategy | [alert_600330]  策略启动
+2026-05-19 17:12:47.189 | INFO | CtaStrategy | [alert_603601]  策略启动
+2026-05-19 17:12:47.189 | INFO | CtaStrategy | [alert_603757]  策略启动
+2026-05-19 17:12:47.189 | INFO | CtaStrategy | [alert_605006]  策略启动
+2026-05-19 17:12:47.190 | INFO | CtaStrategy | [fusion_002149]  策略启动
+2026-05-19 17:12:47.190 | INFO | CtaStrategy | [fusion_002156]  策略启动
+2026-05-19 17:12:47.190 | INFO | CtaStrategy | [fusion_002709]  策略启动
+2026-05-19 17:12:47.190 | INFO | CtaStrategy | [fusion_603757]  策略启动
+2026-05-19 17:12:47.190 | INFO | CtaStrategy | [fusion_605006]  策略启动
+2026-05-19 17:13:05,205 [INFO] run_intraday | 达到 --duration=18 秒，退出
+2026-05-19 17:13:05,205 [INFO] run_intraday | 关闭 main_engine ...
+2026-05-19 17:13:06,194 [INFO] run_intraday | 已关闭

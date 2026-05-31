@@ -76,6 +76,8 @@ def stock_pool_enabled() -> dict:
 def risk_params() -> dict:
     return {
         "max_position_pct": float(get("risk.max_position_pct", 0.60)),
+        "max_total_positions": int(get("risk.max_total_positions", 6)),
+        "max_daily_new_positions": int(get("risk.max_daily_new_positions", 3)),
         "max_daily_trades": int(get("risk.max_daily_trades", 5)),
         "stop_loss_pct": float(get("risk.stop_loss_pct", -0.08)),
         "take_profit_pct": float(get("risk.take_profit_pct", 0.15)),

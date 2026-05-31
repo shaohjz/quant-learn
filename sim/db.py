@@ -122,6 +122,63 @@ def init_tables():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_trades_code ON sim_trades(stock_code)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_pos_code ON sim_positions(stock_code)")
 
+        # 订单记录（OmsEngine EVENT_ORDER 持久化）
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sim_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                account_id INTEGER DEFAULT 1,
+                order_id TEXT,              -- vnpy 内部 order_id / broker_order_id
+                stock_code TEXT NOT NULL,
+                stock_name TEXT,
+                direction TEXT NOT NULL,    -- BUY / SELL
+                offset TEXT,               -- OPEN / CLOSE
+                price REAL,
+                quantity INTEGER,
+                traded INTEGER DEFAULT 0,   -- 已成交数量
+                status TEXT,               -- SUBMITTED / PART_TRADED / ALL_TRADED / CANCELLED / REJECTED
+                order_time TIMESTAMP,       -- 下单时间
+                cancel_time TIMESTAMP,     -- 撤单时间
+                broker TEXT DEFAULT 'sim',
+                broker_order_id TEXT,       -- 券商委托号
+                strategy_name TEXT,         -- 触发策略名
+                signal_reason TEXT,        -- 信号原因
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # 成交记录（OmsEngine EVENT_TRADE 持久化，比 sim_trades 更细粒度）
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sim_fills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                account_id INTEGER DEFAULT 1,
+                order_id TEXT,              -- 关联 sim_orders.order_id
+                stock_code TEXT NOT NULL,
+                stock_name TEXT,
+                direction TEXT NOT NULL,    -- BUY / SELL
+                trade_price REAL NOT NULL, -- 成交价格
+                trade_volume INTEGER,       -- 成交数量
+                trade_amount REAL,          -- 成交金额
+                commission REAL DEFAULT 0,  -- 佣金
+                tax REAL DEFAULT 0,         -- 印花税
+                trade_time TIMESTAMP,       -- 成交时间
+                broker TEXT DEFAULT 'sim',
+                broker_trade_id TEXT,       -- 券商成交编号
+                strategy_name TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # sim_orders 索引
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_orders_date ON sim_orders(order_time)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_orders_code ON sim_orders(stock_code)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON sim_orders(status)")
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_broker_id ON sim_orders(broker_order_id) WHERE broker_order_id IS NOT NULL AND broker_order_id != ''")
+
+        # sim_fills 索引
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_fills_date ON sim_fills(trade_time)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_fills_code ON sim_fills(stock_code)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_fills_order ON sim_fills(order_id)")
+
         # 初始化默认账户（如果不存在）
         cur.execute("SELECT id FROM sim_account WHERE id = 1")
         if not cur.fetchone():
@@ -137,6 +194,389 @@ def init_tables():
         print(f"  ✓ 所有表已创建/确认 (DB={DB_PATH})")
     finally:
         conn.close()
+
+
+# ============================================================
+# sim_orders / sim_fills 持久化接口（OmsEngine 回放支撑）
+# ============================================================
+
+def insert_order(
+    account_id: int = 1,
+    order_id: str = "",
+    stock_code: str = "",
+    stock_name: str = "",
+    direction: str = "",
+    offset: str = "",
+    price: float = 0.0,
+    quantity: int = 0,
+    traded: int = 0,
+    status: str = "SUBMITTED",
+    order_time=None,
+    cancel_time=None,
+    broker: str = "sim",
+    broker_order_id: str = "",
+    strategy_name: str = "",
+    signal_reason: str = "",
+) -> int:
+    """写入一笔订单，返回 row id。"""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO sim_orders
+            (account_id, order_id, stock_code, stock_name, direction, offset,
+             price, quantity, traded, status, order_time, cancel_time,
+             broker, broker_order_id, strategy_name, signal_reason)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            account_id, order_id, stock_code, stock_name, direction, offset,
+            price, quantity, traded, status, order_time, cancel_time,
+            broker, broker_order_id, strategy_name, signal_reason,
+        ))
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def update_order_by_broker_id(
+    broker_order_id: str,
+    traded: int | None = None,
+    status: str | None = None,
+    cancel_time=None,
+):
+    """按 broker_order_id 更新订单成交数量/状态（EVENT_ORDER 推送时用）。"""
+    if traded is None and status is None and cancel_time is None:
+        return
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        fields, vals = [], []
+        if traded is not None:
+            fields.append("traded = ?")
+            vals.append(traded)
+        if status is not None:
+            fields.append("status = ?")
+            vals.append(status)
+        if cancel_time is not None:
+            fields.append("cancel_time = ?")
+            vals.append(cancel_time)
+        vals.append(broker_order_id)
+        cur.execute(
+            f"UPDATE sim_orders SET {', '.join(fields)} WHERE broker_order_id = ?",
+            vals,
+        )
+    finally:
+        conn.close()
+
+
+def update_order_by_order_id(
+    order_id: str,
+    traded: int | None = None,
+    status: str | None = None,
+    cancel_time=None,
+):
+    """按 order_id（vnpy 内部 id）更新。"""
+    if traded is None and status is None and cancel_time is None:
+        return
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        fields, vals = [], []
+        if traded is not None:
+            fields.append("traded = ?")
+            vals.append(traded)
+        if status is not None:
+            fields.append("status = ?")
+            vals.append(status)
+        if cancel_time is not None:
+            fields.append("cancel_time = ?")
+            vals.append(cancel_time)
+        vals.append(order_id)
+        cur.execute(
+            f"UPDATE sim_orders SET {', '.join(fields)} WHERE order_id = ?",
+            vals,
+        )
+    finally:
+        conn.close()
+
+
+def insert_fill(
+    account_id: int = 1,
+    order_id: str = "",
+    stock_code: str = "",
+    stock_name: str = "",
+    direction: str = "",
+    trade_price: float = 0.0,
+    trade_volume: int = 0,
+    trade_amount: float = 0.0,
+    commission: float = 0.0,
+    tax: float = 0.0,
+    trade_time=None,
+    broker: str = "sim",
+    broker_trade_id: str = "",
+    strategy_name: str = "",
+) -> int:
+    """写入一笔成交记录，返回 row id。"""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO sim_fills
+            (account_id, order_id, stock_code, stock_name, direction,
+             trade_price, trade_volume, trade_amount,
+             commission, tax, trade_time, broker, broker_trade_id, strategy_name)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            account_id, order_id, stock_code, stock_name, direction,
+            trade_price, trade_volume, trade_amount,
+            commission, tax, trade_time, broker, broker_trade_id, strategy_name,
+        ))
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def fetch_orders(account_id: int = 1, day: str | None = None) -> list[dict]:
+    """读取订单列表，按 order_time 升序。day 格式 YYYY-MM-DD。"""
+    conn = get_conn()
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.cursor()
+        if day:
+            cur.execute(
+                "SELECT * FROM sim_orders "
+                "WHERE account_id=? AND DATE(order_time)=? "
+                "ORDER BY order_time ASC",
+                (account_id, day),
+            )
+        else:
+            cur.execute(
+                "SELECT * FROM sim_orders "
+                "WHERE account_id=? ORDER BY order_time ASC",
+                (account_id,),
+            )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def fetch_fills(account_id: int = 1, day: str | None = None) -> list[dict]:
+    """读取成交列表，按 trade_time 升序。"""
+    conn = get_conn()
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.cursor()
+        if day:
+            cur.execute(
+                "SELECT * FROM sim_fills "
+                "WHERE account_id=? AND DATE(trade_time)=? "
+                "ORDER BY trade_time ASC",
+                (account_id, day),
+            )
+        else:
+            cur.execute(
+                "SELECT * FROM sim_fills "
+                "WHERE account_id=? ORDER BY trade_time ASC",
+                (account_id,),
+            )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def fetch_order_fill_timeline(account_id: int = 1, day: str | None = None) -> list[dict]:
+    """订单+成交统一时间线（回放用）：按时间戳混合排序。
+
+    每条记录带 type='order' 或 type='fill'，可直接用于前端回放。
+    """
+    orders = fetch_orders(account_id, day)
+    fills  = fetch_fills(account_id, day)
+    timeline = []
+    for o in orders:
+        timeline.append({
+            "type": "order",
+            "time": o.get("order_time") or o.get("created_at"),
+            "stock_code": o["stock_code"],
+            "stock_name": o.get("stock_name", ""),
+            "direction": o["direction"],
+            "price": o["price"],
+            "quantity": o["quantity"],
+            "traded": o.get("traded", 0),
+            "status": o.get("status", ""),
+            "strategy_name": o.get("strategy_name", ""),
+            "signal_reason": o.get("signal_reason", ""),
+            "raw": o,
+        })
+    for f in fills:
+        timeline.append({
+            "type": "fill",
+            "time": f.get("trade_time") or f.get("created_at"),
+            "stock_code": f["stock_code"],
+            "stock_name": f.get("stock_name", ""),
+            "direction": f["direction"],
+            "price": f["trade_price"],
+            "volume": f["trade_volume"],
+            "amount": f.get("trade_amount", 0),
+            "strategy_name": f.get("strategy_name", ""),
+            "raw": f,
+        })
+    timeline.sort(key=lambda x: x["time"] or "")
+    return timeline
+
+
+# ============================================================
+# OmsEngine 事件监听：注册到 vnpy EventEngine
+# ============================================================
+_oms_listeners_registered = False
+
+
+def _on_order(event):
+    """监听 EVENT_ORDER：将 vnpy OrderData 持久化到 sim_orders。"""
+    from vnpy.trader.object import OrderData
+    order: OrderData = event.data
+    # 映射 vnpy status -> 文本
+    status_map = {
+        "SUBMITTING": "SUBMITTING",
+        "SUBMITTED": "SUBMITTED",
+        "PART_TRADED": "PART_TRADED",
+        "ALL_TRADED": "ALL_TRADED",
+        "CANCELLED": "CANCELLED",
+        "CANCELED": "CANCELLED",
+        "REJECTED": "REJECTED",
+    }
+    vt_order_id = order.vt_order_id or ""
+    broker_order_id = order.trade_id or order.vt_order_id or ""  # 实盘委托号
+    status_str = status_map.get(str(order.status), str(order.status))
+
+    # 尝试更新已有记录（ORDER 事件会多次推送同一单）
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id FROM sim_orders WHERE order_id=? OR broker_order_id=? LIMIT 1",
+            (vt_order_id, broker_order_id),
+        )
+        existing = cur.fetchone()
+        if existing:
+            # UPDATE
+            cur.execute("""
+                UPDATE sim_orders
+                SET traded=?, status=?, cancel_time=?
+                WHERE id=?
+            """, (order.traded, status_str,
+                  None if status_str != "CANCELLED" else _now_str(),
+                  existing[0]))
+        else:
+            # INSERT
+            direction = "BUY" if order.direction.value == "多" else "SELL"
+            offset = str(order.offset) if hasattr(order, "offset") else ""
+            insert_order(
+                order_id=vt_order_id,
+                stock_code=order.vt_symbol or "",
+                stock_name="",
+                direction=direction,
+                offset=offset,
+                price=order.price,
+                quantity=order.volume,
+                traded=order.traded,
+                status=status_str,
+                order_time=_now_str(),
+                broker="qmt" if broker_order_id else "sim",
+                broker_order_id=broker_order_id,
+            )
+    finally:
+        conn.close()
+
+
+def _on_trade(event):
+    """监听 EVENT_TRADE：将 vnpy TradeData 持久化到 sim_fills。"""
+    from vnpy.trader.object import TradeData
+    trade: TradeData = event.data
+    vt_order_id = trade.vt_order_id or ""
+    broker_trade_id = trade.trade_id or ""
+    direction = "BUY" if trade.direction.value == "多" else "SELL"
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        # 去重：同一 broker_trade_id 不重复写入
+        if broker_trade_id:
+            cur.execute("SELECT id FROM sim_fills WHERE broker_trade_id=? LIMIT 1", (broker_trade_id,))
+            if cur.fetchone():
+                return
+        insert_fill(
+            order_id=vt_order_id,
+            stock_code=trade.vt_symbol or "",
+            stock_name="",
+            direction=direction,
+            trade_price=trade.price,
+            trade_volume=trade.volume,
+            trade_amount=trade.price * trade.volume,
+            trade_time=_now_str(),
+            broker="qmt" if broker_trade_id else "sim",
+            broker_trade_id=broker_trade_id,
+        )
+        # 同步更新 sim_orders.traded
+        cur.execute(
+            "UPDATE sim_orders SET traded=traded+? WHERE order_id=?",
+            (trade.volume, vt_order_id),
+        )
+    finally:
+        conn.close()
+
+
+def _now_str() -> str:
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def register_oms_listeners(event_engine):
+    """注册 EVENT_ORDER / EVENT_TRADE 监听（在 build_main_engine 后调用一次）。"""
+    global _oms_listeners_registered
+    if _oms_listeners_registered:
+        return
+    event_engine.register("EVENT_ORDER", _on_order)
+    event_engine.register("EVENT_TRADE", _on_trade)
+    _oms_listeners_registered = True
+    logging.getLogger(__name__).info("✓ OmsEngine 事件监听已注册 (EVENT_ORDER / EVENT_TRADE)")
+
+
+# ============================================================
+# 回放工具：按时间线重演订单/成交
+# ============================================================
+def replay_timeline(account_id: int = 1, day: str | None = None) -> str:
+    """生成可读的订单/成交回放文本（用于复盘报告）。"""
+    timeline = fetch_order_fill_timeline(account_id, day)
+    if not timeline:
+        return "（本日无订单/成交记录）"
+    lines = [f"📋 订单/成交回放（共 {len(timeline)} 条）"]
+    for i, ev in enumerate(timeline, 1):
+        t = ev["time"] or "--:--:--"
+        code = ev["stock_code"]
+        name = ev.get("stock_name", "")
+        if ev["type"] == "order":
+            direction = ev["direction"]
+            price = ev["price"]
+            qty  = ev["quantity"]
+            status = ev.get("status", "")
+            strat = ev.get("strategy_name", "")
+            reason = ev.get("signal_reason", "")
+            tag = f"[{strat}]" if strat else ""
+            reason_str = f" {reason}" if reason else ""
+            lines.append(
+                f"  {i:3d}. [{t}] 📩 订单 {direction} {code}{' '+name if name else ''} "
+                f"{qty}股 @{price:.2f} {tag}{reason_str} → {status}"
+            )
+        else:  # fill
+            direction = ev["direction"]
+            price = ev["price"]
+            vol = ev.get("volume", 0)
+            amount = ev.get("amount", 0)
+            lines.append(
+                f"  {i:3d}. [{t}] ✅ 成交 {direction} {code}{' '+name if name else ''} "
+                f"{vol}股 @{price:.2f} 金额{amount:.0f}元"
+            )
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

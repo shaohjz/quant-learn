@@ -45,6 +45,10 @@ def build_main_engine(connect: bool = True, dry_run: bool = True) -> Tuple[MainE
     main_engine.add_gateway(QmtGateway)
     main_engine.add_app(CtaStrategyApp)
 
+    # 注册 OmsEngine 订单/成交事件监听（REQ-011）
+    from sim.db import register_oms_listeners
+    register_oms_listeners(event_engine)
+
     if connect:
         main_engine.connect(setting, "QMT")
 

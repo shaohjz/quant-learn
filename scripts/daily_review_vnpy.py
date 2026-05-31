@@ -322,11 +322,24 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
     _trade_block(f"QMT mini ({qmt_snap.get('source','?')}) 成交", qmt_snap.get("trades", []))
     lines.append("")
 
+    # ---- 订单/成交回放（REQ-011 OmsEngine 持久化）----
+    import sys
+    sys.path.insert(0, str(ROOT))
+    try:
+        from sim.db import replay_timeline as _replay_fn
+        replay_text = _replay_fn(account_id=1, day=day)
+        lines.append("## 五、订单/成交回放（OmsEngine）")
+        lines.append("")
+        lines.append(replay_text)
+        lines.append("")
+    except Exception as e:  # noqa: BLE001
+        logger.warning("OmsEngine 回放失败（可能无数据）: %s", e)
+
     # ---- 摘要 / 提示 ----
-    lines.append("## 四、备注")
+    lines.append("## 六、备注")
     lines.append(f"- QMT 数据来源：`{qmt_snap.get('source','?')}` "
                  f"(live = 实时 broker，live_mirror = sim_live_mirror.db 最近镜像)")
-    lines.append("- 如需更详细的 vnpy 端订单/成交回放，建议接入 vnpy OmsEngine 持久化。")
+    lines.append("- 订单/成交回放由 vnpy OmsEngine EVENT_ORDER/EVENT_TRADE 持久化驱动（REQ-011）。")
     lines.append(f"- 报告生成时间: {date.today().isoformat()}")
     return "\n".join(lines) + "\n"
 

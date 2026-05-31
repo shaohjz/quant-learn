@@ -25,10 +25,28 @@ def _fmt_pct(v):
 
 def generate_daily_report(trade_date: Date = None,
                           signals: list = None,
-                          account_id: int = 1) -> str:
-    """生成每日模拟盘报告（纯文本/Markdown）"""
+                          account_id: int = 1,
+                          db_path: str = None) -> str:
+    """生成每日模拟盘报告（纯文本/Markdown）
+    
+    Args:
+        db_path: 可选，指定数据库路径（默认 sim.db，可指定 sim_live_mirror.db）
+    """
     trade_date = trade_date or Date.today()
-    conn = get_conn()
+    
+    # 支持自定义数据库路径
+    from sim.db import get_conn as _orig_get_conn
+    import sqlite3
+    if db_path:
+        def _get_conn():
+            conn = sqlite3.connect(str(db_path), timeout=30, isolation_level=None)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            return conn
+    else:
+        _get_conn = _orig_get_conn
+    
+    conn = _get_conn()
     try:
         cur = conn.cursor()
 
@@ -121,8 +139,8 @@ def generate_daily_report(trade_date: Date = None,
         lines.append("")
         lines.append("📋 今日无交易")
 
-    # 风控建议（REQ-026）
-    risk_section = generate_risk_suggestions(account_id, trade_date)
+    # 风控建议（REQ-026：严重浮亏个股自动生成风控建议）
+    risk_section = generate_risk_suggestions(account_id, trade_date, db_path=db_path)
     if risk_section:
         lines.append(risk_section)
 
@@ -147,7 +165,7 @@ def generate_daily_report(trade_date: Date = None,
     return "\n".join(lines)
 
 
-def generate_risk_suggestions(account_id: int = 1, trade_date=None) -> str:
+def generate_risk_suggestions(account_id: int = 1, trade_date=None, db_path: str = None) -> str:
     """
     针对严重浮亏个股自动生成风控建议，返回 Markdown 文本段落。
     
@@ -156,9 +174,24 @@ def generate_risk_suggestions(account_id: int = 1, trade_date=None) -> str:
       - 中度浮亏 (-8% ~ -10%):  触发软止损警告，建议减仓
       - 重度浮亏 (-10% ~ -15%): 触发硬止损线，建议清仓
       - 严重浮亏 (<-15%):       强制平仓警告
+    
+    Args:
+        db_path: 可选，指定数据库路径（默认使用 sim.db，可指定 sim_live_mirror.db）
     """
+    from sim.db import get_conn as _orig_get_conn
+    import sqlite3
+
+    if db_path:
+        def _get_conn():
+            conn = sqlite3.connect(str(db_path), timeout=30, isolation_level=None)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            return conn
+    else:
+        _get_conn = _orig_get_conn
+
     trade_date = trade_date or Date.today()
-    conn = get_conn()
+    conn = _get_conn()
     try:
         cur = conn.cursor()
         cur.execute("""

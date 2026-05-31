@@ -290,8 +290,12 @@ def run_settle(broker, trade_date: Date = None):
           f"日收益 {settle['daily_return']*100:+.2f}%, "
           f"累计 {settle['cumulative_return']*100:+.2f}%")
 
-    # 6. 生成报告
-    report = generate_daily_report(trade_date, signals)
+    # 6. 生成报告（REQ-026：风控建议需要读 sim_live_mirror.db）
+    import os
+    _db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "sim_live_mirror.db")
+    if not os.path.exists(_db_path):
+        _db_path = None  # 回退到默认 sim.db
+    report = generate_daily_report(trade_date, signals, db_path=_db_path)
     print("\n" + report)
 
     # 7. 生成净值曲线

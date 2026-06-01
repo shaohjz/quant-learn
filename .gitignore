@@ -37,3 +37,4 @@ env/
 .pytest_cache/
 __pycache__/
 
+config.local.yaml

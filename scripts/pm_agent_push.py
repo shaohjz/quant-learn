@@ -11,40 +11,17 @@ scripts/pm_agent_push.py — PM 状态变更推送（纯代码 Webhook 直推）
 from __future__ import annotations
 import sys
 import json
-import requests
 from pathlib import Path
 
-# ── 读 config.yaml 的 notify.wecom_webhook ───────────────────────
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
-
-def _load_webhook() -> str:
-    try:
-        import yaml
-        cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
-        return (cfg.get("notify") or {}).get("wecom_webhook", "") or ""
-    except Exception:
-        return ""
+from sim.notifier import send_text
 
 
 def push_text(content: str) -> bool:
-    """纯代码推文本到企微群机器人，无需大模型"""
-    url = _load_webhook()
-    if not url:
-        print("[pm_agent_push] ⚠️ 未配置 notify.wecom_webhook，跳过推送", file=sys.stderr)
-        return False
-    try:
-        r = requests.post(
-            url,
-            json={"msgtype": "text", "text": {"content": content}},
-            timeout=8,
-        )
-        ok = r.ok and r.json().get("errcode") == 0
-        print(f"[pm_agent_push] {'✅ 推送成功' if ok else '⚠️ 推送失败：' + r.text[:120]}")
-        return ok
-    except Exception as e:
-        print(f"[pm_agent_push] ⚠️ 推送异常：{e}", file=sys.stderr)
-        return False
+    """纯代码推文本到统一企微群机器人，无需大模型。"""
+    return send_text(content)
 
 
 def main():
@@ -87,7 +64,6 @@ def main():
         lines.append(f"⚠️ 阻塞项：{len(data['stuck_tasks'])} 个任务超时")
 
     msg = "\n".join(lines)
-    print(msg)
 
     # REQ-042 去大模型化：直接 Webhook 直推，无需 Agent 中转
     ok = push_text(msg)

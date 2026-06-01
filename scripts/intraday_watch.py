@@ -9,49 +9,28 @@ scripts/intraday_watch.py — 盘中实时监控
   python scripts/intraday_watch.py post       # 收盘复盘（15:05 跑）
 
 输出：
-  - 控制台打印
   - 写入 output/intraday_log.jsonl
-  - 返回 stdout 文本（cron 把这个 push 给用户）
+  - 有通知时统一走 sim.notifier 里的单一企微 webhook
+  - stdout 保持为空，避免 OpenClaw cron/计划任务把文本当聊天消息发送
 """
 
 import os
 import sys
 import json
-import urllib.request
 from datetime import datetime, time as dtime
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sim.notifier import send_text
 from sim.realtime_price import get_latest_prices
 
 
-def _load_webhook():
-    """从 config.yaml 读取企微 Webhook URL"""
-    try:
-        import yaml
-        cfg = yaml.safe_load((Path(__file__).resolve().parents[1] / 'config.yaml').read_text(encoding='utf-8')) or {}
-        return (cfg.get('notify') or {}).get('wecom_webhook', '') or ''
-    except Exception:
-        return ''
-
-
 def _push_webhook(content: str) -> bool:
-    """纯代码推送文本到企微群机器人，无需大模型"""
-    url = _load_webhook()
-    if not url:
-        _log({'mode': 'webhook', 'ok': False, 'reason': 'notify.wecom_webhook not configured'})
-        return False
-    try:
-        body = json.dumps({'msgtype': 'text', 'text': {'content': content}}).encode('utf-8')
-        req = urllib.request.Request(url, data=body, headers={'Content-Type': 'application/json'})
-        resp = urllib.request.urlopen(req, timeout=10)
-        ok = b'"errcode":0' in resp.read()
-        _log({'mode': 'webhook', 'ok': ok})
-        return ok
-    except Exception as e:
-        _log({'mode': 'webhook', 'ok': False, 'error': str(e)})
-        return False
+    """统一通过 sim.notifier 的单一企微 webhook 推送。"""
+    ok = send_text(content)
+    _log({'mode': 'webhook', 'ok': ok})
+    return ok
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 LOG_FILE = PROJECT_DIR / "output" / "intraday_log.jsonl"

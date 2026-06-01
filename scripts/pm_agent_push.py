@@ -17,6 +17,7 @@ from pathlib import Path
 # ── 读 config.yaml 的 notify.wecom_webhook ───────────────────────
 ROOT = Path(__file__).resolve().parents[1]
 
+
 def _load_webhook() -> str:
     try:
         import yaml
@@ -88,7 +89,7 @@ def main():
     msg = "\n".join(lines)
     print(msg)
 
-    # ✅ REQ-042 去大模型化：直接 Webhook 直推，不写文件让 main session 中转
+    # REQ-042 去大模型化：直接 Webhook 直推，无需 Agent 中转
     ok = push_text(msg)
     print(f"PUSH_OK: webhook={'success' if ok else 'failed'}")
     return 0

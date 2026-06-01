@@ -83,14 +83,35 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
                 
                 let counts = { pending:0, open:0, in_progress:0, testing:0, done:0, closed:0 };
 
-                data.tasks.forEach(task => {
-                    let colKey = 'pending';
-                    if (task.status === 'pending') colKey = 'pending';
-                    else if (['open', 'reopened'].includes(task.status)) colKey = 'open';
-                    else if (task.status === 'in_progress') colKey = 'in_progress';
-                    else if (['testing', 'fixed'].includes(task.status)) colKey = 'testing';
-                    else if (['done', 'verified'].includes(task.status)) colKey = 'done';
-                    else if (task.status === 'closed') colKey = 'closed';
+                function columnOf(task) {
+                    if (task.status === 'pending') return 'pending';
+                    if (['open', 'reopened'].includes(task.status)) return 'open';
+                    if (task.status === 'in_progress') return 'in_progress';
+                    if (['testing', 'fixed'].includes(task.status)) return 'testing';
+                    if (['done', 'verified'].includes(task.status)) return 'done';
+                    if (task.status === 'closed') return 'closed';
+                    return 'pending';
+                }
+
+                function timeValue(v) {
+                    return v ? new Date(String(v).replace(' ', 'T')).getTime() || 0 : 0;
+                }
+
+                const colOrder = {pending:0, open:1, in_progress:2, testing:3, done:4, closed:5};
+                const sortedTasks = [...data.tasks].sort((a, b) => {
+                    const ca = columnOf(a), cb = columnOf(b);
+                    if (ca !== cb) return colOrder[ca] - colOrder[cb];
+                    // 需求池：按创建时间从小到大（最早提出的先看/先做）
+                    if (ca === 'pending' || ca === 'open') return timeValue(a.created_at) - timeValue(b.created_at);
+                    // 进行中：按进入/更新时间从大到小（最近动过的在前）
+                    if (ca === 'in_progress' || ca === 'testing') return timeValue(b.updated_at) - timeValue(a.updated_at);
+                    // 完成列表：按完成/更新时间从最近到最远
+                    if (ca === 'done' || ca === 'closed') return timeValue(b.updated_at) - timeValue(a.updated_at);
+                    return String(a.id).localeCompare(String(b.id));
+                });
+
+                sortedTasks.forEach(task => {
+                    let colKey = columnOf(task);
 
                     counts[colKey]++;
 

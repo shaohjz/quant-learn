@@ -40,17 +40,17 @@ def _push_webhook(content: str) -> bool:
     """纯代码推送文本到企微群机器人，无需大模型"""
     url = _load_webhook()
     if not url:
-        print('[intraday_watch] ⚠️ 未配置 notify.wecom_webhook，跳过推送', file=sys.stderr)
+        _log({'mode': 'webhook', 'ok': False, 'reason': 'notify.wecom_webhook not configured'})
         return False
     try:
         body = json.dumps({'msgtype': 'text', 'text': {'content': content}}).encode('utf-8')
         req = urllib.request.Request(url, data=body, headers={'Content-Type': 'application/json'})
         resp = urllib.request.urlopen(req, timeout=10)
         ok = b'"errcode":0' in resp.read()
-        print(f"[intraday_watch] webhook {'成功' if ok else '返回错误'}", file=sys.stderr)
+        _log({'mode': 'webhook', 'ok': ok})
         return ok
     except Exception as e:
-        print(f'[intraday_watch] ⚠️ webhook 推送失败: {e}', file=sys.stderr)
+        _log({'mode': 'webhook', 'ok': False, 'error': str(e)})
         return False
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -178,9 +178,11 @@ def cmd_auction():
         lines.append("\n✅ 暂无触发关键阈值")
 
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "auction", "is_premarket": is_premarket, "prices": prices})
-    return out
+    # 只在有关键阈值时通知；通知直推企微 webhook，不走 OpenClaw cron 聊天回复。
+    if triggered:
+        _push_webhook(out)
+    return ""
 
 
 # ========== 模式 2：完整持仓快照 ==========
@@ -210,9 +212,9 @@ def cmd_monitor():
 
     lines.append(f"\n💼 总市值 ¥{total_market:,.2f}  盈亏 ¥{total_pnl:+,.2f}")
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "monitor", "total_market": total_market, "total_pnl": total_pnl})
-    return out
+    _push_webhook(out)
+    return ""
 
 
 # ========== 模式 3：触发预警（每 5 分钟跑一次） ==========
@@ -262,13 +264,12 @@ def cmd_check():
         lines.append(f"   → {a['msg']}")
     lines.append("\n⚠️ 立刻去东财 App 看一眼，决定是否执行操作")
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "check", "alerts": new_alerts})
 
     # ✅ REQ-042 去大模型化：直接推 Webhook，不依赖 cron agent 读 stdout
     _push_webhook(out)
 
-    return out
+    return ""
 
 
 # ========== 模式 4：收盘复盘 ==========
@@ -301,7 +302,6 @@ def cmd_post():
     lines.append(f"\n👉 用 `python scripts/portfolio_analyze.py` 看明日策略建议")
 
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "post", "today_pnl": total_pnl_today, "overall_pnl": total_pnl_overall})
     
     # ✅ BUG-016 修复：推送收盘复盘报告

@@ -5,11 +5,18 @@ sim/realtime_price.py
 - 备选：baostock 最新日线
 """
 
+import os
 import re
 import requests
 import baostock as bs
 import pandas as pd
 from datetime import datetime, timedelta
+
+
+def _log(message: str):
+    """默认静默，避免 OpenClaw cron 把行情调试日志当聊天通知发出。"""
+    if os.environ.get("QL_VERBOSE_PRICE") == "1":
+        print(message)
 
 
 def _sina_code(code: str) -> str:
@@ -39,7 +46,7 @@ def fetch_sina_realtime(codes: list) -> dict:
         resp.encoding = "gbk"
         text = resp.text.strip()
     except Exception as e:
-        print(f"  ⚠ 新浪行情请求失败: {e}")
+        _log(f"  ⚠ 新浪行情请求失败: {e}")
         return {}
 
     result = {}
@@ -78,7 +85,7 @@ def fetch_sina_realtime(codes: list) -> dict:
                 "time": parts[31],
             }
         except (ValueError, IndexError) as e:
-            print(f"  ⚠ 解析 {code} 失败: {e}")
+            _log(f"  ⚠ 解析 {code} 失败: {e}")
 
     return result
 
@@ -93,7 +100,7 @@ def fetch_baostock_latest(codes: list, days_back: int = 5) -> dict:
 
     lg = bs.login()
     if lg.error_code != "0":
-        print(f"  ⚠ baostock 登录失败: {lg.error_msg}")
+        _log(f"  ⚠ baostock 登录失败: {lg.error_msg}")
         return {}
 
     result = {}
@@ -139,13 +146,13 @@ def get_latest_prices(codes: list) -> dict:
     豫能 14.88 “买入”，实际盘中已在涨停 16.37）。
     返回 {code: {name, open, high, low, price, volume, ...}}
     """
-    print("  📡 获取实时行情（新浪）...")
+    _log("  📡 获取实时行情（新浪）...")
     prices = fetch_sina_realtime(codes)
 
     missing = [c for c in codes if c not in prices or prices[c]["price"] <= 0]
     if missing:
         # 不再从 baostock 拿（那是昨日收盘价），避免伪“实时”价
-        print(f"  ⚠ 新浪缺少 {len(missing)} 只，跳过（在交易时段外/休市/服务异常，不作为实时价使用）")
+        _log(f"  ⚠ 新浪缺少 {len(missing)} 只，跳过（在交易时段外/休市/服务异常，不作为实时价使用）")
 
     return prices
 
@@ -155,11 +162,11 @@ def get_latest_prices_with_fallback(codes: list) -> dict:
     只供非实时使用场景（如代码名查询/调试/复盘）调用：
     新浪 + baostock 后退。调用者需明确知道 baostock 会返回昨收盘。
     """
-    print("  📡 获取行情（新浪 + baostock 作为后退）...")
+    _log("  📡 获取行情（新浪 + baostock 作为后退）...")
     prices = fetch_sina_realtime(codes)
     missing = [c for c in codes if c not in prices or prices[c]["price"] <= 0]
     if missing:
-        print(f"  ⚠ 新浪缺少 {missing}，尝试 baostock 补充（返回昨日收盘价!）...")
+        _log(f"  ⚠ 新浪缺少 {missing}，尝试 baostock 补充（返回昨日收盘价!）...")
         bs_prices = fetch_baostock_latest(missing)
         for code, data in bs_prices.items():
             if data["price"] > 0:

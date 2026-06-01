@@ -9,6 +9,8 @@ data/cache/
 data/cache-wal/
 output/intraday_log.jsonl
 output/portfolio_analysis.json
+output/next_watchlists/
+data/next_watchlists/
 vnpy_xtquant_main.zip
 
 # 周末清理：不入库的内容

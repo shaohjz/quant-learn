@@ -6,6 +6,11 @@ set PUSH=1
 
 echo ===== [%date% %time%] daily review START ===== >> "output\daily_review_runner.log"
 ".\.venv\Scripts\python.exe" "scripts\daily_review.py" 1>> "output\daily_review_runner.log" 2>>&1
+
+echo ===== [%date% %time%] next watchlist START ===== >> "output\daily_review_runner.log"
+".\.venv\Scripts\python.exe" "scripts\generate_next_watchlist.py" --push 1>> "output\daily_review_runner.log" 2>>&1
+echo ===== [%date% %time%] next watchlist END   ===== >> "output\daily_review_runner.log"
+
 echo ===== [%date% %time%] daily review END   ===== >> "output\daily_review_runner.log"
 
 exit /b 0

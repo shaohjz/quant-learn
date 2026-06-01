@@ -103,3 +103,29 @@ def test_non_empty_review_file_is_ok_without_alert(tmp_path):
     assert sent == []
     assert not (tmp_path / "pm.db").exists()
     assert "ok" in (tmp_path / "review_missing.log").read_text(encoding="utf-8")
+
+
+def test_default_monitor_accepts_active_output_reviews_dir(tmp_path, monkeypatch):
+    """BUG-018: active daily_review.py writes output/reviews, not docs/reviews."""
+    monkeypatch.setattr("scripts.review_missing_check.DEFAULT_REVIEWS_DIR", tmp_path / "output" / "reviews")
+    monkeypatch.setattr("scripts.review_missing_check.LEGACY_REVIEWS_DIR", tmp_path / "docs" / "reviews")
+    (tmp_path / "output" / "reviews").mkdir(parents=True)
+    (tmp_path / "output" / "reviews" / "2026-05-27.md").write_text(
+        "# 📊 2026/5/27 日复盘\n\n## 🤖 学习账户\n有内容",
+        encoding="utf-8",
+    )
+    sent: list[str] = []
+
+    result = run_check(
+        date(2026, 5, 27),
+        reviews_dir=tmp_path / "output" / "reviews",
+        db_path=tmp_path / "pm.db",
+        log_path=tmp_path / "review_missing.log",
+        trading_day_func=lambda d: True,
+        notifier=lambda text: sent.append(text) or True,
+    )
+
+    assert result["status"] == "ok"
+    assert result["review_path"].endswith("output\\reviews\\2026-05-27.md") or result["review_path"].endswith("output/reviews/2026-05-27.md")
+    assert sent == []
+    assert not (tmp_path / "pm.db").exists()

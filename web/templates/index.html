@@ -141,6 +141,7 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
   <div class="tab" onclick="switchTab(this,'watch')">👀 观察</div>
   <div class="tab" onclick="switchTab(this,'history')">📋 日报</div>
   <div class="tab" onclick="switchTab(this,'stats')">📊 统计</div>
+  <a class="tab" href="/pm" style="text-decoration:none">📋 需求大盘</a>
 </div>
 
 <div id="panel-real">
@@ -293,6 +294,7 @@ async function loadStockDetail(code, container) {
 
 function renderSummary(id, acc) {
   const items = [
+    {label:'初始资金', value:'¥'+(acc.initial_cash || 0).toLocaleString()},
     {label:'总资产', value:'¥'+acc.total_asset.toLocaleString()},
     {label:'现金', value:'¥'+acc.cash.toLocaleString()},
     {label:'仓位', value:(acc.position_pct||0)+'%'},
@@ -399,13 +401,16 @@ function renderWatchlist(list) {
     const cat = w.category === 'auto_discovered' ? '🤖' : '👤';
     const sinceCls = w.since_pct !== null ? cls(w.since_pct) : '';
     const sinceText = w.since_pct !== null ? fmt(w.since_pct) + '%' : '-';
+    const addedPriceText = w.added_price ? '¥' + Number(w.added_price).toFixed(2) : '-';
+    const currentPriceText = w.price ? '¥' + Number(w.price).toFixed(2) : '-';
     html += `<div class="stock-item" style="cursor:default">
-      <div class="stock-header" style="grid-template-columns:70px 1fr 70px 70px 90px">
+      <div class="stock-header" style="grid-template-columns:70px 1fr 86px 86px 86px 90px">
         <span class="code">${w.code} ${cat}</span>
         <span class="name">${w.name}<div class="sub">${w.source} | ${w.added_at} | ${w.added_reason||''}</div>
           ${w.tags&&w.tags.length?'<div class="sub">🏷 '+w.tags.join(', ')+'</div>':''}
         </span>
-        <span class="price">¥${w.price.toFixed(2)}<div class="sub ${cls(w.pct_today)}">${fmt(w.pct_today)}%</div></span>
+        <span class="price">加入价<br><b>${addedPriceText}</b></span>
+        <span class="price">现价<br><b>${currentPriceText}</b><div class="sub ${cls(w.pct_today)}">${fmt(w.pct_today)}%</div></span>
         <span class="today ${sinceCls}" style="font-size:11px">加入以来<br>${sinceText}</span>
         <span class="pnl" style="font-size:10px;color:var(--gray)">买1¥${(w.buy_zone||0).toFixed(1)}<br>买2¥${(w.buy_strong||0).toFixed(1)}</span>
       </div>

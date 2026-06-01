@@ -1022,6 +1022,8 @@ risk:
   max_total_positions: 6    # 总持仓股票数硬上限（含原有持仓+本次新建）
   max_daily_new_positions: 3  # 单日新建仓位数硬上限（REQ-038）
   max_daily_trades: 10     # 提升每日交易上限从5到10笔，匹配更激进的信号生成
+  max_daily_build_amount_pct: 0.30  # 单日最大建仓金额上限（占总资产比例），防止现金过低（REQ-045）
+  liquidity_release_loss_threshold: 0.08  # 释放流动性时优先卖出浮亏超过此比例的仓位（REQ-045）
   stop_loss_pct: -0.08
   take_profit_pct: 0.15
 fees:
@@ -1038,6 +1040,6 @@ broker:
   live:
     session_id: 123456
 account:
-  initial_cash: 100000
+  initial_cash: 200000
   account_id: 1
 stock_pool: []

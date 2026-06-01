@@ -8,7 +8,7 @@
 :root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-.header { margin-bottom: 20px; display: flex; justify-board: space-between; align-items: center; }
+.header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
 .header h1 { font-size: 20px; color: var(--blue); }
 .nav-links a { color: var(--blue); text-decoration: none; font-size: 14px; font-weight: 500; margin-left: 15px;}
 .nav-links a:hover { text-decoration: underline; }
@@ -32,7 +32,7 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
     <div class="header">
         <h1>📋 QuantLearn 敏捷看板</h1>
         <div class="nav-links">
-            <a href="/">🔙 返回大盘</a>
+            <a href="/">📊 返回量化仪表盘</a>
         </div>
     </div>
     <div class="board" id="board">
@@ -56,6 +56,10 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
             <div class="column-title"><span>已完成 (Done / Verified)</span><span class="count">0</span></div>
             <div class="task-list"></div>
         </div>
+        <div class="column" id="col-closed">
+            <div class="column-title"><span>已关闭 (Closed)</span><span class="count">0</span></div>
+            <div class="task-list"></div>
+        </div>
     </div>
 
     <script>
@@ -70,13 +74,14 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
                     'open': document.querySelector('#col-open .task-list'),
                     'in_progress': document.querySelector('#col-in_progress .task-list'),
                     'testing': document.querySelector('#col-testing .task-list'),
-                    'done': document.querySelector('#col-done .task-list')
+                    'done': document.querySelector('#col-done .task-list'),
+                    'closed': document.querySelector('#col-closed .task-list')
                 };
                 
                 // 清空
                 Object.values(cols).forEach(el => el.innerHTML = '');
                 
-                let counts = { pending:0, open:0, in_progress:0, testing:0, done:0 };
+                let counts = { pending:0, open:0, in_progress:0, testing:0, done:0, closed:0 };
 
                 data.tasks.forEach(task => {
                     let colKey = 'pending';
@@ -85,6 +90,7 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
                     else if (task.status === 'in_progress') colKey = 'in_progress';
                     else if (['testing', 'fixed'].includes(task.status)) colKey = 'testing';
                     else if (['done', 'verified'].includes(task.status)) colKey = 'done';
+                    else if (task.status === 'closed') colKey = 'closed';
 
                     counts[colKey]++;
 
@@ -107,6 +113,7 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
                 document.querySelector('#col-in_progress .count').textContent = counts.in_progress;
                 document.querySelector('#col-testing .count').textContent = counts.testing;
                 document.querySelector('#col-done .count').textContent = counts.done;
+                document.querySelector('#col-closed .count').textContent = counts.closed;
 
             } catch(e) {
                 console.error(e);

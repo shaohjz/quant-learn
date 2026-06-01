@@ -39,16 +39,23 @@ def get_sina_prices(codes):
             if len(parts) >= 10 and parts[3]:
                 code = m.group(2)
                 try:
+                    raw_price = float(parts[3] or 0)
+                    yclose = float(parts[2] or 0)
+                    open_price = float(parts[1] or 0)
+                    # 早盘/非交易时段新浪可能返回现价=0，不能把持仓市值打成 0。
+                    # 优先用昨收兜底；如果昨收也缺失，再由调用方使用数据库当前价/成本价兜底。
+                    price = raw_price if raw_price > 0 else yclose
+                    pct = round((price - yclose) / yclose * 100, 2) if yclose > 0 and raw_price > 0 else 0
                     prices[code] = {
                         'name': parts[0],
-                        'price': float(parts[3]),
-                        'yclose': float(parts[2]),
-                        'open': float(parts[1]),
-                        'high': float(parts[4]),
-                        'low': float(parts[5]),
-                        'volume': float(parts[8]),
-                        'amount': float(parts[9]),
-                        'pct': round((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100, 2) if float(parts[2]) > 0 else 0,
+                        'price': price,
+                        'yclose': yclose,
+                        'open': open_price,
+                        'high': float(parts[4] or 0),
+                        'low': float(parts[5] or 0),
+                        'volume': float(parts[8] or 0),
+                        'amount': float(parts[9] or 0),
+                        'pct': pct,
                     }
                 except (ValueError, IndexError):
                     pass
@@ -71,7 +78,13 @@ def query_db(sql, params=()):
 def api_portfolio():
     positions = query_db("SELECT * FROM sim_positions WHERE account_id=1 AND quantity > 0")
     acc = query_db("SELECT * FROM sim_account WHERE id=1")
-    acc = acc[0] if acc else {'cash': 0}
+    acc = acc[0] if acc else {'cash': 0, 'initial_cash': 0}
+    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding='utf-8')) or {}
+    initial_cash = float(
+        cfg.get('accounts', {}).get('learn', {}).get(
+            'initial_cash', acc.get('initial_cash') or 200000
+        )
+    )
     
     codes = [p['stock_code'] for p in positions]
     rt = get_sina_prices(codes)
@@ -81,7 +94,8 @@ def api_portfolio():
     total_pnl = 0
     for p in positions:
         code = p['stock_code']
-        cur = rt.get(code, {}).get('price', p.get('avg_cost', 0))
+        rt_price = rt.get(code, {}).get('price', 0) or 0
+        cur = rt_price if rt_price > 0 else (p.get('current_price') or p.get('avg_cost', 0) or 0)
         pct_today = rt.get(code, {}).get('pct', 0)
         qty = p['quantity']
         cost = p['avg_cost']
@@ -118,8 +132,9 @@ def api_portfolio():
     return jsonify({
         'account': {
             'cash': round(acc.get('cash', 0), 2),
+            'initial_cash': round(initial_cash, 2),
             'total_asset': round(total_asset, 2),
-            'total_return_pct': round((total_asset - 100000) / 100000 * 100, 2),
+            'total_return_pct': round((total_asset - initial_cash) / initial_cash * 100, 2) if initial_cash > 0 else 0,
             'position_pct': round(total_mv / total_asset * 100, 1) if total_asset > 0 else 0,
         },
         'positions': result,
@@ -276,6 +291,31 @@ def api_selection_logic():
         data = yaml.safe_load(logic_path.read_text(encoding='utf-8'))
         return jsonify(data.get('stock_selection_logic', {}))
     return jsonify({})
+
+# ====================================================================
+#  API: 全部交易历史
+# ====================================================================
+@app.route('/api/trades')
+def api_trades():
+    """获取交易记录，支持按 account_id 过滤"""
+    from flask import request as _req
+    account_id = int(_req.args.get('account_id', 1))
+    limit = int(_req.args.get('limit', 50))
+    trades = query_db(
+        "SELECT id, trade_date, trade_time, account_id, stock_code, direction, "
+        "quantity, price, amount, signal_reason, trade_context, created_at "
+        "FROM sim_trades WHERE account_id=? ORDER BY created_at DESC LIMIT ?",
+        (account_id, limit)
+    )
+    import json as _json
+    for t in trades:
+        if t.get('trade_context'):
+            try:
+                t['trade_context'] = _json.loads(t['trade_context'])
+            except:
+                pass
+    return jsonify({'trades': trades, 'total': len(trades)})
+
 
 # ====================================================================
 #  API: 单股交易历史

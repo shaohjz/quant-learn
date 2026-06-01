@@ -34,3 +34,11 @@ schtasks /create /tn "QuantLearn_DailyPM_Workflow" `
     /sc DAILY /st 18:30 ` 
     /sd 01/01/2026 ` 
     /f /rl HIGHEST
+
+# 任务4: 工作日复盘缺失检查（每日18:30；脚本内部按交易日历跳过节假日）
+Write-Host "注册任务: QuantLearn_ReviewMissingCheck"
+schtasks /create /tn "QuantLearn_ReviewMissingCheck" `
+    /tr "$ProjectRoot\scripts\review_missing_check_runner.bat" `
+    /sc DAILY /st 18:30 `
+    /sd 01/01/2026 `
+    /f /rl HIGHEST

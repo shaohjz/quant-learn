@@ -1,6 +1,9 @@
 import sqlite3
+from pathlib import Path
 
-conn = sqlite3.connect('data/pm.db')
+ROOT = Path(__file__).resolve().parent
+DB = ROOT / 'data' / 'pm.db'
+conn = sqlite3.connect(DB)
 cursor = conn.cursor()
 cursor.execute('''
     SELECT id, type, title, description, status, priority

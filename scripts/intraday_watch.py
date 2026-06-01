@@ -17,12 +17,41 @@ scripts/intraday_watch.py — 盘中实时监控
 import os
 import sys
 import json
+import urllib.request
 from datetime import datetime, time as dtime
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sim.realtime_price import get_latest_prices
+
+
+def _load_webhook():
+    """从 config.yaml 读取企微 Webhook URL"""
+    try:
+        import yaml
+        cfg = yaml.safe_load((Path(__file__).resolve().parents[1] / 'config.yaml').read_text(encoding='utf-8')) or {}
+        return (cfg.get('notify') or {}).get('wecom_webhook', '') or ''
+    except Exception:
+        return ''
+
+
+def _push_webhook(content: str) -> bool:
+    """纯代码推送文本到企微群机器人，无需大模型"""
+    url = _load_webhook()
+    if not url:
+        print('[intraday_watch] ⚠️ 未配置 notify.wecom_webhook，跳过推送', file=sys.stderr)
+        return False
+    try:
+        body = json.dumps({'msgtype': 'text', 'text': {'content': content}}).encode('utf-8')
+        req = urllib.request.Request(url, data=body, headers={'Content-Type': 'application/json'})
+        resp = urllib.request.urlopen(req, timeout=10)
+        ok = b'"errcode":0' in resp.read()
+        print(f"[intraday_watch] webhook {'成功' if ok else '返回错误'}", file=sys.stderr)
+        return ok
+    except Exception as e:
+        print(f'[intraday_watch] ⚠️ webhook 推送失败: {e}', file=sys.stderr)
+        return False
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 LOG_FILE = PROJECT_DIR / "output" / "intraday_log.jsonl"
@@ -235,6 +264,10 @@ def cmd_check():
     out = "\n".join(lines)
     print(out)
     _log({"mode": "check", "alerts": new_alerts})
+
+    # ✅ REQ-042 去大模型化：直接推 Webhook，不依赖 cron agent 读 stdout
+    _push_webhook(out)
+
     return out
 
 

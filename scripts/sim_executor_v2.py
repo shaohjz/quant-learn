@@ -24,6 +24,7 @@ os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db')
 _DB_PATH = os.environ['QUANT_DB_PATH']
 
 from sim.db import get_conn
+from sim.precision import quantize_amount, quantize_cost, quantize_price
 
 import logging
 logger = logging.getLogger(__name__)
@@ -72,6 +73,64 @@ DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
 # 费率
 COMMISSION_RATE = 0.00025   # 万2.5
 STAMP_TAX_RATE = 0.0005   # 万5（仅卖出）
+
+
+# ── BUG-009：同一股票同日买入去重 ─────────────────────────────────────────
+def _today_str() -> str:
+    return datetime.now().strftime('%Y-%m-%d')
+
+
+def _has_today_buy(conn: sqlite3.Connection, code: str) -> bool:
+    """同一账户/股票/交易日是否已有 BUY 成交。
+
+    阈值执行器可能在同一轮里同时收到 buy_zone、buy_strong 等多级信号。
+    这里在执行层做最终幂等保护，避免重复加仓突破仓位约束。
+    """
+    row = conn.execute(
+        """
+        SELECT 1 FROM sim_trades
+         WHERE account_id=? AND stock_code=? AND direction='BUY' AND trade_date=?
+         LIMIT 1
+        """,
+        (_ACCOUNT_ID, code, _today_str()),
+    ).fetchone()
+    return row is not None
+
+
+def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
+                           allowed: int, reason: str):
+    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。"""
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS review_decisions ("
+            "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "  account_id INTEGER NOT NULL,"
+            "  stock_code TEXT NOT NULL,"
+            "  trade_date DATE NOT NULL DEFAULT (date('now', 'localtime')),"
+            "  decision_type TEXT NOT NULL,"
+            "  allowed INTEGER NOT NULL,"
+            "  reason TEXT,"
+            "  created_at TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime'))"
+            ")"
+        )
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(review_decisions)").fetchall()}
+        if "allowed" in cols:
+            conn.execute(
+                "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (account_id, stock_code, decision_type, allowed, reason),
+            )
+        elif "action" in cols:
+            conn.execute(
+                "INSERT INTO review_decisions (account_id, stock_code, decision_type, action, reason) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (account_id, stock_code, decision_type, allowed, reason),
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"_write_review_decision 失败: {e}")
 
 
 def _get_yesterday_close(code: str) -> float | None:
@@ -565,6 +624,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     """
     code = rule["code"]
     name = rule["name"]
+    cur_price = quantize_price(cur_price)
     action = decide_action(rule, cur_price)
     severity = None
     severity_label = ''
@@ -651,8 +711,19 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute("ROLLBACK")
                 return {'action': action, 'success': False, 'message': f'现金不足: ¥{acct[0] if acct else 0:.0f}'}
 
-            commission = cur_price * qty * COMMISSION_RATE
-            amount = cur_price * qty + commission
+            if _has_today_buy(conn, code):
+                msg = f'今日已买入过 {code}，跳过重复买入信号'
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'duplicate_buy_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入重复买入风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
+            commission = quantize_amount(cur_price * qty * COMMISSION_RATE)
+            amount = quantize_amount(cur_price * qty + commission)
 
             conn.execute(
                 "UPDATE sim_account SET cash=cash-?, total_value=total_value-? WHERE id=?",
@@ -665,19 +736,19 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             ).fetchone()
             if existing:
                 new_qty = existing[0] + qty
-                new_cost = (existing[0] * existing[1] + qty * cur_price) / new_qty
+                new_cost = quantize_cost((existing[0] * existing[1] + qty * cur_price) / new_qty)
                 conn.execute(
                     "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
                     "WHERE account_id=? AND stock_code=?",
-                    (new_qty, new_cost, cur_price, new_qty * cur_price,
-                     (cur_price - new_cost) * new_qty, (cur_price - new_cost) / new_cost * 100,
+                    (new_qty, new_cost, cur_price, quantize_amount(new_qty * cur_price),
+                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
                      _ACCOUNT_ID, code)
                 )
             else:
                 conn.execute(
                     "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, qty * cur_price,
+                    (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, quantize_amount(qty * cur_price),
                      0.0, 0.0)
                 )
             # 写入成交记录
@@ -723,9 +794,9 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute("ROLLBACK")
                 return {'action': action, 'success': False, 'message': f'计算卖出数量失败'}
 
-            commission = cur_price * sell_qty * COMMISSION_RATE
-            stamp_tax = cur_price * sell_qty * STAMP_TAX_RATE
-            amount = cur_price * sell_qty - commission - stamp_tax
+            commission = quantize_amount(cur_price * sell_qty * COMMISSION_RATE)
+            stamp_tax = quantize_amount(cur_price * sell_qty * STAMP_TAX_RATE)
+            amount = quantize_amount(cur_price * sell_qty - commission - stamp_tax)
 
             conn.execute(
                 "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
@@ -737,8 +808,8 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute(
                     "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
                     "WHERE account_id=? AND stock_code=?",
-                    (new_qty, cur_price, new_qty * cur_price,
-                     (cur_price - new_cost) * new_qty, (cur_price - new_cost) / new_cost * 100,
+                    (new_qty, cur_price, quantize_amount(new_qty * cur_price),
+                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
                      _ACCOUNT_ID, code)
                 )
             else:

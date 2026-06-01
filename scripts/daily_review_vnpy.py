@@ -30,6 +30,7 @@ sys.path.insert(0, str(ROOT))
 
 from notifier import push_text
 from sim.db import get_conn  # noqa: E402
+from sim.precision import fmt_cost  # noqa: E402
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -50,10 +51,55 @@ def _assert_safe(account_id: Optional[str]):
 # ============================================================
 # sim 25000 数据
 # ============================================================
+def fetch_unmatched_sell_confirmations(day: str, db_path: Path) -> list[dict]:
+    """Return executed sell confirmations that have no matching sim_trades row.
+
+    BUG-017: threshold_state could be marked ``executed`` while the broker/sim
+    trade insert failed or was not persisted. Surface these audit rows in the
+    daily review so SELL execution is not hidden by an empty trade table.
+    """
+    import sqlite3
+    if not db_path.exists():
+        return []
+    try:
+        conn = sqlite3.connect(str(db_path), timeout=10)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        has_state = cur.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='threshold_state'"
+        ).fetchone()
+        if not has_state:
+            conn.close()
+            return []
+        rows = cur.execute(
+            """
+            SELECT ts.*
+            FROM threshold_state ts
+            WHERE ts.status='executed'
+              AND ts.next_day_confirmed_at=?
+              AND ts.rule_name IN ('trend_break', 'take_profit', 'stop_loss', 'trailing_stop')
+              AND NOT EXISTS (
+                  SELECT 1 FROM sim_trades tr
+                  WHERE tr.account_id=1
+                    AND tr.stock_code=ts.stock_code
+                    AND tr.trade_date=ts.next_day_confirmed_at
+                    AND tr.direction='SELL'
+              )
+            ORDER BY ts.updated_at, ts.id
+            """,
+            (day,),
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception as e:  # noqa: BLE001
+        logger.warning("读取卖出执行审计失败 %s: %s", db_path, e)
+        return []
+
+
 def fetch_sim_snapshot(day: str, db_path: Path) -> dict:
     """从指定 sim*.db 拉账户/持仓/当日成交 (直接开 sqlite，不走 sim/db.py 的全局常量)"""
     import sqlite3
-    snap = {"account": None, "positions": [], "trades": [], "db_path": str(db_path)}
+    snap = {"account": None, "positions": [], "trades": [], "unmatched_sell_confirmations": [], "db_path": str(db_path)}
     if not db_path.exists():
         logger.warning("DB 不存在: %s", db_path)
         return snap
@@ -82,6 +128,7 @@ def fetch_sim_snapshot(day: str, db_path: Path) -> dict:
         )
         snap["trades"] = [dict(r) for r in cur.fetchall()]
         conn.close()
+        snap["unmatched_sell_confirmations"] = fetch_unmatched_sell_confirmations(day, db_path)
     except Exception as e:  # noqa: BLE001
         logger.warning("读取 %s 失败: %s", db_path, e)
     return snap
@@ -282,7 +329,7 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
     lines.append("|------|------|----:|----:|----:|----:|----:|----:|")
     for p in sim_snap.get("positions", []):
         lines.append(f"| {p['stock_code']} | {p.get('stock_name', '-')} | "
-                     f"{p['quantity']} | {p.get('avg_cost', 0):.2f} | "
+                     f"{p['quantity']} | {fmt_cost(p.get('avg_cost', 0))} | "
                      f"{p.get('current_price', 0):.2f} | {p.get('market_value', 0):,.2f} | "
                      f"{p.get('pnl', 0):,.2f} | {p.get('pnl_pct', 0):+.2f}% |")
     if not sim_snap.get("positions"):
@@ -294,7 +341,7 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
     lines.append("|------|------|----:|----:|----:|----:|----:|")
     for p in qmt_snap.get("positions", []):
         lines.append(f"| {p['stock_code']} | {p.get('stock_name', '-')} | "
-                     f"{p['quantity']} | {p.get('avg_cost', 0):.2f} | "
+                     f"{p['quantity']} | {fmt_cost(p.get('avg_cost', 0))} | "
                      f"{p.get('current_price', 0):.2f} | {p.get('market_value', 0):,.2f} | "
                      f"{p.get('pnl', 0):,.2f} |")
     if not qmt_snap.get("positions"):
@@ -343,6 +390,23 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
 
     _trade_block("sim 25000 成交", sim_snap.get("trades", []))
     _trade_block(f"QMT mini ({qmt_snap.get('source','?')}) 成交", qmt_snap.get("trades", []))
+
+    # BUG-017: threshold_state 已确认/执行卖出，但 sim_trades 没有 SELL 记录时，
+    # 不能让复盘静默显示“无卖出”。这里单独列出待回填/对账项。
+    missing_sells = sim_snap.get("unmatched_sell_confirmations", [])
+    if missing_sells:
+        lines.append("### ⚠️ 卖出执行确认但成交表缺失")
+        lines.append("| 确认日 | 股票 | 规则 | 阈值 | 确认价 | 状态 | 备注 |")
+        lines.append("|------|------|------|----:|-----:|------|------|")
+        for r in missing_sells:
+            stock = f"{r.get('stock_code', '')} {r.get('stock_name', '')}".strip()
+            lines.append(
+                f"| {_md_cell(r.get('next_day_confirmed_at', day))} | "
+                f"{_md_cell(stock)} | {_md_cell(r.get('rule_name', ''))} | "
+                f"{_money(r.get('rule_threshold')):.2f} | {_money(r.get('next_day_price')):.2f} | "
+                f"{_md_cell(r.get('status', ''))} | {_md_cell(r.get('notes', ''), 60)} |"
+            )
+        lines.append("> 这些记录来自 threshold_state；需核对 broker 日志并补写 sim_trades，避免实现盈亏/复盘漏计。")
     lines.append("")
 
     # ---- 订单/成交回放（REQ-011 OmsEngine 持久化）----

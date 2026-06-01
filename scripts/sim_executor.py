@@ -24,6 +24,7 @@ os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db')
 _DB_PATH = os.environ['QUANT_DB_PATH']
 
 from sim.db import get_conn
+from sim.precision import quantize_amount, quantize_cost, quantize_price
 
 import logging
 logger = logging.getLogger(__name__)
@@ -103,6 +104,210 @@ def _load_risk_limits():
         return 6, 2
 
 MAX_TOTAL_POSITIONS, MAX_DAILY_NEW_POSITIONS = _load_risk_limits()
+
+
+# ── BUG-009：同一股票同日买入去重 ─────────────────────────────────────────
+def _today_str() -> str:
+    return datetime.now().strftime('%Y-%m-%d')
+
+
+def _has_today_buy(conn: sqlite3.Connection, code: str) -> bool:
+    """同一账户/股票/交易日是否已有 BUY 成交。
+
+    阈值执行器可能在同一轮里同时收到 buy_zone、buy_strong 等多级信号。
+    这里在执行层做最终幂等保护，避免重复加仓突破仓位约束。
+    """
+    row = conn.execute(
+        """
+        SELECT 1 FROM sim_trades
+         WHERE account_id=? AND stock_code=? AND direction='BUY' AND trade_date=?
+         LIMIT 1
+        """,
+        (_ACCOUNT_ID, code, _today_str()),
+    ).fetchone()
+    return row is not None
+
+
+def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
+                           allowed: int, reason: str):
+    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。"""
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS review_decisions ("
+            "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "  account_id INTEGER NOT NULL,"
+            "  stock_code TEXT NOT NULL,"
+            "  trade_date DATE NOT NULL DEFAULT (date('now', 'localtime')),"
+            "  decision_type TEXT NOT NULL,"
+            "  allowed INTEGER NOT NULL,"
+            "  reason TEXT,"
+            "  created_at TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime'))"
+            ")"
+        )
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(review_decisions)").fetchall()}
+        if "allowed" in cols:
+            conn.execute(
+                "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (account_id, stock_code, decision_type, allowed, reason),
+            )
+        elif "action" in cols:
+            conn.execute(
+                "INSERT INTO review_decisions (account_id, stock_code, decision_type, action, reason) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (account_id, stock_code, decision_type, allowed, reason),
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"_write_review_decision 失败: {e}")
+
+
+def _load_daily_buy_controls() -> tuple[float, float, int]:
+    """REQ-033: 从 config.yaml 读取日内买入资金预算与冷静期。
+
+    返回 (daily_amount_cap, daily_pct_cap, cooldown_minutes)：
+    - daily_amount_cap: 当日 BUY 成交额硬上限；默认 30,000 元
+    - daily_pct_cap: 当日 BUY 成交额占账户总资产上限；默认 35%
+    - cooldown_minutes: 任意两次自动 BUY 的最小间隔；默认 30 分钟
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        daily_amount_cap = float(
+            risk.get('max_daily_buy_amount', risk.get('max_daily_trade_amount', 30000.0))
+        )
+        daily_pct_cap = float(risk.get('max_daily_buy_pct', risk.get('max_daily_build_amount_pct', 0.35)))
+        cooldown_minutes = int(risk.get('buy_cooldown_minutes', 30))
+        return daily_amount_cap, daily_pct_cap, cooldown_minutes
+    except Exception:
+        return 30000.0, 0.35, 30
+
+
+MAX_DAILY_BUY_AMOUNT, MAX_DAILY_BUY_PCT, BUY_COOLDOWN_MINUTES = _load_daily_buy_controls()
+
+
+def _parse_trade_datetime(trade_date: str | None, trade_time: str | None) -> datetime | None:
+    """兼容 sim_trades 中 trade_date=YYYY-MM-DD、trade_time=HH:MM:SS/空 的格式。"""
+    if not trade_date:
+        return None
+    raw = f"{trade_date} {trade_time or '00:00:00'}"
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
+        try:
+            return datetime.strptime(raw[:19], fmt)
+        except ValueError:
+            pass
+    return None
+
+
+def get_daily_buy_budget_status(account_id: int | None = None, planned_amount: float = 0.0) -> dict:
+    """REQ-033: 返回当日自动买入预算状态，供复盘/看板展示。"""
+    account_id = int(account_id or _ACCOUNT_ID)
+    today = _today_str()
+    conn = sqlite3.connect(_DB_PATH)
+    try:
+        acct = conn.execute(
+            "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
+            (account_id,),
+        ).fetchone()
+        total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and acct[2] else 0) or _load_max_total())
+        pct_cap_amount = total_value * MAX_DAILY_BUY_PCT if MAX_DAILY_BUY_PCT > 0 else MAX_DAILY_BUY_AMOUNT
+        daily_cap = min(MAX_DAILY_BUY_AMOUNT, pct_cap_amount) if MAX_DAILY_BUY_AMOUNT > 0 else pct_cap_amount
+        used = float(conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM sim_trades "
+            "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+            (account_id, today),
+        ).fetchone()[0] or 0.0)
+        last = conn.execute(
+            "SELECT trade_date, trade_time, stock_code FROM sim_trades "
+            "WHERE account_id=? AND direction='BUY' "
+            "ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC LIMIT 1",
+            (account_id,),
+        ).fetchone()
+        last_dt = _parse_trade_datetime(last[0], last[1]) if last else None
+        minutes_since_last = None
+        if last_dt:
+            minutes_since_last = max(0.0, (datetime.now() - last_dt).total_seconds() / 60.0)
+        remaining = max(0.0, daily_cap - used)
+        return {
+            'date': today,
+            'account_id': account_id,
+            'daily_cap': daily_cap,
+            'used': used,
+            'remaining': remaining,
+            'planned_amount': planned_amount,
+            'after_planned': used + max(0.0, planned_amount),
+            'cooldown_minutes': BUY_COOLDOWN_MINUTES,
+            'minutes_since_last_buy': minutes_since_last,
+            'last_buy_code': last[2] if last else None,
+        }
+    finally:
+        conn.close()
+
+
+def _check_daily_buy_controls(conn: sqlite3.Connection, account_id: int, code: str, planned_amount: float) -> tuple[bool, str, dict]:
+    """REQ-033: 日内新买入资金预算 + 连续买入冷静期检查。
+
+    注意：使用调用方传入的 conn 读取 sim_trades，可在 execute_trade 的
+    BEGIN IMMEDIATE 事务内完成最终校验，避免并发/重算预算穿透。
+    """
+    account_id = int(account_id)
+    today = _today_str()
+    acct = conn.execute(
+        "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
+        (account_id,),
+    ).fetchone()
+    total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and acct[2] else 0) or _load_max_total())
+    pct_cap_amount = total_value * MAX_DAILY_BUY_PCT if MAX_DAILY_BUY_PCT > 0 else MAX_DAILY_BUY_AMOUNT
+    daily_cap = min(MAX_DAILY_BUY_AMOUNT, pct_cap_amount) if MAX_DAILY_BUY_AMOUNT > 0 else pct_cap_amount
+    used = float(conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) FROM sim_trades "
+        "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+        (account_id, today),
+    ).fetchone()[0] or 0.0)
+    last = conn.execute(
+        "SELECT trade_date, trade_time, stock_code FROM sim_trades "
+        "WHERE account_id=? AND direction='BUY' "
+        "ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC LIMIT 1",
+        (account_id,),
+    ).fetchone()
+    last_dt = _parse_trade_datetime(last[0], last[1]) if last else None
+    minutes_since_last = None
+    if last_dt:
+        minutes_since_last = max(0.0, (datetime.now() - last_dt).total_seconds() / 60.0)
+    remaining = max(0.0, daily_cap - used)
+    status = {
+        'date': today,
+        'account_id': account_id,
+        'daily_cap': daily_cap,
+        'used': used,
+        'remaining': remaining,
+        'planned_amount': planned_amount,
+        'after_planned': used + max(0.0, planned_amount),
+        'cooldown_minutes': BUY_COOLDOWN_MINUTES,
+        'minutes_since_last_buy': minutes_since_last,
+        'last_buy_code': last[2] if last else None,
+    }
+    after = status['after_planned']
+    if daily_cap > 0 and after > daily_cap + 1e-6:
+        return False, (
+            f"日内买入预算不足：今日已用¥{used:,.0f}，计划¥{planned_amount:,.0f}，"
+            f"将达¥{after:,.0f} > 上限¥{daily_cap:,.0f}；剩余¥{status['remaining']:,.0f}"
+        ), status
+
+    mins = status.get('minutes_since_last_buy')
+    if BUY_COOLDOWN_MINUTES > 0 and mins is not None and mins < BUY_COOLDOWN_MINUTES:
+        return False, (
+            f"连续买入冷静期未过：距上次买入 {mins:.0f} 分钟 < {BUY_COOLDOWN_MINUTES} 分钟，"
+            f"跳过 {code}；今日剩余买入预算¥{status['remaining']:,.0f}"
+        ), status
+
+    return True, (
+        f"日内买入预算通过：今日已用¥{used:,.0f}/¥{daily_cap:,.0f}，"
+        f"本次约¥{planned_amount:,.0f}，剩余约¥{max(0.0, daily_cap-after):,.0f}"
+    ), status
 
 
 def _get_yesterday_close(code: str) -> float | None:
@@ -621,7 +826,19 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         finally:
             conn.close()
 
-        _write_review_decision(_ACCOUNT_ID, code, 'buy', 1, f'{level} 信号通过风控')
+        # ── REQ-033 日内买入资金预算 + 连续买入冷静期 ─────────────────────
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            ok, reason, budget_status = _check_daily_buy_controls(conn, _ACCOUNT_ID, code, budget)
+        finally:
+            conn.close()
+        if not ok:
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'daily_buy_budget_guard', 0, reason)
+            return 'NO_ACTION'
+        logger.info(f'✅ [{code}] {reason}')
+
+        _write_review_decision(_ACCOUNT_ID, code, 'buy', 1, f'{level} 信号通过风控；{reason}')
         return 'BUY'
 
     elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):
@@ -643,6 +860,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     """
     code = rule["code"]
     name = rule["name"]
+    cur_price = quantize_price(cur_price)
     action = decide_action(rule, cur_price)
     severity = None
     severity_label = ''
@@ -729,8 +947,31 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute("ROLLBACK")
                 return {'action': action, 'success': False, 'message': f'现金不足: ¥{acct[0] if acct else 0:.0f}'}
 
-            commission = cur_price * qty * COMMISSION_RATE
-            amount = cur_price * qty + commission
+            if _has_today_buy(conn, code):
+                msg = f'今日已买入过 {code}，跳过重复买入信号'
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'duplicate_buy_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入重复买入风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
+            commission = quantize_amount(cur_price * qty * COMMISSION_RATE)
+            amount = quantize_amount(cur_price * qty + commission)
+
+            # REQ-033: 成交前在同一事务中再次校验日内预算/冷静期，避免并发或重算预算穿透。
+            ok, reason, _budget_status = _check_daily_buy_controls(conn, _ACCOUNT_ID, code, amount)
+            if not ok:
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {reason}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'daily_buy_budget_guard', 0, reason)
+                except Exception as e:
+                    logger.warning(f"写入日内预算风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': reason, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
 
             conn.execute(
                 "UPDATE sim_account SET cash=cash-?, total_value=total_value-? WHERE id=?",
@@ -743,19 +984,19 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             ).fetchone()
             if existing:
                 new_qty = existing[0] + qty
-                new_cost = (existing[0] * existing[1] + qty * cur_price) / new_qty
+                new_cost = quantize_cost((existing[0] * existing[1] + qty * cur_price) / new_qty)
                 conn.execute(
                     "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
                     "WHERE account_id=? AND stock_code=?",
-                    (new_qty, new_cost, cur_price, new_qty * cur_price,
-                     (cur_price - new_cost) * new_qty, (cur_price - new_cost) / new_cost * 100,
+                    (new_qty, new_cost, cur_price, quantize_amount(new_qty * cur_price),
+                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
                      _ACCOUNT_ID, code)
                 )
             else:
                 conn.execute(
                     "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, qty * cur_price,
+                    (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, quantize_amount(qty * cur_price),
                      0.0, 0.0)
                 )
             # 写入成交记录
@@ -801,9 +1042,9 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute("ROLLBACK")
                 return {'action': action, 'success': False, 'message': f'计算卖出数量失败'}
 
-            commission = cur_price * sell_qty * COMMISSION_RATE
-            stamp_tax = cur_price * sell_qty * STAMP_TAX_RATE
-            amount = cur_price * sell_qty - commission - stamp_tax
+            commission = quantize_amount(cur_price * sell_qty * COMMISSION_RATE)
+            stamp_tax = quantize_amount(cur_price * sell_qty * STAMP_TAX_RATE)
+            amount = quantize_amount(cur_price * sell_qty - commission - stamp_tax)
 
             conn.execute(
                 "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
@@ -815,8 +1056,8 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute(
                     "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
                     "WHERE account_id=? AND stock_code=?",
-                    (new_qty, cur_price, new_qty * cur_price,
-                     (cur_price - new_cost) * new_qty, (cur_price - new_cost) / new_cost * 100,
+                    (new_qty, cur_price, quantize_amount(new_qty * cur_price),
+                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
                      _ACCOUNT_ID, code)
                 )
             else:

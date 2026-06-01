@@ -31,6 +31,78 @@ ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "pm.db"
 SIM_DB = ROOT / "data" / "sim_live_mirror.db"
 
+sys.path.insert(0, str(ROOT))
+from sim.precision import fmt_cost, fmt_price
+
+
+def ensure_task_claim_columns(conn):
+    """确保 tasks 表具备轻量认领字段（兼容旧库，幂等）。"""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(tasks)").fetchall()}
+    if "assigned_to" not in cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN assigned_to TEXT")
+    if "work_notes" not in cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN work_notes TEXT")
+
+
+def pick_and_work(worker="agent", task_id=None):
+    """原子认领 1 个 pending 任务，标记为 in_progress 并写 assigned_to。
+
+    用法：python scripts/agent_helper.py pick_and_work --worker worker-1 [--task-id BUG-001]
+    """
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = sqlite3.connect(DB, timeout=30, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        ensure_task_claim_columns(conn)
+        if task_id:
+            row = conn.execute(
+                "SELECT * FROM tasks WHERE id=? AND status='pending'",
+                (task_id,),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """
+                SELECT * FROM tasks
+                WHERE status='pending'
+                ORDER BY CASE priority
+                    WHEN 'S0' THEN 0 WHEN 'P0' THEN 0
+                    WHEN 'S1' THEN 1 WHEN 'P1' THEN 1
+                    WHEN 'S2' THEN 2 WHEN 'P2' THEN 2
+                    WHEN 'S3' THEN 3 WHEN 'P3' THEN 3
+                    ELSE 9 END,
+                    created_at ASC, id ASC
+                LIMIT 1
+                """
+            ).fetchone()
+        if not row:
+            conn.execute("COMMIT")
+            return "NO_PENDING_TASK"
+
+        cur = conn.execute(
+            """
+            UPDATE tasks
+               SET status='in_progress', assigned_to=?, updated_at=?,
+                   work_notes=COALESCE(work_notes || char(10), '') || ?
+             WHERE id=? AND status='pending'
+            """,
+            (worker, now, f"[{now}] claimed by {worker}", row["id"]),
+        )
+        if cur.rowcount != 1:
+            conn.execute("ROLLBACK")
+            return "CLAIM_RACE_LOST"
+        conn.execute("COMMIT")
+        return (f"CLAIMED {row['id']} [{row['priority']}] {row['title']}\n"
+                f"description: {row['description'] or ''}")
+    except Exception:
+        try:
+            conn.execute("ROLLBACK")
+        except Exception:
+            pass
+        raise
+    finally:
+        conn.close()
+
 
 def create_story(title, desc="", priority="P1"):
     """创建需求故事"""
@@ -115,8 +187,8 @@ def show_positions():
         pnl_sign = "+" if r["pnl"] >= 0 else ""
         lines.append(
             f"  {r['stock_name']}({r['stock_code']}) "
-            f"{r['quantity']}股 @成本{r['avg_cost']:.2f} "
-            f"现值{r['current_price']:.2f} "
+            f"{r['quantity']}股 @成本{fmt_cost(r['avg_cost'])} "
+            f"现值{fmt_price(r['current_price'])} "
             f"{pnl_sign}{r['pnl_pct']*100:.1f}%"
         )
     return "\n".join(lines)
@@ -148,7 +220,7 @@ def show_trades(date=None):
         lines.append(
             f"  {r['trade_date']} {r['direction']} "
             f"{r['stock_name']}({r['stock_code']}) "
-            f"{r['quantity']}股 @ {r['price']:.2f} "
+            f"{r['quantity']}股 @ {fmt_price(r['price'])} "
             f"金额{r['amount']:.0f}元"
         )
     return "\n".join(lines)
@@ -162,7 +234,16 @@ if __name__ == "__main__":
     
     action = sys.argv[1]
     
-    if action == "create_story":
+    if action == "pick_and_work":
+        worker = "agent"
+        task_id = None
+        if "--worker" in sys.argv:
+            worker = sys.argv[sys.argv.index("--worker") + 1]
+        if "--task-id" in sys.argv:
+            task_id = sys.argv[sys.argv.index("--task-id") + 1]
+        print(pick_and_work(worker=worker, task_id=task_id))
+
+    elif action == "create_story":
         title = sys.argv[2] if len(sys.argv) > 2 else "未命名需求"
         desc = ""
         priority = "P1"

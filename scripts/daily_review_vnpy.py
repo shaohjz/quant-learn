@@ -304,6 +304,26 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
     # ---- 当日交易 ----
     lines.append(f"## 三、{day} 当日交易")
 
+    def _md_cell(value, max_len: int | None = None) -> str:
+        """Return a safe Markdown table cell.
+
+        Trade signal_reason often contains a literal pipe, e.g.
+        "自动: buy_zone | 💰 ...".  If left unescaped, the generated row has
+        one more column than the header and the broker cell is shifted.  Keep
+        newlines compact and escape pipes so every trade row remains 8 cells.
+        """
+        text = "" if value is None else str(value)
+        text = " ".join(text.splitlines()).strip()
+        if max_len is not None and len(text) > max_len:
+            text = text[:max_len]
+        return text.replace("|", r"\|")
+
+    def _money(value, default=0.0) -> float:
+        try:
+            return float(value if value is not None else default)
+        except (TypeError, ValueError):
+            return float(default)
+
     def _trade_block(title: str, trades: list):
         lines.append(f"### {title} ({len(trades)} 笔)")
         if not trades:
@@ -312,11 +332,14 @@ def render_markdown(day: str, sim_snap: dict, qmt_snap: dict,
         lines.append("| 时间/标记 | 股票 | 方向 | 数量 | 价格 | 金额 | 信号 | broker |")
         lines.append("|---------|------|----|----:|----:|-----:|------|--------|")
         for t in trades:
-            lines.append(f"| {t.get('trade_date', '')} | "
-                         f"{t.get('stock_code', '')} {t.get('stock_name', '')} | "
-                         f"{t.get('direction', '')} | {t.get('quantity', 0)} | "
-                         f"{t.get('price', 0):.2f} | {t.get('amount', 0):,.2f} | "
-                         f"{(t.get('signal_reason') or '')[:24]} | {t.get('broker', '-')} |")
+            stock = f"{t.get('stock_code', '')} {t.get('stock_name', '')}".strip()
+            signal = _md_cell(t.get('signal_reason') or '', 48)
+            broker_name = _md_cell(t.get('broker') or '-', 32)
+            lines.append(f"| {_md_cell(t.get('trade_date', ''))} | "
+                         f"{_md_cell(stock)} | "
+                         f"{_md_cell(t.get('direction', ''))} | {t.get('quantity', 0)} | "
+                         f"{_money(t.get('price')):.2f} | {_money(t.get('amount')):,.2f} | "
+                         f"{signal} | {broker_name} |")
 
     _trade_block("sim 25000 成交", sim_snap.get("trades", []))
     _trade_block(f"QMT mini ({qmt_snap.get('source','?')}) 成交", qmt_snap.get("trades", []))

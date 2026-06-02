@@ -34,6 +34,8 @@ MAX_POSITION_PCT = _RISK["max_position_pct"]
 DAILY_MAX_TRADES = _RISK["max_daily_trades"]
 STOP_LOSS_PCT = _RISK["stop_loss_pct"]
 TAKE_PROFIT_PCT = _RISK["take_profit_pct"]
+MAX_DAILY_BUILD_AMOUNT_PCT = _RISK["max_daily_build_amount_pct"]
+LIQUIDITY_RELEASE_LOSS_THRESHOLD = _RISK["liquidity_release_loss_threshold"]
 
 
 def _build_existing_position_map(broker):
@@ -50,7 +52,12 @@ def _build_existing_position_map(broker):
 
 def _release_liquidity(broker, needed_cash: float, max_sell_ratio: float = 0.5) -> float:
     """
-    释放流动性：卖出部分浮亏仓位以获取现金
+    释放流动性：优先卖出浮亏超阈值的仓位以获取现金
+    
+    策略（REQ-045）：
+    1. 优先卖出浮亏超过 liquidity_release_loss_threshold（默认8%）的仓位
+    2. 若 still not enough，再卖其他浮亏仓位
+    3. 按亏损幅度排序（亏得最多的优先卖）
     
     Args:
         broker: 经纪商接口
@@ -64,32 +71,47 @@ def _release_liquidity(broker, needed_cash: float, max_sell_ratio: float = 0.5) 
     if not positions:
         return 0.0
     
-    # 1. 找出浮亏仓位，按亏损幅度排序（亏得多的优先卖）
-    loss_positions = []
+    loss_threshold = LIQUIDITY_RELEASE_LOSS_THRESHOLD  # 默认 8%
+    
+    # 1. 分类持仓：深亏（>threshold）、浅亏、浮盈
+    deep_loss = []   # 浮亏超过阈值的
+    shallow_loss = []  # 浮亏但未超阈值的
+    
     for pos in positions:
         if pos.quantity <= 0:
             continue
         pnl_pct = (pos.current_price - pos.avg_cost) / pos.avg_cost if pos.avg_cost > 0 else 0
-        if pnl_pct < 0:  # 只卖浮亏的
-            heapq.heappush(loss_positions, (pnl_pct, pos))  # 最小堆，亏损最多的在前面
+        if pnl_pct < -loss_threshold:
+            heapq.heappush(deep_loss, (pnl_pct, pos))  # 深亏优先
+        elif pnl_pct < 0:
+            shallow_loss.append((pnl_pct, pos))
+        # 浮盈的不主动卖
     
-    if not loss_positions:
-        print("  → 无浮亏仓位可卖，无法释放流动性")
+    if not deep_loss and not shallow_loss:
+        print(f"  → 无浮亏仓位可卖（阈值为 {-loss_threshold:.0%}），无法释放流动性")
         return 0.0
     
     released_cash = 0.0
     sold_positions = []
     
     print(f"  → 尝试释放流动性，需要 ¥{needed_cash:,.2f}")
+    print(f"  → 深亏(>{ -loss_threshold:.0%})仓位数: {len(deep_loss)}，浅亏仓位数: {len(shallow_loss)}")
     
-    # 2. 依次卖出浮亏仓位，直到释放足够现金或卖完
-    for i in range(min(len(loss_positions), 5)):  # 最多卖5个持仓
+    # 2. 先卖深亏仓位（按亏损幅度从大到小）
+    to_sell = []
+    while deep_loss:
+        pnl_pct, pos = heapq.heappop(deep_loss)  # 最小堆，最负的在最前
+        to_sell.append((pnl_pct, pos))
+    # 再卖浅亏仓位
+    # shallow_loss 按亏损幅度排序（亏得多的在前）
+    shallow_loss.sort(key=lambda x: x[0])  # 升序，最负的在前
+    to_sell.extend(shallow_loss)
+    
+    for pnl_pct, pos in to_sell:
         if released_cash >= needed_cash:
             break
         
-        pnl_pct, pos = heapq.heappop(loss_positions)
-        
-        # 计算卖出数量（最多卖一半）
+        # 计算卖出数量（最多卖一半，避免过度卖出）
         max_sell_qty = int(pos.quantity * max_sell_ratio / 100) * 100
         if max_sell_qty < 100:
             max_sell_qty = pos.quantity  # 如果太少就全卖
@@ -113,7 +135,7 @@ def _release_liquidity(broker, needed_cash: float, max_sell_ratio: float = 0.5) 
                 "price": pos.current_price,
                 "pnl_pct": pnl_pct
             })
-            print(f"  → 卖出 {pos.stock_name}({pos.stock_code}) {max_sell_qty}股 @ {pos.current_price:.2f} 释放 ¥{result.amount:,.2f}")
+            print(f"  → 卖出 {pos.stock_name}({pos.stock_code}) {max_sell_qty}股 @ {pos.current_price:.2f} 释放 ¥{result.amount:,.2f} [浮亏{(pnl_pct*100):.1f}%]")
     
     if sold_positions:
         print(f"  ✓ 共释放流动性 ¥{released_cash:,.2f}")
@@ -195,6 +217,40 @@ def run_settle(broker, trade_date: Date = None):
     # 3. 执行交易
     trades_today = 0
     positions_by_code = {p.stock_code: p for p in broker.get_positions()}
+    
+    # REQ-045: 单日最大建仓金额上限检查
+    import sqlite3, os
+    _DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "sim_live_mirror.db")
+    if not os.path.exists(_DB_PATH):
+        _DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "sim.db")
+    _today_str = trade_date.isoformat()
+    _account_id = 1  # learn 模拟盘
+    
+    # 查询今日已买入金额（含佣金税费）
+    _conn = sqlite3.connect(_DB_PATH)
+    try:
+        _row = _conn.execute(
+            "SELECT COALESCE(SUM(amount + commission + tax), 0) FROM sim_trades "
+            "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+            (_account_id, _today_str)
+        ).fetchone()
+        today_bought_amount = _row[0] if _row else 0.0
+    finally:
+        _conn.close()
+    
+    # 计算今日还可建仓金额上限
+    acct_for_limit = broker.get_account()
+    total_assets = acct_for_limit.cash + acct_for_limit.total_value - acct_for_limit.cash  # 近似值
+    # 更精确的总资产 = cash + sum(market_value of all positions)
+    positions_for_assets = broker.get_positions()
+    total_market_value = sum(p.market_value for p in positions_for_assets)
+    total_assets = acct_for_limit.cash + total_market_value
+    max_daily_build_amount = total_assets * MAX_DAILY_BUILD_AMOUNT_PCT
+    remaining_build_amount = max(0, max_daily_build_amount - today_bought_amount)
+    
+    print(f"\n📊 [REQ-045 仓位管理] 单日建仓上限: ¥{max_daily_build_amount:,.2f} "
+          f"(总资产¥{total_assets:,.2f}×{MAX_DAILY_BUILD_AMOUNT_PCT:.0%}), "
+          f"今日已建: ¥{today_bought_amount:,.2f}, 剩余额度: ¥{remaining_build_amount:,.2f}")
 
     for sig in signals:
         if trades_today >= DAILY_MAX_TRADES:

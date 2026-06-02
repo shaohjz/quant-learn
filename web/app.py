@@ -5,10 +5,15 @@
 import sys, json, sqlite3, re
 from pathlib import Path
 from datetime import datetime, date, timedelta
-from flask import Flask, jsonify, send_from_directory, render_template_string
+from flask import Flask, jsonify, request, send_from_directory, render_template_string
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from sim.closed_trades import analyze_closed_trades
+from sim.asset_allocation import summarize_allocation
+from sim.market_sentiment import fetch_market_sentiment
+
 app = Flask(__name__)
 DB_PATH = ROOT / "data" / "sim_live_mirror.db"
 
@@ -64,9 +69,24 @@ def get_sina_prices(codes):
 # ====================================================================
 #  DB
 # ====================================================================
-def query_db(sql, params=()):
-    conn = sqlite3.connect(str(DB_PATH))
+def sim_db_path():
+    """Return simulation DB path; overridable in tests via app.config['SIM_DB_PATH']."""
+    return Path(app.config.get("SIM_DB_PATH", DB_PATH))
+
+
+def config_path():
+    """Return main config path; overridable in tests via app.config['CONFIG_PATH']."""
+    return Path(app.config.get("CONFIG_PATH", ROOT / "config.yaml"))
+
+
+def _sim_conn():
+    conn = sqlite3.connect(str(sim_db_path()))
     conn.row_factory = sqlite3.Row
+    return conn
+
+
+def query_db(sql, params=()):
+    conn = _sim_conn()
     rows = conn.execute(sql, params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -79,7 +99,7 @@ def api_portfolio():
     positions = query_db("SELECT * FROM sim_positions WHERE account_id=1 AND quantity > 0")
     acc = query_db("SELECT * FROM sim_account WHERE id=1")
     acc = acc[0] if acc else {'cash': 0, 'initial_cash': 0}
-    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding='utf-8')) or {}
+    cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
     initial_cash = float(
         cfg.get('accounts', {}).get('learn', {}).get(
             'initial_cash', acc.get('initial_cash') or 200000
@@ -209,7 +229,7 @@ def api_real_portfolio():
 # ====================================================================
 @app.route('/api/watchlist')
 def api_watchlist():
-    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding='utf-8'))
+    cfg = yaml.safe_load(config_path().read_text(encoding='utf-8'))
     wl = cfg.get('watchlist', {})
     um = wl.get('user_manual', {}) if isinstance(wl, dict) else {}
     
@@ -292,6 +312,231 @@ def api_selection_logic():
         return jsonify(data.get('stock_selection_logic', {}))
     return jsonify({})
 
+
+def _pct(v):
+    try:
+        return round(float(v) * 100, 1)
+    except Exception:
+        return 0
+
+
+def _rule_text(rule_key, rule):
+    """Format a YAML rule into PM/FA-friendly text."""
+    if not isinstance(rule, dict):
+        return str(rule)
+    label_map = {
+        'buy_zone': '买入观察', 'buy_strong': '强买区', 'stop_loss_tight': '接近止损',
+        'stop_loss_soft': '软止损', 'stop_loss': '硬止损', 'hard_stop': '硬止损',
+        'half_out': '减半卖出', 'take_profit_half': '止盈减仓', 'take_profit': '止盈',
+        'trend_break': '趋势破位',
+    }
+    label = label_map.get(rule_key, rule_key)
+    trigger = rule.get('trigger')
+    direction = '跌破/低于' if rule.get('dir') == 'below' else ('突破/高于' if rule.get('dir') == 'above' else rule.get('dir', ''))
+    msg = rule.get('msg', '')
+    head = f"{label}: {direction} {trigger}" if trigger not in (None, '') else label
+    return f"{head}｜{msg}" if msg else head
+
+
+def _collect_watch_rules(watchlist, auto_cfg):
+    rows = []
+    if isinstance(watchlist, dict):
+        for category in ('user_manual', 'auto_discovered'):
+            for code, info in (watchlist.get(category, {}) or {}).items():
+                if not isinstance(info, dict) or not info.get('enabled', True):
+                    continue
+                rules = info.get('rules', {}) if isinstance(info.get('rules', {}), dict) else {}
+                buy_rules = [_rule_text(k, v) for k, v in rules.items() if str(k).startswith('buy')]
+                rows.append({
+                    'code': str(code),
+                    'name': info.get('name', ''),
+                    'category': category,
+                    'source': info.get('source', '观察池'),
+                    'trigger_rules': buy_rules,
+                    'trend_gate': (info.get('trend_filter') or {}).get('gate', ''),
+                    'status': (info.get('trend_filter') or {}).get('status', ''),
+                    'added_reason': info.get('added_reason', ''),
+                })
+    for code, info in ((auto_cfg or {}).get('auto_discovered', {}) or {}).items():
+        if not isinstance(info, dict) or not info.get('enabled', True):
+            continue
+        rows.append({
+            'code': str(code),
+            'name': info.get('name', ''),
+            'category': 'auto_discovered',
+            'source': info.get('source', 'intraday_scanner'),
+            'trigger_rules': [r for r in [
+                f"买入观察: 跌破/低于 {info.get('buy_zone')}" if info.get('buy_zone') else '',
+                f"强买区: 跌破/低于 {info.get('buy_strong')}" if info.get('buy_strong') else '',
+            ] if r],
+            'trend_gate': '',
+            'status': '',
+            'added_reason': info.get('added_reason', ''),
+        })
+    return rows
+
+
+@app.route('/api/strategy_control')
+def api_strategy_control():
+    """策略控制大盘：规则、仓位限制、现金水位、最近命中/执行结果。"""
+    cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
+    risk = cfg.get('risk', {}) or {}
+    accounts = cfg.get('accounts', {}) or {}
+    learn_cfg = accounts.get('learn', {}) or {}
+
+    account = query_db("SELECT * FROM sim_account WHERE id=1")
+    account = account[0] if account else {'cash': 0, 'initial_cash': learn_cfg.get('initial_cash', cfg.get('account', {}).get('initial_cash', 0))}
+    positions = query_db("SELECT stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct FROM sim_positions WHERE account_id=1 AND quantity > 0")
+    total_market_value = sum(float(p.get('market_value') or 0) for p in positions)
+    cash = float(account.get('cash') or 0)
+    total_asset = cash + total_market_value
+    today = date.today().isoformat()
+    today_new_positions = query_db(
+        "SELECT COUNT(DISTINCT stock_code) AS cnt FROM sim_trades WHERE account_id=1 AND direction='BUY' AND trade_date=?",
+        (today,),
+    )[0]['cnt']
+    today_buy_amount = query_db(
+        "SELECT COALESCE(SUM(amount), 0) AS amt FROM sim_trades WHERE account_id=1 AND direction='BUY' AND trade_date=?",
+        (today,),
+    )[0]['amt']
+
+    holding_rules = []
+    for code, info in (cfg.get('real_portfolio_rules', {}) or {}).items():
+        rules = info.get('rules', {}) if isinstance(info, dict) else {}
+        holding_rules.append({
+            'code': str(code),
+            'name': info.get('name', ''),
+            'sell_rules': [_rule_text(k, v) for k, v in rules.items() if not str(k).startswith('buy')],
+        })
+
+    auto_path = ROOT / "config_auto.yaml"
+    auto_cfg = yaml.safe_load(auto_path.read_text(encoding='utf-8')) if auto_path.exists() else {}
+    watch_rows = _collect_watch_rules((cfg.get('watchlist') or {}), auto_cfg)
+
+    recent_trades = query_db(
+        "SELECT trade_date, trade_time, stock_code, stock_name, direction, quantity, price, amount, signal_reason, trade_context, signal_detail, created_at "
+        "FROM sim_trades WHERE account_id=1 ORDER BY created_at DESC LIMIT 12"
+    )
+    recent_orders = query_db(
+        "SELECT order_time, order_id, broker_order_id, broker, stock_code, stock_name, direction, quantity, traded, price, status, strategy_name, signal_reason, created_at "
+        "FROM sim_orders WHERE account_id=1 ORDER BY COALESCE(order_time, created_at) DESC LIMIT 12"
+    )
+    qmt_orders = query_db(
+        "SELECT order_time, order_id, broker_order_id, broker, stock_code, stock_name, direction, quantity, traded, price, status, strategy_name, signal_reason, created_at "
+        "FROM sim_orders WHERE account_id=1 AND broker LIKE 'qmt%' ORDER BY COALESCE(order_time, created_at) DESC LIMIT 20"
+    )
+    qmt_fills = query_db(
+        "SELECT trade_time, order_id, broker_trade_id, broker, stock_code, stock_name, direction, trade_volume, trade_price, trade_amount, strategy_name, created_at "
+        "FROM sim_fills WHERE account_id=1 AND broker LIKE 'qmt%' ORDER BY COALESCE(trade_time, created_at) DESC LIMIT 20"
+    )
+    for row in recent_trades:
+        for key in ('trade_context', 'signal_detail'):
+            if row.get(key):
+                try:
+                    row[key] = json.loads(row[key])
+                except Exception:
+                    pass
+
+    return jsonify({
+        'updated_at': datetime.now().strftime('%H:%M:%S'),
+        'buy_rules': {
+            'summary': '观察池触发 + 趋势过滤 + 风控校验后建仓；自动买入以 sim/learn 账户配置为准。',
+            'watchlist_count': len(watch_rows),
+            'sample_rules': watch_rows[:30],
+        },
+        'sell_rules': {
+            'summary': '持仓规则优先使用逐票止损/止盈/减仓线；全局兜底使用 risk.stop_loss_pct / risk.take_profit_pct。',
+            'global_stop_loss_pct': _pct(risk.get('stop_loss_pct', -0.08)),
+            'global_take_profit_pct': _pct(risk.get('take_profit_pct', 0.15)),
+            'holding_rules': holding_rules,
+        },
+        'position_controls': {
+            'auto_trade': bool(learn_cfg.get('auto_trade', False)),
+            'max_position_pct': _pct(risk.get('max_position_pct', 0)),
+            'max_total_positions': int(risk.get('max_total_positions', 0) or 0),
+            'max_daily_new_positions': int(risk.get('max_daily_new_positions', 0) or 0),
+            'max_daily_trades': int(risk.get('max_daily_trades', 0) or 0),
+            'max_daily_build_amount_pct': _pct(risk.get('max_daily_build_amount_pct', 0)),
+            'max_total_value': float(learn_cfg.get('max_total_value', 0) or 0),
+            'current_positions': len(positions),
+            'today_new_positions': int(today_new_positions or 0),
+            'today_buy_amount': round(float(today_buy_amount or 0), 2),
+        },
+        'cash_level': {
+            'cash': round(cash, 2),
+            'total_market_value': round(total_market_value, 2),
+            'total_asset': round(total_asset, 2),
+            'cash_pct': round(cash / total_asset * 100, 1) if total_asset > 0 else 0,
+            'position_pct': round(total_market_value / total_asset * 100, 1) if total_asset > 0 else 0,
+        },
+        'recent_hits': {
+            'trades': recent_trades,
+            'orders': recent_orders,
+        },
+        'qmt_flow': {
+            'orders': qmt_orders,
+            'fills': qmt_fills,
+        },
+    })
+
+
+@app.route('/api/asset_allocation')
+def api_asset_allocation():
+    """REQ-031: broad asset allocation and dynamic strategy exposure dashboard."""
+    account_id = int(request.args.get('account_id', 1))
+    account_rows = query_db("SELECT * FROM sim_account WHERE id=?", (account_id,))
+    account = account_rows[0] if account_rows else {'id': account_id, 'cash': 0, 'initial_cash': 0}
+    positions = query_db("SELECT * FROM sim_positions WHERE account_id=? AND quantity > 0 ORDER BY market_value DESC", (account_id,))
+    trades = query_db(
+        "SELECT * FROM sim_trades WHERE account_id=? ORDER BY COALESCE(created_at, trade_date) DESC, id DESC LIMIT 300",
+        (account_id,),
+    )
+    try:
+        market = fetch_market_sentiment(date.today())
+    except Exception:
+        market = None
+    cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
+    return jsonify({
+        'updated_at': datetime.now().strftime('%H:%M:%S'),
+        'allocation': summarize_allocation(account, positions, trades, market, cfg),
+    })
+
+
+@app.route('/api/qmt_order_flow')
+def api_qmt_order_flow():
+    """QMT 委托/成交状态流：用于实盘与模拟盘明细对比和回放。"""
+    account_id = int(request.args.get('account_id', 1))
+    limit = int(request.args.get('limit', 50))
+    orders = query_db(
+        "SELECT order_time, order_id, broker_order_id, broker, stock_code, stock_name, direction, "
+        "quantity, traded, price, status, strategy_name, signal_reason, created_at "
+        "FROM sim_orders WHERE account_id=? AND broker LIKE 'qmt%' "
+        "ORDER BY COALESCE(order_time, created_at) DESC LIMIT ?",
+        (account_id, limit),
+    )
+    fills = query_db(
+        "SELECT trade_time, order_id, broker_trade_id, broker, stock_code, stock_name, direction, "
+        "trade_volume, trade_price, trade_amount, commission, tax, strategy_name, created_at "
+        "FROM sim_fills WHERE account_id=? AND broker LIKE 'qmt%' "
+        "ORDER BY COALESCE(trade_time, created_at) DESC LIMIT ?",
+        (account_id, limit),
+    )
+    events = []
+    for o in orders:
+        events.append({
+            'type': 'order',
+            'time': o.get('order_time') or o.get('created_at'),
+            **o,
+        })
+    for f in fills:
+        events.append({
+            'type': 'fill',
+            'time': f.get('trade_time') or f.get('created_at'),
+            **f,
+        })
+    events.sort(key=lambda x: x.get('time') or '', reverse=True)
+    return jsonify({'orders': orders, 'fills': fills, 'events': events[:limit], 'total': len(events)})
+
 # ====================================================================
 #  API: 全部交易历史
 # ====================================================================
@@ -335,6 +580,22 @@ def api_stock_trades(code):
             except:
                 pass
     return jsonify({'trades': trades})
+
+@app.route('/api/closed_trades')
+def api_closed_trades():
+    """REQ-023: 已平仓历史交易盈亏分析，支持 account_id/as_of/limit。"""
+    account_id = int(request.args.get('account_id', 1))
+    limit = int(request.args.get('limit', 50))
+    as_of_raw = request.args.get('as_of') or ''
+    as_of = None
+    if as_of_raw:
+        try:
+            as_of = date.fromisoformat(as_of_raw[:10])
+        except ValueError:
+            return jsonify({'error': 'invalid as_of, expected YYYY-MM-DD'}), 400
+    data = analyze_closed_trades(account_id, as_of, conn_factory=_sim_conn, limit=limit)
+    return jsonify(data)
+
 
 @app.route('/api/push_history')
 def api_push_history():
@@ -395,76 +656,40 @@ def api_stats():
     all_trades = query_db("SELECT id, trade_date, direction, price, stock_code FROM sim_trades WHERE account_id=1")
     total_trades = len(all_trades)
     
-    # 计算胜率：需要匹配买卖对
-    # 简化：按股票代码匹配最近买入和卖出，判断盈亏
-    win_count = 0
-    total_closed = 0
-    
-    # 获取所有卖出交易
-    sell_trades = query_db(
-        "SELECT stock_code, price, trade_date FROM sim_trades WHERE account_id=1 AND direction='SELL' ORDER BY trade_date"
-    )
-    
-    for sell in sell_trades:
-        # 找到该股票在卖出前的最后买入价格
-        buy_records = query_db(
-            "SELECT price FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='BUY' AND trade_date <= ? ORDER BY trade_date DESC LIMIT 1",
-            (sell['stock_code'], sell['trade_date'])
-        )
-        if buy_records:
-            avg_cost = buy_records[0]['price']
-            total_closed += 1
-            if sell['price'] > avg_cost:
-                win_count += 1
-    
-    win_rate = round(win_count / total_closed * 100, 1) if total_closed > 0 else 0
-    
-    # 计算平均持仓天数
-    hold_days_list = []
-    for sell in sell_trades:
-        buy_records = query_db(
-            "SELECT trade_date FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='BUY' AND trade_date <= ? ORDER BY trade_date DESC LIMIT 1",
-            (sell['stock_code'], sell['trade_date'])
-        )
-        if buy_records:
-            try:
-                buy_date = datetime.strptime(buy_records[0]['trade_date'], '%Y-%m-%d').date()
-                sell_date = datetime.strptime(sell['trade_date'], '%Y-%m-%d').date()
-                hold_days_list.append((sell_date - buy_date).days)
-            except:
-                pass
-    
-    avg_hold_days = round(sum(hold_days_list) / len(hold_days_list), 1) if hold_days_list else 0
-    
-    # 最大单笔盈利/亏损
-    max_profit_trade = {'code': '', 'pnl': 0}
-    max_loss_trade = {'code': '', 'pnl': 0}
-    
-    for sell in sell_trades:
-        buy_records = query_db(
-            "SELECT price, quantity FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='BUY' AND trade_date <= ? ORDER BY trade_date DESC LIMIT 1",
-            (sell['stock_code'], sell['trade_date'])
-        )
-        if buy_records:
-            # 获取卖出数量
-            sell_qty = query_db(
-                "SELECT quantity FROM sim_trades WHERE account_id=1 AND stock_code=? AND direction='SELL' AND trade_date=? LIMIT 1",
-                (sell['stock_code'], sell['trade_date'])
-            )
-            if sell_qty:
-                qty = sell_qty[0]['quantity']
-                pnl = (sell['price'] - buy_records[0]['price']) * qty
-                if pnl > max_profit_trade['pnl']:
-                    max_profit_trade = {'code': sell['stock_code'], 'pnl': round(pnl, 2)}
-                if pnl < max_loss_trade['pnl']:
-                    max_loss_trade = {'code': sell['stock_code'], 'pnl': round(pnl, 2)}
+    closed_data = analyze_closed_trades(1, conn_factory=_sim_conn, limit=20)
+    closed_summary = closed_data['summary']
+    max_profit = closed_summary.get('max_profit_trade') or {}
+    max_loss = closed_summary.get('max_loss_trade') or {}
+
+    def _trade_card(row):
+        return {
+            'code': row.get('stock_code', ''),
+            'name': row.get('stock_name', ''),
+            'pnl': round(float(row.get('pnl') or 0), 2),
+            'pnl_pct': round(float(row.get('pnl_pct') or 0), 2),
+            'date': row.get('close_date', ''),
+        }
     
     return jsonify({
         'total_trades': total_trades,
-        'win_rate': win_rate,
-        'avg_hold_days': avg_hold_days,
-        'max_profit_trade': max_profit_trade,
-        'max_loss_trade': max_loss_trade,
+        'win_rate': round(closed_summary['win_rate'], 1),
+        'avg_hold_days': round(closed_summary['avg_holding_days'] or 0, 1),
+        'max_profit_trade': _trade_card(max_profit),
+        'max_loss_trade': _trade_card(max_loss),
+        'closed_trades': {
+            'closed_count': closed_summary['closed_count'],
+            'win_count': closed_summary['win_count'],
+            'loss_count': closed_summary['loss_count'],
+            'net_pnl': round(closed_summary['net_pnl'], 2),
+            'gross_profit': round(closed_summary['gross_profit'], 2),
+            'gross_loss': round(closed_summary['gross_loss'], 2),
+            'avg_win': round(closed_summary['avg_win'], 2),
+            'avg_loss': round(closed_summary['avg_loss'], 2),
+            'payoff_ratio': None if closed_summary['payoff_ratio'] is None else round(closed_summary['payoff_ratio'], 2),
+            'profit_factor': None if closed_summary['profit_factor'] is None or closed_summary['profit_factor'] == float('inf') else round(closed_summary['profit_factor'], 2),
+            'by_symbol': closed_summary['by_symbol'][:8],
+            'recent': closed_data['closed_trades'][:8],
+        },
         'week_trades': {
             'buy_count': week_buy_count,
             'sell_count': week_sell_count,
@@ -520,6 +745,143 @@ def api_equity_curve():
         'benchmark': benchmark
     })
 
+
+# ====================================================================
+#  API: PM 快捷操作
+# ====================================================================
+PM_ALLOWED_TYPES = {"story", "bug"}
+PM_ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3", "S0", "S1", "S2", "S3"}
+PM_ALLOWED_STATUSES = {"pending", "open", "in_progress", "testing", "fixed", "done", "verified", "reopened", "closed"}
+
+
+def pm_db_path():
+    """Return PM DB path; overridable in tests via app.config['PM_DB_PATH']."""
+    return Path(app.config.get("PM_DB_PATH", ROOT / "data" / "pm.db"))
+
+
+def pm_columns(conn):
+    return {row[1] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
+
+
+def ensure_pm_schema(conn):
+    """Create the minimal PM schema if missing; keep compatibility with extended schemas."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id TEXT PRIMARY KEY,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            status TEXT NOT NULL,
+            priority TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    """)
+
+
+def next_pm_id(cursor, task_type):
+    prefix = "REQ-" if task_type == "story" else "BUG-"
+    cursor.execute("SELECT id FROM tasks WHERE id LIKE ?", (prefix + "%",))
+    max_num = 0
+    for row in cursor.fetchall():
+        try:
+            max_num = max(max_num, int(str(row[0]).split("-", 1)[1]))
+        except Exception:
+            continue
+    return f"{prefix}{max_num + 1:03d}"
+
+
+def append_work_note(existing, note):
+    note = (note or "").strip()
+    if not note:
+        return existing
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{stamp}] {note}"
+    return (str(existing or "").rstrip() + "\n" + line).strip()
+
+
+@app.route('/api/pm/tasks', methods=['POST'])
+def api_pm_create_task():
+    """Quick-create a PM task from the dashboard action panel."""
+    payload = request.get_json(silent=True) or {}
+    task_type = str(payload.get('type', 'story')).strip()
+    title = str(payload.get('title', '')).strip()
+    description = str(payload.get('description', '')).strip()
+    priority = str(payload.get('priority', 'P1')).strip().upper()
+
+    if task_type not in PM_ALLOWED_TYPES:
+        return jsonify({'status': 'error', 'msg': 'type must be story or bug'}), 400
+    if not title:
+        return jsonify({'status': 'error', 'msg': 'title is required'}), 400
+    if priority not in PM_ALLOWED_PRIORITIES:
+        return jsonify({'status': 'error', 'msg': 'invalid priority'}), 400
+
+    initial_status = 'pending' if task_type == 'story' else 'open'
+    db_path = pm_db_path()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as conn:
+        ensure_pm_schema(conn)
+        cols = pm_columns(conn)
+        cur = conn.cursor()
+        task_id = next_pm_id(cur, task_type)
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        values = {
+            'id': task_id,
+            'type': task_type,
+            'title': title,
+            'description': description,
+            'status': initial_status,
+            'priority': priority,
+            'created_at': now,
+            'updated_at': now,
+            'work_notes': append_work_note('', 'created from PM quick action panel'),
+        }
+        use_cols = [c for c in values.keys() if c in cols]
+        placeholders = ','.join(['?'] * len(use_cols))
+        cur.execute(
+            f"INSERT INTO tasks ({','.join(use_cols)}) VALUES ({placeholders})",
+            [values[c] for c in use_cols],
+        )
+        conn.commit()
+
+    return jsonify({'status': 'ok', 'task': {'id': task_id, 'type': task_type, 'title': title, 'status': initial_status, 'priority': priority}})
+
+
+@app.route('/api/pm/tasks/<task_id>/status', methods=['POST'])
+def api_pm_update_task_status(task_id):
+    """Quick transition a PM task status from the dashboard action panel."""
+    payload = request.get_json(silent=True) or {}
+    new_status = str(payload.get('status', '')).strip()
+    note = str(payload.get('note', '')).strip()
+    if new_status not in PM_ALLOWED_STATUSES:
+        return jsonify({'status': 'error', 'msg': 'invalid status'}), 400
+
+    db_path = pm_db_path()
+    with sqlite3.connect(db_path) as conn:
+        ensure_pm_schema(conn)
+        conn.row_factory = sqlite3.Row
+        cols = pm_columns(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM tasks WHERE id=?", (task_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'status': 'error', 'msg': f'{task_id} not found'}), 404
+
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        updates = ['status=?', 'updated_at=?']
+        params = [new_status, now]
+        if 'work_notes' in cols:
+            updates.append('work_notes=?')
+            params.append(append_work_note(row['work_notes'] if 'work_notes' in row.keys() else '', note or f'status -> {new_status} from PM quick action panel'))
+        if 'result_notes' in cols and new_status in {'done', 'fixed', 'verified'} and note:
+            updates.append('result_notes=?')
+            params.append(note)
+        params.append(task_id)
+        cur.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id=?", params)
+        conn.commit()
+
+    return jsonify({'status': 'ok', 'task': {'id': task_id, 'status': new_status, 'updated_at': now}})
+
 # ====================================================================
 #  页面
 # ====================================================================
@@ -529,9 +891,10 @@ def index():
 
 @app.route('/api/pm_tasks')
 def api_pm_tasks():
-    pm_db = ROOT / "data" / "pm.db"
+    pm_db = pm_db_path()
     try:
         with sqlite3.connect(pm_db) as conn:
+            ensure_pm_schema(conn)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM tasks ORDER BY priority ASC, updated_at DESC")

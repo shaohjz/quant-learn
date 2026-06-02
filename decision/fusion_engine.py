@@ -1,8 +1,12 @@
-"""
-decision/fusion_engine.py — 双账户融合决策器（v1）
+"""decision/fusion_engine.py — 双账户融合决策器（v2 · REQ-042 去大模型化）
+
+REQ-042 去大模型化说明：
+  - ❌ 不再接受 qlib_signal（AI 信号 / daily_signals.json）作为输入
+  - ✅ 纯代码规则：threshold_alert（阈值触发）+ 持仓状态 + 当前价格
+  - ✅ 决策结果通过企微 Webhook 直推（由调用方 fusion_strategy.py / portfolio_alert.py 执行推送）
+  - ✅ qlib_signal 参数保留（兼容旧接口），但忽略其 action/confidence
 
 输入：
-  - qlib_signal: dict | None  从 daily_signals.json 取的当前股票信号
   - threshold_alert: dict | None  portfolio_alert 当日触发的阈值（来自 alert_state.json）
   - position_qty: int  当前 broker 账户该股持仓数量（QMT 模拟账户：可能 0）
   - current_price: float  当前现价
@@ -16,43 +20,30 @@ decision/fusion_engine.py — 双账户融合决策器（v1）
                     - real_advisor —— 仅以企微消息推给人工（影响真实账户的建议）
   qty             : 建议数量（100 整数倍）
   reason          : 文字解释，写到日志/推送
-  confidence      : 0.0 ~ 1.0
+  confidence      : 0.0 ~ 1.0  （纯代码规则赋置信度，不再依赖 AI）
 
-决策规则（v1）：
-  ┌──────────────────────────┬─────────────────────────┬───────────────┐
-  │ threshold_alert.level    │ qlib_signal.action      │ 决策          │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ stop_loss / hard_stop /  │ SELL / HOLD / None      │ 强卖出        │
-  │ deep_drop / limitdown_*  │                         │ (执行老规则)  │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ stop_loss(任一)         │ BUY                     │ HOLD（冲突，  │
-  │                          │                         │ 优先止损）    │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ buy_zone / buy_strong    │ BUY                     │ 买入          │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ buy_zone / buy_strong    │ SELL                    │ HOLD          │
-  │                          │                         │ (AI 看空)     │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ take_profit / half_out / │ BUY / HOLD              │ HOLD          │
-  │ rebound_exit             │                         │ (AI 不看空时  │
-  │                          │                         │  暂不止盈)    │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ take_profit              │ SELL                    │ 卖出          │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ None                     │ BUY (高 conf > 0.6)     │ 买入          │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ None                     │ BUY (低 conf <= 0.6)    │ HOLD          │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ None                     │ SELL (高 conf > 0.6) +  │ 卖出          │
-  │                          │ position_qty > 0        │               │
-  ├──────────────────────────┼─────────────────────────┼───────────────┤
-  │ None                     │ SELL + position_qty=0   │ HOLD（无仓位  │
-  │                          │                         │  不开空）     │
-  └──────────────────────────┴─────────────────────────┴───────────────┘
+决策规则（v2 · 去大模型化版）：
+  ┌──────────────────────────┬──────────────────┬───────────────┐
+  │ threshold_alert.level    │ 持仓状态         │ 决策          │
+  ├──────────────────────────┼──────────────────┼───────────────┤
+  │ stop_loss / hard_stop /  │ 有持仓           │ 强卖出        │
+  │ deep_drop / limitdown_*  │                  │ (执行止损)    │
+  ├──────────────────────────┼──────────────────┼───────────────┤
+  │ take_profit / half_out / │ 有持仓           │ 止盈/减仓    │
+  │ rebound_exit             │                  │               │
+  ├──────────────────────────┼──────────────────┼───────────────┤
+  │ buy_zone / buy_strong    │ 无持仓           │ 买入          │
+  └──────────────────────────┴──────────────────┴───────────────┘
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
+
+try:
+    from sim.config import load_config
+    _HAS_CONFIG = True
+except Exception:  # noqa: BLE001
+    _HAS_CONFIG = False
 
 
 # 持仓 5 只（决策器自己也认下，避免上游忘传）
@@ -73,7 +64,7 @@ BUY_LEVELS = {"buy_zone", "buy_strong", "support_1", "support_2", "support_3"}
 
 @dataclass
 class Decision:
-    """融合决策结果"""
+    """融合决策结果（REQ-042 去大模型化）"""
     stock_code: str
     action: str                 # "BUY" / "SELL" / "HOLD"
     target_account: str         # "qmt_sim" / "real_advisor" / "none"
@@ -82,7 +73,7 @@ class Decision:
     reason: str = ""
     confidence: float = 0.0
     rule: str = ""              # 命中了哪条规则
-    sources: dict = field(default_factory=dict)  # 调试用：原始 qlib + alert
+    sources: dict = field(default_factory=dict)  # 调试用
 
     def is_actionable(self) -> bool:
         return self.action in ("BUY", "SELL") and self.qty > 0
@@ -104,7 +95,7 @@ def _suggest_buy_qty(price: float, target_amount: float = 50_000.0, level: str =
     """
     if price <= 0:
         return 0
-        
+
     actual_target = target_amount
     if level == "support_1":
         actual_target = target_amount * 0.3
@@ -112,7 +103,7 @@ def _suggest_buy_qty(price: float, target_amount: float = 50_000.0, level: str =
         actual_target = target_amount * 0.6
     elif level == "support_3":
         actual_target = target_amount * 1.0
-        
+
     qty = _round_lot(int(actual_target / price))
     # 如果价格太高导致 round 到 0，至少买1手（100股）
     if qty == 0 and price * 100 <= actual_target * 6:
@@ -130,12 +121,15 @@ def decide(stock_code: str,
            qlib_signal: Optional[dict] = None,
            threshold_alert: Optional[dict] = None) -> Decision:
     """
-    融合决策。详见模块 docstring。
+    融合决策（REQ-042 去大模型化版）。
+
+    ❌ 忽略 qlib_signal（AI 信号），纯代码规则决策。
+    ✅ 完全基于 threshold_alert（阈值触发）+ 持仓状态 + 当前价格。
 
     :param stock_code: 6 位股票代码（如 "600330"）
     :param current_price: 当前现价
     :param position_qty: 当前账户持仓数量（QMT 或镜像）
-    :param qlib_signal: 从 daily_signals.json["signals"] 中匹配到的 dict，可能 None
+    :param qlib_signal: 【已废弃】从 daily_signals.json 取的信号（REQ-042 忽略）
     :param threshold_alert: 命中的 portfolio_alert rule（含 level/dir/trigger 等），可能 None
     :return: Decision
     """
@@ -145,42 +139,33 @@ def decide(stock_code: str,
     target = "real_advisor" if _is_holding(stock_code) else "qmt_sim"
 
     sources = {
-        "has_qlib": qlib_signal is not None,
+        "has_qlib": False,  # REQ-042: 始终为 False
         "has_alert": threshold_alert is not None,
         "in_holdings": _is_holding(stock_code),
     }
 
-    qlib_action = (qlib_signal or {}).get("action") if qlib_signal else None
-    qlib_conf = float((qlib_signal or {}).get("confidence", 0)) if qlib_signal else 0.0
+    # REQ-042 去大模型化：忽略 qlib_signal，始终按纯代码规则决策
+    # 保留变量读取以便日志输出，但不影响决策
+    qlib_action = None  # 不再使用 AI 信号方向
+    qlib_conf = 0.0
     alert_level = (threshold_alert or {}).get("level") if threshold_alert else None
 
-    # ============ 规则 1：止损/深跌（最高优先级，无视 qlib） ============
+    # ============ 规则 1：止损/深跌（最高优先级） ============
     if alert_level in SELL_LEVELS:
         # 必须有持仓才能卖
         if position_qty <= 0:
-            # 不在持仓的股票被触发跌幅警报（不太可能，但兜底）
             return Decision(
                 stock_code=stock_code, action="HOLD", target_account=target,
                 reason=f"触发 {alert_level} 但无持仓，忽略",
                 rule="SELL_NO_POSITION",
                 sources=sources,
             )
-        if qlib_action == "BUY":
-            # AI 看多但价格已破止损 → 优先止损（资金安全 > AI 预测）
-            return Decision(
-                stock_code=stock_code, action="SELL", target_account=target,
-                qty=_round_lot(position_qty), price=current_price,
-                reason=f"触发 {alert_level}（强制止损）；AI 虽看多但保资金优先",
-                confidence=0.9,
-                rule="STOP_LOSS_OVERRIDE_AI_BUY",
-                sources=sources,
-            )
-        # 默认：止损全部卖
+        # 默认：止损全部卖（纯代码规则，不依赖 AI 信号）
         return Decision(
             stock_code=stock_code, action="SELL", target_account=target,
             qty=_round_lot(position_qty), price=current_price,
             reason=f"触发 {alert_level} ({(threshold_alert or {}).get('message','')})",
-            confidence=max(0.85, qlib_conf if qlib_action == "SELL" else 0.85),
+            confidence=0.90,  # 止损规则置信度固定 0.90
             rule="STOP_LOSS",
             sources=sources,
         )
@@ -191,19 +176,14 @@ def decide(stock_code: str,
             return Decision(stock_code=stock_code, action="HOLD",
                             target_account=target, reason="触发止盈但无持仓",
                             rule="TP_NO_POSITION", sources=sources)
-        if qlib_action == "SELL":
-            return Decision(
-                stock_code=stock_code, action="SELL", target_account=target,
-                qty=_round_lot(position_qty), price=current_price,
-                reason=f"触发 {alert_level} + AI 也看空 → 清仓",
-                confidence=max(0.85, qlib_conf), rule="TAKE_PROFIT_AI_AGREE",
-                sources=sources,
-            )
-        # AI 不看空就先暂时不全卖
+        # REQ-042：无 AI 信号时，默认执行止盈清仓（纯代码规则）
         return Decision(
-            stock_code=stock_code, action="HOLD", target_account=target,
-            reason=f"触发 {alert_level} 但 AI 仍看 {qlib_action or '未知'}，暂不止盈",
-            rule="TP_AI_DISAGREE", sources=sources,
+            stock_code=stock_code, action="SELL", target_account=target,
+            qty=_round_lot(position_qty), price=current_price,
+            reason=f"触发 {alert_level}（去大模型化，执行止盈清仓）",
+            confidence=0.90,
+            rule="TAKE_PROFIT_PURE_CODE",
+            sources=sources,
         )
 
     # ============ 规则 3：减仓 ============
@@ -212,91 +192,46 @@ def decide(stock_code: str,
             return Decision(stock_code=stock_code, action="HOLD",
                             target_account=target, reason="触发减仓但无持仓",
                             rule="TRIM_NO_POSITION", sources=sources)
-        if qlib_action == "SELL":
-            qty = _round_lot(position_qty // 2 or 100)
-            return Decision(
-                stock_code=stock_code, action="SELL", target_account=target,
-                qty=qty, price=current_price,
-                reason=f"触发 {alert_level} + AI 看空 → 减一半",
-                confidence=max(0.7, qlib_conf), rule="TRIM_AI_AGREE",
-                sources=sources,
-            )
-        return Decision(
-            stock_code=stock_code, action="HOLD", target_account=target,
-            reason=f"触发 {alert_level} 但 AI 看 {qlib_action or '未知'}，暂不减仓",
-            rule="TRIM_AI_DISAGREE", sources=sources,
-        )
-
-    # ============ 规则 4：买入区 ============
-    if alert_level in BUY_LEVELS:
-        if qlib_action == "SELL":
-            return Decision(
-                stock_code=stock_code, action="HOLD", target_account=target,
-                reason=f"价位进入 {alert_level} 但 AI 看空 → 观望",
-                rule="BUY_ZONE_AI_DISAGREE", confidence=qlib_conf,
-                sources=sources,
-            )
-        if qlib_action == "BUY":
-            qty = _suggest_buy_qty(current_price, level=alert_level)
-            return Decision(
-                stock_code=stock_code, action="BUY", target_account=target,
-                qty=qty, price=current_price,
-                reason=f"价位进入 {alert_level} + AI 看多 → 建仓",
-                confidence=max(0.75, qlib_conf), rule="BUY_ZONE_AI_AGREE",
-                sources=sources,
-            )
-        # 没 qlib 信号或 HOLD → 走老规则（按 portfolio_alert 原意买入）
-        qty = _suggest_buy_qty(current_price, level=alert_level)
-        return Decision(
-            stock_code=stock_code, action="BUY", target_account=target,
-            qty=qty, price=current_price,
-            reason=f"价位进入 {alert_level}（无 AI 信号，按原规则）",
-            confidence=0.55, rule="BUY_ZONE_NO_AI",
-            sources=sources,
-        )
-
-    # ============ 规则 5：仅有 qlib，无 alert ============
-    if qlib_action == "BUY" and qlib_conf > 0.60:
-        if position_qty > 0:
-            # 已经有仓位，再加仓更保守
-            return Decision(stock_code=stock_code, action="HOLD", target_account=target,
-                            reason=f"AI BUY conf={qlib_conf:.2f} 但已有持仓 {position_qty}，等回调",
-                            confidence=qlib_conf, rule="QLIB_BUY_HAS_POS",
-                            sources=sources)
-        qty = _suggest_buy_qty(current_price)
-        return Decision(
-            stock_code=stock_code, action="BUY", target_account=target,
-            qty=qty, price=current_price,
-            reason=f"AI BUY conf={qlib_conf:.2f}（CSI300 排名靠前）",
-            confidence=qlib_conf, rule="QLIB_BUY_HIGH_CONF",
-            sources=sources,
-        )
-
-    if qlib_action == "SELL" and qlib_conf > 0.60 and position_qty > 0:
+        # REQ-042：无 AI 信号时，默认减仓一半
+        qty = _round_lot(position_qty // 2 or 100)
         return Decision(
             stock_code=stock_code, action="SELL", target_account=target,
-            qty=_round_lot(position_qty), price=current_price,
-            reason=f"AI SELL conf={qlib_conf:.2f}，清仓",
-            confidence=qlib_conf, rule="QLIB_SELL_HIGH_CONF",
+            qty=qty, price=current_price,
+            reason=f"触发 {alert_level}（去大模型化，减仓一半）",
+            confidence=0.80,
+            rule="TRIM_PURE_CODE",
             sources=sources,
         )
 
-    if qlib_action == "BUY" and qlib_conf <= 0.60:
-        return Decision(stock_code=stock_code, action="HOLD", target_account=target,
-                        reason=f"AI BUY 但 conf={qlib_conf:.2f} 较低，观望",
-                        confidence=qlib_conf, rule="QLIB_BUY_LOW_CONF",
-                        sources=sources)
+    # ============ 规则 4：买入区（REQ-042 去大模型化）============
+    if alert_level in BUY_LEVELS:
+        # REQ-042：不再等待 AI 信号确认，直接按阈值规则买入
+        qty = _suggest_buy_qty(current_price, level=alert_level)
+        if qty <= 0:
+            return Decision(stock_code=stock_code, action="HOLD", target_account=target,
+                            reason=f"价位进入 {alert_level} 但计算仓位为 0，跳过",
+                            rule="BUY_ZONE_ZERO_QTY", sources=sources)
+        return Decision(
+            stock_code=stock_code, action="BUY", target_account=target,
+            qty=qty, price=current_price,
+            reason=f"价位进入 {alert_level}（去大模型化，纯代码规则直接建仓）",
+            confidence=0.75,  # 阈值规则固定置信度
+            rule="BUY_ZONE_PURE_CODE",
+            sources=sources,
+        )
 
-    if qlib_action == "SELL" and position_qty == 0:
-        return Decision(stock_code=stock_code, action="HOLD", target_account=target,
-                        reason="AI SELL 但无持仓（A 股不开空）",
-                        confidence=qlib_conf, rule="QLIB_SELL_NO_POS",
-                        sources=sources)
+    # ============ 规则 5（原）：仅有 qlib，无 alert ============
+    # REQ-042 去大模型化：不再有 qlib_signal，此分支改为：
+    #   无阈值触发 + 无 AI 信号 → 直接 HOLD
+    # 保留分支结构以便将来必要时恢复 AI 信号
+    if False:  # pylint: disable=condition-always-false  # 已禁用 AI 信号分支
+        pass
 
-    # ============ 兜底 ============
+    # ============ 兜底（REQ-042 去大模型化）============
     return Decision(
         stock_code=stock_code, action="HOLD", target_account=target,
-        reason=f"无明确信号 (alert={alert_level} qlib={qlib_action})",
-        confidence=qlib_conf, rule="DEFAULT_HOLD",
+        reason=f"无明确信号 (alert={alert_level}, AI信号已禁用)",
+        confidence=0.50,
+        rule="DEFAULT_HOLD",
         sources=sources,
     )

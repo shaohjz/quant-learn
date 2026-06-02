@@ -7,7 +7,12 @@ sim/engine.py
 """
 
 from datetime import date as Date
-from sim.db import get_conn
+from sim.db import (
+    get_conn,
+    ensure_sim_trades_detail_columns,
+    ensure_sim_positions_trailing_columns,
+    calc_trailing_stop_price,
+)
 from sim.config import risk_params
 
 
@@ -82,9 +87,11 @@ class SimEngine:
         conn = get_conn()
         try:
             cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
             cur.execute(
                 "SELECT id, stock_code, stock_name, quantity, avg_cost, "
-                "current_price, market_value, pnl, pnl_pct "
+                "current_price, market_value, pnl, pnl_pct, "
+                "trailing_stop_price, highest_price "
                 "FROM sim_positions WHERE account_id = ? AND quantity > 0",
                 (self.account_id,),
             )
@@ -168,6 +175,7 @@ class SimEngine:
         conn = get_conn()
         try:
             cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
             # 1. 扣减现金
             new_cash = acct["cash"] - total_cost
             cur.execute("UPDATE sim_account SET cash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
@@ -183,29 +191,34 @@ class SimEngine:
                 cur.execute(
                     "UPDATE sim_positions SET quantity = ?, avg_cost = ?, "
                     "current_price = ?, market_value = ?, pnl = ?, pnl_pct = ?, "
+                    "highest_price = MAX(COALESCE(highest_price, ?), ?), "
                     "updated_at = CURRENT_TIMESTAMP "
                     "WHERE id = ?",
                     (new_qty, round(new_avg, 4), price,
                      round(price * new_qty, 2),
                      round((price - new_avg) * new_qty, 2),
                      round((price - new_avg) / new_avg, 4) if new_avg else 0,
+                     price, price,
                      pos["id"]),
                 )
             else:
                 cur.execute(
                     "INSERT INTO sim_positions "
                     "(account_id, stock_code, stock_name, quantity, avg_cost, "
-                    "current_price, market_value, pnl, pnl_pct) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "current_price, market_value, pnl, pnl_pct, "
+                    "highest_price, trailing_stop_price) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (self.account_id, stock_code, stock_name, quantity,
                      round(price, 4), round(price, 4),
-                     round(price * quantity, 2), 0, 0),
+                     round(price * quantity, 2), 0, 0,
+                     round(price, 4), None),
                 )
 
-            # 3. 写交易记录
-            import json as _json, sqlite3 as _sq
+            # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失
+            import json as _json
+            ensure_sim_trades_detail_columns(cur)
             _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
-            # 动态检测 signal_detail 列是否存在（兼容旧表）
+            # 动态检测 signal_detail 列是否存在（兼容旧表/异常迁移场景）
             _cols = [r[1] for r in cur.execute('PRAGMA table_info(sim_trades)').fetchall()]
             _has_detail = 'signal_detail' in _cols
             if _has_detail:
@@ -253,6 +266,15 @@ class SimEngine:
         if quantity <= 0 or price <= 0:
             return {"success": False, "msg": "价格/数量无效"}
 
+        # REQ-058: SELL 必须可溯源 —— 禁止写入空 signal_reason，
+        # 缺失时用标准格式回填占位（规则名+触发价），避免成交记录 NULL 无法对账。
+        if not (signal_reason or "").strip():
+            try:
+                from sim.sell_signal_audit import build_sell_signal_reason
+                signal_reason = build_sell_signal_reason("manual_sell", trigger_price=price)
+            except Exception:
+                signal_reason = f"manual_sell|触发价{price:.3f}"
+
         pos = self._get_position(stock_code)
         if not pos:
             return {"success": False, "msg": f"{stock_code} 无持仓"}
@@ -294,20 +316,37 @@ class SimEngine:
                     (pos["id"],),
                 )
 
-            # 3. 写交易记录
+            # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失
             import json as _json
+            ensure_sim_trades_detail_columns(cur)
             _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
-            cur.execute(
-                "INSERT INTO sim_trades "
-                "(account_id, trade_date, stock_code, stock_name, direction, "
-                "price, quantity, amount, commission, tax, signal_reason, "
-                "broker, broker_order_id, signal_detail) "
-                "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (self.account_id, str(trade_date), stock_code, stock_name,
-                 round(price, 4), quantity, round(amount, 2),
-                 round(commission, 2), round(tax, 2), signal_reason,
-                 broker, broker_order_id, _detail_str),
-            )
+            _cols = [r[1] for r in cur.execute('PRAGMA table_info(sim_trades)').fetchall()]
+            _has_detail = 'signal_detail' in _cols
+            if _has_detail:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id, signal_detail) "
+                    "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                           round(price, 4), quantity, round(amount, 2),
+                           round(commission, 2), round(tax, 2), signal_reason,
+                           broker, broker_order_id, _detail_str)
+            else:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id) "
+                    "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                           round(price, 4), quantity, round(amount, 2),
+                           round(commission, 2), round(tax, 2), signal_reason,
+                           broker, broker_order_id)
+            cur.execute(_sql, _params)
         finally:
             conn.close()
 
@@ -321,20 +360,43 @@ class SimEngine:
 
     # ---------- 更新持仓价格 ----------
     def update_prices(self, price_dict: dict):
-        """price_dict: {stock_code: latest_price}"""
+        """price_dict: {stock_code: latest_price}
+
+        价格刷新时同步抬高 P2 跟踪止损：
+        - 浮盈 > 5%  ：止损位 → entry*1.0（保本）
+        - 浮盈 > 10% ：止损位 → entry*1.02（保 2% 利润）
+        - 浮盈 > 20% ：止损位 → max(entry*1.10, high*0.92)
+        止损位和持仓最高价只能上移，不能下移。
+        """
         conn = get_conn()
         try:
             cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
             for code, p in price_dict.items():
+                cur.execute(
+                    "SELECT id, avg_cost, highest_price, trailing_stop_price "
+                    "FROM sim_positions WHERE account_id = ? AND stock_code = ? AND quantity > 0",
+                    (self.account_id, code),
+                )
+                row = cur.fetchone()
+                if not row:
+                    continue
+                latest = float(p)
+                entry = float(row["avg_cost"] or 0)
+                highest = max(float(row["highest_price"] or entry or 0), latest)
+                trailing, _reason = calc_trailing_stop_price(entry, highest, row["trailing_stop_price"])
                 cur.execute(
                     "UPDATE sim_positions SET "
                     "current_price = ?, "
                     "market_value = quantity * ?, "
                     "pnl = (quantity * ?) - (quantity * avg_cost), "
                     "pnl_pct = CASE WHEN avg_cost > 0 THEN (? - avg_cost) / avg_cost ELSE 0 END, "
+                    "highest_price = ?, trailing_stop_price = ?, "
                     "updated_at = CURRENT_TIMESTAMP "
-                    "WHERE account_id = ? AND stock_code = ? AND quantity > 0",
-                    (p, p, p, p, self.account_id, code),
+                    "WHERE id = ?",
+                    (latest, latest, latest, latest,
+                     round(highest, 4), trailing if trailing > 0 else None,
+                     row["id"]),
                 )
         finally:
             conn.close()

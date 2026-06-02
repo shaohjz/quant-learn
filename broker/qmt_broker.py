@@ -170,6 +170,17 @@ class QMTBroker(IBroker):
                 f"amount={amount:>10.2f}  fake_id={fake_id}  reason={signal_reason}",
                 flush=True,
             )
+            self._record_order_submission(
+                order_id=fake_id,
+                side=side,
+                stock_code=stock_code,
+                stock_name=stock_name,
+                price=price,
+                quantity=quantity,
+                signal_reason=signal_reason,
+                status="DRY_RUN",
+                broker="qmt_dry_run",
+            )
             return OrderResult(
                 success=True, msg="dry-run 伪委托（未真下单）",
                 order_id=fake_id, stock_code=stock_code, side=side,
@@ -229,6 +240,18 @@ class QMTBroker(IBroker):
                 "submit_at": datetime.now(),
             }
 
+        self._record_order_submission(
+            order_id=order_id_str,
+            side=side,
+            stock_code=stock_code,
+            stock_name=stock_name,
+            price=price,
+            quantity=quantity,
+            signal_reason=signal_reason,
+            status="SUBMITTED",
+            broker="qmt",
+        )
+
         logger.info(f"QMT 已委托: id={order_id_str} {side} {stock_code} {quantity}@{price}")
         return OrderResult(
             success=True,
@@ -243,6 +266,198 @@ class QMTBroker(IBroker):
             tax=0.0,
             extra={"submitted": True, "filled": False},
         )
+
+    def _record_order_submission(self, order_id: str, side: OrderSide,
+                                 stock_code: str, stock_name: str,
+                                 price: float, quantity: int,
+                                 signal_reason: str, status: str,
+                                 broker: str = "qmt") -> None:
+        """Persist every QMT submission attempt into sim_orders.
+
+        BUG-013 的一个坑是：真实 QMT 下单只有成交回调才会写 sim_trades；如果委托
+        未成交、dry-run、或回调未触发，本地会表现为“完全静默”。这里把提交层也
+        留痕，方便区分“没路由到 QMT”和“已委托但未成交”。
+        """
+        try:
+            conn = get_conn()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """INSERT INTO sim_orders
+                       (account_id, order_id, stock_code, stock_name, direction,
+                        offset, price, quantity, traded, status, order_time,
+                        broker, broker_order_id, strategy_name, signal_reason)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       ON CONFLICT(broker_order_id) WHERE broker_order_id IS NOT NULL AND broker_order_id != ''
+                       DO UPDATE SET
+                         stock_code=excluded.stock_code,
+                         stock_name=COALESCE(NULLIF(excluded.stock_name, ''), sim_orders.stock_name),
+                         direction=excluded.direction,
+                         offset=excluded.offset,
+                         price=excluded.price,
+                         quantity=excluded.quantity,
+                         status=excluded.status,
+                         broker=excluded.broker,
+                         strategy_name=excluded.strategy_name,
+                         signal_reason=COALESCE(NULLIF(excluded.signal_reason, ''), sim_orders.signal_reason)
+                    """,
+                    (
+                        self.local_account_id,
+                        order_id,
+                        stock_code,
+                        stock_name or "",
+                        side.value if hasattr(side, "value") else str(side),
+                        "OPEN" if side == OrderSide.BUY else "CLOSE",
+                        price,
+                        quantity,
+                        0,
+                        status,
+                        datetime.now().isoformat(timespec="seconds"),
+                        broker,
+                        order_id,
+                        "quant-learn",
+                        signal_reason or "",
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            # 提交留痕不能影响真实交易链路，但必须打日志，避免再次静默。
+            logger.exception("QMT 委托提交留痕失败")
+
+    @staticmethod
+    def _first_attr(obj, *names, default=None):
+        """Return the first available xtquant attribute among several aliases."""
+        for name in names:
+            if hasattr(obj, name):
+                value = getattr(obj, name)
+                if value is not None:
+                    return value
+        return default
+
+    @staticmethod
+    def _normalize_qmt_status(raw) -> str:
+        """Normalize common xtquant order status values for dashboard display.
+
+        xtquant 版本/券商封装里 order_status 可能是 int、枚举或字符串；这里保守
+        保存可读状态，未知值也原样落库，避免状态流再次“静默”。
+        """
+        if raw is None:
+            return "UNKNOWN"
+        text = str(raw)
+        upper = text.upper()
+        known_text = {
+            "SUBMITTED", "PART_TRADED", "ALL_TRADED", "CANCELLED", "CANCELED",
+            "REJECTED", "UNKNOWN", "DRY_RUN", "PART_OR_ALL_TRADED",
+        }
+        if upper in known_text:
+            return "CANCELLED" if upper == "CANCELED" else upper
+        # 常见 xtconstant 状态码（不同版本可能不完全一致；未知码保留 QMT_STATUS_x）。
+        code_map = {
+            48: "SUBMITTED",
+            49: "PART_TRADED",
+            50: "ALL_TRADED",
+            51: "CANCELLED",
+            52: "PART_TRADED_CANCELLED",
+            53: "REJECTED",
+            54: "UNKNOWN",
+            55: "SUBMITTING",
+        }
+        try:
+            return code_map.get(int(raw), f"QMT_STATUS_{raw}")
+        except Exception:
+            return text
+
+    def _on_order_status(self, order) -> None:
+        """委托状态回调：实时更新 sim_orders，供前端/复盘查看状态流。"""
+        try:
+            order_id = str(self._first_attr(order, "order_id", "order_sysid", "entrust_no", default="") or "")
+            if not order_id:
+                logger.warning("QMT 委托状态缺少 order_id，跳过落库: %s", order)
+                return
+
+            with self._meta_lock:
+                meta = self._order_meta.get(order_id, {})
+
+            side = meta.get("side")
+            raw_type = self._first_attr(order, "order_type", "entrust_bs", default=None)
+            if side is None:
+                side = OrderSide.BUY if raw_type in (23, "23", "BUY", "买入") else OrderSide.SELL
+            direction = side.value if hasattr(side, "value") else str(side)
+
+            stock_code = self._first_attr(order, "stock_code", "code", "symbol", default=meta.get("stock_code", ""))
+            stock_name = self._first_attr(order, "stock_name", "name", default=meta.get("stock_name", ""))
+            price = float(self._first_attr(order, "price", "order_price", "entrust_price", default=meta.get("submit_price", 0)) or 0)
+            quantity = int(self._first_attr(order, "order_volume", "volume", "quantity", default=meta.get("submit_quantity", 0)) or 0)
+            traded = int(self._first_attr(order, "traded_volume", "traded", "deal_volume", default=0) or 0)
+            status = self._normalize_qmt_status(self._first_attr(order, "order_status", "status", default=None))
+            order_time = self._first_attr(order, "order_time", "entrust_time", default=None) or datetime.now().isoformat(timespec="seconds")
+
+            conn = get_conn()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """INSERT INTO sim_orders
+                       (account_id, order_id, stock_code, stock_name, direction,
+                        offset, price, quantity, traded, status, order_time,
+                        broker, broker_order_id, strategy_name, signal_reason)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       ON CONFLICT(broker_order_id) WHERE broker_order_id IS NOT NULL AND broker_order_id != ''
+                       DO UPDATE SET
+                         stock_code=excluded.stock_code,
+                         stock_name=COALESCE(NULLIF(excluded.stock_name, ''), sim_orders.stock_name),
+                         direction=excluded.direction,
+                         price=excluded.price,
+                         quantity=CASE WHEN excluded.quantity > 0 THEN excluded.quantity ELSE sim_orders.quantity END,
+                         traded=MAX(COALESCE(sim_orders.traded, 0), COALESCE(excluded.traded, 0)),
+                         status=excluded.status
+                    """,
+                    (
+                        self.local_account_id,
+                        order_id,
+                        stock_code or "",
+                        stock_name or "",
+                        direction,
+                        "OPEN" if side == OrderSide.BUY else "CLOSE",
+                        price,
+                        quantity,
+                        traded,
+                        status,
+                        order_time,
+                        "qmt",
+                        order_id,
+                        "quant-learn",
+                        meta.get("signal_reason", ""),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            logger.exception("QMT 委托状态落库失败")
+
+    def _on_order_error(self, err) -> None:
+        """委托错误回调：把拒单/失败写回 sim_orders，避免只有日志没有明细。"""
+        try:
+            order_id = str(self._first_attr(err, "order_id", "order_sysid", "entrust_no", default="") or "")
+            if not order_id:
+                return
+            msg = str(self._first_attr(err, "error_msg", "msg", default=err) or "")
+            conn = get_conn()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """UPDATE sim_orders
+                          SET status='REJECTED', signal_reason=COALESCE(NULLIF(signal_reason, ''), ?)
+                        WHERE broker_order_id=? OR order_id=?""",
+                    (msg[:200], order_id, order_id),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            logger.exception("QMT 委托错误落库失败")
 
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
@@ -382,26 +597,67 @@ class QMTBroker(IBroker):
                 cur = conn.cursor()
                 _detail = meta.get("signal_detail")
                 _detail_str = _json.dumps(_detail, ensure_ascii=False) if _detail else None
+                trade_day = meta.get("trade_date") or Date.today()
+                if hasattr(trade_day, "isoformat"):
+                    trade_day = trade_day.isoformat()
+                stock_name = meta.get("stock_name") or getattr(trade, "stock_name", "") or ""
+                direction = side.value if hasattr(side, "value") else str(side)
+                now_str = datetime.now().isoformat(timespec="seconds")
+                broker_trade_id = str(getattr(trade, "traded_id", "") or getattr(trade, "trade_id", "") or "")
                 cur.execute(
                     """INSERT INTO sim_trades
-                       (account_id, trade_date, stock_code, stock_name, side,
+                       (account_id, trade_date, stock_code, stock_name, direction,
                         price, quantity, amount, commission, tax,
-                        signal_reason, broker, order_id, created_at,
+                        signal_reason, broker, broker_order_id, created_at,
                         signal_detail)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         self.local_account_id,
-                        (meta.get("trade_date") or Date.today()).isoformat(),
+                        trade_day,
                         stock_code,
-                        meta.get("stock_name") or getattr(trade, "stock_name", "") or "",
-                        side.value if hasattr(side, "value") else str(side),
+                        stock_name,
+                        direction,
                         price, qty, amount, commission, tax,
                         meta.get("signal_reason", ""),
                         "qmt",
                         order_id,
-                        datetime.now().isoformat(),
+                        now_str,
                         _detail_str,
                     ),
+                )
+                # REQ-019: 同步一份更细粒度的成交流到 sim_fills，供 QMT 状态回放/明细对比。
+                cur.execute(
+                    """INSERT INTO sim_fills
+                       (account_id, order_id, stock_code, stock_name, direction,
+                        trade_price, trade_volume, trade_amount, commission, tax,
+                        trade_time, broker, broker_trade_id, strategy_name)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        self.local_account_id,
+                        order_id,
+                        stock_code,
+                        stock_name,
+                        direction,
+                        price,
+                        qty,
+                        amount,
+                        commission,
+                        tax,
+                        now_str,
+                        "qmt",
+                        broker_trade_id,
+                        "quant-learn",
+                    ),
+                )
+                cur.execute(
+                    """UPDATE sim_orders
+                          SET traded=COALESCE(traded, 0) + ?,
+                              status=CASE
+                                WHEN quantity > 0 AND COALESCE(traded, 0) + ? >= quantity THEN 'ALL_TRADED'
+                                ELSE 'PART_TRADED'
+                              END
+                        WHERE broker_order_id=?""",
+                    (qty, qty, order_id),
                 )
                 conn.commit()
             finally:
@@ -438,6 +694,7 @@ class _QMTCallback:
             f"status={getattr(order, 'order_status', '')} "
             f"code={getattr(order, 'stock_code', '')}"
         )
+        self.broker._on_order_status(order)
 
     def on_stock_trade(self, trade):
         logger.info(
@@ -451,6 +708,7 @@ class _QMTCallback:
             f"[QMT] 委托失败: id={getattr(err, 'order_id', '')} "
             f"err={getattr(err, 'error_msg', err)}"
         )
+        self.broker._on_order_error(err)
 
     def on_cancel_error(self, err):
         logger.error(f"[QMT] 撤单失败: {getattr(err, 'error_msg', err)}")

@@ -1,10 +1,11 @@
-"""strategies/fusion_strategy.py — 双账户融合策略（vnpy 版）
+"""strategies/fusion_strategy.py — 双账户融合策略（vnpy 版 · 去大模型化）
 
-把 decision/fusion_engine.py 的 decide() 包成 vnpy CtaTemplate 子类：
-- 启动时加载 data/daily_signals.json
-- on_tick 用现价 + qlib_signal + threshold_alert 算出 Decision
-- 持仓股（HOLDINGS=5 只）→ 只推送企微，**不真下单**（target_account="real_advisor"）
-- 非持仓股（CSI300 信号股等）→ 通过 self.buy()/self.sell() 走 vnpy 引擎，由 QmtGateway 真发到 mini 账户
+REQ-042 去大模型化：
+- ❌ 不再加载 data/daily_signals.json（AI 信号）
+- ✅ 纯代码规则：现价 + threshold_alert（阈值触发）→ decide()
+- ✅ 企微 Webhook 直推（通过 notifier.push_text）
+- 持仓股（HOLDINGS=5 只）→ 只推送企微，不下单（target_account="real_advisor"）
+- 非持仓股 → 通过 self.buy()/self.sell() 走 vnpy 引擎
 
 去重逻辑：同一只股票同一交易日只发一次 BUY 或 SELL，避免反复触发。
 """
@@ -23,32 +24,41 @@ except Exception:  # noqa: BLE001
     CtaTemplate = object  # type: ignore
 
 from notifier import push_text
-from decision.fusion_engine import Decision, decide, HOLDINGS  # 保留老引擎逻辑
+from decision.fusion_engine import Decision, decide, HOLDINGS  # 保留老引擎逻辑（已去大模型化）
 
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[1]
-SIGNAL_FILE = ROOT / "data" / "daily_signals.json"
+# SIGNAL_FILE 不再使用（REQ-042 去大模型化）
 ALERT_STATE_FILE = ROOT / "output" / "alert_state.json"   # 老 portfolio_alert 写的
 ALERT_DB_PATH = ROOT / "data" / "alert_fired.db"            # Phase 3 vnpy 写的
 
 
 def _load_signals() -> dict:
-    """加载 daily_signals.json 转 dict[code]=signal"""
+    """REQ-042 去大模型化：不再加载 daily_signals.json，始终返回空 dict。
+    
+    保留函数签名以兼容 on_init 中的调用，但不再读取 AI 信号文件。
+    所有决策现在完全基于阈值规则（threshold_alert）+ 纯代码逻辑。
+    """
+    logger.info("REQ-042: 去大模型化模式，不加载 AI 信号（daily_signals.json）")
+    return {}
+
+
+def _load_signals_from_file() -> dict:
+    """（保留）从 daily_signals.json 加载信号，仅用于手动调试。"""
     if not SIGNAL_FILE.exists():
-        logger.warning("daily_signals.json 不存在，融合策略将无 qlib 信号")
         return {}
     try:
         data = json.loads(SIGNAL_FILE.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        logger.error("解析 daily_signals.json 失败: %s", e)
+        out = {}
+        for sig in data.get("signals", []) or []:
+            code = sig.get("code") or sig.get("stock_code")
+            if code:
+                out[str(code)] = sig
+        return out
+    except Exception as e:
+        logger.warning("加载 daily_signals.json 失败: %s", e)
         return {}
-    out: dict = {}
-    for sig in data.get("signals", []) or []:
-        code = sig.get("code") or sig.get("stock_code")
-        if code:
-            out[str(code)] = sig
-    return out
 
 
 # Phase 4: 加载当日 alert 状态（来源：老 alert_state.json + vnpy alert_fired SQLite）
@@ -152,14 +162,14 @@ class FusionStrategy(CtaTemplate):
 
     # ---------- 生命周期 ----------
     def on_init(self):
-        self._signals = _load_signals()
+        self._signals = _load_signals()  # REQ-042: 始终返回 {}
         self._alert_state = _load_alert_state(self._today)
-        sig = self._signals.get(self._symbol)
         my_alert = self._alert_state.get(self._symbol)
         self.write_log(
-            f"FusionStrategy 初始化 {self._symbol} 持仓股={self._symbol in HOLDINGS} "
-            f"qlib_signal={'有' if sig else '无'} "
-            f"alert={my_alert.get('level') if my_alert else '无'}"
+            f"FusionStrategy 初始化 [去大模型化] {self._symbol} "
+            f"持仓股={self._symbol in HOLDINGS} "
+            f"alert={my_alert.get('level') if my_alert else '无'} "
+            f"(AI信号已禁用)"
         )
 
     def on_start(self):
@@ -206,21 +216,15 @@ class FusionStrategy(CtaTemplate):
             stock_code=self._symbol,
             current_price=price,
             position_qty=int(getattr(self, "pos", 0) or 0),
-            qlib_signal=sig,
+            qlib_signal=None,  # REQ-042 去大模型化：始终不传 AI 信号
             threshold_alert=threshold_alert,
         )
-        # 提高 confidence：阈值刚触发 + AI 看法一致 → 加成 0.1（封顶 0.95）
-        if threshold_alert and sig:
-            alert_lvl = threshold_alert.get("level")
-            ai_action = sig.get("action")
-            buy_aligned = (alert_lvl in ("buy_zone", "buy_strong") and ai_action == "BUY")
-            sell_aligned = (alert_lvl in ("stop_loss", "stop_loss_tight", "hard_stop",
-                                          "take_profit", "deep_drop")
-                            and ai_action == "SELL")
-            if (buy_aligned or sell_aligned) and decision.is_actionable():
-                old = decision.confidence
-                decision.confidence = min(0.95, decision.confidence + 0.10)
-                decision.reason += f" [boost: alert+AI 共识 conf {old:.2f}→{decision.confidence:.2f}]"
+        # REQ-042 去大模型化：不再有 AI 信号，移除 AI 共识加成逻辑
+        # 原逻辑：阈值刚触发 + AI 看法一致 → 加成 0.1
+        # 现在只基于阈值规则，confidence 由 decide() 纯代码决定
+        if threshold_alert and False:  # pylint: disable=condition-always-false
+            # 保留代码框架以便将来调试，但永不执行
+            pass
 
         if not decision.is_actionable():
             return

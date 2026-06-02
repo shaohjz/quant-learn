@@ -6,7 +6,16 @@
 <title>📊 量化仪表盘</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
-:root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --yellow: #d97706; --orange: #f59e0b; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
+:root {
+  color-scheme: light;
+  --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --yellow: #d97706; --orange: #f59e0b; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --subtle-bg: #f8fafc; --hover-blue: rgba(26,115,232,0.04); --chart-text: #1f2937; --chart-grid: #e4e8ee; --chart-muted: #9ca3af;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f172a; --card: #111827; --border: #334155; --blue: #60a5fa; --green: #34d399; --red: #f87171; --gray: #94a3b8; --text: #e5e7eb; --yellow: #fbbf24; --orange: #fb923c; --shadow: 0 1px 3px rgba(0,0,0,0.35);
+  --subtle-bg: #1e293b; --hover-blue: rgba(96,165,250,0.12); --chart-text: #e5e7eb; --chart-grid: #334155; --chart-muted: #94a3b8;
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .container { max-width: 1200px; margin: 0 auto; padding: 15px; }
@@ -15,7 +24,7 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
 .header .sub { font-size: 12px; color: var(--gray); margin-top: 4px; }
 .tabs { display: flex; gap: 0; margin-bottom: 15px; background: var(--card); border-radius: 8px; overflow: hidden; }
 .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 13px; color: var(--gray); border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 500; }
-.tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(26,115,232,0.04); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--hover-blue); }
 .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
 .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); }
 .stat-card .label { font-size: 11px; color: var(--gray); }
@@ -46,7 +55,9 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
 .neg { color: var(--red); }
 .hidden { display: none; }
 .btn { background: var(--blue); color: #fff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-.btn:hover { background: #1557b0; }
+.btn:hover { filter: brightness(0.92); }
+.theme-btn { margin-left: 6px; background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.theme-btn:hover { border-color: var(--blue); filter: none; }
 h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 .badge { background: var(--blue); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
 .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray); }
@@ -117,6 +128,18 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
   color: var(--orange);
 }
 
+/* 策略控制大盘 */
+.control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.control-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); }
+.control-card h3 { font-size: 13px; color: var(--blue); margin-bottom: 8px; }
+.rule-list { list-style: none; font-size: 12px; line-height: 1.6; color: var(--text); }
+.rule-list li { border-bottom: 1px solid var(--border); padding: 4px 0; }
+.rule-list li:last-child { border-bottom: none; }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 11px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.mini-table th, .mini-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.mini-table th { color: var(--gray); background: var(--subtle-bg); font-weight: 600; }
+.mini-table tr:last-child td { border-bottom: none; }
+
 @media (max-width: 768px) {
   .stock-header { grid-template-columns: 60px 1fr 65px 60px 30px; }
   .stock-header .pnl { display: none; }
@@ -132,6 +155,7 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
     <span class="status-indicator ok" id="status-indicator" title="连接正常"></span>
     | 
     <button class="btn" id="refresh-btn" onclick="refresh()">🔄 刷新</button>
+    <button class="btn theme-btn" id="theme-toggle" onclick="toggleTheme()" title="切换暗色/浅色主题">🌙 暗色</button>
   </div>
 </div>
 
@@ -139,6 +163,7 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
   <div class="tab active" onclick="switchTab(this,'real')">💼 实盘</div>
   <div class="tab" onclick="switchTab(this,'sim')">🧪 模拟</div>
   <div class="tab" onclick="switchTab(this,'watch')">👀 观察</div>
+  <div class="tab" onclick="switchTab(this,'control')">🧭 策略</div>
   <div class="tab" onclick="switchTab(this,'history')">📋 日报</div>
   <div class="tab" onclick="switchTab(this,'stats')">📊 统计</div>
   <a class="tab" href="/pm" style="text-decoration:none">📋 需求大盘</a>
@@ -169,6 +194,27 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
   <div id="w-list"></div>
 </div>
 
+<div id="panel-control" class="hidden">
+  <h2>策略控制大盘 <span class="badge" id="c-updated">--</span></h2>
+  <div class="summary" id="c-summary"></div>
+  <div class="control-grid">
+    <div class="control-card">
+      <h3>买入规则 / 观察池触发</h3>
+      <div id="c-buy-summary" style="font-size:12px;color:var(--gray);margin-bottom:6px"></div>
+      <ul class="rule-list" id="c-buy-rules"></ul>
+    </div>
+    <div class="control-card">
+      <h3>卖出 / 止损 / 止盈</h3>
+      <div id="c-sell-summary" style="font-size:12px;color:var(--gray);margin-bottom:6px"></div>
+      <ul class="rule-list" id="c-sell-rules"></ul>
+    </div>
+  </div>
+  <h2>大类资产配置与动态配比</h2>
+  <div id="c-allocation"></div>
+  <h2>最近策略命中与执行结果</h2>
+  <div id="c-recent"></div>
+</div>
+
 <div id="panel-history" class="hidden">
   <h2>操作日报 & 盘中提醒</h2>
   <div class="filter-bar">
@@ -185,12 +231,44 @@ h2 { color: var(--blue); margin: 12px 0 8px; font-size: 14px; display: flex; ali
 
 <div id="panel-stats" class="hidden">
   <div class="summary" id="stats-cards"></div>
+  <h2>已平仓历史交易分析 <span class="badge" id="closed-count">0</span></h2>
+  <div id="closed-analysis"></div>
 </div>
 
 <div class="footer">QuantLearn 量化学习 | 不依赖LLM,纯规则+统计驱动</div>
 </div>
 
 <script>
+let equityChart = null;
+let pieChart = null;
+const THEME_KEY = 'quantlearn-theme';
+function applyTheme(theme) {
+  const normalized = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = normalized;
+  localStorage.setItem(THEME_KEY, normalized);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = normalized === 'dark' ? '☀️ 浅色' : '🌙 暗色';
+  if (equityChart) equityChart.setOption(getLineChartThemeOption());
+  if (pieChart) pieChart.setOption(getPieChartThemeOption());
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+}
+function getCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function getPieChartThemeOption() {
+  return { title: { textStyle: { color: getCssVar('--chart-text') } } };
+}
+function getLineChartThemeOption() {
+  return {
+    title: { textStyle: { color: getCssVar('--chart-text') } },
+    legend: { textStyle: { color: getCssVar('--gray') } },
+    xAxis: { axisLabel: { color: getCssVar('--gray') }, axisLine: { lineStyle: { color: getCssVar('--border') } } },
+    yAxis: { axisLabel: { color: getCssVar('--gray') }, nameTextStyle: { color: getCssVar('--gray') }, splitLine: { lineStyle: { color: getCssVar('--chart-grid') } } }
+  };
+}
+applyTheme(localStorage.getItem(THEME_KEY) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 const fmt = n => n >= 0 ? '+' + n.toFixed(2) : n.toFixed(2);
 const cls = n => n >= 0 ? 'pos' : 'neg';
 
@@ -236,6 +314,7 @@ function switchTab(el, tab) {
   el.classList.add('active');
   document.getElementById('panel-' + tab).classList.remove('hidden');
   if (tab === 'watch') loadWatchlist();
+  if (tab === 'control') loadStrategyControl();
   if (tab === 'history') loadHistory('');
   if (tab === 'stats') loadStats();
 }
@@ -419,6 +498,102 @@ function renderWatchlist(list) {
   document.getElementById('w-list').innerHTML = html || '<div style="color:var(--gray);padding:20px">暂无</div>';
 }
 
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadStrategyControl() {
+  try {
+    const [res, allocRes] = await Promise.all([
+      fetch('/api/strategy_control'),
+      fetch('/api/asset_allocation?account_id=1')
+    ]);
+    const data = await res.json();
+    const allocData = await allocRes.json();
+    const pc = data.position_controls || {};
+    const cash = data.cash_level || {};
+    document.getElementById('c-updated').textContent = data.updated_at || '--';
+    document.getElementById('c-summary').innerHTML = `
+      <div class="stat-card"><div class="label">自动交易</div><div class="value ${pc.auto_trade ? 'pos' : 'neg'}">${pc.auto_trade ? 'ON' : 'OFF'}</div></div>
+      <div class="stat-card"><div class="label">现金水位</div><div class="value">${cash.cash_pct || 0}%</div><div style="font-size:11px;color:var(--gray)">¥${Number(cash.cash||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="label">当前仓位</div><div class="value">${cash.position_pct || 0}%</div><div style="font-size:11px;color:var(--gray)">${pc.current_positions || 0}/${pc.max_total_positions || 0} 只</div></div>
+      <div class="stat-card"><div class="label">单票上限</div><div class="value">${pc.max_position_pct || 0}%</div></div>
+      <div class="stat-card"><div class="label">今日新建仓</div><div class="value">${pc.today_new_positions || 0}/${pc.max_daily_new_positions || 0}</div><div style="font-size:11px;color:var(--gray)">买入¥${Number(pc.today_buy_amount||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="label">单日建仓预算</div><div class="value">${pc.max_daily_build_amount_pct || 0}%</div><div style="font-size:11px;color:var(--gray)">交易上限 ${pc.max_daily_trades || 0} 笔</div></div>
+    `;
+
+    document.getElementById('c-buy-summary').textContent = `${data.buy_rules?.summary || ''}（观察池 ${data.buy_rules?.watchlist_count || 0} 只）`;
+    const buyRows = (data.buy_rules?.sample_rules || []).slice(0, 12).map(r => {
+      const rules = (r.trigger_rules || []).map(esc).join('<br>') || '暂无显式买入阈值';
+      const gate = [r.trend_gate, r.status].filter(Boolean).join('/');
+      return `<li><b>${esc(r.name)}(${esc(r.code)})</b> <span style="color:var(--gray)">${esc(r.source)} ${esc(gate)}</span><br>${rules}</li>`;
+    }).join('');
+    document.getElementById('c-buy-rules').innerHTML = buyRows || '<li>暂无观察池规则</li>';
+
+    const sell = data.sell_rules || {};
+    document.getElementById('c-sell-summary').textContent = `${sell.summary || ''} 全局止损 ${sell.global_stop_loss_pct || 0}%，止盈 +${sell.global_take_profit_pct || 0}%`;
+    const sellRows = (sell.holding_rules || []).map(r => {
+      const rules = (r.sell_rules || []).map(esc).join('<br>') || '暂无逐票卖出线';
+      return `<li><b>${esc(r.name)}(${esc(r.code)})</b><br>${rules}</li>`;
+    }).join('');
+    document.getElementById('c-sell-rules').innerHTML = sellRows || '<li>暂无持仓规则</li>';
+
+    const alloc = allocData.allocation || {};
+    const policy = alloc.regime_policy || {};
+    const assetRows = (alloc.asset_classes || []).map(r => `<tr><td>${esc(r.name)}</td><td>¥${Number(r.value||0).toLocaleString()}</td><td>${Number(r.pct||0).toFixed(1)}%</td></tr>`).join('');
+    const strategyRows = (alloc.strategy_targets || []).map(r => {
+      const diff = Number(r.diff_pct || 0);
+      return `<tr><td>${esc(r.name)}</td><td>${Number(r.current_pct||0).toFixed(1)}%</td><td>${Number(r.target_pct||0).toFixed(1)}%</td><td class="${diff > 5 ? 'neg' : (diff < -5 ? 'pos' : '')}">${diff > 0 ? '+' : ''}${diff.toFixed(1)}%</td></tr>`;
+    }).join('');
+    const advice = (alloc.advice || []).map(a => `<li>${esc(a)}</li>`).join('');
+    document.getElementById('c-allocation').innerHTML = `
+      <div class="control-grid">
+        <div class="control-card">
+          <h3>市场环境与仓位目标</h3>
+          <div style="font-size:12px;line-height:1.7">
+            <b>${esc(policy.label || 'N/A')}</b>：目标仓位 ${Number(policy.target_position_pct||0).toFixed(0)}%，最低现金 ${Number(policy.min_cash_pct||0).toFixed(0)}%<br>
+            当前仓位 ${Number(alloc.position_pct||0).toFixed(1)}%，现金 ${Number(alloc.cash_pct||0).toFixed(1)}%
+          </div>
+          <ul class="rule-list">${advice}</ul>
+        </div>
+        <div class="control-card">
+          <h3>大类资产</h3>
+          <table class="mini-table"><thead><tr><th>类别</th><th>金额</th><th>占比</th></tr></thead><tbody>${assetRows}</tbody></table>
+        </div>
+        <div class="control-card">
+          <h3>策略动态配比</h3>
+          <table class="mini-table"><thead><tr><th>策略</th><th>当前</th><th>目标</th><th>偏离</th></tr></thead><tbody>${strategyRows}</tbody></table>
+        </div>
+      </div>`;
+
+    const trades = data.recent_hits?.trades || [];
+    const orders = data.recent_hits?.orders || [];
+    const qmtOrders = data.qmt_flow?.orders || [];
+    const qmtFills = data.qmt_flow?.fills || [];
+    let recentHtml = '<table class="mini-table"><thead><tr><th>时间</th><th>标的</th><th>方向</th><th>数量/价格</th><th>结果</th><th>策略原因</th></tr></thead><tbody>';
+    trades.slice(0, 10).forEach(t => {
+      recentHtml += `<tr><td>${esc(t.trade_date)} ${esc(t.trade_time||'')}</td><td>${esc(t.stock_name||'')}<br><span style="color:var(--gray)">${esc(t.stock_code)}</span></td><td class="${t.direction==='BUY'?'pos':'neg'}">${t.direction==='BUY'?'买入':'卖出'}</td><td>${esc(t.quantity)}股 @ ¥${Number(t.price||0).toFixed(2)}</td><td>已成交<br><span style="color:var(--gray)">¥${Number(t.amount||0).toLocaleString()}</span></td><td>${esc(t.signal_reason||'')}</td></tr>`;
+    });
+    orders.slice(0, 6).forEach(o => {
+      recentHtml += `<tr><td>${esc(o.order_time||o.created_at||'')}</td><td>${esc(o.stock_name||'')}<br><span style="color:var(--gray)">${esc(o.stock_code)}</span></td><td class="${o.direction==='BUY'?'pos':'neg'}">${o.direction==='BUY'?'买入':'卖出'}</td><td>${esc(o.quantity)}股 @ ¥${Number(o.price||0).toFixed(2)}</td><td>${esc(o.status||'订单')}<br><span style="color:var(--gray)">${esc(o.broker||'')}</span></td><td>${esc(o.strategy_name||'')} ${esc(o.signal_reason||'')}</td></tr>`;
+    });
+    recentHtml += '</tbody></table>';
+
+    let qmtHtml = '<h2>QMT 委托/成交状态流</h2><table class="mini-table"><thead><tr><th>时间</th><th>类型</th><th>标的</th><th>方向</th><th>数量/价格</th><th>状态/编号</th></tr></thead><tbody>';
+    qmtOrders.slice(0, 10).forEach(o => {
+      qmtHtml += `<tr><td>${esc(o.order_time||o.created_at||'')}</td><td>委托<br><span style="color:var(--gray)">${esc(o.broker||'')}</span></td><td>${esc(o.stock_name||'')}<br><span style="color:var(--gray)">${esc(o.stock_code)}</span></td><td class="${o.direction==='BUY'?'pos':'neg'}">${o.direction==='BUY'?'买入':'卖出'}</td><td>${esc(o.traded||0)}/${esc(o.quantity||0)}股 @ ¥${Number(o.price||0).toFixed(2)}</td><td>${esc(o.status||'')}<br><span style="color:var(--gray)">${esc(o.broker_order_id||o.order_id||'')}</span></td></tr>`;
+    });
+    qmtFills.slice(0, 10).forEach(f => {
+      qmtHtml += `<tr><td>${esc(f.trade_time||f.created_at||'')}</td><td>成交<br><span style="color:var(--gray)">${esc(f.broker||'')}</span></td><td>${esc(f.stock_name||'')}<br><span style="color:var(--gray)">${esc(f.stock_code)}</span></td><td class="${f.direction==='BUY'?'pos':'neg'}">${f.direction==='BUY'?'买入':'卖出'}</td><td>${esc(f.trade_volume||0)}股 @ ¥${Number(f.trade_price||0).toFixed(2)}</td><td>¥${Number(f.trade_amount||0).toLocaleString()}<br><span style="color:var(--gray)">${esc(f.broker_trade_id||f.order_id||'')}</span></td></tr>`;
+    });
+    qmtHtml += '</tbody></table>';
+    if (!qmtOrders.length && !qmtFills.length) qmtHtml = '<h2>QMT 委托/成交状态流</h2><div style="color:var(--gray);padding:12px">暂无 QMT 委托/成交记录</div>';
+    document.getElementById('c-recent').innerHTML = (trades.length || orders.length) ? recentHtml + qmtHtml : '<div style="color:var(--gray);padding:20px">暂无策略执行记录</div>' + qmtHtml;
+  } catch(e) {
+    console.error(e);
+    document.getElementById('c-allocation').innerHTML = '<div style="color:var(--red);padding:12px">资产配置看板加载失败</div>';
+    document.getElementById('c-recent').innerHTML = '<div style="color:var(--red);padding:20px">策略控制大盘加载失败</div>';
+  }
+}
+
 async function loadHistory(phase) {
   const url = phase ? '/api/push_history?phase=' + phase + '&limit=30' : '/api/push_history?limit=30';
   try {
@@ -452,22 +627,39 @@ async function loadStats() {
   const data = await res.json();
   const w = data.week_trades;
   const m = data.month_trades;
+  const c = data.closed_trades || {};
+  const pf = c.profit_factor == null ? '∞/样本不足' : c.profit_factor;
+  const payoff = c.payoff_ratio == null ? '样本不足' : c.payoff_ratio;
   
   document.getElementById('stats-cards').innerHTML = `
     <div class="stat-card"><div class="label">累计交易</div><div class="value">${data.total_trades}笔</div></div>
-    <div class="stat-card"><div class="label">胜率</div><div class="value ${data.win_rate >= 50 ? 'pos' : 'neg'}">${data.win_rate}%</div></div>
+    <div class="stat-card"><div class="label">平仓胜率</div><div class="value ${data.win_rate >= 50 ? 'pos' : 'neg'}">${data.win_rate}%</div><div style="font-size:11px;color:var(--gray)">${c.win_count || 0}/${c.closed_count || 0} 笔</div></div>
+    <div class="stat-card"><div class="label">平仓净实现</div><div class="value ${cls(c.net_pnl || 0)}">￥${(c.net_pnl || 0).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">盈亏比 / PF</div><div class="value">${payoff}</div><div style="font-size:11px;color:var(--gray)">PF ${pf}</div></div>
     <div class="stat-card"><div class="label">平均持仓</div><div class="value">${data.avg_hold_days}天</div></div>
-    <div class="stat-card"><div class="label">最大单笔盈利</div><div class="value pos">￥${data.max_profit_trade.pnl}</div><div style="font-size:11px;color:var(--gray)">${data.max_profit_trade.code}</div></div>
-    <div class="stat-card"><div class="label">最大单笔亏损</div><div class="value neg">￥${data.max_loss_trade.pnl}</div><div style="font-size:11px;color:var(--gray)">${data.max_loss_trade.code}</div></div>
+    <div class="stat-card"><div class="label">最大单笔盈利</div><div class="value pos">￥${data.max_profit_trade.pnl}</div><div style="font-size:11px;color:var(--gray)">${data.max_profit_trade.name || data.max_profit_trade.code}</div></div>
+    <div class="stat-card"><div class="label">最大单笔亏损</div><div class="value neg">￥${data.max_loss_trade.pnl}</div><div style="font-size:11px;color:var(--gray)">${data.max_loss_trade.name || data.max_loss_trade.code}</div></div>
     <div class="stat-card"><div class="label">近7天买入</div><div class="value">${w.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${w.buy_amount.toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">近7天卖出</div><div class="value">${w.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${w.sell_amount.toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">本月买入</div><div class="value">${m.buy_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${m.buy_amount.toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">本月卖出</div><div class="value">${m.sell_count}笔</div><div style="font-size:11px;color:var(--gray)">￥${m.sell_amount.toLocaleString()}</div></div>
   `;
+
+  document.getElementById('closed-count').textContent = c.closed_count || 0;
+  const symbols = (c.by_symbol || []).map(r => `
+    <tr><td>${r.stock_name}<div style="color:var(--gray);font-size:10px">${r.stock_code}</div></td><td>${r.closed_count}</td><td>${r.win_rate.toFixed(1)}%</td><td class="${cls(r.pnl)}">￥${r.pnl.toLocaleString(undefined,{maximumFractionDigits:0})}</td><td>${r.avg_pnl_pct.toFixed(2)}%</td></tr>
+  `).join('');
+  const recent = (c.recent || []).map(r => `
+    <tr><td>${r.close_date}</td><td>${r.stock_name}<div style="color:var(--gray);font-size:10px">${r.stock_code}</div></td><td>${r.quantity}</td><td class="${cls(r.pnl)}">￥${r.pnl.toLocaleString(undefined,{maximumFractionDigits:0})}</td><td>${r.pnl_pct.toFixed(2)}%</td></tr>
+  `).join('');
+  document.getElementById('closed-analysis').innerHTML = `
+    <div class="control-grid">
+      <div class="control-card"><h3>个股累计贡献</h3><table class="mini-table"><thead><tr><th>个股</th><th>笔数</th><th>胜率</th><th>实现盈亏</th><th>均收益</th></tr></thead><tbody>${symbols || '<tr><td colspan="5">暂无平仓样本</td></tr>'}</tbody></table></div>
+      <div class="control-card"><h3>最近平仓</h3><table class="mini-table"><thead><tr><th>日期</th><th>个股</th><th>数量</th><th>盈亏</th><th>收益率</th></tr></thead><tbody>${recent || '<tr><td colspan="5">暂无平仓样本</td></tr>'}</tbody></table></div>
+    </div>
+  `;
 }
 
-let equityChart = null;
-let pieChart = null;
 async function loadEquityCurve() {
   try {
     const res = await fetch('/api/equity_curve');
@@ -500,7 +692,7 @@ async function loadEquityCurve() {
         left: 'center',
         textStyle: {
           fontSize: 14,
-          color: '#1f2937',
+          color: getCssVar('--chart-text'),
           fontWeight: 600
         }
       },
@@ -517,7 +709,7 @@ async function loadEquityCurve() {
       legend: {
         data: ['收益率', '基准线'],
         bottom: 0,
-        textStyle: { fontSize: 11 }
+        textStyle: { fontSize: 11, color: getCssVar('--gray') }
       },
       grid: {
         left: '50',
@@ -531,23 +723,26 @@ async function loadEquityCurve() {
         data: data.dates,
         axisLabel: {
           fontSize: 10,
+          color: getCssVar('--gray'),
           formatter: function(value) {
             // 只显示月-日
             return value.slice(5);
           }
-        }
+        },
+        axisLine: { lineStyle: { color: getCssVar('--border') } }
       },
       yAxis: {
         type: 'value',
         name: '%',
-        nameTextStyle: { fontSize: 10 },
+        nameTextStyle: { fontSize: 10, color: getCssVar('--gray') },
         axisLabel: {
           fontSize: 10,
+          color: getCssVar('--gray'),
           formatter: '{value}%'
         },
         splitLine: {
           lineStyle: {
-            color: '#e4e8ee'
+            color: getCssVar('--chart-grid')
           }
         }
       },
@@ -576,12 +771,12 @@ async function loadEquityCurve() {
           type: 'line',
           data: data.benchmark,
           lineStyle: {
-            color: '#9ca3af',
+            color: getCssVar('--chart-muted'),
             width: 1,
             type: 'dashed'
           },
           itemStyle: {
-            color: '#9ca3af'
+            color: getCssVar('--chart-muted')
           },
           symbol: 'none'
         }
@@ -642,7 +837,7 @@ function renderPieChart(positions, cash, totalAsset) {
       textStyle: {
         fontSize: 16,
         fontWeight: 600,
-        color: '#1f2937'
+        color: getCssVar('--chart-text')
       }
     },
     tooltip: {

@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📋 PM 看板</title>
 <style>
-:root { --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --shadow: 0 1px 3px rgba(0,0,0,0.08); }
+:root {
+  color-scheme: light;
+  --bg: #f5f7fa; --card: #ffffff; --border: #e4e8ee; --blue: #1a73e8; --green: #16a34a; --red: #dc2626; --gray: #6b7280; --text: #1f2937; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --column-bg: #e5e7eb; --count-bg: #d1d5db; --subtle-bg: #fafafa; --input-bg: #ffffff; --bug-bg: #fee2e2; --story-bg: #e0e7ff;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f172a; --card: #111827; --border: #334155; --blue: #60a5fa; --green: #34d399; --red: #f87171; --gray: #94a3b8; --text: #e5e7eb; --shadow: 0 1px 3px rgba(0,0,0,0.35);
+  --column-bg: #1e293b; --count-bg: #334155; --subtle-bg: #0f172a; --input-bg: #111827; --bug-bg: rgba(248,113,113,0.16); --story-bg: rgba(96,165,250,0.16);
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
 .header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -13,9 +22,9 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
 .nav-links a { color: var(--blue); text-decoration: none; font-size: 14px; font-weight: 500; margin-left: 15px;}
 .nav-links a:hover { text-decoration: underline; }
 .board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
-.column { flex: 1; min-width: 280px; max-width: 320px; background: #e5e7eb; border-radius: 8px; padding: 12px; }
+.column { flex: 1; min-width: 280px; max-width: 320px; background: var(--column-bg); border-radius: 8px; padding: 12px; }
 .column-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); display: flex; justify-content: space-between; }
-.column-title .count { background: #d1d5db; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+.column-title .count { background: var(--count-bg); padding: 2px 8px; border-radius: 12px; font-size: 12px; }
 .task-card { background: var(--card); border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); border-left: 4px solid var(--gray); font-size: 13px; }
 .task-card.priority-P0, .task-card.priority-S0 { border-left-color: var(--red); }
 .task-card.priority-P1, .task-card.priority-S1 { border-left-color: #f59e0b; }
@@ -24,8 +33,30 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
 .task-title { font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
 .task-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); }
 .badge { padding: 2px 6px; border-radius: 4px; font-weight: 600; }
-.badge.bug { background: #fee2e2; color: var(--red); }
-.badge.story { background: #e0e7ff; color: var(--blue); }
+.badge.bug { background: var(--bug-bg); color: var(--red); }
+.badge.story { background: var(--story-bg); color: var(--blue); }
+
+.quick-panel { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.quick-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--blue); }
+.quick-grid { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 12px; }
+.quick-box { border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: var(--subtle-bg); }
+.quick-box h3 { font-size: 13px; margin-bottom: 8px; color: var(--text); }
+.form-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.form-row input, .form-row select, .form-row textarea { border: 1px solid var(--border); border-radius: 4px; padding: 7px 8px; font-size: 12px; font-family: inherit; background: var(--input-bg); color: var(--text); }
+.form-row input, .form-row textarea { flex: 1; min-width: 130px; }
+.form-row textarea { min-height: 54px; resize: vertical; width: 100%; }
+.btn { border: none; background: var(--blue); color: #fff; border-radius: 4px; padding: 7px 12px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.btn:hover { filter: brightness(0.92); }
+.btn.secondary { background: #64748b; }
+.btn.small { padding: 4px 7px; font-size: 11px; }
+.theme-btn { margin-left: 15px; background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.theme-btn:hover { border-color: var(--blue); filter: none; }
+.quick-message { font-size: 12px; margin-top: 8px; color: var(--gray); min-height: 18px; }
+.quick-message.ok { color: var(--green); }
+.quick-message.error { color: var(--red); }
+.task-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+@media (max-width: 760px) { .quick-grid { grid-template-columns: 1fr; } }
+
 </style>
 </head>
 <body>
@@ -33,8 +64,55 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
         <h1>📋 QuantLearn 敏捷看板</h1>
         <div class="nav-links">
             <a href="/">📊 返回量化仪表盘</a>
+            <button class="btn theme-btn" id="theme-toggle" onclick="toggleTheme()" title="切换暗色/浅色主题">🌙 暗色</button>
         </div>
     </div>
+    <div class="quick-panel">
+        <div class="quick-title">⚡ 快捷操作面板</div>
+        <div class="quick-grid">
+            <div class="quick-box">
+                <h3>新建任务</h3>
+                <div class="form-row">
+                    <select id="quick-type">
+                        <option value="story">需求 Story</option>
+                        <option value="bug">Bug</option>
+                    </select>
+                    <select id="quick-priority">
+                        <option value="P1">P1 / S1</option>
+                        <option value="P2" selected>P2 / S2</option>
+                        <option value="P0">P0 / S0</option>
+                        <option value="P3">P3 / S3</option>
+                    </select>
+                    <input id="quick-title" placeholder="标题，如：增加盘中提醒开关" />
+                </div>
+                <div class="form-row">
+                    <textarea id="quick-desc" placeholder="描述 / 验收标准（可选）"></textarea>
+                </div>
+                <button class="btn" onclick="createQuickTask()">创建</button>
+            </div>
+            <div class="quick-box">
+                <h3>快速流转</h3>
+                <div class="form-row">
+                    <input id="quick-task-id" placeholder="任务ID，如 REQ-006" />
+                    <select id="quick-status">
+                        <option value="in_progress">开始开发</option>
+                        <option value="testing">提交测试</option>
+                        <option value="fixed">标记 fixed</option>
+                        <option value="done">完成 done</option>
+                        <option value="verified">验收 verified</option>
+                        <option value="closed">关闭 closed</option>
+                        <option value="reopened">重新打开</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <textarea id="quick-note" placeholder="备注 / 完成说明（可选）"></textarea>
+                </div>
+                <button class="btn secondary" onclick="updateQuickStatus()">更新状态</button>
+            </div>
+        </div>
+        <div id="quick-message" class="quick-message"></div>
+    </div>
+
     <div class="board" id="board">
         <div class="column" id="col-pending">
             <div class="column-title"><span>需求池 (Pending)</span><span class="count">0</span></div>
@@ -63,6 +141,78 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
     </div>
 
     <script>
+        const THEME_KEY = 'quantlearn-theme';
+        function applyTheme(theme) {
+            const normalized = theme === 'dark' ? 'dark' : 'light';
+            document.documentElement.dataset.theme = normalized;
+            localStorage.setItem(THEME_KEY, normalized);
+            const btn = document.getElementById('theme-toggle');
+            if (btn) btn.textContent = normalized === 'dark' ? '☀️ 浅色' : '🌙 暗色';
+        }
+        function toggleTheme() {
+            applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+        }
+        applyTheme(localStorage.getItem(THEME_KEY) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+        function escapeHtml(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function showQuickMessage(msg, ok=true) {
+            const el = document.getElementById('quick-message');
+            el.textContent = msg;
+            el.className = 'quick-message ' + (ok ? 'ok' : 'error');
+        }
+
+        async function postJson(url, payload) {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.status !== 'ok') throw new Error(data.msg || ('HTTP ' + res.status));
+            return data;
+        }
+
+        async function createQuickTask() {
+            const type = document.getElementById('quick-type').value;
+            const rawPriority = document.getElementById('quick-priority').value;
+            const priority = type === 'bug' ? rawPriority.replace('P', 'S') : rawPriority.replace('S', 'P');
+            const title = document.getElementById('quick-title').value.trim();
+            const description = document.getElementById('quick-desc').value.trim();
+            if (!title) return showQuickMessage('请先填写标题', false);
+            try {
+                const data = await postJson('/api/pm/tasks', {type, priority, title, description});
+                showQuickMessage(`已创建 ${data.task.id}：${data.task.title}`);
+                document.getElementById('quick-title').value = '';
+                document.getElementById('quick-desc').value = '';
+                await loadTasks();
+            } catch (e) {
+                showQuickMessage('创建失败：' + e.message, false);
+            }
+        }
+
+        async function updateTaskStatus(taskId, status, note='') {
+            const data = await postJson('/api/pm/tasks/' + encodeURIComponent(taskId) + '/status', {status, note});
+            showQuickMessage(`已更新 ${data.task.id} → ${data.task.status}`);
+            await loadTasks();
+            return data;
+        }
+
+        async function updateQuickStatus() {
+            const taskId = document.getElementById('quick-task-id').value.trim().toUpperCase();
+            const status = document.getElementById('quick-status').value;
+            const note = document.getElementById('quick-note').value.trim();
+            if (!taskId) return showQuickMessage('请先填写任务ID', false);
+            try {
+                await updateTaskStatus(taskId, status, note);
+                document.getElementById('quick-note').value = '';
+            } catch (e) {
+                showQuickMessage('更新失败：' + e.message, false);
+            }
+        }
+
         async function loadTasks() {
             try {
                 const res = await fetch('/api/pm_tasks');
@@ -117,12 +267,20 @@ body { font-family: -apple-system, "PingFang SC", sans-serif; background: var(--
 
                     const card = document.createElement('div');
                     card.className = `task-card priority-${task.priority}`;
+                    const actions = [];
+                    if (['pending', 'open', 'reopened'].includes(task.status)) actions.push(['in_progress', '开始']);
+                    if (task.status === 'in_progress') actions.push(['testing', '提测'], ['done', '完成']);
+                    if (['testing', 'fixed'].includes(task.status)) actions.push(['verified', '验收'], ['reopened', '退回']);
+                    if (['done', 'verified'].includes(task.status)) actions.push(['closed', '关闭']);
                     card.innerHTML = `
-                        <div class="task-id">${task.id} <span class="badge ${task.type}">${task.type}</span></div>
-                        <div class="task-title">${task.title}</div>
+                        <div class="task-id">${escapeHtml(task.id)} <span class="badge ${escapeHtml(task.type)}">${escapeHtml(task.type)}</span></div>
+                        <div class="task-title">${escapeHtml(task.title)}</div>
                         <div class="task-meta">
-                            <span>Pri: ${task.priority}</span>
-                            <span>${task.updated_at.split(' ')[0]}</span>
+                            <span>Pri: ${escapeHtml(task.priority)}</span>
+                            <span>${escapeHtml((task.updated_at || '').split(' ')[0])}</span>
+                        </div>
+                        <div class="task-actions">
+                            ${actions.map(a => `<button class="btn small" onclick="updateTaskStatus('${escapeHtml(task.id)}','${a[0]}','quick action button')">${a[1]}</button>`).join('')}
                         </div>
                     `;
                     cols[colKey].appendChild(card);

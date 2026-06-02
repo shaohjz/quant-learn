@@ -316,9 +316,29 @@ class TestDailyReviewIntegration:
         target = date(2026, 5, 27)
         acct = {"id": 1, "name": "学习账户", "icon": "🤖", "auto": True}
         section = render_account_section(acct, target)
-        assert "资金口径不一致" not in section, (
-            f"口径一致时不应有警告：\n{section[:600]}"
+        assert "资金口径变更提示" not in section, (
+            f"口径一致且无历史跳变时不应有警告：\n{section[:600]}"
         )
+
+    def test_review_pauses_return_on_historical_snapshot_jump(self, isolated_env):
+        """历史现金/总资产口径跳变时，报告提示并暂停跨日收益率对比。"""
+        from sim.db import sync_account_initial_cash
+        from scripts.daily_review import render_account_section
+        from datetime import date
+        sync_account_initial_cash(1, source="config")  # 先消除 config vs DB 初始资金差异
+        db_file = isolated_env["db_file"]
+        conn = sqlite3.connect(str(db_file))
+        conn.execute(
+            "INSERT INTO sim_daily_nav (account_id, trade_date, total_value, cash, market_value, daily_return, cumulative_return, max_drawdown) "
+            "VALUES (1, '2026-05-26', 200000.0, 190000.0, 10000.0, 0.0, 0.0, 0.0)"
+        )
+        conn.commit(); conn.close()
+
+        acct = {"id": 1, "name": "学习账户", "icon": "🤖", "auto": True}
+        section = render_account_section(acct, date(2026, 5, 27))
+        assert "账户资金口径变更提示" in section
+        assert "口径跳变" in section
+        assert "暂停对比" in section
 
 
 if __name__ == "__main__":

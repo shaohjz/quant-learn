@@ -16,7 +16,7 @@ import sys
 import sqlite3
 import logging
 import requests
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time as dtime
 from pathlib import Path
 from collections import defaultdict
 from math import sqrt
@@ -27,6 +27,7 @@ os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db')
 
 from sim.config import load_config
 from sim.market_sentiment import fetch_market_sentiment, render_market_sentiment_section
+from sim.asset_allocation import render_allocation_markdown, summarize_allocation
 
 logger = logging.getLogger('daily-review')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -70,6 +71,17 @@ def fetch_trades(account_id: int, target_date: date):
     rows = c.execute(
         'SELECT * FROM sim_trades WHERE account_id=? AND trade_date=? ORDER BY id',
         (account_id, target_date.isoformat())
+    ).fetchall()
+    c.close()
+    return [dict(r) for r in rows]
+
+
+def fetch_recent_entry_trades(account_id: int, limit: int = 300):
+    """Fetch recent trades used to infer current holding strategy buckets (REQ-031)."""
+    c = get_conn()
+    rows = c.execute(
+        'SELECT * FROM sim_trades WHERE account_id=? ORDER BY COALESCE(created_at, trade_date) DESC, id DESC LIMIT ?',
+        (account_id, limit)
     ).fetchall()
     c.close()
     return [dict(r) for r in rows]
@@ -341,6 +353,249 @@ def format_review_alerts(alerts: list[dict], compact: bool = False, limit: int |
 
 
 # =====================================
+# 1.0 持仓技术面破位分析（REQ-025）
+# =====================================
+def _load_technical_break_thresholds() -> dict:
+    """Load thresholds for position technical-break analysis.
+
+    Config path (optional): review.technical_break.*.  Defaults are deliberately
+    data-only and conservative; the analysis is advisory and never places orders.
+    """
+    cfg = load_config()
+    raw = ((cfg.get('review') or {}).get('technical_break') or {})
+
+    def pct_value(key: str, default: float) -> float:
+        val = raw.get(key, default)
+        try:
+            val = float(val)
+        except Exception:
+            val = default
+        return val / 100.0 if abs(val) > 1 else val
+
+    def int_list(key: str, default: list[int]) -> list[int]:
+        val = raw.get(key, default)
+        if isinstance(val, str):
+            val = [x.strip() for x in val.split(',') if x.strip()]
+        try:
+            out = sorted({int(x) for x in val if int(x) > 1})
+        except Exception:
+            out = default
+        return out or default
+
+    return {
+        'enabled': bool(raw.get('enabled', True)),
+        'ma_periods': int_list('ma_periods', [5, 10, 20, 60]),
+        'support_windows': int_list('support_windows', [20, 60]),
+        'break_tolerance_pct': abs(pct_value('break_tolerance_pct', 0.005)),
+        'near_support_pct': abs(pct_value('near_support_pct', 0.01)),
+        'fetch_days': int(raw.get('fetch_days', 100) or 100),
+        'min_points': int(raw.get('min_points', 20) or 20),
+    }
+
+
+def fetch_position_kline(stock_code: str, target_date: date | None = None, days: int = 100):
+    """Fetch qfq daily K-line for a held A-share position via akshare.
+
+    Kept as a tiny wrapper so tests can inject deterministic K-line data and the
+    daily report degrades gracefully when network/vendor data is unavailable.
+    """
+    import akshare as ak
+
+    sym = str(stock_code or '').lower().replace('sh', '').replace('sz', '').replace('bj', '')
+    if not sym:
+        return None
+    end_day = target_date or date.today()
+    end = end_day.strftime('%Y%m%d')
+    start = (end_day - timedelta(days=max(days * 2, 120))).strftime('%Y%m%d')
+    try:
+        df = ak.stock_zh_a_hist(symbol=sym, period='daily', start_date=start, end_date=end, adjust='qfq')
+    except Exception as exc:
+        logger.warning('fetch kline failed for %s: %s', stock_code, exc)
+        return None
+    if df is None or len(df) == 0:
+        return None
+    return df.tail(days).reset_index(drop=True)
+
+
+def _column_values(kline, *names: str) -> list[float]:
+    """Return numeric values from a pandas DataFrame or list[dict]."""
+    if kline is None:
+        return []
+    for name in names:
+        try:
+            if hasattr(kline, 'columns') and name in kline.columns:
+                return [float(x) for x in kline[name].dropna().tolist()]
+        except Exception:
+            pass
+    if isinstance(kline, list):
+        for name in names:
+            vals = []
+            for row in kline:
+                if isinstance(row, dict) and row.get(name) is not None:
+                    try:
+                        vals.append(float(row.get(name)))
+                    except Exception:
+                        continue
+            if vals:
+                return vals
+    return []
+
+
+def analyze_position_technical_break(position: dict, kline, thresholds: dict | None = None) -> dict:
+    """Analyze whether one held stock has broken key MAs/support levels.
+
+    Returns a structured result for report rendering.  ``status`` is one of:
+    ok / warn / critical / unavailable.
+    """
+    thresholds = {**_load_technical_break_thresholds(), **(thresholds or {})}
+    code = position.get('stock_code') or position.get('code') or ''
+    name = position.get('stock_name') or position.get('name') or code or '未知标的'
+    result = {
+        'code': code,
+        'name': name,
+        'status': 'ok',
+        'severity': 'ok',
+        'price': None,
+        'signals': [],
+        'levels': {},
+        'message': '',
+    }
+
+    closes = _column_values(kline, '收盘', 'close', 'Close')
+    lows = _column_values(kline, '最低', 'low', 'Low')
+    if len(closes) < int(thresholds['min_points']):
+        current = position.get('current_price')
+        try:
+            result['price'] = float(current) if current is not None else None
+        except Exception:
+            result['price'] = None
+        result.update({
+            'status': 'unavailable',
+            'severity': 'warn',
+            'message': f"{name}({code}) K线数据不足，无法判断均线/支撑破位",
+        })
+        return result
+
+    price = float(closes[-1])
+    result['price'] = price
+    tol = float(thresholds['break_tolerance_pct'])
+    near = float(thresholds['near_support_pct'])
+
+    critical = False
+    warn = False
+    for period in thresholds['ma_periods']:
+        if len(closes) < period:
+            continue
+        ma = sum(closes[-period:]) / period
+        result['levels'][f'MA{period}'] = ma
+        if price < ma * (1 - tol):
+            drop = (price / ma - 1) * 100
+            if period >= 20:
+                critical = True
+                label = '关键均线'
+            else:
+                warn = True
+                label = '短期均线'
+            result['signals'].append(f"跌破{label}MA{period} {ma:.2f}（{drop:.1f}%）")
+
+    # Support is previous N-day low, excluding the current bar to avoid a new low
+    # masking its own breakdown.
+    for window in thresholds['support_windows']:
+        if len(lows) <= window:
+            continue
+        prev_lows = lows[-(window + 1):-1]
+        if not prev_lows:
+            continue
+        support = min(prev_lows)
+        result['levels'][f'{window}日支撑'] = support
+        if price < support * (1 - tol):
+            critical = True
+            drop = (price / support - 1) * 100
+            result['signals'].append(f"跌破{window}日低点支撑 {support:.2f}（{drop:.1f}%）")
+        elif price <= support * (1 + near):
+            warn = True
+            dist = (price / support - 1) * 100
+            result['signals'].append(f"贴近{window}日低点支撑 {support:.2f}（+{dist:.1f}%）")
+
+    if critical:
+        result['status'] = result['severity'] = 'critical'
+    elif warn:
+        result['status'] = result['severity'] = 'warn'
+    else:
+        result['message'] = f"{name}({code}) 未见明显均线/支撑破位"
+        return result
+
+    result['message'] = f"{name}({code}) 现价 {price:.2f}：" + '；'.join(result['signals'])
+    return result
+
+
+def detect_position_technical_breaks(
+    positions: list[dict],
+    target_date: date | None = None,
+    kline_fetcher=None,
+    thresholds: dict | None = None,
+) -> list[dict]:
+    """Analyze all current positions for MA/support breakdowns (REQ-025)."""
+    thresholds = {**_load_technical_break_thresholds(), **(thresholds or {})}
+    if not thresholds.get('enabled', True):
+        return []
+    fetcher = kline_fetcher or fetch_position_kline
+    analyses: list[dict] = []
+    for p in positions or []:
+        try:
+            qty = int(p.get('quantity') or 0)
+        except Exception:
+            qty = 0
+        if qty <= 0:
+            continue
+        code = p.get('stock_code') or p.get('code') or ''
+        try:
+            kline = fetcher(code, target_date, int(thresholds['fetch_days']))
+        except TypeError:
+            kline = fetcher(code)
+        except Exception as exc:
+            logger.warning('technical break fetcher failed for %s: %s', code, exc)
+            kline = None
+        analyses.append(analyze_position_technical_break(p, kline, thresholds))
+    return analyses
+
+
+def format_position_technical_breaks(analyses: list[dict], compact: bool = False, limit: int | None = None) -> str:
+    """Render REQ-025 technical-break analysis as Markdown."""
+    if not analyses:
+        return ''
+    issues = [a for a in analyses if a.get('status') in ('critical', 'warn')]
+    unavailable = [a for a in analyses if a.get('status') == 'unavailable']
+    if compact:
+        if not issues:
+            return ''
+        shown = issues[:(limit or 3)]
+        lines = ['🧭 技术面破位']
+    else:
+        shown = issues[:(limit or 20)]
+        lines = ['### 🧭 持仓技术面破位', '']
+        if not issues:
+            if unavailable:
+                lines.append('- ℹ️ 部分持仓K线数据不足，无法判断均线/支撑破位。')
+                for item in unavailable[:3]:
+                    lines.append(f"  - {item.get('message', '')}")
+            else:
+                lines.append('- ✅ 持仓未见明显均线/支撑破位。')
+            return '\n'.join(lines)
+
+    for item in shown:
+        icon = '🚨' if item.get('status') == 'critical' else '⚠️'
+        lines.append(f"- {icon} {item.get('message', '')}")
+    if len(issues) > len(shown):
+        lines.append(f"- … 另有 {len(issues) - len(shown)} 条，见完整复盘")
+    return '\n'.join(lines)
+
+
+def has_technical_break_issue(analyses: list[dict]) -> bool:
+    return any(a.get('status') in ('critical', 'warn') for a in analyses or [])
+
+
+# =====================================
 # 1.1 双账户执行一致性诊断（REQ-034）
 # =====================================
 def _money(v) -> str:
@@ -575,6 +830,230 @@ def render_signal_detail_lines(detail) -> list[str]:
     return lines
 
 
+
+def _extract_entry_strategy_tag(signal_reason: str | None, signal_detail=None) -> tuple[str, str]:
+    """Return (source_type, strategy_tag) for an entry snapshot (REQ-029).
+
+    The daily review is the first place where manual initial positions and auto
+    buy signals meet.  Normalising both into a stable tag lets later analysis
+    compare the user's real/manual entries with strategy generated entries.
+    """
+    reason = (signal_reason or '').strip()
+    detail = _parse_signal_detail(signal_detail) or {}
+    lower = reason.lower()
+
+    # Manual / imported real-position entries.
+    if '初始化建仓快照' in reason or '初始持仓回填' in reason or '初始持仓' in reason:
+        return 'manual_initial_snapshot', 'user_real_position'
+    if '手动' in reason or '用户实盘' in reason:
+        return 'manual_user_action', 'user_manual'
+
+    # Structured signal detail has priority when present.
+    for key in ('strategy_tag', 'trigger_type', 'signal'):
+        val = detail.get(key) if isinstance(detail, dict) else None
+        if val:
+            tag = str(val).strip().lower()
+            if tag in {'buy', 'tech_buy'}:
+                continue
+            return 'auto_strategy', tag
+
+    # Parse historical short reasons, e.g. "自动: buy_zone | ...".
+    import re
+    m = re.search(r'自动\s*[:：]\s*([a-zA-Z0-9_\-]+)', reason)
+    if m:
+        return 'auto_strategy', m.group(1).lower()
+    m = re.search(r'\b(buy_[a-zA-Z0-9_\-]+)\b', lower)
+    if m:
+        return 'auto_strategy', m.group(1).lower()
+
+    return 'unknown_entry', 'unclassified'
+
+
+def ensure_entry_snapshot_table(conn) -> None:
+    """Create/upgrade the structured entry snapshot table (REQ-029)."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS position_entry_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL,
+            source_trade_id INTEGER NOT NULL,
+            entry_date DATE,
+            stock_code TEXT,
+            stock_name TEXT,
+            source_type TEXT,
+            strategy_tag TEXT,
+            entry_price REAL,
+            entry_quantity INTEGER,
+            entry_amount REAL,
+            current_price REAL,
+            current_quantity INTEGER DEFAULT 0,
+            floating_pnl REAL DEFAULT 0,
+            floating_pnl_pct REAL DEFAULT 0,
+            status TEXT DEFAULT 'open',
+            signal_reason TEXT,
+            raw_detail TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(account_id, source_trade_id)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entry_snapshots_account_date ON position_entry_snapshots(account_id, entry_date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entry_snapshots_strategy ON position_entry_snapshots(source_type, strategy_tag)")
+
+
+def extract_entry_snapshots(account_id: int, target_date: date, conn_factory=get_conn) -> list[dict]:
+    """Extract BUY entries up to target_date into structured snapshots (REQ-029).
+
+    It supports both sides of the dual-account review:
+    - real account imported entries such as "初始持仓回填" / "初始化建仓快照";
+    - learning-account automatic entries such as "自动: buy_zone".
+    """
+    conn = conn_factory()
+    conn.row_factory = sqlite3.Row
+    try:
+        ensure_entry_snapshot_table(conn)
+        trades = conn.execute(
+            """
+            SELECT * FROM sim_trades
+             WHERE account_id=? AND direction='BUY' AND trade_date<=?
+             ORDER BY trade_date, id
+            """,
+            (account_id, target_date.isoformat()),
+        ).fetchall()
+        positions = {
+            r['stock_code']: r for r in conn.execute(
+                "SELECT * FROM sim_positions WHERE account_id=?",
+                (account_id,),
+            ).fetchall()
+        }
+        snapshots: list[dict] = []
+        remaining_by_code = {code: int(pos['quantity'] or 0) for code, pos in positions.items()}
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for t in trades:
+            reason = t['signal_reason'] if 'signal_reason' in t.keys() else ''
+            detail = t['signal_detail'] if 'signal_detail' in t.keys() else None
+            source_type, strategy_tag = _extract_entry_strategy_tag(reason, detail)
+            code = t['stock_code']
+            pos = positions.get(code)
+            qty = int(t['quantity'] or 0)
+            entry_price = float(t['price'] or 0)
+            remaining = remaining_by_code.get(code, 0)
+            cur_price = float((pos['current_price'] if pos else None) or entry_price or 0)
+            open_qty = min(qty, remaining) if remaining > 0 else 0
+            remaining_by_code[code] = max(0, remaining - open_qty)
+            floating_pnl = (cur_price - entry_price) * open_qty if open_qty and entry_price else 0.0
+            floating_pnl_pct = ((cur_price / entry_price - 1) * 100) if open_qty and entry_price else 0.0
+            status = 'open' if open_qty >= qty and qty > 0 else ('partial_or_closed' if open_qty > 0 else 'closed_or_absent')
+            entry_amount = float((t['amount'] if 'amount' in t.keys() else None) or entry_price * qty)
+            raw_detail = detail if isinstance(detail, str) else None
+            row = {
+                'account_id': account_id,
+                'source_trade_id': int(t['id']),
+                'entry_date': t['trade_date'],
+                'stock_code': t['stock_code'],
+                'stock_name': t['stock_name'],
+                'source_type': source_type,
+                'strategy_tag': strategy_tag,
+                'entry_price': entry_price,
+                'entry_quantity': qty,
+                'entry_amount': entry_amount,
+                'current_price': cur_price,
+                'current_quantity': open_qty,
+                'floating_pnl': floating_pnl,
+                'floating_pnl_pct': floating_pnl_pct,
+                'status': status,
+                'signal_reason': reason,
+                'raw_detail': raw_detail,
+            }
+            conn.execute(
+                """
+                INSERT INTO position_entry_snapshots (
+                    account_id, source_trade_id, entry_date, stock_code, stock_name,
+                    source_type, strategy_tag, entry_price, entry_quantity, entry_amount,
+                    current_price, current_quantity, floating_pnl, floating_pnl_pct,
+                    status, signal_reason, raw_detail, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(account_id, source_trade_id) DO UPDATE SET
+                    entry_date=excluded.entry_date,
+                    stock_code=excluded.stock_code,
+                    stock_name=excluded.stock_name,
+                    source_type=excluded.source_type,
+                    strategy_tag=excluded.strategy_tag,
+                    entry_price=excluded.entry_price,
+                    entry_quantity=excluded.entry_quantity,
+                    entry_amount=excluded.entry_amount,
+                    current_price=excluded.current_price,
+                    current_quantity=excluded.current_quantity,
+                    floating_pnl=excluded.floating_pnl,
+                    floating_pnl_pct=excluded.floating_pnl_pct,
+                    status=excluded.status,
+                    signal_reason=excluded.signal_reason,
+                    raw_detail=excluded.raw_detail,
+                    updated_at=excluded.updated_at
+                """,
+                (
+                    row['account_id'], row['source_trade_id'], row['entry_date'], row['stock_code'], row['stock_name'],
+                    row['source_type'], row['strategy_tag'], row['entry_price'], row['entry_quantity'], row['entry_amount'],
+                    row['current_price'], row['current_quantity'], row['floating_pnl'], row['floating_pnl_pct'],
+                    row['status'], row['signal_reason'], row['raw_detail'], now,
+                ),
+            )
+            snapshots.append(row)
+        conn.commit()
+        return snapshots
+    finally:
+        conn.close()
+
+
+def render_entry_strategy_snapshot_section(account_id: int, target_date: date, compact: bool = False) -> str:
+    """Render manual-vs-auto entry preference summary from extracted snapshots."""
+    snapshots = extract_entry_snapshots(account_id, target_date)
+    if not snapshots:
+        return ''
+
+    groups: dict[tuple[str, str], dict] = {}
+    for s in snapshots:
+        key = (s['source_type'], s['strategy_tag'])
+        g = groups.setdefault(key, {
+            'count': 0,
+            'open_count': 0,
+            'qty': 0,
+            'amount': 0.0,
+            'floating_pnl': 0.0,
+            'weighted_pct': 0.0,
+            'examples': [],
+        })
+        g['count'] += 1
+        g['open_count'] += 1 if s['current_quantity'] > 0 else 0
+        g['qty'] += int(s['entry_quantity'] or 0)
+        g['amount'] += float(s['entry_amount'] or 0)
+        g['floating_pnl'] += float(s['floating_pnl'] or 0)
+        if s['current_quantity'] > 0 and s['entry_price']:
+            weight = float(s['entry_amount'] or 0)
+            g['weighted_pct'] += float(s['floating_pnl_pct'] or 0) * weight
+        if len(g['examples']) < (2 if compact else 4):
+            g['examples'].append(f"{s['stock_name']}({s['stock_code']}) {s['entry_date']}")
+
+    lines = ['### 🧬 建仓快照与策略标签']
+    if compact:
+        best = sorted(groups.items(), key=lambda kv: kv[1]['floating_pnl'], reverse=True)[:3]
+        for (source_type, strategy_tag), g in best:
+            avg_pct = g['weighted_pct'] / g['amount'] if g['amount'] else 0.0
+            lines.append(f"- {strategy_tag}: {g['count']} 笔 / 持有 {g['open_count']} 笔，浮盈亏 {g['floating_pnl']:+,.0f}（均 {avg_pct:+.2f}%）")
+        return '\n'.join(lines)
+
+    lines.append('| 来源 | 策略标签 | 笔数 | 仍持有 | 成本金额 | 当前浮盈亏 | 均值 | 示例 |')
+    lines.append('|---|---|---:|---:|---:|---:|---:|---|')
+    for (source_type, strategy_tag), g in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1])):
+        avg_pct = g['weighted_pct'] / g['amount'] if g['amount'] else 0.0
+        examples = '；'.join(g['examples'])
+        lines.append(
+            f"| {source_type} | `{strategy_tag}` | {g['count']} | {g['open_count']} | "
+            f"¥{g['amount']:,.0f} | {g['floating_pnl']:+,.0f} | {avg_pct:+.2f}% | {examples} |"
+        )
+    lines.append('')
+    lines.append('> 用途：把用户真实持仓的初始化建仓与自动 buy_zone/buy_strong 信号统一沉淀，后续可直接按策略标签评估手动/自动建仓收益偏好。')
+    return '\n'.join(lines)
+
 # =====================================
 # 2. 实现盈亏 (FIFO 配对)
 # =====================================
@@ -793,14 +1272,13 @@ def calculate_strategy_performance(account_id: int, target_date: date) -> dict:
         volatility = std * sqrt(252)
         sharpe = (mean / std) * sqrt(252) if std > 0 else None
 
-    closed = compute_realized_pnl_until(account_id, target_date)
-    win_count = sum(1 for r in closed if r['pnl'] > 0)
-    loss_count = sum(1 for r in closed if r['pnl'] < 0)
-    closed_count = len(closed)
+    from sim.closed_trades import analyze_closed_trades
+    closed_summary = analyze_closed_trades(account_id, target_date, conn_factory=get_conn)['summary']
+    closed_count = closed_summary['closed_count']
+    win_count = closed_summary['win_count']
+    loss_count = closed_summary['loss_count']
     win_rate = (win_count / closed_count) if closed_count else None
-    profit_sum = sum(r['pnl'] for r in closed if r['pnl'] > 0)
-    loss_sum = abs(sum(r['pnl'] for r in closed if r['pnl'] < 0))
-    profit_factor = (profit_sum / loss_sum) if loss_sum > 0 else (None if profit_sum == 0 else float('inf'))
+    profit_factor = closed_summary['profit_factor']
 
     return {
         'nav_days': len(rows),
@@ -940,10 +1418,130 @@ def render_strategy_performance_section(account_id: int, target_date: date, comp
     return '\n'.join(lines)
 
 
+def render_signal_performance_section(account_id: int, target_date: date, compact: bool = False) -> str:
+    """REQ-030：按开仓信号统计已平仓交易盈亏，用于验证信号有效性。"""
+    from sim.signal_performance import analyze_signal_performance
+
+    data = analyze_signal_performance(account_id, target_date, conn_factory=get_conn, limit=5 if compact else None)
+    s = data['summary']
+    rows = s.get('by_signal') or []
+    if not rows:
+        return ''
+
+    def pf_text(v) -> str:
+        return _fmt_metric(v, digits=2)
+
+    if compact:
+        lines = [
+            f"🎯 信号盈亏：{s['segment_count']} 段，净实现 {s['net_pnl']:+,.0f}，覆盖 {s['signal_count']} 类信号"
+        ]
+        for r in rows[:3]:
+            emoji = '🟢' if float(r.get('net_pnl') or 0) >= 0 else '🔴'
+            lines.append(
+                f"  {emoji} {r['signal']} {r['net_pnl']:+,.0f} | "
+                f"胜率 {r['win_rate']:.1f}% ({r['win_count']}/{r['closed_count']}) | PF {pf_text(r.get('profit_factor'))}"
+            )
+        return '\n'.join(lines)
+
+    lines = ['### 🎯 信号触发交易盈亏统计']
+    lines.append(
+        f"- 口径：按 FIFO 将已平仓卖出拆分回对应 BUY 批次，并归因到开仓信号；"
+        f"共 **{s['segment_count']}** 个平仓片段 / **{s['signal_count']}** 类信号，净实现 **{s['net_pnl']:+,.2f}**。"
+    )
+    lines.append('- 用途：验证 `buy_zone`、`buy_strong`、右侧确认等信号成交后的真实胜率、盈亏比和收益贡献。')
+    lines.append('')
+    lines.append('| 开仓信号 | 平仓片段 | 胜率 | 净实现盈亏 | 平均收益率 | Profit Factor | 覆盖标的 |')
+    lines.append('|---|---:|---:|---:|---:|---:|---:|')
+    for r in rows:
+        lines.append(
+            f"| `{r['signal']}` | {r['closed_count']} | {r['win_rate']:.1f}% "
+            f"({r['win_count']}/{r['closed_count']}) | {r['net_pnl']:+,.2f} | "
+            f"{r['avg_pnl_pct']:+.2f}% | {pf_text(r.get('profit_factor'))} | {r['symbol_count']} |"
+        )
+    lines.append('')
+    return '\n'.join(lines)
+
+
+def render_closed_trades_analysis_section(account_id: int, target_date: date, compact: bool = False) -> str:
+    """REQ-023：渲染已平仓历史交易盈亏分析。"""
+    from sim.closed_trades import analyze_closed_trades
+
+    data = analyze_closed_trades(account_id, target_date, conn_factory=get_conn, limit=5 if compact else None)
+    s = data['summary']
+    if not s['closed_count']:
+        return ''
+
+    pf = _fmt_metric(s['profit_factor'])
+    payoff = _fmt_metric(s['payoff_ratio'])
+    avg_hold = _fmt_metric(s['avg_holding_days'], '天', digits=1, none_text='样本不足')
+    max_profit = s.get('max_profit_trade') or {}
+    max_loss = s.get('max_loss_trade') or {}
+
+    if compact:
+        lines = [
+            f"🔒 平仓复盘：{s['closed_count']} 笔，胜率 {s['win_rate']:.2f}% | "
+            f"净实现 {s['net_pnl']:+,.0f} | 盈亏比 {payoff} | PF {pf}"
+        ]
+        if max_profit:
+            lines.append(f"  🟢 最大盈利 {max_profit.get('stock_name')} {float(max_profit.get('pnl') or 0):+,.0f}")
+        if max_loss and float(max_loss.get('pnl') or 0) < 0:
+            lines.append(f"  🔴 最大亏损 {max_loss.get('stock_name')} {float(max_loss.get('pnl') or 0):+,.0f}")
+        top = s.get('by_symbol') or []
+        if top:
+            leaders = '；'.join(f"{r['stock_name']} {r['pnl']:+,.0f}" for r in top[:3])
+            lines.append(f"  个股贡献：{leaders}")
+        return '\n'.join(lines)
+
+    lines = ['### 🔒 已平仓历史交易分析']
+    lines.append(
+        f"- 平仓笔数：**{s['closed_count']}**；胜率：**{s['win_rate']:.2f}%** "
+        f"（盈利 {s['win_count']} / 亏损 {s['loss_count']}）"
+    )
+    lines.append(
+        f"- 累计实现盈亏：**{s['net_pnl']:+,.2f}**；总盈利 {s['gross_profit']:+,.2f} / 总亏损 -{s['gross_loss']:,.2f}"
+    )
+    lines.append(
+        f"- 平均盈利：{s['avg_win']:+,.2f}；平均亏损：{s['avg_loss']:+,.2f}；"
+        f"盈亏比：**{payoff}**；Profit Factor：**{pf}**；平均持仓：{avg_hold}"
+    )
+    if max_profit:
+        lines.append(
+            f"- 单笔最大盈利：🟢 {max_profit.get('stock_name')}({max_profit.get('stock_code')}) "
+            f"{float(max_profit.get('pnl') or 0):+,.2f} / {float(max_profit.get('pnl_pct') or 0):+.2f}% "
+            f"（{max_profit.get('close_date')}）"
+        )
+    if max_loss and float(max_loss.get('pnl') or 0) < 0:
+        lines.append(
+            f"- 单笔最大亏损：🔴 {max_loss.get('stock_name')}({max_loss.get('stock_code')}) "
+            f"{float(max_loss.get('pnl') or 0):+,.2f} / {float(max_loss.get('pnl_pct') or 0):+.2f}% "
+            f"（{max_loss.get('close_date')}）"
+        )
+    lines.append('')
+    lines.append('| 个股 | 平仓笔数 | 胜率 | 累计实现盈亏 | 平均收益率 | 卖出金额 |')
+    lines.append('|---|---:|---:|---:|---:|---:|')
+    for r in (s.get('by_symbol') or [])[:10]:
+        lines.append(
+            f"| {r['stock_name']} ({r['stock_code']}) | {r['closed_count']} | {r['win_rate']:.1f}% | "
+            f"{r['pnl']:+,.2f} | {r['avg_pnl_pct']:+.2f}% | ¥{r['sell_amount']:,.0f} |"
+        )
+    lines.append('')
+    lines.append('最近平仓：')
+    for r in data['closed_trades'][:8]:
+        emoji = '🟢' if float(r.get('pnl') or 0) >= 0 else '🔴'
+        hold = f" / 持仓 {r['holding_days']}天" if r.get('holding_days') is not None else ''
+        lines.append(
+            f"- {emoji} {r['close_date']} {r['stock_name']}({r['stock_code']}) {r['quantity']}股 "
+            f"成本 ¥{float(r['avg_cost']):.3f} → 卖 ¥{float(r['sell_price']):.2f} "
+            f"= {float(r['pnl']):+,.2f} ({float(r['pnl_pct']):+.2f}%){hold}"
+        )
+    lines.append('')
+    return '\n'.join(lines)
+
+
 # =====================================
 # 5. 文本生成
 # =====================================
-def render_account_section(acct: dict, target_date: date) -> str:
+def render_account_section(acct: dict, target_date: date, market_snapshot=None) -> str:
     lines = []
     
     # ── REQ-035: 资金口径一致性检测 ──────────────────────
@@ -986,9 +1584,17 @@ def render_account_section(acct: dict, target_date: date) -> str:
     realized_pnl = sum(r['pnl'] for r in realized)
     floating_pnl = sum(p['pnl'] for p in positions)
     review_alerts = detect_trade_anomaly_alerts(account, positions, trades, realized, nav, target_date)
+    technical_breaks = detect_position_technical_breaks(positions, target_date)
+    allocation = summarize_allocation(
+        account,
+        positions,
+        fetch_recent_entry_trades(acct['id']),
+        market_snapshot if market_snapshot is not None else fetch_market_sentiment(target_date),
+        load_config(),
+    )
 
-    # 标题行（如有口径问题或交易异动，加警告图标）
-    title_prefix = '⚠️ ' if (basis_warnings or review_alerts) else ''
+    # 标题行（如有口径问题、交易异动或技术破位，加警告图标）
+    title_prefix = '⚠️ ' if (basis_warnings or review_alerts or has_technical_break_issue(technical_breaks)) else ''
     lines.append(f"## {title_prefix}{acct['icon']} {acct['name']}")
     lines.append('')
 
@@ -1003,6 +1609,11 @@ def render_account_section(acct: dict, target_date: date) -> str:
         lines.append(alert_block)
         lines.append('')
 
+    technical_block = format_position_technical_breaks(technical_breaks, compact=False)
+    if technical_block:
+        lines.append(technical_block)
+        lines.append('')
+
     lines.append(
         f"💰 总资产 ¥{nav['total_value']:,.2f} "
         f"(现金 ¥{nav['cash']:,.2f} + 持仓市值 ¥{nav['market_value']:,.2f})"
@@ -1015,7 +1626,23 @@ def render_account_section(acct: dict, target_date: date) -> str:
     )
     lines.append('')
 
+    allocation_section = render_allocation_markdown(allocation, compact=False)
+    if allocation_section:
+        lines.append(allocation_section)
+
     lines.append(render_strategy_performance_section(acct['id'], target_date, compact=False))
+
+    entry_snapshot_section = render_entry_strategy_snapshot_section(acct['id'], target_date, compact=False)
+    if entry_snapshot_section:
+        lines.append(entry_snapshot_section)
+
+    closed_analysis = render_closed_trades_analysis_section(acct['id'], target_date, compact=False)
+    if closed_analysis:
+        lines.append(closed_analysis)
+
+    signal_perf = render_signal_performance_section(acct['id'], target_date, compact=False)
+    if signal_perf:
+        lines.append(signal_perf)
 
     contribution = render_pnl_contribution_section(positions, realized, nav['total_value'], compact=False)
     if contribution:
@@ -1087,13 +1714,134 @@ def render_account_section(acct: dict, target_date: date) -> str:
     return '\n'.join(lines)
 
 
+def analyze_intraday_snapshot_coverage(target_date: date, log_path: Path | None = None) -> dict:
+    """Audit whether intraday price snapshots cover the full trading day (BUG-005).
+
+    ``portfolio_alert.py`` appends one JSON object per run to
+    ``output/intraday_log.jsonl``.  Daily review used to consume the end-state
+    account/position tables without checking whether that collector actually ran
+    across both trading sessions.  If the scheduler only fires in a narrow
+    window (e.g. 13:37 -> 14:55), the review can look complete while missing
+    morning and close context.  This helper makes the coverage explicit and
+    machine-testable.
+    """
+    import json
+
+    log_path = log_path or (ROOT / 'output' / 'intraday_log.jsonl')
+    sessions = (
+        (dtime(9, 30), dtime(11, 30)),
+        (dtime(13, 0), dtime(15, 0)),
+    )
+    result = {
+        'date': target_date.isoformat(),
+        'log_path': str(log_path),
+        'count': 0,
+        'first_ts': None,
+        'last_ts': None,
+        'first_time': None,
+        'last_time': None,
+        'morning_count': 0,
+        'afternoon_count': 0,
+        'status': 'missing',
+        'warnings': [],
+    }
+
+    if not log_path.exists():
+        result['warnings'].append('未找到 intraday_log.jsonl，无法验证盘中采样覆盖。')
+        return result
+
+    timestamps: list[datetime] = []
+    try:
+        with log_path.open('r', encoding='utf-8') as f:
+            for line in f:
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                ts_raw = obj.get('ts') or obj.get('timestamp')
+                if not ts_raw or not str(ts_raw).startswith(target_date.isoformat()):
+                    continue
+                try:
+                    ts = datetime.fromisoformat(str(ts_raw))
+                except Exception:
+                    continue
+                timestamps.append(ts)
+    except Exception as exc:
+        result['warnings'].append(f'读取盘中采样日志失败：{type(exc).__name__}')
+        return result
+
+    timestamps.sort()
+    result['count'] = len(timestamps)
+    if not timestamps:
+        result['warnings'].append('当日没有任何盘中价格快照。')
+        return result
+
+    first = timestamps[0]
+    last = timestamps[-1]
+    result.update({
+        'first_ts': first.isoformat(),
+        'last_ts': last.isoformat(),
+        'first_time': first.strftime('%H:%M'),
+        'last_time': last.strftime('%H:%M'),
+    })
+
+    for ts in timestamps:
+        t = ts.time()
+        if sessions[0][0] <= t <= sessions[0][1]:
+            result['morning_count'] += 1
+        elif sessions[1][0] <= t <= sessions[1][1]:
+            result['afternoon_count'] += 1
+
+    if result['morning_count'] == 0:
+        result['warnings'].append('上午盘缺少采样点（09:30-11:30）。')
+    if result['afternoon_count'] == 0:
+        result['warnings'].append('下午盘缺少采样点（13:00-15:00）。')
+    if first.time() > dtime(9, 45):
+        result['warnings'].append(f'首个采样点偏晚：{result["first_time"]}，未覆盖开盘阶段。')
+    if last.time() < dtime(14, 55):
+        result['warnings'].append(f'最后采样点偏早：{result["last_time"]}，未覆盖收盘阶段。')
+
+    # A full day with a 10-minute Windows task should have roughly 25+ samples;
+    # keep the threshold lower to avoid false positives when the task starts late
+    # but still covers both sessions.
+    if result['count'] < 12:
+        result['warnings'].append(f'采样点数量偏少：{result["count"]} 个，建议检查 Windows 计划任务频率。')
+
+    result['status'] = 'ok' if not result['warnings'] else 'partial'
+    return result
+
+
+def render_intraday_snapshot_coverage_section(target_date: date, compact: bool = False) -> str:
+    coverage = analyze_intraday_snapshot_coverage(target_date)
+    if compact:
+        if coverage['status'] == 'ok':
+            return ''
+        rng = 'N/A' if not coverage.get('first_time') else f"{coverage['first_time']} -> {coverage['last_time']}"
+        return f"⚠️ 盘中采样覆盖不完整：{coverage['count']} 点，范围 {rng}；请检查 QuantLearn_PortfolioAlert 计划任务。"
+
+    lines = ['## 🧭 盘中采样覆盖审计', '']
+    rng = 'N/A' if not coverage.get('first_time') else f"{coverage['first_time']} -> {coverage['last_time']}"
+    status_text = '✅ 完整' if coverage['status'] == 'ok' else '⚠️ 不完整'
+    lines.append(f"- 状态：**{status_text}**")
+    lines.append(f"- 数据点：{coverage['count']} 个；收集范围：{rng}")
+    lines.append(f"- 上午/下午采样：{coverage['morning_count']} / {coverage['afternoon_count']}")
+    if coverage['warnings']:
+        lines.append('- 诊断：')
+        for w in coverage['warnings']:
+            lines.append(f"  - {w}")
+        lines.append('- 建议：确认 `QuantLearn_PortfolioAlert`/`portfolio_alert_runner.bat` 在交易日 09:30-11:30、13:00-15:00 按 5-10 分钟频率运行；复盘应在 15:05 后生成。')
+    lines.append('')
+    return '\n'.join(lines)
+
+
 def generate_full_md(target_date: date) -> str:
     sentiment = fetch_market_sentiment(target_date)
     parts = [f"# 📊 {target_date.year}/{target_date.month}/{target_date.day} 日复盘\n"]
     parts.append(render_market_sentiment_section(sentiment, compact=False))
+    parts.append(render_intraday_snapshot_coverage_section(target_date, compact=False))
     parts.append('---\n')
     for acct in ACCOUNTS:
-        parts.append(render_account_section(acct, target_date))
+        parts.append(render_account_section(acct, target_date, sentiment))
         parts.append('---\n')
     parts.append(render_execution_consistency_section(target_date, compact=False))
     parts.append('---\n')
@@ -1106,6 +1854,9 @@ def generate_wecom_summary(target_date: date) -> str:
     sentiment = fetch_market_sentiment(target_date)
     lines = [f"# 📊 {target_date.year}/{target_date.month}/{target_date.day} 日复盘\n"]
     lines.append(render_market_sentiment_section(sentiment, compact=True))
+    coverage_warning = render_intraday_snapshot_coverage_section(target_date, compact=True)
+    if coverage_warning:
+        lines.append(coverage_warning)
     lines.append('')
 
     for acct in ACCOUNTS:
@@ -1124,8 +1875,10 @@ def generate_wecom_summary(target_date: date) -> str:
         nav_history = fetch_nav_history(acct['id'], target_date, 1)
         nav = nav_history[0] if nav_history else None
         review_alerts = detect_trade_anomaly_alerts(account, positions, trades, realized, nav, target_date)
+        technical_breaks = detect_position_technical_breaks(positions, target_date)
+        allocation = summarize_allocation(account, positions, fetch_recent_entry_trades(acct['id']), sentiment, load_config())
 
-        title_prefix = '⚠️ ' if (basis_warnings or review_alerts) else ''
+        title_prefix = '⚠️ ' if (basis_warnings or review_alerts or has_technical_break_issue(technical_breaks)) else ''
         lines.append(f"## {title_prefix}{acct['icon']} {acct['name']}")
         if nav:
             dr = nav.get('daily_return')
@@ -1135,12 +1888,23 @@ def generate_wecom_summary(target_date: date) -> str:
                 f"({dr_text} / 累计 {nav['cumulative_return']:+.2f}%)"
             )
             lines.append(render_strategy_performance_section(acct['id'], target_date, compact=True))
+            closed_summary = render_closed_trades_analysis_section(acct['id'], target_date, compact=True)
+            if closed_summary:
+                lines.append(closed_summary)
+            allocation_summary = render_allocation_markdown(allocation, compact=True)
+            if allocation_summary:
+                lines.append(allocation_summary)
+            signal_summary = render_signal_performance_section(acct['id'], target_date, compact=True)
+            if signal_summary:
+                lines.append(signal_summary)
         if basis_warnings:
             lines.append('⚠️ 账户资金口径变更：已暂停跨日收益率对比')
         alert_block = format_review_alerts(review_alerts, compact=True)
         if alert_block:
             lines.append(alert_block)
-
+        technical_block = format_position_technical_breaks(technical_breaks, compact=True)
+        if technical_block:
+            lines.append(technical_block)
         if trades:
             buy_n = sum(1 for t in trades if t['direction'] == 'BUY')
             sell_n = len(trades) - buy_n

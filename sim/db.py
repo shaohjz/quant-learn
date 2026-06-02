@@ -75,6 +75,8 @@ def init_tables():
                 market_value REAL,
                 pnl REAL,
                 pnl_pct REAL,
+                trailing_stop_price REAL DEFAULT NULL,
+                highest_price REAL DEFAULT NULL,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -117,6 +119,10 @@ def init_tables():
                 UNIQUE (account_id, trade_date)
             )
         """)
+
+        # 兼容旧库：CREATE TABLE IF NOT EXISTS 不会给既有表补列。
+        _ensure_sim_trades_detail_columns(cur)
+        _ensure_sim_positions_trailing_columns(cur)
 
         # 索引
         cur.execute("CREATE INDEX IF NOT EXISTS idx_trades_date ON sim_trades(trade_date)")
@@ -193,6 +199,89 @@ def init_tables():
             print("  ✓ 默认账户已存在")
 
         print(f"  ✓ 所有表已创建/确认 (DB={DB_PATH})")
+    finally:
+        conn.close()
+
+
+def _ensure_sim_positions_trailing_columns(cur) -> None:
+    """确保 sim_positions 具备 REQ-041 跟踪止损字段。
+
+    CREATE TABLE IF NOT EXISTS 不会给旧库补列；本迁移同时补齐
+    trailing_stop_price（当前生效跟踪止损）和 highest_price（持仓后最高价）。
+    highest_price 默认可为空，首次价格更新/买入时再以成本或现价初始化。
+    """
+    cols = {r[1] for r in cur.execute("PRAGMA table_info(sim_positions)").fetchall()}
+    if "trailing_stop_price" not in cols:
+        cur.execute("ALTER TABLE sim_positions ADD COLUMN trailing_stop_price REAL DEFAULT NULL")
+    if "highest_price" not in cols:
+        cur.execute("ALTER TABLE sim_positions ADD COLUMN highest_price REAL DEFAULT NULL")
+
+
+def ensure_sim_positions_trailing_columns(cur=None) -> None:
+    """公开迁移入口：幂等补齐 REQ-041 跟踪止损字段。"""
+    if cur is not None:
+        _ensure_sim_positions_trailing_columns(cur)
+        return
+    conn = get_conn()
+    try:
+        _ensure_sim_positions_trailing_columns(conn.cursor())
+    finally:
+        conn.close()
+
+
+def calc_trailing_stop_price(entry_price: float, highest_price: float, current_trailing: float | None = None) -> tuple[float, str]:
+    """按 REQ-041 计算跟踪止损价；结果只能上移不能下移。"""
+    current = float(current_trailing or 0.0)
+    if entry_price <= 0 or highest_price <= 0:
+        return current, ""
+
+    profit_pct = (highest_price - entry_price) / entry_price
+    if profit_pct > 0.20:
+        candidate = max(entry_price * 1.10, highest_price * 0.92)
+        reason = "浮盈>20%，跟踪止损=max(entry*1.10, high*0.92)"
+    elif profit_pct > 0.10:
+        candidate = entry_price * 1.02
+        reason = "浮盈>10%，止损抬到 entry*1.02"
+    elif profit_pct > 0.05:
+        candidate = entry_price * 1.00
+        reason = "浮盈>5%，止损抬到保本位"
+    else:
+        candidate = current
+        reason = "浮盈未超过5%，跟踪止损未启动"
+
+    candidate = round(float(candidate or 0.0), 4)
+    if current > candidate:
+        return current, "保持原跟踪止损，不下移"
+    return candidate, reason
+
+
+def _ensure_sim_trades_detail_columns(cur) -> None:
+    """确保 sim_trades 具备完整信号解释字段（REQ-032）。
+
+    旧的 sim_live_mirror.db 可能只有 signal_reason 短文本；在写入成交前补齐
+    signal_detail，避免完整触发规则、指标快照、阈值、策略版本等上下文被静默丢弃。
+    """
+    cols = {r[1] for r in cur.execute("PRAGMA table_info(sim_trades)").fetchall()}
+    if "signal_detail" not in cols:
+        cur.execute("ALTER TABLE sim_trades ADD COLUMN signal_detail TEXT")
+    # 历史脚本中已使用这两个字段；一并幂等补齐，降低旧库插入失败概率。
+    if "trade_time" not in cols:
+        cur.execute("ALTER TABLE sim_trades ADD COLUMN trade_time TEXT")
+    if "trade_context" not in cols:
+        cur.execute("ALTER TABLE sim_trades ADD COLUMN trade_context TEXT")
+
+
+def ensure_sim_trades_detail_columns(cur=None) -> None:
+    """公开迁移入口：在成交写入前幂等补齐 REQ-032 所需字段。
+
+    可传入当前事务的 cursor，避免在已有写事务中另开连接导致 SQLite 锁冲突。
+    """
+    if cur is not None:
+        _ensure_sim_trades_detail_columns(cur)
+        return
+    conn = get_conn()
+    try:
+        _ensure_sim_trades_detail_columns(conn.cursor())
     finally:
         conn.close()
 

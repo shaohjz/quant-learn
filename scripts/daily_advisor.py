@@ -284,386 +284,45 @@ def gen_real_section(rt_prices, phase=''):
 # ====================================================================
 #  各阶段
 # ====================================================================
-def gen_pre_market(sim_positions, rules, cfg, auto_cfg):
-    today = date.today().strftime('%m/%d')
-    lines = [f"☀️ 盘前操作建议 ({today})", "=" * 40]
-    
-    # 获取所有相关股票行情
-    all_codes = list(set(
-        [p['stock_code'] for p in sim_positions] +
-        [r['code'] for r in rules] +
-        [p['code'] for p in load_real_positions()[1]]
-    ))
-    rt = get_sina_prices(all_codes)
-    
-    # 实盘（放最前面）
-    lines.append(gen_real_section(rt, 'pre'))
-    
-    # 模拟盘概览
-    acc = get_account()
-    total_mv = sum(p['quantity'] * p.get('avg_cost', 0) for p in sim_positions)
-    lines.append(f"\n🧪 模拟盘: 现金¥{acc.get('cash', 0):,.0f} | {len(sim_positions)}只 | 仓位{total_mv/(acc.get('cash',0)+total_mv)*100:.0f}%")
-    for p in sim_positions:
-        code = p['stock_code']
-        if code in rt:
-            pnl_pct = (rt[code]['price'] - p['avg_cost']) / p['avg_cost'] * 100
-            emoji = "🟢" if pnl_pct >= 0 else "🔴"
-            lines.append(f"  {emoji} {code} {p.get('stock_name',''):6s} {p['quantity']}股 @{p['avg_cost']:.2f} 浮盈{pnl_pct:+.1f}%")
-    
-    # 今日关键买入价位
-    lines.append("\n🎯 今日关键价位:")
-    buy_rules = [r for r in rules if 'buy' in r['level']]
-    shown = set()
-    # 按 trend_filter gate 分组：auto 在前，其他后面
-    gate_priority = {'auto': 0, 'require_support': 1, 'wait_volume': 2, 'wait_macd': 3, 'manual_only': 4, 'frozen': 5}
-    def _key(r):
-        gate = (r.get('trend_filter') or {}).get('gate', 'auto')
-        return (gate_priority.get(gate, 9), r['trigger'])
-    
-    for r in sorted(buy_rules, key=_key):
-        if r['code'] in shown:
-            continue
-        shown.add(r['code'])
-        tf = r.get('trend_filter') or {}
-        gate = tf.get('gate', 'auto')
-        gate_tag = {
-            'auto': '✅',
-            'require_support': '🔍需支撑',
-            'wait_volume': f"📊等量",
-            'wait_macd': '⏳等MACD',
-            'manual_only': f"✋{'高ATR' if tf.get('status') == 'DIRTY' else '均线空'}",
-            'frozen': '⛔冻结',
-        }.get(gate, '')
-        lines.append(f"  • {r['code']} {r['name']:6s} 触发¥{r['trigger']:.2f} ({r['level']}) [{gate_tag}]")
-    
-    # 止损价位
-    lines.append("\n🚨 止损线:")
-    for p in sim_positions:
-        stop = p['avg_cost'] * 0.92
-        lines.append(f"  • {p['stock_code']} {p.get('stock_name',''):6s} 止损¥{stop:.2f}")
-    
-    lines.append("\n📝 策略: 竞价观察→开盘5分钟不动→触发则按计划执行→14点后不开新仓")
+def _real_only_codes() -> list[str]:
+    """Codes that should appear in user-facing operation advice.
+
+    User-facing WeCom advice is for the real account only.  Sim/live_mirror
+    positions and paper watchlist signals are useful for research, but mixing
+    them into the same message makes the actual action unclear.
+    """
+    _, real_pos = load_real_positions()
+    return [p['code'] for p in real_pos]
+
+
+def _gen_real_only(title: str, mode: str) -> str:
+    today = date.today().strftime('%Y-%m-%d')
+    codes = _real_only_codes()
+    rt = get_sina_prices(codes) if codes else {}
+    lines = [f"{title} | {today}", "=" * 40]
+    lines.append(gen_real_section(rt, mode))
+    lines.append("\n说明：本消息只展示实盘持仓与实盘操作建议；模拟盘/观察池信号仅后台记录，不混入决策提醒。")
     return '\n'.join(lines)
+
+
+def gen_pre_market(sim_positions, rules, cfg, auto_cfg):
+    return _gen_real_only("🌅 盘前实盘操作建议", "pre")
 
 
 def gen_auction(sim_positions, rules):
-    lines = ["🔔 竞价建议 (9:15-9:25)", "=" * 40]
-    
-    all_codes = list(set(
-        [p['stock_code'] for p in sim_positions] +
-        [r['code'] for r in rules] +
-        [p['code'] for p in load_real_positions()[1]]
-    ))
-    rt = get_sina_prices(all_codes)
-    
-    # 实盘
-    lines.append(gen_real_section(rt, 'auction'))
-    
-    # 模拟盘竞价
-    lines.append("\n🧪 模拟盘竞价:")
-    for p in sim_positions:
-        code = p['stock_code']
-        if code in rt:
-            pct = rt[code]['pct']
-            emoji = "🟢" if pct > 0 else "🔴" if pct < 0 else "⚪"
-            lines.append(f"  {emoji} {code} {rt[code]['name']:6s} 竞价¥{rt[code]['price']:.2f} ({pct:+.1f}%)")
-    
-    # 触发监测
-    lines.append("\n🎯 触发监测:")
-    triggered = []
-    close_to = []
-    for r in rules:
-        if 'buy' not in r['level']:
-            continue
-        code = r['code']
-        if code in rt:
-            price = rt[code]['price']
-            if price <= r['trigger']:
-                triggered.append((code, r['name'], price, r['trigger'], r['level'], r.get('trend_filter') or {}))
-            elif price <= r['trigger'] * 1.02:
-                close_to.append((code, r['name'], price, r['trigger'], r['level'], r.get('trend_filter') or {}))
-    
-    def _gate_tag(tf):
-        gate = tf.get('gate', 'auto')
-        return {
-            'auto': '✅可买',
-            'require_support': '🔍需支撑',
-            'wait_volume': '📊等量',
-            'wait_macd': '⏳等MACD',
-            'manual_only': '✋仅提醒',
-            'frozen': '⛔冻结',
-        }.get(gate, '')
-
-    if triggered:
-        for code, name, price, trigger, level, tf in triggered:
-            tag = _gate_tag(tf)
-            note = '→ 开盘确认后建仓' if tf.get('gate', 'auto') == 'auto' else f'→ [{tag}] sim_executor 拦截，需人工判断'
-            lines.append(f"  🔥 {code} {name} ¥{price:.2f} ≤ ¥{trigger:.2f} ({level}) {note}")
-    if close_to:
-        for code, name, price, trigger, level, tf in close_to:
-            gap = (price - trigger) / trigger * 100
-            tag = _gate_tag(tf)
-            lines.append(f"  📍 {code} {name} ¥{price:.2f} (距触发{gap:.1f}%) [{tag}]")
-    if not triggered and not close_to:
-        lines.append("  ✅ 暂无接近触发的观察股")
-    
-    lines.append("\n📝 竞价操作: 9:15-9:20可撤单观察 | 9:20后不可撤 | 大幅低开>3%不急卖")
-    return '\n'.join(lines)
+    return _gen_real_only("⚡ 集合竞价实盘建议", "auction")
 
 
 def gen_intraday(sim_positions, rules):
-    lines = ["📊 盘中操作建议", "=" * 40]
-    
-    all_codes = list(set(
-        [p['stock_code'] for p in sim_positions] +
-        [r['code'] for r in rules] +
-        [p['code'] for p in load_real_positions()[1]]
-    ))
-    rt = get_sina_prices(all_codes)
-    
-    # 实盘
-    lines.append(gen_real_section(rt, 'intraday'))
-    
-    # 模拟盘信号 — 每条附带 原因 + 数据依据
-    acc = get_account()
-    sim_total = sum(p['quantity'] * p.get('current_price', p.get('avg_cost', 0)) for p in sim_positions) + acc.get('cash', 0)
-    lines.append(f"\n🧪 模拟盘信号（live_mirror 组合视角 · 总资¥{sim_total:,.0f} · 现金¥{acc.get('cash',0):,.0f}）:")
-    action_count = 0
-    
-    # 按 code 分组 rules，方便查同一只股的所有阈值
-    rules_by_code = {}
-    for r in rules:
-        rules_by_code.setdefault(r['code'], []).append(r)
-    
-    # === 持仓股的止损 / 止盈 信号 ===
-    for p in sim_positions:
-        code = p['stock_code']
-        cost = p['avg_cost']
-        if code not in rt:
-            continue
-        d = rt[code]
-        price = d['price']
-        pnl_pct = (price - cost) / cost * 100
-        stop = cost * 0.92  # 8% 机械止损
-        ctx = get_stock_context(code, rules_by_code.get(code, []), price)
-        
-        if price <= stop:
-            # P0: 调用三档评级（量价共振 + 收盘确认）
-            sev_label = ''
-            sev_reason = ''
-            sev_advice = ''
-            try:
-                from sim_executor import _check_stop_loss_severity, _is_late_session, _get_today_vol_ratio
-                trigger_rule = {'trigger': stop, 'level': 'stop_loss'}
-                position = {
-                    'quantity': p['quantity'], 'avg_cost': cost,
-                    'highest_price': p.get('highest_price') or cost,
-                    'trailing_stop_price': p.get('trailing_stop_price') or 0,
-                }
-                sev, sev_act, sev_reason = _check_stop_loss_severity(code, trigger_rule, price, position)
-                if sev == 'soft':
-                    sev_label = '⚠️ 软止损（盘中预警）'
-                    sev_advice = '量能未放大，不自动卖。等 14:50 后复查：若仍破 → 减半；反包→震仓考验'
-                elif sev == 'confirmed':
-                    sev_label = '📉 确认止损（量能证实）'
-                    sev_advice = f'赋量下跌或近收盘仍破 → 减半仓 {p["quantity"]//2} 股'
-                elif sev == 'hard':
-                    sev_label = '⛔️ 硬止损（倍破 5%）'
-                    sev_advice = f'深度下跌，不留情全卖 {p["quantity"]} 股'
-                vr = _get_today_vol_ratio(code)
-                vr_str = f'量比{vr:.2f}×' if vr is not None else '量能未知'
-                late_str = '近收盘' if _is_late_session() else '盘中'
-            except Exception as ex:
-                logger.warning(f"daily_advisor 调 _check_stop_loss_severity 异常: {ex}")
-                vr_str, late_str = '量能未知', ''
-            
-            # 双重上下文：原有 ma20/trend_break + P0 量价
-            extra = []
-            if ctx['ma20']:
-                ma20_gap = (price - ctx['ma20']) / ctx['ma20'] * 100
-                if ma20_gap < 0:
-                    extra.append(f"距 MA20({ctx['ma20']:.2f}) 还跌 {ma20_gap:.1f}%")
-            if ctx['trend_break'] and price <= ctx['trend_break']:
-                extra.append(f"同时破 trend_break({ctx['trend_break']:.2f}) ⚠️趋势失效")
-            extra.append(f"{late_str} | {vr_str}")
-            extra_str = " | ".join(extra)
-            
-            head = sev_label or '🚨 止损'
-            lines.append(
-                f"  {head} {code} {d['name']} ¥{price:.2f} ≤ 止损线¥{stop:.2f}(成本×0.92) | 浮亏{pnl_pct:+.1f}% 今日{d['pct']:+.1f}%"
-            )
-            if extra_str:
-                lines.append(f"     ↳ {extra_str}")
-            if sev_reason:
-                lines.append(f"     ↳ 📊 评级: {sev_reason}")
-            if sev_advice:
-                lines.append(f"     ↳ 💡 建议: {sev_advice}")
-            else:
-                lines.append(f"     ↳ 💡 原因: 机械止损线=成本×0.92（不超 8% 亏损），现价已跳下。建议减半仓 {p['quantity']//2} 股")
-            action_count += 1
-        elif pnl_pct >= 15:
-            lines.append(
-                f"  🎯 止盈 {code} {d['name']} ¥{price:.2f} 浮盈{pnl_pct:+.1f}% 今日{d['pct']:+.1f}%"
-            )
-            lines.append(f"     ↳ 💡 原因: 浮盈达 15%，减半仓 {p['quantity']//2} 股锁利")
-            action_count += 1
-    
-    # === 买入信号 — 附带原因 ===
-    # 同一只股多个 buy 规则只取优先级最高的（buy_strong > buy_zone），避免刷屏
-    triggered_buys = {}  # code -> best rule
-    for r in rules:
-        if 'buy' not in r['level']:
-            continue
-        if r.get('auto_buy_disabled'):
-            continue
-        code = r['code']
-        if code not in rt:
-            continue
-        if rt[code]['price'] > r['trigger']:
-            continue
-        priority = {'buy_strong': 2, 'buy_zone': 1}.get(r['level'], 0)
-        if code not in triggered_buys or priority > triggered_buys[code][0]:
-            triggered_buys[code] = (priority, r)
-    
-    for code, (_, r) in triggered_buys.items():
-        d = rt[code]
-        held = any(p['stock_code'] == code for p in sim_positions)
-        ctx = get_stock_context(code, rules_by_code.get(code, []), d['price'])
-        
-        # ⚡ trend_filter 状态标签
-        tf = r.get('trend_filter', {}) or {}
-        gate = tf.get('gate', 'auto')
-        
-        warn = []
-        if ctx['trend_break'] and d['price'] <= ctx['trend_break']:
-            warn.append(f"⚠️ 同时破 trend_break({ctx['trend_break']:.2f})—折价别接")
-        if d['pct'] < -3:
-            warn.append(f"⚠️ 今日跌幅{d['pct']:+.1f}% 偏深")
-        if held:
-            warn.append("📍 已有持仓（不加仓）")
-        
-        if r['level'] == 'buy_zone':
-            level_meaning = "MA10 附近 → 试探建仓"
-        elif r['level'] == 'buy_strong':
-            level_meaning = "MA20 优质建仓区"
-        else:
-            level_meaning = r['level']
-        
-        # 根据 gate 选择 emoji + 拼标签
-        gate_label = ''
-        if gate == 'auto':
-            emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
-        elif gate == 'require_support':
-            emoji = "🔍"
-            gate_label = f" [🔍需支撑+量能 MA60¥{tf.get('ma60', 0):.2f}]"
-        elif gate == 'frozen':
-            emoji = "⛔"
-            gate_label = f" [⛔冻结 status={tf.get('status')} last/MA60={tf.get('last_vs_ma60_pct')}%]"
-        elif gate == 'manual_only':
-            emoji = "✋"
-            if tf.get('status') == 'DIRTY':
-                gate_label = f" [✋仅提醒 ATR={tf.get('atr_pct')}% 趋势不可信]"
-            else:
-                gate_label = f" [✋仅提醒 MA20<MA60 {tf.get('ma20_vs_ma60_pct')}%]"
-        elif gate == 'wait_macd':
-            emoji = "⏳"
-            gate_label = f" [⏳等MACD金叉]"
-        elif gate == 'wait_volume':
-            emoji = "📊"
-            gate_label = f" [📊等量能放大 vol×{tf.get('vol_ratio', 0):.2f}]"
-        else:
-            emoji = "⚠️" if (warn and not held) else ("📍" if held else "💰")
-        
-        lines.append(
-            f"  {emoji} {code} {r['name']} ¥{d['price']:.2f} ≤ ¥{r['trigger']:.2f} ({r['level']}) 今日{d['pct']:+.1f}%{gate_label}"
-        )
-        lines.append(f"     ↳ 💡 含义: {level_meaning}")
-        if r.get('source'):
-            lines.append(f"     ↳ 🔖 来源: {r['source']}")
-        # gate 不是 auto 时加提示
-        if gate != 'auto':
-            gate_explain = {
-                'frozen': "⛔ sim_executor 已拦截，需人工判断是否手动买",
-                'require_support': "🔍 价位在支撑区且今日量能企稳+启动信号才会自动买（左侧低吸）",
-                'manual_only': "✋ sim_executor 不会自动买，欲入则手动下单",
-                'wait_macd': "⏳ 实时复查 MACD 金叉才会自动买",
-                'wait_volume': "📊 实时复查量能放大才会自动买",
-            }.get(gate, '')
-            if gate_explain:
-                lines.append(f"     ↳ {gate_explain}")
-        if warn:
-            lines.append(f"     ↳ {' | '.join(warn)}")
-        action_count += 1
-    
-    if action_count == 0:
-        lines.append("  ✅ 暂无操作信号")
-    
-    return '\n'.join(lines)
+    return _gen_real_only(f"📊 盘中实盘操作建议 {datetime.now().strftime('%H:%M')}", "intraday")
 
 
 def gen_closing(sim_positions, rules):
-    lines = ["🌅 尾盘建议 (14:00-15:00)", "=" * 40]
-    
-    all_codes = list(set(
-        [p['stock_code'] for p in sim_positions] +
-        [p['code'] for p in load_real_positions()[1]]
-    ))
-    rt = get_sina_prices(all_codes)
-    
-    # 实盘（放最前面，尾盘建议最重要）
-    lines.append(gen_real_section(rt, 'closing'))
-    
-    # 模拟盘
-    lines.append("\n🧪 模拟盘:")
-    for p in sim_positions:
-        code = p['stock_code']
-        if code in rt:
-            d = rt[code]
-            pnl_pct = (d['price'] - p['avg_cost']) / p['avg_cost'] * 100
-            amp = (d['high'] - d['low']) / d['yclose'] * 100 if d['yclose'] > 0 else 0
-            emoji = "🟢" if d['pct'] > 0 else "🔴"
-            lines.append(f"  {emoji} {code} {d['name']:6s} ¥{d['price']:.2f} 今日{d['pct']:+.1f}% 浮盈{pnl_pct:+.1f}%")
-    
-    lines.append("\n📝 尾盘原则: 不开新仓 | 拉升>3%可减仓 | 跳水>3%不恐慌卖 | 关注14:57集合竞价")
-    return '\n'.join(lines)
+    return _gen_real_only("🌅 尾盘实盘建议", "closing")
 
 
 def gen_review(sim_positions, rules):
-    lines = ["📝 盘后复盘", "=" * 40]
-    
-    all_codes = list(set(
-        [p['stock_code'] for p in sim_positions] +
-        [p['code'] for p in load_real_positions()[1]]
-    ))
-    rt = get_sina_prices(all_codes)
-    
-    # 实盘
-    lines.append(gen_real_section(rt, 'review'))
-    
-    # 模拟盘日盈亏
-    total_pnl_today = 0
-    lines.append("\n🧪 模拟盘今日:")
-    for p in sim_positions:
-        code = p['stock_code']
-        if code in rt:
-            d = rt[code]
-            day_pnl = (d['price'] - d['yclose']) * p['quantity']
-            total_pnl_today += day_pnl
-            emoji = "🟢" if d['pct'] > 0 else "🔴"
-            lines.append(f"  {emoji} {code} {d['name']:6s} {d['pct']:+.1f}% 日盈亏{day_pnl:+.0f}")
-    lines.append(f"  💰 模拟盘今日: ¥{total_pnl_today:+,.0f}")
-    
-    # 近期交易
-    trades = get_recent_trades(3)
-    if trades:
-        lines.append("\n📋 近3日交易:")
-        for t in trades[:8]:
-            dir_str = "买" if t['direction'] == 'BUY' else "卖"
-            time_str = t.get('trade_time', '') or ''
-            lines.append(f"  {t['trade_date']} {time_str} {dir_str} {t['stock_code']} {t.get('stock_name', '')} {t['quantity']}股 @{t['price']:.2f}")
-    
-    lines.append("\n📅 明日: 8:25阈值校准 → 8:30盘前建议 → 9:15竞价建议")
-    return '\n'.join(lines)
+    return _gen_real_only("📝 盘后实盘复盘", "review")
 
 # ====================================================================
 #  主入口

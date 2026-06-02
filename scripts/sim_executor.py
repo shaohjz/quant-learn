@@ -64,6 +64,17 @@ _SUPPORT_CACHE = {}     # code → (timestamp, ok, reason)
 _MACD_CACHE = {}       # code → (timestamp, ok)
 _STOP_VOL_THRESH = 1.5   # 放量下跌阈值（放量 ≥1.5 倍确认止损）
 
+def _ensure_trailing_columns(conn: sqlite3.Connection) -> None:
+    """REQ-041: 旧 sim_positions 表幂等补齐跟踪止损字段。"""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(sim_positions)").fetchall()}
+    if "trailing_stop_price" not in cols:
+        conn.execute("ALTER TABLE sim_positions ADD COLUMN trailing_stop_price REAL DEFAULT NULL")
+    if "highest_price" not in cols:
+        conn.execute("ALTER TABLE sim_positions ADD COLUMN highest_price REAL DEFAULT NULL")
+    if "updated_at" not in cols:
+        conn.execute("ALTER TABLE sim_positions ADD COLUMN updated_at TIMESTAMP")
+
+
 # A股最小交易单位 100 股
 LOT_SIZE = 100
 
@@ -702,6 +713,7 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
     """P2: 更新仓位的 highest_price 和 trailing_stop_price。每次实时价格变动后调用。"""
     conn = sqlite3.connect(_DB_PATH)
     try:
+        _ensure_trailing_columns(conn)
         cur = conn.cursor()
         row = cur.execute(
             "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
@@ -725,6 +737,66 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
             'trailing': new_trailing,
             'reason': reason,
         }
+    finally:
+        conn.close()
+
+
+def update_all_positions_market_value(price_dict: dict, account_id: int | None = None) -> int:
+    """批量更新持仓现价/市值，并同步 REQ-041 跟踪止损。
+
+    portfolio_alert 在每次行情刷新后调用它，让 trailing_stop_price 随价格抬高。
+    返回实际更新的持仓数。
+    """
+    account_id = int(account_id or _ACCOUNT_ID)
+    conn = sqlite3.connect(_DB_PATH)
+    try:
+        _ensure_trailing_columns(conn)
+        updated = 0
+        for code, raw_price in (price_dict or {}).items():
+            try:
+                cur_price = quantize_price(float(raw_price or 0))
+            except Exception:
+                continue
+            if cur_price <= 0:
+                continue
+            row = conn.execute(
+                "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+                "FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (account_id, code),
+            ).fetchone()
+            if not row:
+                continue
+            qty, avg_cost, prev_high, prev_trailing = row
+            new_high = max(float(prev_high or avg_cost or 0), cur_price)
+            new_trailing, _reason = calc_trailing_stop(avg_cost, new_high, prev_trailing)
+            conn.execute(
+                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, "
+                "highest_price=?, trailing_stop_price=?, updated_at=CURRENT_TIMESTAMP "
+                "WHERE account_id=? AND stock_code=?",
+                (
+                    cur_price,
+                    quantize_amount(qty * cur_price),
+                    quantize_amount((cur_price - avg_cost) * qty),
+                    (cur_price - avg_cost) / avg_cost * 100 if avg_cost else 0,
+                    new_high,
+                    new_trailing if new_trailing > 0 else None,
+                    account_id,
+                    code,
+                ),
+            )
+            updated += 1
+        acct = conn.execute("SELECT cash FROM sim_account WHERE id=?", (account_id,)).fetchone()
+        if acct:
+            mv = conn.execute(
+                "SELECT COALESCE(SUM(market_value),0) FROM sim_positions WHERE account_id=? AND quantity > 0",
+                (account_id,),
+            ).fetchone()[0] or 0.0
+            conn.execute(
+                "UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (quantize_amount(float(acct[0] or 0) + float(mv)), account_id),
+            )
+        conn.commit()
+        return updated
     finally:
         conn.close()
 
@@ -873,6 +945,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
         position = None
         try:
             conn = sqlite3.connect(_DB_PATH)
+            _ensure_trailing_columns(conn)
             row = conn.execute(
                 "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
                 "FROM sim_positions WHERE account_id=? AND stock_code=?",
@@ -890,6 +963,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 update_position_trailing(_ACCOUNT_ID, code, cur_price)
                 # 重拉拿最新的 trailing_stop_price
                 conn = sqlite3.connect(_DB_PATH)
+                _ensure_trailing_columns(conn)
                 row2 = conn.execute(
                     "SELECT highest_price, trailing_stop_price "
                     "FROM sim_positions WHERE account_id=? AND stock_code=?",
@@ -940,6 +1014,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
         conn = sqlite3.connect(_DB_PATH)
         try:
             conn.execute("BEGIN")
+            _ensure_trailing_columns(conn)
             acct = conn.execute(
                 "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
             ).fetchone()
@@ -986,26 +1061,29 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 new_qty = existing[0] + qty
                 new_cost = quantize_cost((existing[0] * existing[1] + qty * cur_price) / new_qty)
                 conn.execute(
-                    "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
+                    "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=?, "
+                    "highest_price=MAX(COALESCE(highest_price, ?), ?) "
                     "WHERE account_id=? AND stock_code=?",
                     (new_qty, new_cost, cur_price, quantize_amount(new_qty * cur_price),
                      quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
-                     _ACCOUNT_ID, code)
+                     cur_price, cur_price, _ACCOUNT_ID, code)
                 )
             else:
                 conn.execute(
-                    "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct, highest_price, trailing_stop_price) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, quantize_amount(qty * cur_price),
-                     0.0, 0.0)
+                     0.0, 0.0, cur_price, None)
                 )
             # 写入成交记录
             trade_date = datetime.now().strftime('%Y-%m-%d')
             trade_time = datetime.now().strftime('%H:%M:%S')
+            # REQ-057: 回写 signal_reason，避免成交记录 signal_reason 为空无法追源
+            _signal_reason = f"{rule.get('level', '')}|{rule.get('message', '')}".strip('|')
             conn.execute(
-                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'BUY', cur_price, qty, amount, commission)
+                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'BUY', cur_price, qty, amount, commission, _signal_reason)
             )
             conn.execute("COMMIT")
             logger.info(f"✅ [{code}] {name} BUY {qty}股 @¥{cur_price:.2f}, 金额¥{amount:.0f}")
@@ -1025,6 +1103,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
         conn = sqlite3.connect(_DB_PATH)
         try:
             conn.execute("BEGIN")
+            _ensure_trailing_columns(conn)
             row = conn.execute(
                 "SELECT quantity, avg_cost FROM sim_positions WHERE account_id=? AND stock_code=?",
                 (_ACCOUNT_ID, code)
@@ -1068,10 +1147,12 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             # 写入成交记录
             trade_date = datetime.now().strftime('%Y-%m-%d')
             trade_time = datetime.now().strftime('%H:%M:%S')
+            # REQ-057: 回写 signal_reason，避免 SELL 成交记录 signal_reason 为空无法追源
+            _signal_reason = f"{rule.get('level', '')}|{rule.get('message', '')}".strip('|')
             conn.execute(
-                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'SELL', cur_price, sell_qty, amount, commission)
+                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'SELL', cur_price, sell_qty, amount, commission, _signal_reason)
             )
             conn.execute("COMMIT")
             logger.info(f"✅ [{code}] {name} SELL {sell_qty}股 @¥{cur_price:.2f}, 金额¥{amount:.0f}")

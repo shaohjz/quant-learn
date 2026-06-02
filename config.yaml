@@ -2,10 +2,10 @@ accounts:
   learn:
     account_id: 1
     account_name: live_mirror
-    initial_cash: 200000.0
+    initial_cash: 25000.0
     auto_trade: true
-    max_total_value: 200000.0
-    description: vqlearn 量化策略自学习账户，自动下单（5/27 充值至 20 万）
+    max_total_value: 25000.0
+    description: vqlearn 量化策略自学习账户，自动下单（REQ-057：本金校准至 25000，与实际资金流水一致；此前误填 20 万但 DB 现金未体现充值，导致净值口径失真 -88.7%）
   real:
     account_id: 2
     account_name: real_portfolio

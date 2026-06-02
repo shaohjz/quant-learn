@@ -355,14 +355,31 @@ class ThresholdAlertStrategy(CtaTemplate):
 
     # ----- sim_executor 真下单 -----
     def _exec_via_sim(self, level: str, price: float, msg: str):
-        """返回 (success, fail_reason)。success=True 表示已下单写入 sim_trades。"""
+        """返回 (filled, fail_reason)。
+
+        REQ-057 修复：filled=True **当且仅当** sim_executor 真正写入了一笔成交
+        （result['trade'] is not None）。此前用 result['success'] 作为返回值，
+        但 NO_ACTION / DEFER / 重复买入风控 / 日内预算风控 等分支都会返回
+        success=True 且 trade=None（仅提醒、不下单），导致上层把 threshold_state
+        误标记为 executed，造成「信号 executed 但 0 笔成交」的链路断裂。
+        现在只有真实成交（trade 非空）才返回 filled=True，executed 才会回写。
+        """
         if _sim_execute_trade is None:
             self.write_log("⚠️ sim_executor 未加载，跳过下单")
             return False, 'sim_executor 未加载'
         rule = {'code': self.code, 'name': self.stock_name_safe, 'level': level, 'message': msg}
         try:
             r = _sim_execute_trade(rule, price)
-            if r.get('success'):
+            # REQ-057: 真实成交的唯一可信标志是 trade 字段非空（含 BUY/SELL 明细）。
+            # success=True 但 trade=None 表示「仅提醒/被风控拦截」，不算成交。
+            filled = r.get('trade') is not None
+            if r.get('success') and not filled:
+                # 信号被接受但未落地成交（观察股提醒 / 重复买入 / 预算风控等）
+                self.write_log(
+                    f"ℹ️ [sim_executor] {r.get('action')} 未成交（不回写executed）: {r.get('message')}"
+                )
+                return False, r.get('message') or '未成交（仅提醒/被风控拦截）'
+            if filled:
                 self.write_log(f"💰 [sim_executor] {r.get('action')} → {r.get('message')}")
                 # 发企微通知
                 action = r.get('action', level.upper())

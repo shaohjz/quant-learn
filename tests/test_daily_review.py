@@ -34,7 +34,7 @@ def test_fetch_sim_snapshot_from_mirror():
         return
     snap = fetch_sim_snapshot("2026-05-19", p)
     assert snap["account"], f"账户加载失败: {snap}"
-    # 5/22 双账户重构：live_mirror 已重置为 100,000；这里只校验 fetch 拿到合法账户
+    # REQ-057: live_mirror 本金校准至 25000（与实际资金流水一致）；只校验 fetch 拿到合法账户
     assert snap["account"]["initial_cash"] in (25000.0, 100000.0), snap["account"]
     assert snap["account"]["name"] in ("sim", "live_mirror", "default"), snap["account"]
     assert len(snap["positions"]) >= 1, "至少 1 个持仓"

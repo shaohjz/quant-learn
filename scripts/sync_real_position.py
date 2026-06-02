@@ -159,9 +159,10 @@ def cmd_buy(args):
 
 def cmd_sell(args):
     if len(args) < 3:
-        print('用法: sell <code> <qty> <price>   (qty=0 表示全卖)')
+        print('用法: sell <code> <qty> <price> [reason]   (qty=0 表示全卖)')
         sys.exit(2)
     code = args[0]; qty_arg = int(args[1]); price = float(args[2])
+    reason_arg = args[3] if len(args) >= 4 else ''
     c = conn_ro_rw()
     pos = get_position(c, code)
     if not pos:
@@ -175,8 +176,18 @@ def cmd_sell(args):
     tax = amount * TAX_RATE
     net = amount - commission - tax
 
+    # REQ-058: 真实账户 SELL 的 signal_reason 也走标准格式（规则名+触发价），可溯源。
+    try:
+        from sim.sell_signal_audit import build_sell_signal_reason
+        signal_reason = build_sell_signal_reason(
+            reason_arg or 'manual_sync_sell', trigger_price=price,
+            extra=f'卖出{sell_qty}股',
+        )
+    except Exception:
+        signal_reason = f'{reason_arg or "manual_sync_sell"}|触发价{price:.3f}|卖出{sell_qty}股'
+
     insert_trade(c, code, pos['stock_name'], 'SELL', price, sell_qty, commission, tax,
-                 f'手动同步: 卖出 {sell_qty}股')
+                 signal_reason)
     c.execute("UPDATE sim_account SET cash=cash+?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
               (net, ACCOUNT_ID))
     new_qty = pos['quantity'] - sell_qty

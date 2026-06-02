@@ -51,8 +51,26 @@ def learn_max_total_value() -> float:
 # ============================================================
 
 def _connect_ro():
-    c = sqlite3.connect(str(DB_PATH))
+    """Open the live mirror DB in read-only mode and fail fast on missing schema.
+
+    sqlite3.connect(path) silently creates a new empty database when the file is
+    missing.  For the live mirror this is dangerous: vqlearn then crashes later
+    with a misleading "no such table" error.  Use SQLite URI read-only mode and
+    validate the required tables up front so DevOps reports the real issue.
+    """
+    if not DB_PATH.exists() or DB_PATH.stat().st_size == 0:
+        raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+    c = sqlite3.connect(f"file:{DB_PATH.as_posix()}?mode=ro", uri=True)
     c.row_factory = sqlite3.Row
+    tables = {
+        row[0]
+        for row in c.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    }
+    required = {'sim_account', 'sim_positions'}
+    missing = required - tables
+    if missing:
+        c.close()
+        raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
     return c
 
 

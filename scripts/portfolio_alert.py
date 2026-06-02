@@ -17,16 +17,19 @@ scripts/portfolio_alert.py — 盘中阈值提醒（持仓 + 观察股）
   - output/intraday_log.jsonl   ：每次现价快照 JSON（一行一条，便于后续分析）
   - output/alert_state.json     ：今日已触发阈值去重记录
 """
-import json, sys, logging, traceback
-import json, sys, logging, traceback, urllib.request, io
+import json, sys, logging, traceback, urllib.request, io, os
 from datetime import datetime, time as dtime
 from pathlib import Path
 
-# 强制 stdout/stderr 使用 UTF-8（避免 Windows 计划任务下 GBK 编码 emoji 崩溃）
-if hasattr(sys.stdout, 'buffer'):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-if hasattr(sys.stderr, 'buffer'):
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+def configure_stdio() -> None:
+    """强制 stdout/stderr 使用 UTF-8（避免 Windows 计划任务下 GBK 编码 emoji 崩溃）。
+
+    只在脚本入口调用，避免模块导入时替换 pytest/调用方的捕获流。
+    """
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'buffer'):
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -63,7 +66,7 @@ def _load_webhook():
         pass
     return None
 
-WEBHOOK_URL = _load_webhook()
+WEBHOOK_URL = None  # 延迟到交易时段内加载，避免非交易时段空跑读取配置
 
 def push_webhook(content: str) -> bool:
     """推送一条文本到企微群机器人，失败不报错仅记志"""
@@ -87,15 +90,35 @@ def push_webhook(content: str) -> bool:
 # ====================================================================
 #  日志配置
 # ====================================================================
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stderr),  # 控制台 stderr不干扰 stdout 传递给 cron
-    ],
-)
 logger = logging.getLogger("portfolio_alert")
+logger.addHandler(logging.NullHandler())
+
+
+def setup_logging() -> None:
+    """按需启用日志。
+
+    BUG-015: portfolio_alert 可能被 Windows 计划任务全天每 10 分钟唤起。
+    非交易时段应尽早静默退出，不能仅为了打印“非交易时段”而持续写
+    output/runner.log / output/portfolio_alert.log。因此日志只在确认进入
+    交易时段后配置。
+    """
+    if getattr(setup_logging, "_configured", False):
+        return
+
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+
+    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler(sys.stderr)  # 控制台 stderr不干扰 stdout 传递给 cron
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    logger.propagate = False
+    setup_logging._configured = True
 
 # ====================================================================
 #  阈值规则表（行动手册）
@@ -114,7 +137,7 @@ import sys as _sys
 from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
 from sim.portfolio import load_all_alert_rules  # noqa: E402
-RULES = load_all_alert_rules()
+RULES = None  # 延迟到交易时段内加载，避免非交易时段 cron 空跑消耗资源
 
 
 # ====================================================================
@@ -245,6 +268,14 @@ def get_rr_ratio_for_rule(code: str, entry_price: float, all_rules: list) -> flo
     return reward / risk
 
 
+def get_now() -> datetime:
+    """返回当前时间；测试可用 PORTFOLIO_ALERT_NOW 注入固定时间。"""
+    override = os.environ.get("PORTFOLIO_ALERT_NOW")
+    if override:
+        return datetime.fromisoformat(override)
+    return datetime.now()
+
+
 def in_trade_hours(now: datetime) -> bool:
     """A股交易时段：周一到周五 9:30-11:30 / 13:00-15:00"""
     if now.weekday() >= 5:
@@ -266,6 +297,17 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+
+def _learn_position_qty(code: str) -> int:
+    """Return current learn-account holding quantity for a stock."""
+    try:
+        from sim.portfolio import fetch_positions, learn_account_id
+        for pos in fetch_positions(learn_account_id()):
+            if str(pos.get('stock_code')) == str(code):
+                return int(pos.get('quantity') or 0)
+    except Exception as e:
+        logger.warning(f"查询学习账户持仓失败 {code}: {e}")
+    return 0
 def is_triggered(price: float, trigger: float, direction: str) -> bool:
     if direction == "below":
         return price <= trigger
@@ -274,18 +316,24 @@ def is_triggered(price: float, trigger: float, direction: str) -> bool:
 
 
 def main():
-    now = datetime.now()
+    now = get_now()
+
+    if not in_trade_hours(now):
+        # BUG-015: 非交易时段会被计划任务频繁唤起；必须早起检跳且完全静默，
+        # 避免 output/runner.log 与 output/portfolio_alert.log 全天膨胀。
+        return 0
+
+    setup_logging()
+    global RULES, WEBHOOK_URL
+    if RULES is None:
+        RULES = load_all_alert_rules()
+    if WEBHOOK_URL is None:
+        WEBHOOK_URL = _load_webhook()
+
     today = now.strftime("%Y-%m-%d")
     run_id = now.strftime("%H%M%S")
     
     logger.info(f"==== 运行开始 run_id={run_id} ====")
-    
-    if not in_trade_hours(now):
-        # 非交易时段，静默退出
-        msg = f"📴 非交易时段 ({now.strftime('%Y-%m-%d %H:%M %A')})，跳过"
-        print(msg)
-        logger.info("非交易时段，退出")
-        return 0
 
     # 拉取所有股票当前价
     codes = list({r["code"] for r in RULES})
@@ -359,37 +407,52 @@ def main():
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         positions = conn.execute(
-            "SELECT account_id, stock_code, stock_name, quantity, avg_cost, current_price, pnl_pct "
+            "SELECT account_id, stock_code, stock_name, quantity, avg_cost, current_price, pnl_pct, "
+            "trailing_stop_price "
             "FROM sim_positions WHERE quantity > 0"
         ).fetchall()
         conn.close()
         
         for pos in positions:
             pnl_pct = pos['pnl_pct'] or 0
-            # 浮亏超过 8% 自动触发止损
-            if pnl_pct <= -8.0 and pos['quantity'] > 0:
-                logger.warning(f"🚨 自动止损触发: {pos['stock_code']} 浮亏 {pnl_pct:.2f}%")
+            cur_price = float(pos['current_price'] or 0)
+            fallback_stop = float(pos['avg_cost'] or 0) * 0.92
+            trailing_stop = float(pos['trailing_stop_price'] or 0)
+            effective_stop = max(fallback_stop, trailing_stop)
+            stop_source = '跟踪止损' if trailing_stop > fallback_stop else '-8%原始止损'
+            # REQ-041: 优先使用 trailing_stop_price；没有启动时才回退到原始 -8%。
+            if effective_stop > 0 and cur_price > 0 and cur_price <= effective_stop and pos['quantity'] > 0:
+                logger.warning(
+                    f"🚨 自动止损触发: {pos['stock_code']} 现价 {cur_price:.2f} <= "
+                    f"{stop_source} {effective_stop:.2f} (浮盈亏 {pnl_pct:.2f}%)"
+                )
                 
                 # 构造止损 rule
                 rule = {
                     'code': pos['stock_code'],
                     'name': pos['stock_name'],
                     'level': 'stop_loss',
-                    'trigger': pos['avg_cost'] * 0.92,
+                    'trigger': effective_stop,
                     'dir': 'below',
-                    'message': f'自动止损 (浮亏 {pnl_pct:.2f}%)',
+                    'message': f'自动止损 ({stop_source} ¥{effective_stop:.2f}, 浮盈亏 {pnl_pct:.2f}%)',
                     'source': 'auto'
                 }
                 
-                # 执行卖出
+                # 执行虚拟卖出；只有真正记录了模拟卖单才推用户。
+                # 软止损/无持仓等结果只记日志，避免误导成“已下单”。
                 from sim_executor import execute_trade
-                result = execute_trade(rule, pos['current_price'])
-                
-                if result['success']:
-                    logger.info(f"✅ 自动止损成功: {result['message']}")
-                    triggered_msgs.append(f"🚨 自动止损: {pos['stock_code']} 浮亏 {pnl_pct:.2f}% → 已卖出")
+                result = execute_trade(rule, cur_price)
+                message = str(result.get('message', ''))
+
+                if result.get('success') and '卖出' in message:
+                    logger.info(f"✅ 已记录模拟止损卖单: {message}")
+                    triggered_msgs.append(
+                        f"🚨 模拟止损卖单: {pos['stock_code']} 现价¥{cur_price:.2f} 触发{stop_source}¥{effective_stop:.2f} → {message}"
+                    )
+                elif result.get('success'):
+                    logger.info(f"ℹ️ 止损提醒已评估: {message}")
                 else:
-                    logger.error(f"❌ 自动止损失败: {result['message']}")
+                    logger.warning(f"⚠️ 止损提醒未下单: {message}")
     except Exception as e:
         logger.warning(f"自动止损检查异常: {e}")
     
@@ -410,6 +473,22 @@ def main():
         checked_count += 1
         
         if is_triggered(cur_price, rule["trigger"], rule["dir"]):
+            # Sell-side rules are meaningful only when the learn account still has a position.
+            # If the simulated position has already been sold, skip both the user alert and
+            # the virtual order attempt.
+            sell_levels = {'take_profit', 'take_profit_half', 'trend_break', 'trend_break_warn', 'stop_loss', 'stop_loss_tight', 'hard_stop', 'trailing_stop'}
+            if rule['source'] == 'real' and rule['level'] in sell_levels:
+                qty = _learn_position_qty(code)
+                if qty <= 0:
+                    logger.info(f"跳过卖出提醒: {code} 无学习账户持仓 level={rule['level']}")
+                    today_state[rule_id] = {
+                        'triggered_at': now.strftime('%H:%M'),
+                        'price': cur_price,
+                        'trigger': rule['trigger'],
+                        'skipped': 'no_learn_position',
+                    }
+                    skipped_already += 1
+                    continue
             arrow = "↓" if rule["dir"] == "below" else "↑"
             msg = (f"【{rule['name']} {code}】\n"
                    f"现价 ¥{cur_price:.2f} {arrow} 阈值 ¥{rule['trigger']:.2f}\n"
@@ -467,14 +546,27 @@ def main():
                 if sev_label:
                     msg += f"\n{sev_label}"
                 if trade_result['success'] and trade_result['action'] != 'NO_ACTION':
-                    msg += f"\n🤖 虚拟交易: {trade_result['message']}"
-                    logger.warning(f"🤖 虚拟交易: {rule_id} → {trade_result['message']}")
+                    msg += f"\n✅ 已记录模拟交易: {trade_result['message']}"
+                    logger.warning(f"✅ 已记录模拟交易: {rule_id} → {trade_result['message']}")
                 elif trade_result['success'] and trade_result['action'] == 'NO_ACTION' and sev == 'soft':
                     # 软止损（盘中）— 不下单只预警
                     msg += f"\n⏸️ 软止损：盘中暂不卖，等尾盘再判断（{trade_result['message']}）"
                     logger.warning(f"⚠️ 软止损推迟: {rule_id} → {trade_result['message']}")
                 elif not trade_result['success']:
-                    msg += f"\n⚠️ 虚拟下单失败: {trade_result['message']}"
+                    # 对卖出类提醒：下单失败通常说明已无模拟持仓，别再把“建议卖/失败”推给用户。
+                    sell_levels = {'take_profit', 'take_profit_half', 'trend_break', 'trend_break_warn', 'stop_loss', 'stop_loss_tight', 'hard_stop', 'trailing_stop'}
+                    if rule['source'] == 'real' and rule['level'] in sell_levels:
+                        logger.warning(f"跳过卖出建议推送: {code} 模拟交易失败: {trade_result['message']}")
+                        today_state[rule_id] = {
+                            'triggered_at': now.strftime('%H:%M'),
+                            'price': cur_price,
+                            'trigger': rule['trigger'],
+                            'skipped': 'virtual_sell_failed',
+                            'message': trade_result['message'],
+                        }
+                        skipped_already += 1
+                        continue
+                    msg += f"\n⚠️ 模拟交易失败: {trade_result['message']}"
             except Exception as ex:
                 logger.warning(f"虚拟下单异常: {ex}")
             
@@ -517,7 +609,7 @@ def main():
     # 输出（stdout 供调试/cron 可读，企微推送走 webhook）
     if triggered_msgs:
         # 拼接完整消息
-        full_msg = f"🔔 盘中提醒 ({now.strftime('%H:%M')})\n" + ("=" * 40) + "\n"
+        full_msg = f"🔔 盘中提醒 {now.strftime('%Y-%m-%d %H:%M')}\n" + ("=" * 40) + "\n"
         for m in triggered_msgs:
             full_msg += m + "\n" + ("-" * 40) + "\n"
         # 1) stdout (保留调试输出)
@@ -540,4 +632,6 @@ def main():
 
 
 if __name__ == "__main__":
+    configure_stdio()
     sys.exit(main())
+

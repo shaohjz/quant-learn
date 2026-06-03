@@ -1,126 +1,220 @@
 #!/usr/bin/env python3
 """
-stop_profit_monitor.py — 止盈监控
+止盈监控脚本 (REQ-019)
 
-每分钟检查持仓中浮盈超过止盈线的股票，自动分批卖出锁定利润。
-每次触发时卖出 1/3 仓位，剩余仓位继续跑。
+监控持仓中浮盈超过止盈线的股票，到达止盈线时自动部分卖出锁定利润。
 
-设计为被 Windows 任务计划程序调用（每 1-5 分钟）。
-
-参考：config.yaml 中 risk.take_profit_pct（默认 0.15，即 +15%）
+功能：
+1. 从 config.yaml 读取 take_profit_pct 参数
+2. 连接 sim_live_mirror.db 查询所有持仓
+3. 计算每只票的浮盈 pnl_pct
+4. 如果 pnl_pct >= take_profit_pct，生成卖出信号
+5. 调用 broker.sell() 执行分批止盈（每次卖 1/3 仓位）
+6. 写日志到 output/stop_profit.log
 """
 
-import os
 import sys
+import os
+import yaml
 import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db'))
+# 添加项目根目录到路径
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from sim.db import get_conn
 from broker.sim_broker import SimBroker
+from sim.engine import SimEngine
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-)
-logger = logging.getLogger('stop_profit')
+def setup_logging():
+    """配置日志记录"""
+    output_dir = project_root / "output"
+    output_dir.mkdir(exist_ok=True)
+    
+    log_file = output_dir / "stop_profit.log"
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    return logging.getLogger(__name__)
 
 
-def load_take_profit_pct() -> float:
-    """从 config.yaml 读取止盈线，默认 0.15"""
-    try:
-        import yaml
-        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
-        return float((cfg.get('risk') or {}).get('take_profit_pct', 0.15))
-    except Exception:
-        return 0.15
+def load_config():
+    """加载配置文件"""
+    config_path = project_root / "config.yaml"
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)
 
 
-def check_and_sell(account_id: int = 1, sell_fraction: float = 1.0/3.0) -> int:
-    """
-    扫描 account_id 的持仓，对触发止盈的股票分批卖出。
-    返回实际卖出次数。
-    """
-    take_profit_pct = load_take_profit_pct()
-    broker = SimBroker(account_id=account_id)
-    broker.connect()
-
-    conn = get_conn()
-    try:
-        cur = conn.execute(
-            "SELECT stock_code, stock_name, quantity, avg_cost, current_price, pnl_pct "
-            "FROM sim_positions "
-            "WHERE account_id = ? AND quantity > 0 "
-            "ORDER BY pnl_pct DESC",
-            (account_id,),
-        )
-        rows = cur.fetchall()
-    finally:
-        conn.close()
-
-    sold_count = 0
-    for row in rows:
-        code, name, qty, avg_cost, cur_price, pnl_pct = row
-        if pnl_pct is None:
-            continue
-        if pnl_pct >= take_profit_pct * 100:  # pnl_pct 是百分比
-            sell_qty = max(1, int(qty * sell_fraction))
-            logger.info(
-                f"🎯 触发止盈 [{code}] {name}："
-                f"成本 ¥{avg_cost:.2f}，现价 ¥{cur_price:.2f}，"
-                f"浮盈 {pnl_pct:.2f}% >= 止盈线 {take_profit_pct*100:.1f}%，"
-                f"卖出 {sell_qty}/{qty} 股锁定利润"
-            )
-            try:
-                result = broker.sell(
-                    stock_code=code,
-                    price=cur_price,
-                    quantity=sell_qty,
-                    stock_name=name,
-                    signal_reason=f"自动止盈分批卖出（浮盈 {pnl_pct:.1f}%）",
-                )
-                if result.get('success'):
-                    logger.info(f"✅ [{code}] 止盈卖出成功：{sell_qty}股")
-                    sold_count += 1
-                else:
-                    logger.error(f"❌ [{code}] 止盈卖出失败：{result.get('msg')}")
-            except Exception as e:
-                logger.error(f"❌ [{code}] 止盈卖出异常：{e}")
-
-    if sold_count == 0:
-        logger.info("✅ 无触发止盈的持仓")
-    else:
-        logger.info(f"✅ 本次共止盈卖出 {sold_count} 只")
-    return sold_count
+def get_positions_from_db(account_id=1):
+    """从数据库获取持仓信息"""
+    db_path = project_root / "data" / "sim_live_mirror.db"
+    
+    import sqlite3
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+    
+    # 查询所有持仓（quantity > 0）
+    cursor.execute("""
+        SELECT stock_code, stock_name, quantity, avg_cost, current_price, 
+               market_value, pnl, pnl_pct
+        FROM sim_positions 
+        WHERE account_id = ? AND quantity > 0
+    """, (account_id,))
+    
+    positions = []
+    for row in cursor.fetchall():
+        positions.append({
+            'stock_code': row[0],
+            'stock_name': row[1],
+            'quantity': row[2],
+            'avg_cost': row[3],
+            'current_price': row[4],
+            'market_value': row[5],
+            'pnl': row[6],
+            'pnl_pct': row[7]
+        })
+    
+    conn.close()
+    return positions
 
 
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='止盈监控')
-    parser.add_argument('--account-id', type=int, default=1, help='账户 ID（默认 1=学习账户）')
-    parser.add_argument('--fraction', type=float, default=1.0/3.0, help='每次卖出仓位比例（默认 1/3）')
-    parser.add_argument('--dry-run', action='store_true', help='仅检查，不实际卖出')
-    args = parser.parse_args()
+def calculate_position_value(positions):
+    """计算持仓总市值"""
+    return sum(p['market_value'] for p in positions)
 
-    if args.dry_run:
-        take_profit_pct = load_take_profit_pct()
-        conn = get_conn()
+
+def execute_stop_profit(sell_orders, broker, logger):
+    """执行止盈卖出"""
+    results = []
+    
+    for order in sell_orders:
+        stock_code = order['stock_code']
+        stock_name = order['stock_name']
+        quantity = order['quantity']
+        current_price = order['current_price']
+        pnl_pct = order['pnl_pct']
+        
         try:
-            cur = conn.execute(
-                "SELECT stock_code, stock_name, quantity, avg_cost, current_price, pnl_pct "
-                "FROM sim_positions WHERE account_id = ? AND quantity > 0",
-                (args.account_id,),
+            # 调用 broker.sell() 执行卖出
+            result = broker.sell(
+                stock_code=stock_code,
+                price=current_price,
+                quantity=quantity,
+                stock_name=stock_name,
+                signal_reason=f"止盈卖出 (浮盈: {pnl_pct:.2%})"
             )
-            for row in cur.fetchall():
-                code, name, qty, cost, price, pct = row
-                flag = "🎯 触发止盈" if pct is not None and pct >= take_profit_pct * 100 else "✅ 正常"
-                print(f"{flag} [{code}] {name} 浮盈 {pct:.2f}%" if pct is not None else f"⚠️ [{code}] {name} pnl_pct=None")
-        finally:
-            conn.close()
+            
+            if result.success:
+                logger.info(f"✅ 止盈成功: {stock_name}({stock_code}) 卖出 {quantity}股 @ {current_price:.2f}, 浮盈: {pnl_pct:.2%}")
+                results.append({
+                    'stock_code': stock_code,
+                    'success': True,
+                    'quantity': quantity,
+                    'price': current_price,
+                    'pnl_pct': pnl_pct
+                })
+            else:
+                logger.warning(f"⚠️ 止盈失败: {stock_name}({stock_code}) - {result.msg}")
+                results.append({
+                    'stock_code': stock_code,
+                    'success': False,
+                    'msg': result.msg
+                })
+                
+        except Exception as e:
+            logger.error(f"❌ 止盈异常: {stock_name}({stock_code}) - {str(e)}")
+            results.append({
+                'stock_code': stock_code,
+                'success': False,
+                'msg': str(e)
+            })
+    
+    return results
+
+
+def main():
+    """主函数"""
+    logger = setup_logging()
+    logger.info("=" * 60)
+    logger.info("开始执行止盈监控 (REQ-019)")
+    logger.info("=" * 60)
+    
+    # 1. 加载配置
+    try:
+        config = load_config()
+        take_profit_pct = config['risk']['take_profit_pct']
+        logger.info(f"读取配置: take_profit_pct = {take_profit_pct:.2%}")
+    except Exception as e:
+        logger.error(f"加载配置失败: {e}")
+        return
+    
+    # 2. 获取持仓
+    try:
+        positions = get_positions_from_db()
+        logger.info(f"获取到 {len(positions)} 个持仓")
+    except Exception as e:
+        logger.error(f"获取持仓失败: {e}")
+        return
+    
+    if not positions:
+        logger.info("无持仓，退出")
+        return
+    
+    # 3. 检查止盈条件
+    sell_orders = []
+    
+    for pos in positions:
+        stock_code = pos['stock_code']
+        stock_name = pos['stock_name']
+        quantity = pos['quantity']
+        pnl_pct = pos['pnl_pct']
+        
+        if pnl_pct >= take_profit_pct:
+            # 计算卖出数量（1/3 仓位）
+            sell_quantity = max(100, int(quantity / 3 / 100) * 100)  # 至少100股，按手数取整
+            
+            logger.info(f"🎯 触发止盈: {stock_name}({stock_code})")
+            logger.info(f"   持仓: {quantity}股, 浮盈: {pnl_pct:.2%}, 止盈线: {take_profit_pct:.2%}")
+            logger.info(f"   计划卖出: {sell_quantity}股 (1/3仓位)")
+            
+            sell_orders.append({
+                'stock_code': stock_code,
+                'stock_name': stock_name,
+                'quantity': sell_quantity,
+                'current_price': pos['current_price'],
+                'pnl_pct': pnl_pct
+            })
+    
+    # 4. 执行止盈卖出
+    if sell_orders:
+        logger.info(f"共 {len(sell_orders)} 只股票触发止盈，开始执行卖出...")
+        
+        # 初始化 broker
+        broker = SimBroker(account_id=1)
+        broker.connect()
+        
+        results = execute_stop_profit(sell_orders, broker, logger)
+        
+        # 统计结果
+        success_count = sum(1 for r in results if r['success'])
+        logger.info(f"止盈执行完成: 成功 {success_count}/{len(results)}")
+        
+        broker.disconnect()
     else:
-        check_and_sell(args.account_id, args.fraction)
+        logger.info("无持仓触发止盈条件")
+    
+    logger.info("=" * 60)
+    logger.info("止盈监控执行完成")
+    logger.info("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

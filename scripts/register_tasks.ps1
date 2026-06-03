@@ -19,6 +19,14 @@ schtasks /create /tn "QuantLearn_CleanupWatchlist" `
     /sd 01/01/2026 `
     /f /rl HIGHEST
 
+# 任务5: 理财经理日报（交易日 15:30）
+Write-Host "注册任务: QuantLearn_FinanceManager"
+schtasks /create /tn "QuantLearn_FinanceManager" `
+    /tr "$ProjectRoot\scripts\finance_manager_runner.bat" `
+    /sc WEEKLY /d MON,TUE,WED,THU,FRI /st 15:30 `
+    /sd 01/01/2026 `
+    /f /rl HIGHEST
+
 Write-Host "`n✓ 计划任务注册完成！"
 Write-Host "`n查看任务状态："
 Write-Host "  schtasks /query /tn QuantLearn_IntradayScanner /fo LIST /v"

@@ -5,22 +5,19 @@ accounts:
     initial_cash: 25000.0
     auto_trade: true
     max_total_value: 25000.0
-    description: vqlearn 量化策略自学习账户，自动下单（REQ-057：本金校准至 25000，与实际资金流水一致；此前误填 20 万但 DB 现金未体现充值，导致净值口径失真 -88.7%）
+    description: vqlearn 量化策略自学习账户，自动下单（REQ-057：本金校准至 25000，与实际资金流水一致；此前误填 20 万但 DB
+      现金未体现充值，导致净值口径失真 -88.7%）
   real:
     account_id: 2
     account_name: real_portfolio
     initial_cash: 25000.0
     auto_trade: false
     description: 用户实际持仓镜像，由 scripts/sync_real_position.py 维护
-
-# REQ-016: 全链路价格/成本精度。成本默认 3 位，避免初始化建仓快照
-# （如 600330: 32.818）在复盘/成交留痕时被截成 2 位导致盈亏偏差。
 precision:
   price_decimals: 3
   cost_decimals: 3
   amount_decimals: 2
   rounding: ROUND_HALF_UP
-
 notify:
   wecom_webhook: ''
 real_portfolio_rules:
@@ -114,18 +111,18 @@ watchlist:
           msg: 💰💰 通富微电跌至 56.04！回踩 MA20(56.04)，优质建仓区
       added_price: 58.86
       trend_filter:
-        gate: auto
-        status: HEALTHY
-        last: 75.39
-        ma60: 50.08
-        last_vs_ma60_pct: 50.5
-        ma20_vs_ma60_pct: 16.8
-        macd_golden: true
-        vol_ratio: 1.82
-        atr_pct: 5.95
-        updated_at: '2026-05-27'
-        atr_stop_pct: 11.9
-        atr_stop_basis: 2*ATR=11.9% (裁到 [5,15])
+        gate: wait_macd
+        status: CAUTION
+        last: 70.22
+        ma60: 51.73
+        last_vs_ma60_pct: 35.7
+        ma20_vs_ma60_pct: 22.1
+        macd_golden: false
+        vol_ratio: 0.92
+        atr_pct: 7.62
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=15.2% (裁到 [5,15])
     002709:
       name: 天赐材料
       enabled: true
@@ -148,16 +145,16 @@ watchlist:
       trend_filter:
         gate: wait_macd
         status: CAUTION
-        last: 51.99
-        ma60: 49.28
-        last_vs_ma60_pct: 5.5
-        ma20_vs_ma60_pct: 16.2
+        last: 51.3
+        ma60: 50.36
+        last_vs_ma60_pct: 1.9
+        ma20_vs_ma60_pct: 10.4
         macd_golden: false
-        vol_ratio: 0.87
-        atr_pct: 6.62
-        updated_at: '2026-05-27'
-        atr_stop_pct: 13.24
-        atr_stop_basis: 2*ATR=13.2% (裁到 [5,15])
+        vol_ratio: 0.55
+        atr_pct: 6.27
+        updated_at: '2026-06-04'
+        atr_stop_pct: 12.54
+        atr_stop_basis: 2*ATR=12.5% (裁到 [5,15])
     002149:
       name: 西部材料
       enabled: true
@@ -180,16 +177,16 @@ watchlist:
       trend_filter:
         gate: manual_only
         status: DIRTY
-        last: 63.6
-        ma60: 55.61
-        last_vs_ma60_pct: 14.4
-        ma20_vs_ma60_pct: 22.2
+        last: 61.7
+        ma60: 56.7
+        last_vs_ma60_pct: 8.8
+        ma20_vs_ma60_pct: 20.3
         macd_golden: false
-        vol_ratio: 0.86
-        atr_pct: 8.69
-        updated_at: '2026-05-27'
+        vol_ratio: 0.68
+        atr_pct: 9.08
+        updated_at: '2026-06-04'
         atr_stop_pct: 15.0
-        atr_stop_basis: 2*ATR=17.4% (裁到 [5,15])
+        atr_stop_basis: 2*ATR=18.2% (裁到 [5,15])
     '605006':
       name: 山东玻纤
       enabled: true
@@ -216,16 +213,16 @@ watchlist:
       trend_filter:
         gate: manual_only
         status: DIRTY
-        last: 17.92
-        ma60: 11.16
-        last_vs_ma60_pct: 60.5
-        ma20_vs_ma60_pct: 27.5
-        macd_golden: true
-        vol_ratio: 1.4
-        atr_pct: 8.59
-        updated_at: '2026-05-27'
+        last: 17.19
+        ma60: 11.95
+        last_vs_ma60_pct: 43.8
+        ma20_vs_ma60_pct: 35.3
+        macd_golden: false
+        vol_ratio: 1.03
+        atr_pct: 9.79
+        updated_at: '2026-06-04'
         atr_stop_pct: 15.0
-        atr_stop_basis: 2*ATR=17.2% (裁到 [5,15])
+        atr_stop_basis: 2*ATR=19.6% (裁到 [5,15])
     '603757':
       name: 大元泵业
       enabled: true
@@ -252,16 +249,16 @@ watchlist:
       trend_filter:
         gate: manual_only
         status: DIRTY
-        last: 55.47
-        ma60: 51.01
-        last_vs_ma60_pct: 8.7
-        ma20_vs_ma60_pct: 12.5
+        last: 56.43
+        ma60: 52.23
+        last_vs_ma60_pct: 8.1
+        ma20_vs_ma60_pct: 13.4
         macd_golden: false
-        vol_ratio: 1.16
-        atr_pct: 9.07
-        updated_at: '2026-05-27'
+        vol_ratio: 1.36
+        atr_pct: 9.89
+        updated_at: '2026-06-04'
         atr_stop_pct: 15.0
-        atr_stop_basis: 2*ATR=18.1% (裁到 [5,15])
+        atr_stop_basis: 2*ATR=19.8% (裁到 [5,15])
     '000725':
       name: 京东方A
       enabled: true
@@ -287,16 +284,16 @@ watchlist:
       trend_filter:
         gate: auto
         status: HEALTHY
-        last: 5.77
-        ma60: 4.23
-        last_vs_ma60_pct: 36.4
-        ma20_vs_ma60_pct: 3.9
+        last: 5.59
+        ma60: 4.34
+        last_vs_ma60_pct: 28.9
+        ma20_vs_ma60_pct: 10.6
         macd_golden: true
-        vol_ratio: 7.35
-        atr_pct: 3.83
-        updated_at: '2026-05-27'
-        atr_stop_pct: 7.66
-        atr_stop_basis: 2*ATR=7.7% (裁到 [5,15])
+        vol_ratio: 1.79
+        atr_pct: 6.77
+        updated_at: '2026-06-04'
+        atr_stop_pct: 13.54
+        atr_stop_basis: 2*ATR=13.5% (裁到 [5,15])
     '600309':
       name: 万华化学
       enabled: true
@@ -312,26 +309,26 @@ watchlist:
       notes: 当前 MA60 下方，右侧交易，等回调到位
       rules:
         right_side_confirm:
-          trigger: 86.49
+          trigger: 83.56
           dir: above
-          msg: ✅ 万华化学站上 86.49 (MA60×1.02)！右侧确认信号，可考虑解冻
+          msg: ✅ 万华化学站上 83.56 (MA60×1.02)！右侧确认信号，可考虑解冻
         trend_break_warn:
-          trigger: 80.55
+          trigger: 77.82
           dir: below
-          msg: ⚠️ 万华化学跳破 80.55 (MA60×0.95)！趋势实质走坏
+          msg: ⚠️ 万华化学跳破 77.82 (MA60×0.95)！趋势实质走坏
       trend_filter:
         gate: frozen
         status: BROKEN
-        last: 77.58
-        ma60: 84.79
-        last_vs_ma60_pct: -8.5
-        ma20_vs_ma60_pct: -1.6
+        last: 74.17
+        ma60: 81.92
+        last_vs_ma60_pct: -9.5
+        ma20_vs_ma60_pct: -4.8
         macd_golden: false
-        vol_ratio: 0.79
-        atr_pct: 3.14
-        updated_at: '2026-05-27'
-        atr_stop_pct: 6.28
-        atr_stop_basis: 2*ATR=6.3% (裁到 [5,15])
+        vol_ratio: 1.22
+        atr_pct: 3.11
+        updated_at: '2026-06-04'
+        atr_stop_pct: 6.22
+        atr_stop_basis: 2*ATR=6.2% (裁到 [5,15])
       rules_backup_2026-05-27:
         buy_zone:
           trigger: 80.78
@@ -379,16 +376,16 @@ watchlist:
       trend_filter:
         gate: require_support
         status: CAUTION
-        last: 6.08
-        ma60: 5.98
-        last_vs_ma60_pct: 1.6
-        ma20_vs_ma60_pct: 3.9
+        last: 6.12
+        ma60: 6.0
+        last_vs_ma60_pct: 1.9
+        ma20_vs_ma60_pct: 3.8
         macd_golden: false
-        vol_ratio: 1.05
-        atr_pct: 4.46
-        updated_at: '2026-05-27'
-        atr_stop_pct: 8.92
-        atr_stop_basis: 2*ATR=8.9% (裁到 [5,15])
+        vol_ratio: 0.52
+        atr_pct: 4.35
+        updated_at: '2026-06-04'
+        atr_stop_pct: 8.7
+        atr_stop_basis: 2*ATR=8.7% (裁到 [5,15])
         gate_locked: true
         note: 'left-side low-buy locked: need price near MA60 or 60d-low + volume
           floor + ignition'
@@ -416,18 +413,18 @@ watchlist:
           dir: below
           msg: ⚠️ 禾盛新材破 77.38！跌破 MA20-1.5ATR，趋势可能反转
       trend_filter:
-        gate: wait_volume
-        status: OK_NO_VOL
-        last: 99.8
-        ma60: 73.86
-        last_vs_ma60_pct: 35.1
-        ma20_vs_ma60_pct: 24.5
-        macd_golden: true
-        vol_ratio: 0.89
-        atr_pct: 7.67
-        updated_at: '2026-05-27'
+        gate: manual_only
+        status: DIRTY
+        last: 89.27
+        ma60: 76.61
+        last_vs_ma60_pct: 16.5
+        ma20_vs_ma60_pct: 23.3
+        macd_golden: false
+        vol_ratio: 0.57
+        atr_pct: 8.3
+        updated_at: '2026-06-04'
         atr_stop_pct: 15.0
-        atr_stop_basis: 2*ATR=15.3% (裁到 [5,15])
+        atr_stop_basis: 2*ATR=16.6% (裁到 [5,15])
     '600186':
       name: 莲花控股
       enabled: true
@@ -453,18 +450,18 @@ watchlist:
           dir: below
           msg: ⚠️ 莲花控股破 9.1！跌破 MA20-1.5ATR，趋势可能反转
       trend_filter:
-        gate: wait_volume
-        status: OK_NO_VOL
-        last: 13.19
-        ma60: 8.26
-        last_vs_ma60_pct: 59.8
-        ma20_vs_ma60_pct: 31.1
-        macd_golden: true
-        vol_ratio: 0.92
-        atr_pct: 6.73
-        updated_at: '2026-05-27'
-        atr_stop_pct: 13.46
-        atr_stop_basis: 2*ATR=13.5% (裁到 [5,15])
+        gate: manual_only
+        status: DIRTY
+        last: 9.55
+        ma60: 8.69
+        last_vs_ma60_pct: 9.9
+        ma20_vs_ma60_pct: 25.0
+        macd_golden: false
+        vol_ratio: 0.75
+        atr_pct: 10.34
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=20.7% (裁到 [5,15])
     '603256':
       name: 宏和科技
       enabled: true
@@ -491,16 +488,16 @@ watchlist:
       trend_filter:
         gate: wait_volume
         status: OK_NO_VOL
-        last: 183.9
-        ma60: 98.49
-        last_vs_ma60_pct: 86.7
-        ma20_vs_ma60_pct: 41.4
+        last: 197.37
+        ma60: 110.03
+        last_vs_ma60_pct: 79.4
+        ma20_vs_ma60_pct: 47.6
         macd_golden: true
-        vol_ratio: 0.91
-        atr_pct: 6.37
-        updated_at: '2026-05-27'
-        atr_stop_pct: 12.74
-        atr_stop_basis: 2*ATR=12.7% (裁到 [5,15])
+        vol_ratio: 0.9
+        atr_pct: 7.91
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=15.8% (裁到 [5,15])
     '002654':
       name: 万润科技
       enabled: true
@@ -517,18 +514,18 @@ watchlist:
           dir: below
           msg: 💰💰 万润科技跌至 16.01！回踩 MA20(16.01)，优质建仓区
       trend_filter:
-        gate: auto
-        status: HEALTHY
-        last: 16.8
-        ma60: 15.14
-        last_vs_ma60_pct: 11.0
-        ma20_vs_ma60_pct: 6.4
-        macd_golden: true
-        vol_ratio: 1.34
-        atr_pct: 6.93
-        updated_at: '2026-05-27'
-        atr_stop_pct: 13.86
-        atr_stop_basis: 2*ATR=13.9% (裁到 [5,15])
+        gate: manual_only
+        status: DIRTY
+        last: 15.27
+        ma60: 15.26
+        last_vs_ma60_pct: 0.1
+        ma20_vs_ma60_pct: 8.1
+        macd_golden: false
+        vol_ratio: 0.52
+        atr_pct: 8.29
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=16.6% (裁到 [5,15])
     '603005':
       name: 晶方科技
       enabled: true
@@ -545,18 +542,18 @@ watchlist:
           dir: below
           msg: 💰💰 晶方科技跌至 33.43！回踩 MA20(33.43)，优质建仓区
       trend_filter:
-        gate: auto
-        status: HEALTHY
-        last: 45.1
-        ma60: 31.04
-        last_vs_ma60_pct: 45.3
-        ma20_vs_ma60_pct: 9.9
+        gate: manual_only
+        status: DIRTY
+        last: 40.53
+        ma60: 31.87
+        last_vs_ma60_pct: 27.2
+        ma20_vs_ma60_pct: 16.3
         macd_golden: true
-        vol_ratio: 2.9
-        atr_pct: 5.26
-        updated_at: '2026-05-27'
-        atr_stop_pct: 10.52
-        atr_stop_basis: 2*ATR=10.5% (裁到 [5,15])
+        vol_ratio: 1.07
+        atr_pct: 8.69
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=17.4% (裁到 [5,15])
     '301120':
       name: 新特电气
       enabled: true
@@ -582,18 +579,18 @@ watchlist:
           dir: below
           msg: ⚠️ 新特电气跳破 21.83 (MA60×0.95)！趋势实质走坏
       trend_filter:
-        gate: frozen
-        status: BROKEN
-        last: 22.8
-        ma60: 22.98
-        last_vs_ma60_pct: -0.8
-        ma20_vs_ma60_pct: -6.9
+        gate: manual_only
+        status: DIRTY
+        last: 24.36
+        ma60: 23.02
+        last_vs_ma60_pct: 5.8
+        ma20_vs_ma60_pct: -0.4
         macd_golden: true
-        vol_ratio: 1.23
-        atr_pct: 6.04
-        updated_at: '2026-05-27'
-        atr_stop_pct: 12.08
-        atr_stop_basis: 2*ATR=12.1% (裁到 [5,15])
+        vol_ratio: 1.52
+        atr_pct: 8.25
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=16.5% (裁到 [5,15])
       rules_backup_2026-05-27:
         buy_zone:
           trigger: 22.54
@@ -615,6 +612,32 @@ watchlist:
       - 绿电
       - 电力
       rules:
+        trend_break:
+          trigger: 23.46
+          dir: below
+          msg: ⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
+        right_side_confirm:
+          trigger: 25.49
+          dir: above
+          msg: ✅ 泽宇智能站上 25.49 (MA60×1.02)！右侧确认信号，可考虑解冻
+        trend_break_warn:
+          trigger: 23.74
+          dir: below
+          msg: ⚠️ 泽宇智能跳破 23.74 (MA60×0.95)！趋势实质走坏
+      trend_filter:
+        gate: frozen
+        status: BROKEN
+        last: 22.77
+        ma60: 24.99
+        last_vs_ma60_pct: -8.9
+        ma20_vs_ma60_pct: -0.3
+        macd_golden: false
+        vol_ratio: 0.51
+        atr_pct: 7.35
+        updated_at: '2026-06-04'
+        atr_stop_pct: 14.7
+        atr_stop_basis: 2*ATR=14.7% (裁到 [5,15])
+      rules_backup_2026-06-04:
         buy_zone:
           trigger: 25.83
           dir: below
@@ -623,23 +646,6 @@ watchlist:
           trigger: 25.21
           dir: below
           msg: 💰💰 泽宇智能跌至 25.21！回踩 MA20(25.21)，优质建仓区
-        trend_break:
-          trigger: 23.46
-          dir: below
-          msg: ⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
-      trend_filter:
-        gate: wait_macd
-        status: CAUTION
-        last: 24.9
-        ma60: 24.55
-        last_vs_ma60_pct: 1.4
-        ma20_vs_ma60_pct: 2.7
-        macd_golden: false
-        vol_ratio: 0.79
-        atr_pct: 6.45
-        updated_at: '2026-05-27'
-        atr_stop_pct: 12.9
-        atr_stop_basis: 2*ATR=12.9% (裁到 [5,15])
     '600021':
       name: 上海电力
       enabled: true
@@ -665,18 +671,18 @@ watchlist:
           dir: below
           msg: ⚠️ 上海电力破 16.62！跌破 MA20-1.5ATR，趋势可能反转
       trend_filter:
-        gate: manual_only
-        status: WEAK
-        last: 20.39
-        ma60: 18.92
-        last_vs_ma60_pct: 7.8
-        ma20_vs_ma60_pct: -5.7
+        gate: auto
+        status: HEALTHY
+        last: 20.86
+        ma60: 18.88
+        last_vs_ma60_pct: 10.5
+        ma20_vs_ma60_pct: 0.2
         macd_golden: true
-        vol_ratio: 1.83
-        atr_pct: 4.37
-        updated_at: '2026-05-27'
-        atr_stop_pct: 8.74
-        atr_stop_basis: 2*ATR=8.7% (裁到 [5,15])
+        vol_ratio: 1.6
+        atr_pct: 6.57
+        updated_at: '2026-06-04'
+        atr_stop_pct: 13.14
+        atr_stop_basis: 2*ATR=13.1% (裁到 [5,15])
     '000600':
       name: 建投能源
       enabled: true
@@ -704,16 +710,16 @@ watchlist:
       trend_filter:
         gate: auto
         status: HEALTHY
-        last: 10.48
-        ma60: 9.61
-        last_vs_ma60_pct: 9.1
-        ma20_vs_ma60_pct: 3.1
+        last: 12.45
+        ma60: 9.7
+        last_vs_ma60_pct: 28.4
+        ma20_vs_ma60_pct: 8.2
         macd_golden: true
-        vol_ratio: 1.21
-        atr_pct: 5.06
-        updated_at: '2026-05-27'
-        atr_stop_pct: 10.12
-        atr_stop_basis: 2*ATR=10.1% (裁到 [5,15])
+        vol_ratio: 1.47
+        atr_pct: 6.43
+        updated_at: '2026-06-04'
+        atr_stop_pct: 12.86
+        atr_stop_basis: 2*ATR=12.9% (裁到 [5,15])
     '002067':
       name: 景兴纸业
       enabled: true
@@ -726,6 +732,32 @@ watchlist:
       - 绿电
       - 电力
       rules:
+        trend_break:
+          trigger: 4.65
+          dir: below
+          msg: ⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
+        right_side_confirm:
+          trigger: 5.11
+          dir: above
+          msg: ✅ 景兴纸业站上 5.11 (MA60×1.02)！右侧确认信号，可考虑解冻
+        trend_break_warn:
+          trigger: 4.76
+          dir: below
+          msg: ⚠️ 景兴纸业跳破 4.76 (MA60×0.95)！趋势实质走坏
+      trend_filter:
+        gate: frozen
+        status: BROKEN
+        last: 4.9
+        ma60: 5.01
+        last_vs_ma60_pct: -2.3
+        ma20_vs_ma60_pct: 0.3
+        macd_golden: false
+        vol_ratio: 0.8
+        atr_pct: 5.77
+        updated_at: '2026-06-04'
+        atr_stop_pct: 11.54
+        atr_stop_basis: 2*ATR=11.5% (裁到 [5,15])
+      rules_backup_2026-06-04:
         buy_zone:
           trigger: 5.09
           dir: below
@@ -734,23 +766,6 @@ watchlist:
           trigger: 4.98
           dir: below
           msg: 💰💰 景兴纸业跌至 4.98！回踩 MA20(4.98)，优质建仓区
-        trend_break:
-          trigger: 4.65
-          dir: below
-          msg: ⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
-      trend_filter:
-        gate: manual_only
-        status: WEAK
-        last: 5.41
-        ma60: 5.07
-        last_vs_ma60_pct: 6.7
-        ma20_vs_ma60_pct: -1.8
-        macd_golden: true
-        vol_ratio: 2.43
-        atr_pct: 4.03
-        updated_at: '2026-05-27'
-        atr_stop_pct: 8.06
-        atr_stop_basis: 2*ATR=8.1% (裁到 [5,15])
     000899:
       name: 赣能股份
       enabled: true
@@ -776,18 +791,18 @@ watchlist:
           dir: below
           msg: ⚠️ 赣能股份跳破 12.84 (MA60×0.95)！趋势实质走坏
       trend_filter:
-        gate: frozen
-        status: BROKEN
-        last: 12.83
+        gate: auto
+        status: HEALTHY
+        last: 15.01
         ma60: 13.52
-        last_vs_ma60_pct: -5.1
-        ma20_vs_ma60_pct: -2.1
-        macd_golden: false
-        vol_ratio: 0.68
-        atr_pct: 5.35
-        updated_at: '2026-05-27'
-        atr_stop_pct: 10.7
-        atr_stop_basis: 2*ATR=10.7% (裁到 [5,15])
+        last_vs_ma60_pct: 11.0
+        ma20_vs_ma60_pct: 0.7
+        macd_golden: true
+        vol_ratio: 1.59
+        atr_pct: 5.85
+        updated_at: '2026-06-04'
+        atr_stop_pct: 11.7
+        atr_stop_basis: 2*ATR=11.7% (裁到 [5,15])
       rules_backup_2026-05-27:
         buy_zone:
           trigger: 13.29
@@ -824,16 +839,16 @@ watchlist:
       trend_filter:
         gate: manual_only
         status: DIRTY
-        last: 16.55
-        ma60: 15.46
-        last_vs_ma60_pct: 7.0
-        ma20_vs_ma60_pct: 5.3
-        macd_golden: false
-        vol_ratio: 1.15
-        atr_pct: 8.9
-        updated_at: '2026-05-27'
+        last: 20.08
+        ma60: 15.83
+        last_vs_ma60_pct: 26.8
+        ma20_vs_ma60_pct: 4.8
+        macd_golden: true
+        vol_ratio: 1.26
+        atr_pct: 8.64
+        updated_at: '2026-06-04'
         atr_stop_pct: 15.0
-        atr_stop_basis: 2*ATR=17.8% (裁到 [5,15])
+        atr_stop_basis: 2*ATR=17.3% (裁到 [5,15])
     '600310':
       name: 广西能源
       enabled: true
@@ -859,18 +874,18 @@ watchlist:
           dir: below
           msg: ⚠️ 广西能源破 4.96！跌破 MA20-1.5ATR，趋势可能反转
       trend_filter:
-        gate: auto
-        status: HEALTHY
-        last: 5.53
-        ma60: 4.92
-        last_vs_ma60_pct: 12.5
-        ma20_vs_ma60_pct: 7.1
+        gate: wait_volume
+        status: OK_NO_VOL
+        last: 6.35
+        ma60: 5.09
+        last_vs_ma60_pct: 24.7
+        ma20_vs_ma60_pct: 8.0
         macd_golden: true
-        vol_ratio: 1.11
-        atr_pct: 7.09
-        updated_at: '2026-05-27'
-        atr_stop_pct: 14.18
-        atr_stop_basis: 2*ATR=14.2% (裁到 [5,15])
+        vol_ratio: 0.9
+        atr_pct: 7.49
+        updated_at: '2026-06-04'
+        atr_stop_pct: 14.98
+        atr_stop_basis: 2*ATR=15.0% (裁到 [5,15])
     '601222':
       name: 林洋能源
       enabled: true
@@ -883,6 +898,32 @@ watchlist:
       - 绿电
       - 电力
       rules:
+        trend_break:
+          trigger: 5.98
+          dir: below
+          msg: ⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
+        right_side_confirm:
+          trigger: 6.44
+          dir: above
+          msg: ✅ 林洋能源站上 6.44 (MA60×1.02)！右侧确认信号，可考虑解冻
+        trend_break_warn:
+          trigger: 5.99
+          dir: below
+          msg: ⚠️ 林洋能源跳破 5.99 (MA60×0.95)！趋势实质走坏
+      trend_filter:
+        gate: frozen
+        status: BROKEN
+        last: 6.25
+        ma60: 6.31
+        last_vs_ma60_pct: -1.0
+        ma20_vs_ma60_pct: 1.4
+        macd_golden: false
+        vol_ratio: 1.15
+        atr_pct: 4.31
+        updated_at: '2026-06-04'
+        atr_stop_pct: 8.62
+        atr_stop_basis: 2*ATR=8.6% (裁到 [5,15])
+      rules_backup_2026-06-04:
         buy_zone:
           trigger: 6.41
           dir: below
@@ -891,23 +932,6 @@ watchlist:
           trigger: 6.28
           dir: below
           msg: 💰💰 林洋能源跌至 6.28！回踩 MA20(6.28)，优质建仓区
-        trend_break:
-          trigger: 5.98
-          dir: below
-          msg: ⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
-      trend_filter:
-        gate: auto
-        status: HEALTHY
-        last: 6.32
-        ma60: 6.28
-        last_vs_ma60_pct: 0.6
-        ma20_vs_ma60_pct: 0.0
-        macd_golden: true
-        vol_ratio: 1.25
-        atr_pct: 3.93
-        updated_at: '2026-05-27'
-        atr_stop_pct: 7.86
-        atr_stop_basis: 2*ATR=7.9% (裁到 [5,15])
     '600863':
       name: 华能蒙电
       enabled: true
@@ -934,17 +958,17 @@ watchlist:
           msg: ⚠️ 华能蒙电破 4.37！跌破 MA20-1.5ATR，趋势可能反转
       trend_filter:
         gate: manual_only
-        status: WEAK
-        last: 6.1
-        ma60: 5.07
-        last_vs_ma60_pct: 20.4
-        ma20_vs_ma60_pct: -0.6
+        status: DIRTY
+        last: 7.39
+        ma60: 5.27
+        last_vs_ma60_pct: 40.2
+        ma20_vs_ma60_pct: 10.1
         macd_golden: true
-        vol_ratio: 2.9
-        atr_pct: 5.93
-        updated_at: '2026-05-27'
-        atr_stop_pct: 11.86
-        atr_stop_basis: 2*ATR=11.9% (裁到 [5,15])
+        vol_ratio: 2.84
+        atr_pct: 8.81
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=17.6% (裁到 [5,15])
     '601991':
       name: 大唐发电
       enabled: true
@@ -972,14 +996,14 @@ watchlist:
       trend_filter:
         gate: manual_only
         status: DIRTY
-        last: 7.16
-        ma60: 4.78
-        last_vs_ma60_pct: 49.9
-        ma20_vs_ma60_pct: 29.2
+        last: 9.1
+        ma60: 5.23
+        last_vs_ma60_pct: 74.1
+        ma20_vs_ma60_pct: 42.8
         macd_golden: true
-        vol_ratio: 1.36
-        atr_pct: 9.68
-        updated_at: '2026-05-27'
+        vol_ratio: 1.27
+        atr_pct: 9.69
+        updated_at: '2026-06-04'
         atr_stop_pct: 15.0
         atr_stop_basis: 2*ATR=19.4% (裁到 [5,15])
     '603693':
@@ -1007,18 +1031,18 @@ watchlist:
           dir: below
           msg: ⚠️ 江苏新能破 14.51！跌破 MA20-1.5ATR，趋势可能反转
       trend_filter:
-        gate: auto
-        status: HEALTHY
-        last: 17.87
-        ma60: 15.27
-        last_vs_ma60_pct: 17.0
-        ma20_vs_ma60_pct: 5.5
-        macd_golden: true
-        vol_ratio: 1.53
-        atr_pct: 6.77
-        updated_at: '2026-05-27'
-        atr_stop_pct: 13.54
-        atr_stop_basis: 2*ATR=13.5% (裁到 [5,15])
+        gate: manual_only
+        status: DIRTY
+        last: 17.46
+        ma60: 15.71
+        last_vs_ma60_pct: 11.2
+        ma20_vs_ma60_pct: 7.4
+        macd_golden: false
+        vol_ratio: 0.86
+        atr_pct: 8.87
+        updated_at: '2026-06-04'
+        atr_stop_pct: 15.0
+        atr_stop_basis: 2*ATR=17.7% (裁到 [5,15])
   auto_discovered: {}
 legacy_watch:
   '002342':
@@ -1026,12 +1050,12 @@ legacy_watch:
     enabled: false
     note: 5/19 暴跌后清仓
 risk:
-  max_position_pct: 0.20  # 提升单票仓位上限从15%到20%，提升资金利用率
-  max_total_positions: 6    # 总持仓股票数硬上限（含原有持仓+本次新建）
-  max_daily_new_positions: 3  # 单日新建仓位数硬上限（REQ-038）
-  max_daily_trades: 10     # 提升每日交易上限从5到10笔，匹配更激进的信号生成
-  max_daily_build_amount_pct: 0.30  # 单日最大建仓金额上限（占总资产比例），防止现金过低（REQ-045）
-  liquidity_release_loss_threshold: 0.08  # 释放流动性时优先卖出浮亏超过此比例的仓位（REQ-045）
+  max_position_pct: 0.2
+  max_total_positions: 6
+  max_daily_new_positions: 3
+  max_daily_trades: 10
+  max_daily_build_amount_pct: 0.3
+  liquidity_release_loss_threshold: 0.08
   stop_loss_pct: -0.08
   take_profit_pct: 0.15
 fees:
@@ -1051,4 +1075,3 @@ account:
   initial_cash: 200000
   account_id: 1
 stock_pool: []
-

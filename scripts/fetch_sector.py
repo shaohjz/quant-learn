@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
-CACHE_FILE = DATA_DIR / "sector_cache.json"
+CACHE_FILE = ROOT / "output" / "sector_cache.json"
 CACHE_TTL_DAYS = 7
 
 # AKShare 可能返回的"行业"字段名（不同版本有差异）

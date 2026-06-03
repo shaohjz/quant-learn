@@ -113,6 +113,11 @@ def risk_params() -> dict:
         "liquidity_release_loss_threshold": float(get("risk.liquidity_release_loss_threshold", 0.08)),
         "stop_loss_pct": float(get("risk.stop_loss_pct", -0.08)),
         "take_profit_pct": float(get("risk.take_profit_pct", 0.15)),
+        # [REQ-036] 行业/板块集中度风控
+        "max_industry_pct": float(get("risk.max_industry_pct", 0.30)),
+        "max_sector_pct": float(get("risk.max_sector_pct", 0.35)),
+        "warn_industry_pct": float(get("risk.warn_industry_pct", 0.25)),
+        "warn_sector_pct": float(get("risk.warn_sector_pct", 0.30)),
     }
 
 

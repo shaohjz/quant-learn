@@ -103,13 +103,29 @@ def execute_stop_profit(sell_orders, broker, logger):
         pnl_pct = order['pnl_pct']
         
         try:
+            # REQ-058: 使用标准化 signal_reason 格式
+            from sim.sell_signal_audit import build_sell_signal_reason
+            _sr = build_sell_signal_reason(
+                'take_profit', trigger_price=current_price, volume=quantity,
+                extra=f'浮盈{pnl_pct:.1%}',
+            )
+        except Exception:
+            _sr = f'take_profit|触发价{current_price:.3f}|量能{quantity}|浮盈{pnl_pct:.1%}'
+        try:
             # 调用 broker.sell() 执行卖出
             result = broker.sell(
                 stock_code=stock_code,
                 price=current_price,
                 quantity=quantity,
                 stock_name=stock_name,
-                signal_reason=f"止盈卖出 (浮盈: {pnl_pct:.2%})"
+                signal_reason=_sr,
+                signal_detail={
+                    "signal": "SELL",
+                    "trigger_type": "risk",
+                    "triggered_rules": [{"rule": f"止盈（浮盈 {pnl_pct:.2%})", "indicator": "pnl_pct", "current_value": round(pnl_pct, 2), "threshold": round(take_profit_pct * 100, 1), "operator": ">="}],
+                    "strategy_version": "stop_profit_monitor/v1.0",
+                    "price_snapshot": {"close": round(current_price, 4)},
+                },
             )
             
             if result.success:

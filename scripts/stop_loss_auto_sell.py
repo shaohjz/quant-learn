@@ -73,12 +73,27 @@ def check_and_sell(account_id: int = 1) -> int:
                 f"浮亏 {pnl_pct:.2f}% <= 止损线 {stop_loss_pct*100:.1f}%"
             )
             try:
+                from sim.sell_signal_audit import build_sell_signal_reason
+                _sr = build_sell_signal_reason(
+                    'stop_loss', trigger_price=cur_price, volume=qty,
+                    extra=f'浮亏{pnl_pct:.1f}%',
+                )
+            except Exception:
+                _sr = f'stop_loss|触发价{cur_price:.3f}|量能{qty}|浮亏{pnl_pct:.1f}%'
+            try:
                 result = broker.sell(
                     stock_code=code,
                     price=cur_price,
                     quantity=qty,
                     stock_name=name,
-                    signal_reason=f"自动止损（浮亏 {pnl_pct:.1f}%）",
+                    signal_reason=_sr,
+                    signal_detail={
+                        "signal": "SELL",
+                        "trigger_type": "risk",
+                        "triggered_rules": [{"rule": f"止损（浮亏 {pnl_pct:.1f}%）", "indicator": "pnl_pct", "current_value": round(pnl_pct, 2), "threshold": round(stop_loss_pct * 100, 1), "operator": "<="}],
+                        "strategy_version": "stop_loss_auto_sell/v1.0",
+                        "price_snapshot": {"close": round(cur_price, 4), "avg_cost": round(avg_cost, 4)},
+                    },
                 )
                 if result.get('success'):
                     logger.info(f"✅ [{code}] 止损卖出成功：{qty}股")

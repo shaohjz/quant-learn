@@ -1063,6 +1063,9 @@ risk:
   max_sector_pct: 0.35          # 单板块最大持仓占比（35% 总资产）
   warn_industry_pct: 0.25       # 行业集中度警告阈值（25%）
   warn_sector_pct: 0.30         # 板块集中度警告阈值（30%）
+  # [REQ-045] 现金占比过低预警
+  cash_ratio_warn: 0.05         # 现金占比警告阈值（5%）
+  cash_ratio_crit: 0.02         # 现金占比严重阈值（2%）
 fees:
   commission_rate: 0.00025
   min_commission: 5.0

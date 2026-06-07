@@ -28,6 +28,57 @@ import pandas as pd
 import numpy as np
 import baostock as bs
 from datetime import datetime, timedelta
+from typing import Optional
+
+# ========== REQ-051: 信号去重 ==========
+# 信号优先级：risk > tech_sell > tech_buy > hold
+_SIGNAL_PRIORITY = {"risk": 0, "tech_sell": 1, "tech_buy": 2, "none": 3}
+
+
+def dedupe_signals(signals: list[dict], trade_date: Optional[str] = None) -> list[dict]:
+    """REQ-051: 同一股票同日多信号去重。
+
+    当同一 stock_code 出现多条信号时，按优先级保留最高优先级信号：
+    risk(止损/止盈) > tech_sell(技术卖出) > tech_buy(技术买入) > hold
+
+    Args:
+        signals: generate_signals() 生成的信号列表
+        trade_date: 交易日期（仅用于日志），默认今天
+
+    Returns:
+        去重后的信号列表（每个 stock_code 最多一条信号）
+    """
+    if not signals:
+        return signals
+
+    trade_date = trade_date or datetime.now().strftime("%Y-%m-%d")
+    by_code: dict[str, list[dict]] = {}
+    for sig in signals:
+        code = sig.get("code", "")
+        by_code.setdefault(code, []).append(sig)
+
+    result = []
+    dupes_dropped = 0
+    for code, sigs in by_code.items():
+        if len(sigs) <= 1:
+            result.append(sigs[0])
+            continue
+        # 按优先级排序：trigger_type 优先级高的排前面
+        sigs.sort(key=lambda s: _SIGNAL_PRIORITY.get(
+            s.get("signal_detail", {}).get("trigger_type", "none"), 3))
+        winner = sigs[0]
+        dropped = sigs[1:]
+        dupes_dropped += len(dropped)
+        for d in dropped:
+            _tt = d.get("signal_detail", {}).get("trigger_type", "?")
+            _sig = d.get("signal", "?")
+            print(f"  ⚠️ [REQ-051] {trade_date} {code} 去重: 丢弃 {_sig}({_tt}), "
+                  f"保留 {winner.get('signal', '?')}({winner.get('signal_detail', {}).get('trigger_type', '?')})")
+        result.append(winner)
+
+    if dupes_dropped:
+        print(f"  📊 [REQ-051] {trade_date} 信号去重: {len(signals)} → {len(result)} 条, 丢弃 {dupes_dropped} 条重复")
+    return result
 
 
 def _fetch_kline(stock_code: str, days: int = 80) -> pd.DataFrame:
@@ -378,6 +429,17 @@ def generate_signals(stock_code: str, stock_name: str = "",
     # ========== 决策 ==========
     has_position = existing_position and existing_position.get("quantity", 0) > 0
 
+    # ========== 构造 signal_reason（标准化，确保 SELL 也可溯源） ==========
+    # 格式：trigger_type|规则1+规则2+...  或  risk|止损/止盈描述
+    if risk_action:
+        _signal_reason = f"risk|{risk_reason}"
+    elif has_position and len(sell_signals) >= 2:
+        _signal_reason = f"tech_sell|{'+'.join(sell_signals)}"
+    elif not has_position and len(buy_signals) >= 3:
+        _signal_reason = f"tech_buy|{'+'.join(buy_signals)}"
+    else:
+        _signal_reason = "hold|no_signal"
+
     if has_position and len(sell_signals) >= 2:
         signal = "SELL"
         reasons = sell_signals
@@ -402,6 +464,7 @@ def generate_signals(stock_code: str, stock_name: str = "",
         "name": stock_name,
         "signal": signal,
         "reasons": reasons,
+        "signal_reason": _signal_reason,   # REQ-058: 标准化 signal_reason，确保 SELL 可溯源
         "price": latest_price,
         "indicators": indicators,
         "risk_action": risk_action,

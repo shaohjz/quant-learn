@@ -18,12 +18,13 @@ from scripts.ensure_dirs import ensure_dirs
 ensure_dirs()
 
 from sim.db import init_tables
-from sim.signal_generator import generate_signals
+from sim.signal_generator import generate_signals, dedupe_signals
 from sim.stock_pool import StockPool
 from sim.realtime_price import get_latest_prices
 from sim.reporter import generate_daily_report, generate_nav_chart
 from sim.config import risk_params, broker_mode
 from sim.trade_calendar import is_trading_day
+from sim.monitoring import check_cash_ratio
 from sim import notifier
 from broker import get_broker
 
@@ -163,31 +164,22 @@ def run_settle(broker, trade_date: Date = None):
 
     print(f"\n📡 行情: {', '.join(f'{name_map.get(c,c)} ¥{p:.2f}' for c, p in price_map.items())}")
 
-    # 2. 生成信号（去重：同一股票同日只保留第一个买入信号）
+    # 2. 生成信号
     pos_map = _build_existing_position_map(broker)
-    signals = []
-    buy_signals_count = 0
-    sell_signals_count = 0
-    
-    # 用于去重：记录已经生成买入信号的股票
-    buy_signal_stocks = set()
-    
+    raw_signals = []
     for code, name in pool.get_all().items():
         sig = generate_signals(code, name, existing_position=pos_map.get(code))
-        
-        # 去重逻辑：同一股票同日多个信号，只保留第一个买入信号
-        if sig["signal"] == "BUY":
-            if code in buy_signal_stocks:
-                print(f"  ⚠️ 跳过重复买入信号: {name}({code})")
-                continue
-            buy_signal_stocks.add(code)
-            buy_signals_count += 1
-        elif sig["signal"] == "SELL":
-            sell_signals_count += 1
-        
-        signals.append(sig)
+        raw_signals.append(sig)
+
+    # REQ-051: 同一股票同日多信号去重（取最高优先级信号，忽略其余）
+    signals = dedupe_signals(raw_signals, trade_date=str(trade_date))
+
+    buy_signals_count = sum(1 for s in signals if s["signal"] == "BUY")
+    sell_signals_count = sum(1 for s in signals if s["signal"] == "SELL")
+
+    for sig in signals:
         emoji = "🟢" if sig["signal"] == "BUY" else "🔴" if sig["signal"] == "SELL" else "⚪"
-        print(f"\n{emoji} {name}({code}): {sig['signal']}")
+        print(f"\n{emoji} {sig['name']}({sig['code']}): {sig['signal']}")
         print(f"  原因: {', '.join(sig['reasons'])}")
 
     print(f"\n📊 信号统计: {buy_signals_count}个买入, {sell_signals_count}个卖出")
@@ -248,8 +240,10 @@ def run_settle(broker, trade_date: Date = None):
             
             result = broker.buy(
                 stock_code=code, price=price, quantity=quantity,
-                stock_name=name, signal_reason="+".join(sig["reasons"]),
+                stock_name=name,
+                signal_reason=sig.get("signal_reason", "+".join(sig["reasons"])),
                 trade_date=trade_date,
+                signal_detail=sig.get("signal_detail"),
             )
             print(f"  → {'✅' if result.success else '❌'} 买入: {result.msg}")
             notifier.notify_trade("BUY", name, code, quantity, price,
@@ -268,8 +262,10 @@ def run_settle(broker, trade_date: Date = None):
             if pos and pos.quantity > 0:
                 result = broker.sell(
                     stock_code=code, price=price, quantity=pos.quantity,
-                    stock_name=name, signal_reason="+".join(sig["reasons"]),
+                    stock_name=name,
+                    signal_reason=sig.get("signal_reason", "+".join(sig["reasons"])),
                     trade_date=trade_date,
+                    signal_detail=sig.get("signal_detail"),
                 )
                 print(f"  → {'✅' if result.success else '❌'} 卖出: {result.msg}")
                 notifier.notify_trade("SELL", name, code, pos.quantity, price,
@@ -289,6 +285,19 @@ def run_settle(broker, trade_date: Date = None):
     print(f"\n📊 结算: 总资产 ¥{settle['total_value']:,.2f}, "
           f"日收益 {settle['daily_return']*100:+.2f}%, "
           f"累计 {settle['cumulative_return']*100:+.2f}%")
+
+    # REQ-045: 现金占比过低预警
+    try:
+        cash_check = check_cash_ratio()
+        if cash_check["level"] != "ok":
+            print(f"\n{cash_check['message']}")
+            notifier.notify_trade("WARN", "现金占比过低", "",
+                                   0, cash_check["cash_ratio"],
+                                   cash_check["message"], True)
+        else:
+            print(f"\n{cash_check['message']}")
+    except Exception as e:
+        print(f"\n⚠️ 现金占比检查失败: {e}")
 
     # 6. 生成报告
     report = generate_daily_report(trade_date, signals)

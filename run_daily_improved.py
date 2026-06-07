@@ -18,7 +18,7 @@ from scripts.ensure_dirs import ensure_dirs
 ensure_dirs()
 
 from sim.db import init_tables
-from sim.signal_generator import generate_signals
+from sim.signal_generator import generate_signals, dedupe_signals
 from sim.stock_pool import StockPool
 from sim.realtime_price import get_latest_prices
 from sim.reporter import generate_daily_report, generate_nav_chart
@@ -187,29 +187,21 @@ def run_settle(broker, trade_date: Date = None):
 
     # 2. 生成信号（去重：同一股票同日只保留第一个买入信号）
     pos_map = _build_existing_position_map(broker)
-    signals = []
-    buy_signals_count = 0
-    sell_signals_count = 0
-    
-    # 用于去重：记录已经生成买入信号的股票
-    buy_signal_stocks = set()
-    
+    # 2. 生成信号
+    raw_signals = []
     for code, name in pool.get_all().items():
         sig = generate_signals(code, name, existing_position=pos_map.get(code))
-        
-        # 去重逻辑：同一股票同日多个信号，只保留第一个买入信号
-        if sig["signal"] == "BUY":
-            if code in buy_signal_stocks:
-                print(f"  ⚠️ 跳过重复买入信号: {name}({code})")
-                continue
-            buy_signal_stocks.add(code)
-            buy_signals_count += 1
-        elif sig["signal"] == "SELL":
-            sell_signals_count += 1
-        
-        signals.append(sig)
+        raw_signals.append(sig)
+
+    # REQ-051: 同一股票同日多信号去重（取最高优先级信号，忽略其余）
+    signals = dedupe_signals(raw_signals, trade_date=str(trade_date))
+
+    buy_signals_count = sum(1 for s in signals if s["signal"] == "BUY")
+    sell_signals_count = sum(1 for s in signals if s["signal"] == "SELL")
+
+    for sig in signals:
         emoji = "🟢" if sig["signal"] == "BUY" else "🔴" if sig["signal"] == "SELL" else "⚪"
-        print(f"\n{emoji} {name}({code}): {sig['signal']}")
+        print(f"\n{emoji} {sig['name']}({sig['code']}): {sig['signal']}")
         print(f"  原因: {', '.join(sig['reasons'])}")
 
     print(f"\n📊 信号统计: {buy_signals_count}个买入, {sell_signals_count}个卖出")
@@ -304,8 +296,10 @@ def run_settle(broker, trade_date: Date = None):
             
             result = broker.buy(
                 stock_code=code, price=price, quantity=quantity,
-                stock_name=name, signal_reason="+".join(sig["reasons"]),
+                stock_name=name,
+                signal_reason=sig.get("signal_reason", "+".join(sig["reasons"])),
                 trade_date=trade_date,
+                signal_detail=sig.get("signal_detail"),
             )
             print(f"  → {'✅' if result.success else '❌'} 买入: {result.msg}")
             notifier.notify_trade("BUY", name, code, quantity, price,
@@ -324,8 +318,10 @@ def run_settle(broker, trade_date: Date = None):
             if pos and pos.quantity > 0:
                 result = broker.sell(
                     stock_code=code, price=price, quantity=pos.quantity,
-                    stock_name=name, signal_reason="+".join(sig["reasons"]),
+                    stock_name=name,
+                    signal_reason=sig.get("signal_reason", "+".join(sig["reasons"])),
                     trade_date=trade_date,
+                    signal_detail=sig.get("signal_detail"),
                 )
                 print(f"  → {'✅' if result.success else '❌'} 卖出: {result.msg}")
                 notifier.notify_trade("SELL", name, code, pos.quantity, price,

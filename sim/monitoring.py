@@ -442,3 +442,122 @@ def get_default_monitor() -> HealthMonitor:
     if _default_monitor is None:
         _default_monitor = HealthMonitor()
     return _default_monitor
+
+
+# ============================================================
+# REQ-045: 现金占比过低预警
+# ============================================================
+
+# 默认阈值：现金占比低于此值触发告警
+DEFAULT_CASH_RATIO_WARN = 0.05   # 5% 警告
+DEFAULT_CASH_RATIO_CRIT = 0.02   # 2% 严重
+
+
+def check_cash_ratio(
+    account_id: int = 1,
+    warn_threshold: float | None = None,
+    crit_threshold: float | None = None,
+    monitor: HealthMonitor | None = None,
+) -> dict:
+    """REQ-045: 检查现金占比，低于阈值时产生告警。
+
+    现金占比 = cash / total_value
+    - 低于 warn_threshold (默认 5%) → warn 告警
+    - 低于 crit_threshold (默认 2%) → critical 告警
+
+    Args:
+        account_id: 账户 ID
+        warn_threshold: 警告阈值（0-1），默认从 config 读取或 0.05
+        crit_threshold: 严重阈值（0-1），默认从 config 读取或 0.02
+        monitor: HealthMonitor 实例，默认用 get_default_monitor()
+
+    Returns:
+        {
+            "cash_ratio": float,      # 0-1
+            "cash": float,
+            "total_value": float,
+            "level": "ok"|"warn"|"critical",
+            "message": str,
+            "alert_sent": bool,
+        }
+    """
+    from sim.config import get as config_get
+
+    # 读取阈值
+    if warn_threshold is None:
+        warn_threshold = float(config_get("risk.cash_ratio_warn", DEFAULT_CASH_RATIO_WARN))
+    if crit_threshold is None:
+        crit_threshold = float(config_get("risk.cash_ratio_crit", DEFAULT_CASH_RATIO_CRIT))
+
+    # 读取账户数据
+    from sim.db import get_conn
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT cash, total_value, initial_cash FROM sim_account WHERE id = ?",
+            (account_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        return {
+            "cash_ratio": 0, "cash": 0, "total_value": 0,
+            "level": "critical", "message": f"账户 {account_id} 不存在",
+            "alert_sent": False,
+        }
+
+    cash = float(row["cash"])
+    total_value = float(row["total_value"])
+    if total_value <= 0:
+        return {
+            "cash_ratio": 0, "cash": cash, "total_value": total_value,
+            "level": "critical", "message": f"总资产异常（{total_value}）",
+            "alert_sent": False,
+        }
+
+    cash_ratio = cash / total_value
+
+    # 判定级别
+    if cash_ratio < crit_threshold:
+        level = "critical"
+        message = (
+            f"🚨 现金占比仅 {cash_ratio*100:.1f}%（¥{cash:,.0f}/¥{total_value:,.0f}），"
+            f"低于严重阈值 {crit_threshold*100:.0f}%，"
+            f"建议卖出部分浮亏仓位释放流动性"
+        )
+    elif cash_ratio < warn_threshold:
+        level = "warn"
+        message = (
+            f"⚠️ 现金占比 {cash_ratio*100:.1f}%（¥{cash:,.0f}/¥{total_value:,.0f}），"
+            f"低于警告阈值 {warn_threshold*100:.0f}%，"
+            f"建议控制买入节奏"
+        )
+    else:
+        level = "ok"
+        message = f"✅ 现金占比 {cash_ratio*100:.1f}%（¥{cash:,.0f}/¥{total_value:,.0f}），正常"
+
+    # 发送告警
+    alert_sent = False
+    if level in ("warn", "critical"):
+        _monitor = monitor or get_default_monitor()
+        severity = SEVERITY_CRITICAL if level == "critical" else SEVERITY_WARN
+        event = _monitor.record_event(
+            component="cash_ratio",
+            event_type="low_cash_ratio",
+            severity=severity,
+            message=message,
+            details=f"cash={cash}, total_value={total_value}, cash_ratio={cash_ratio:.4f}, "
+                    f"warn_threshold={warn_threshold}, crit_threshold={crit_threshold}",
+            alert=True,
+        )
+        alert_sent = True
+
+    return {
+        "cash_ratio": round(cash_ratio, 4),
+        "cash": round(cash, 2),
+        "total_value": round(total_value, 2),
+        "level": level,
+        "message": message,
+        "alert_sent": alert_sent,
+    }

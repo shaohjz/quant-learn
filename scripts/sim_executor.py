@@ -63,6 +63,7 @@ _VOL_CACHE = {}          # code → (timestamp, vol_ratio)
 _SUPPORT_CACHE = {}     # code → (timestamp, ok, reason)
 _MACD_CACHE = {}       # code → (timestamp, ok)
 _STOP_VOL_THRESH = 1.5   # 放量下跌阈值（放量 ≥1.5 倍确认止损）
+_MACD_CACHE_TTL_SEC = 600  # MACD/支撑检查缓存有效期（秒）
 
 def _ensure_trailing_columns(conn: sqlite3.Connection) -> None:
     """REQ-041: 旧 sim_positions 表幂等补齐跟踪止损字段。"""
@@ -349,9 +350,9 @@ def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, 
 
 
 def _is_late_session() -> bool:
-    """是否近收盘（14:50 后）。近收盘才执行止损动作，避盘中插针。"""
+    """是否近收盘（14:40 后）。REQ-046: 从 14:50 提前到 14:40，给软止损升级留时间。"""
     now = datetime.now()
-    return (now.hour > 14) or (now.hour == 14 and now.minute >= 50)
+    return (now.hour > 14) or (now.hour == 14 and now.minute >= 40)
 
 
 def _get_today_vol_ratio(code: str) -> float | None:
@@ -490,11 +491,12 @@ def _realtime_macd_ok(code: str) -> bool:
 def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
     """左侧买入支撑检查。
     
-    必须同时满足两个条件才能买：
-    1. 价格支撑：在 MA60 附近不破 或 在近 60 日低点企稳
-    2. 量能企稳：今日量 ≥ 近 5 日均量 × 0.6（放宽从 0.8 → 0.6）
+    REQ-049 修复：放宽条件，提高买入信号执行率：
+    1. 价格支撑：在 MA60 附近不破 或 在近 60 日低点企稳 或 5日均线拐头向上
+    2. 量能企稳：今日量 ≥ 近 5 日均量 × 0.4（进一步放宽从 0.6 → 0.4）
+    3. 量能获取失败时放行（不因数据问题阻断信号）
     ⚡ 加分（其中一项满足即可）：
-      - 今日收红（close > open）且量比 ≥ 1.0 —— 启动信号
+      - 今日收红（close > open）且量比 ≥ 0.8 —— 启动信号（放宽从 1.0）
       - 近 3 日有一个探低反弹日（low 创近期新低但 close 阳线）
     """
     if not code:
@@ -527,9 +529,9 @@ def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
         finally:
             bs.logout()
 
-        if len(rows) < 60:
-            _SUPPORT_CACHE[code] = (now_ts, False, '数据不足 60 日')
-            return False, '数据不足 60 日'
+        if len(rows) < 30:  # REQ-049: 降低数据要求 60→30，允许更多股票通过
+            _SUPPORT_CACHE[code] = (now_ts, True, '数据不足30日，放行（REQ-049）')
+            return True, '数据不足30日，放行（REQ-049）'
 
         df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
         for c in ['open','high','low','close','volume']:
@@ -539,35 +541,40 @@ def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
         last_close = float(df['close'].iloc[-1])
         last_open = float(df['open'].iloc[-1])
         last_low = float(df['low'].iloc[-1])
-        ma60 = float(df['close'].tail(60).mean())
-        low60 = float(df['low'].tail(60).min())
-        avg_vol5 = float(df['volume'].tail(5).mean())
+        ma5 = float(df['close'].tail(5).mean()) if len(df) >= 5 else last_close
+        ma60 = float(df['close'].tail(60).mean()) if len(df) >= 60 else last_close
+        low60 = float(df['low'].tail(60).min()) if len(df) >= 60 else last_low
+        avg_vol5 = float(df['volume'].tail(5).mean()) if len(df) >= 5 else 0
         today_vol = float(df['volume'].iloc[-1])
-        vol_ratio = (today_vol / avg_vol5) if avg_vol5 > 0 else 0.0
+        vol_ratio = (today_vol / avg_vol5) if avg_vol5 > 0 else None
 
-        # 条件 1：价格支撑
-        near_ma60 = last_close >= ma60 * 0.99
-        near_low60 = last_close <= low60 * 1.05
-        price_ok = near_ma60 or near_low60
+        # 条件 1：价格支撑（REQ-049: 增加 MA5 拐头条件）
+        near_ma60 = last_close >= ma60 * 0.97  # REQ-049: 放宽 0.99→0.97
+        near_low60 = last_close <= low60 * 1.08  # REQ-049: 放宽 1.05→1.08
+        # 新增：5日均线拐头向上也算支撑
+        ma5_turning_up = False
+        if len(df) >= 6:
+            ma5_prev = float(df['close'].iloc[-6:-1].tail(5).mean())
+            ma5_turning_up = ma5 > ma5_prev and last_close > ma5
+        price_ok = near_ma60 or near_low60 or ma5_turning_up
         if not price_ok:
-            reason = f"🔍 价位在支撑区但未见企稳 (MA60×0.99={ma60*0.99:.2f}, low60×1.05={low60*1.05:.2f})"
+            reason = f"🔍 价位未见企稳 (MA60×0.97={ma60*0.97:.2f}, low60×1.08={low60*1.08:.2f}, MA5拐头={'是' if ma5_turning_up else '否'})"
             _SUPPORT_CACHE[code] = (now_ts, False, reason)
             return False, reason
 
-        # 条件 2：量能不缩（动量判断企稳）
+        # 条件 2：量能不缩（REQ-049: 大幅放宽阈值 0.6 → 0.4）
         if vol_ratio is None:
-            # 量能获取失败，放行但记日志
             logger.warning(f'_check_left_side_support({code}) 量能获取失败，放行')
             _SUPPORT_CACHE[code] = (now_ts, True, f'✅ 价位在支撑区 + 量能获取失败（放行）')
             return True, f'✅ 价位在支撑区 + 量能获取失败（放行）'
 
-        if vol_ratio < 0.6:  # 放宽阈值 0.8 → 0.6
+        if vol_ratio < 0.4:  # REQ-049: 大幅放宽阈值 0.6→0.4
             reason = f'🔍 量能过缩 (今日量={vol_ratio:.2f}×5日均)，无量阴跌不能买'
             _SUPPORT_CACHE[code] = (now_ts, False, reason)
             return False, reason
 
         # ⚡ 加分项
-        if last_close > last_open and vol_ratio >= 1.0:
+        if last_close > last_open and vol_ratio >= 0.8:  # REQ-049: 放宽 1.0→0.8
             reason = f'✅ 价位在支撑区 + 今日量比{vol_ratio:.2f}×收红 —— 启动信号'
             _SUPPORT_CACHE[code] = (now_ts, True, reason)
             return True, reason
@@ -588,12 +595,14 @@ def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
             _SUPPORT_CACHE[code] = (now_ts, True, reason)
             return True, reason
 
-        reason = f'✅ 价位在支撑区但未见启动 (今日{"阳" if last_close>last_open else "阴"}，量比{vol_ratio:.2f}× — 等企稳'
-        _SUPPORT_CACHE[code] = (now_ts, False, reason)
-        return False, reason
+        # REQ-049: 价格支撑OK + 量能不是极度萎缩 → 放行（以前会拒绝）
+        reason = f'✅ 价位在支撑区 + 量比{vol_ratio:.2f}×（REQ-049: 放行）'
+        _SUPPORT_CACHE[code] = (now_ts, True, reason)
+        return True, reason
     except Exception as e:
         logger.warning(f"_check_left_side_support({code}) failed: {e}")
-        return False, f'检查异常: {e}'
+        # REQ-049: 检查异常时放行（不因数据获取问题阻断有效信号）
+        return True, f'支撑检查异常，放行: {e}'
 
 
 def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
@@ -843,17 +852,17 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
 
 
         # 买入信号
-        # REQ-049 修复：buy_strong 是更深支撑位触发，属于强信号，trend_gate 只警告不阻断
-        if level == 'buy_strong':
-            gate_ok, gate_reason = _check_trend_gate(rule, 'BUY')
-            if not gate_ok:
-                logger.info(f'⚠️ [{code}] {level} 强信号穿透 trend_gate: {gate_reason}（继续执行买入）')
-                # buy_strong 穿透：记日志但放行
-        else:
-            gate_ok, gate_reason = _check_trend_gate(rule, 'BUY')
-            if not gate_ok:
-                logger.info(f'🚫 [{code}] {level} 触发但趋势过滤未放行: {gate_reason}')
+        # REQ-049 修复：buy_strong/buy_zone 信号穿透 trend_gate（只记日志不阻断）
+        # 理由：趋势过滤不应完全阻断已触发信号，仅 frozen/manual_only 才硬阻断
+        gate_ok, gate_reason = _check_trend_gate(rule, 'BUY')
+        if not gate_ok:
+            if gate_reason and 'frozen' in gate_reason:
+                # frozen/manual_only 是用户显式冻结，仍硬阻断
+                logger.info(f'🚫 [{code}] {level} 触发但趋势过滤冻结: {gate_reason}')
                 return 'NO_ACTION'
+            else:
+                # wait_volume/wait_macd/require_support 等软过滤：穿透，记日志
+                logger.info(f'⚠️ [{code}] {level} 信号穿透 trend_gate: {gate_reason}（继续执行买入）')
 
         # 检查价格合理性
         ok, reason = check_price_sanity(code, cur_price, 'BUY')
@@ -907,7 +916,33 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         logger.info(f'[{code}] 止损决策: severity={severity}, action={sev_action}')
         return sev_action  # NO_ACTION / SELL_HALF / SELL_ALL / DEFER
 
-    elif level in ('take_profit', 'half_out'):
+    elif level in ('trend_break', 'trend_break_warn'):
+        # REQ-048 修复：trend_break 之前在 decide_action 中无匹配分支，
+        # 导致 threshold_strategy._try_sell('trend_break') 走到末尾 return 'NO_ACTION'，
+        # 卖出信号被吞掉——threshold_state 标记 executed 但 sim_positions 仓位仍在。
+        # 修复：趋势破位 → SELL_ALL（全仓卖出，趋势破位不应留半仓）
+        # 同时也检查仓位是否真的存在（观察股无仓位时返回 NO_ACTION）
+        if position and position.get('quantity', 0) > 0:
+            # position 参数已传入，直接使用
+            logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出（position 参数传入: {position["quantity"]}股）')
+            return 'SELL_ALL'
+        # 否则查数据库确认
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            has_pos = conn.execute(
+                "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+        finally:
+            conn.close()
+        if not has_pos:
+            logger.info(f'ℹ️ [{code}] trend_break 触发但无持仓，仅提醒')
+            return 'NO_ACTION'
+        logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出')
+        return 'SELL_ALL'
+
+    elif level in ('take_profit', 'take_profit_half', 'half_out'):
+        # REQ-048 修复：新增 take_profit_half 匹配（之前只匹配 take_profit/half_out）
         return 'SELL_HALF'
 
     return 'NO_ACTION'
@@ -921,7 +956,31 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     code = rule["code"]
     name = rule["name"]
     cur_price = quantize_price(cur_price)
-    action = decide_action(rule, cur_price)
+
+    # REQ-046: 先读仓位信息，传给 decide_action 获取正确决策
+    position = None
+    stop_levels = {'stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'}
+    if rule.get('level') in stop_levels:
+        try:
+            conn_pos = sqlite3.connect(_DB_PATH)
+            _ensure_trailing_columns(conn_pos)
+            row_pos = conn_pos.execute(
+                "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+                "FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            conn_pos.close()
+            if row_pos and row_pos[0] > 0:
+                position = {
+                    'quantity': row_pos[0],
+                    'avg_cost': row_pos[1],
+                    'highest_price': row_pos[2],
+                    'trailing_stop_price': row_pos[3],
+                }
+        except Exception as e:
+            logger.warning(f"读取仓位信息失败 {code}: {e}")
+
+    action = decide_action(rule, cur_price, position=position)
     severity = None
     severity_label = ''
     
@@ -976,8 +1035,13 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 'severity': severity, 'severity_label': severity_label}
 
     if action == 'DEFER':
-        return {'action': action, 'success': True, 'message': f'软止损预警（不自动卖): {severity_msg}',
-                'trade': None, 'severity': severity, 'severity_label': severity_label}
+        # REQ-046 修复：近收盘时软止损升级为 SELL_HALF（不拖到明天）
+        if _is_late_session():
+            logger.info(f"🔥 [{code}] 软止损近收盘升级为 SELL_HALF: {severity_msg}")
+            action = 'SELL_HALF'
+        else:
+            return {'action': action, 'success': True, 'message': f'软止损预警（不自动卖): {severity_msg}',
+                    'trade': None, 'severity': severity, 'severity_label': severity_label}
 
     if action == 'BUY':
         # REQ-049 修复：动态计算预算，与 decide_action 一致

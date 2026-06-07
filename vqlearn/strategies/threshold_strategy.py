@@ -43,12 +43,18 @@ try:
         record_sell_executed,
         should_buy_now,
         record_buy_executed,
+        reset_stuck_confirmed,
+        audit_executed_without_trade,
+        cleanup_orphaned_executed,
     )
 except Exception:
     evaluate_sell_signal = None
     record_sell_executed = None
     should_buy_now = None
     record_buy_executed = None
+    reset_stuck_confirmed = None
+    audit_executed_without_trade = None
+    cleanup_orphaned_executed = None
 
 
 # A 股交易时段判定（确定收盘价/开盘价时点）
@@ -285,7 +291,12 @@ class ThresholdAlertStrategy(CtaTemplate):
 
     # ----- 卖出执行：通过两段确认 -----
     def _try_sell(self, rule_name: str, threshold: float, price: float, tick: TickData) -> None:
-        """卖出走两段确认状态机；只有 confirmed 才真下单。"""
+        """卖出走两段确认状态机；只有 confirmed 才真下单。
+
+        REQ-048 修复：
+        - execute 失败时将 confirmed/armed 重置为 expired，避免永远卡住
+        - 成功但 record_sell_executed 未匹配行时也重置
+        """
         if evaluate_sell_signal is None:
             self.write_log(f"⚠️ threshold_state 未加载，回退当下卖")
             self._exec_via_sim(rule_name, price, f"{self.vt_symbol} 触发 {rule_name}")
@@ -304,9 +315,74 @@ class ThresholdAlertStrategy(CtaTemplate):
         elif action == 'execute':
             self.write_log(f"🚀 [{rule_name}] {self.vt_symbol} {price:.2f}: {reason}")
             if self.auto_trade:
-                success, _ = self._exec_via_sim(rule_name, price, reason)
+                success, fail_reason = self._exec_via_sim(rule_name, price, reason)
                 if success and record_sell_executed:
-                    record_sell_executed(self.code, rule_name, price, reason)
+                    # REQ-048: 卖出成功后校验仓位是否真的被清除/减少
+                    self._verify_sell_executed(rule_name, price)
+                    # REQ-048: record_sell_executed 返回实际更新行数
+                    updated = record_sell_executed(self.code, rule_name, price, reason)
+                    if updated == 0:
+                        # 没有匹配的 armed/confirmed 行，可能是卡住的状态
+                        self.write_log(
+                            f"⚠️ [{rule_name}] {self.code} 卖出成功但 record_sell_executed 未匹配行，"
+                            f"尝试重置卡住状态"
+                        )
+                        if reset_stuck_confirmed:
+                            reset_stuck_confirmed(
+                                self.code, rule_name,
+                                f"卖出成交但record_sell_executed未匹配，重置; {reason}"
+                            )
+                elif not success:
+                    # REQ-048: 卖出失败 — 如果是「无持仓可卖」则重置 confirmed
+                    if fail_reason and '无持仓' in str(fail_reason):
+                        self.write_log(
+                            f"♻️ [{rule_name}] {self.code} 无持仓可卖，重置卡住的 confirmed/armed"
+                        )
+                        if reset_stuck_confirmed:
+                            reset_stuck_confirmed(
+                                self.code, rule_name,
+                                f"无持仓可卖，confirmed→expired; {fail_reason}"
+                            )
+                    else:
+                        self.write_log(
+                            f"⚠️ [{rule_name}] {self.code} 卖出执行失败: {fail_reason}"
+                        )
+
+    # ----- REQ-048: 卖出后持仓校验 -----
+    def _verify_sell_executed(self, rule_name: str, price: float) -> None:
+        """卖出成功后校验仓位是否真的被清除/减少。
+
+        REQ-048 防御：即使 execute_trade 返回 trade 非空（成功），
+        也需确认 sim_positions 中仓位已变，防止 DB 并发/回滚导致
+        threshold_state 标记 executed 但仓位仍在。
+        """
+        try:
+            import sqlite3 as _sq
+            conn = _sq.connect(str(_ROOT / 'data' / 'sim_live_mirror.db'))
+            row = conn.execute(
+                "SELECT quantity FROM sim_positions WHERE account_id=1 AND stock_code=? AND quantity > 0",
+                (self.code,)
+            ).fetchone()
+            conn.close()
+            if row and row[0] > 0:
+                self.write_log(
+                    f"⚠️ [{rule_name}] {self.code} 卖出成功但仓位仍在({row[0]}股)，"
+                    f"可能需要人工介入"
+                )
+                # 发企微告警
+                try:
+                    _send_wecom_notify(
+                        f"## ⚠️ 卖出校验失败\n"
+                        f"**{self.stock_name_safe} ({self.code})**\n\n"
+                        f"- 规则: `{rule_name}`\n"
+                        f"- 卖出价: ¥{price:.2f}\n"
+                        f"- 异常: threshold_state 标记 executed 但仓位仍在 {row[0]}股\n"
+                        f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
+                    )
+                except Exception:
+                    pass
+        except Exception as e:
+            self.write_log(f"⚠️ _verify_sell_executed 异常: {e}")
 
     # ----- 买入执行：当下立即（仅靠 db 去重） -----
     def _try_buy(self, rule_name: str, threshold: float, price: float, tick: TickData) -> None:

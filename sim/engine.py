@@ -115,6 +115,21 @@ class SimEngine:
         finally:
             conn.close()
 
+    def _has_buy_today(self, stock_code: str, trade_date: str) -> bool:
+        """REQ-051: 检查今日是否已买入同一股票（用于多信号去重）"""
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM sim_trades "
+                "WHERE account_id = ? AND stock_code = ? AND trade_date = ? "
+                "AND direction = 'BUY' LIMIT 1",
+                (self.account_id, stock_code, trade_date),
+            )
+            return cur.fetchone() is not None
+        finally:
+            conn.close()
+
     # ---------- 买入 ----------
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
@@ -129,6 +144,15 @@ class SimEngine:
         """
         if quantity <= 0 or price <= 0:
             return {"success": False, "msg": "价格/数量无效"}
+
+        # ---- REQ-051: 同一股票同日多信号去重 ----
+        # 若今日已有该股票的 BUY 成交，拒绝重复买入（避免同日多信号重复执行）
+        trade_date = trade_date or Date.today()
+        if self._has_buy_today(stock_code, str(trade_date)):
+            return {
+                "success": False,
+                "msg": f"REQ-051: {stock_code} 今日已有买入成交，拒绝重复买入",
+            }
 
         # ---- REQ-038 硬上限检查 ----
         risk = risk_params()
@@ -157,6 +181,34 @@ class SimEngine:
 
         # 重置 trade_date（上面可能已赋值）
         trade_date = trade_date or Date.today()
+
+        # ---- REQ-045: 现金过低预警 + 仓位管理 ----
+        acct = self.get_account()
+        try:
+            from sim.cash_warning import check_cash_ratio, suggest_position_size
+            _cw = check_cash_ratio(acct["cash"], acct["total_value"])
+            if _cw.level == "critical" and stock_code not in existing_codes:
+                return {
+                    "success": False,
+                    "msg": f"REQ-045: {_cw.message}",
+                }
+            if _cw.level == "low":
+                original_qty = quantity
+                quantity = suggest_position_size(quantity, _cw)
+                if quantity < original_qty:
+                    import logging as _logging
+                    _logging.getLogger(__name__).warning(
+                        "REQ-045: 现金占比 %.1f%% 偏低，买入量 %d→%d",
+                        _cw.cash_pct * 100, original_qty, quantity,
+                    )
+                if quantity == 0:
+                    return {
+                        "success": False,
+                        "msg": f"REQ-045: 现金占比 {_cw.cash_pct:.1%} 过低，建议买入量缩减为0",
+                    }
+        except Exception as _e:
+            import logging as _logging
+            _logging.getLogger(__name__).debug("REQ-045 check failed: %s", _e)
 
         # 数量向下取整到 100 股
         quantity = (quantity // 100) * 100
@@ -403,7 +455,13 @@ class SimEngine:
 
     # ---------- 每日结算 ----------
     def daily_settle(self, trade_date: Date = None) -> dict:
-        """每日结算：刷新总资产、记录净值。SQLite UPSERT 写法。"""
+        """每日结算：刷新总资产、记录净值。SQLite UPSERT 写法。
+
+        新增 REQ-001 资金口径跳变检测：
+        - 检测总资产/现金相对上一净值日是否跳变超过 50%
+        - 跳变时记录事件到 sim_account_events
+        - 跳变时 daily_return 设为 None，cumulative_return 重新基于 initial_cash 计算
+        """
         trade_date = trade_date or Date.today()
         acct = self.get_account()
         positions = self.get_positions()
@@ -425,14 +483,50 @@ class SimEngine:
 
             # 前一日净值
             cur.execute(
-                "SELECT total_value FROM sim_daily_nav "
+                "SELECT total_value, cash, trade_date FROM sim_daily_nav "
                 "WHERE account_id = ? AND trade_date < ? "
                 "ORDER BY trade_date DESC LIMIT 1",
                 (self.account_id, str(trade_date)),
             )
             prev = cur.fetchone()
             prev_value = float(prev["total_value"]) if prev else initial_cash
-            daily_return = (total_value - prev_value) / prev_value if prev_value else 0
+
+            # [REQ-001] 资金口径跳变检测
+            cash_jump_detected = 0
+            cash_jump_reason = None
+            if prev:
+                prev_total = float(prev["total_value"])
+                prev_cash = float(prev["cash"])
+                total_jump = (total_value - prev_total) / prev_total if prev_total > 0 else 0
+                cash_jump = (acct["cash"] - prev_cash) / prev_cash if prev_cash > 0 else 0
+                if abs(total_jump) >= 0.50 or abs(cash_jump) >= 0.50:
+                    cash_jump_detected = 1
+                    cash_jump_reason = (
+                        f"总资产跳变 {total_jump*100:+.2f}% (¥{prev_total:,.2f}→¥{total_value:,.2f}), "
+                        f"现金跳变 {cash_jump*100:+.2f}% (¥{prev_cash:,.2f}→¥{acct['cash']:,.2f})"
+                    )
+                    # 记录账户事件
+                    try:
+                        from sim.db import record_account_event
+                        record_account_event(
+                            account_id=self.account_id,
+                            event_type="reset",
+                            event_date=trade_date,
+                            old_initial_cash=initial_cash,
+                            new_initial_cash=initial_cash,
+                            old_total_value=prev_total,
+                            new_total_value=total_value,
+                            reason=cash_jump_reason,
+                            source="engine.daily_settle",
+                        )
+                    except Exception:
+                        pass
+
+            # 计算日收益率（跳变时设为 None）
+            if cash_jump_detected:
+                daily_return = None
+            else:
+                daily_return = (total_value - prev_value) / prev_value if prev_value else 0
 
             # 历史峰值（包含当前）
             cur.execute(
@@ -444,22 +538,28 @@ class SimEngine:
             peak = max(peak, total_value)
             max_drawdown = (peak - total_value) / peak if peak > 0 else 0
 
-            # SQLite UPSERT
+            # SQLite UPSERT (含跳变标记)
             cur.execute(
                 "INSERT INTO sim_daily_nav "
                 "(account_id, trade_date, total_value, cash, market_value, "
-                "daily_return, cumulative_return, max_drawdown) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+                "daily_return, cumulative_return, max_drawdown, "
+                "cash_jump_detected, cash_jump_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(account_id, trade_date) DO UPDATE SET "
                 "total_value = excluded.total_value, cash = excluded.cash, "
                 "market_value = excluded.market_value, daily_return = excluded.daily_return, "
                 "cumulative_return = excluded.cumulative_return, "
-                "max_drawdown = excluded.max_drawdown",
+                "max_drawdown = excluded.max_drawdown, "
+                "cash_jump_detected = excluded.cash_jump_detected, "
+                "cash_jump_reason = excluded.cash_jump_reason",
                 (self.account_id, str(trade_date),
                  round(total_value, 2), round(acct["cash"], 2),
                  round(market_value, 2),
-                 round(daily_return, 4), round(cumulative_return, 4),
-                 round(max_drawdown, 4)),
+                 daily_return,  # 跳变时 None
+                 round(cumulative_return, 4),
+                 round(max_drawdown, 4),
+                 cash_jump_detected,
+                 cash_jump_reason),
             )
         finally:
             conn.close()
@@ -469,7 +569,9 @@ class SimEngine:
             "total_value": round(total_value, 2),
             "cash": round(acct["cash"], 2),
             "market_value": round(market_value, 2),
-            "daily_return": round(daily_return, 4),
+            "daily_return": daily_return,  # 跳变时 None
             "cumulative_return": round(cumulative_return, 4),
             "max_drawdown": round(max_drawdown, 4),
+            "cash_jump_detected": bool(cash_jump_detected),
+            "cash_jump_reason": cash_jump_reason,
         }

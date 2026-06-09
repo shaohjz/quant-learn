@@ -120,9 +120,28 @@ def init_tables():
             )
         """)
 
+        # 账户事件表(REQ-001: 资金口径变更追踪)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sim_account_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                account_id INTEGER DEFAULT 1,
+                event_type TEXT NOT NULL,       -- reset / topup / withdrawal / config_sync / manual
+                event_date DATE,
+                old_initial_cash REAL,
+                new_initial_cash REAL,
+                old_total_value REAL,
+                new_total_value REAL,
+                reason TEXT,                    -- 变更原因说明
+                source TEXT DEFAULT 'system',   -- config / db / manual / engine
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # 兼容旧库：CREATE TABLE IF NOT EXISTS 不会给既有表补列。
         _ensure_sim_trades_detail_columns(cur)
         _ensure_sim_positions_trailing_columns(cur)
+        _ensure_sim_daily_nav_jump_columns(cur)
+        _ensure_sim_account_events_index(cur)
 
         # 索引
         cur.execute("CREATE INDEX IF NOT EXISTS idx_trades_date ON sim_trades(trade_date)")
@@ -269,6 +288,21 @@ def _ensure_sim_trades_detail_columns(cur) -> None:
         cur.execute("ALTER TABLE sim_trades ADD COLUMN trade_time TEXT")
     if "trade_context" not in cols:
         cur.execute("ALTER TABLE sim_trades ADD COLUMN trade_context TEXT")
+
+
+def _ensure_sim_daily_nav_jump_columns(cur) -> None:
+    """确保 sim_daily_nav 具备资金跳变标记字段(REQ-001)。"""
+    cols = {r[1] for r in cur.execute("PRAGMA table_info(sim_daily_nav)").fetchall()}
+    if "cash_jump_detected" not in cols:
+        cur.execute("ALTER TABLE sim_daily_nav ADD COLUMN cash_jump_detected INTEGER DEFAULT 0")
+    if "cash_jump_reason" not in cols:
+        cur.execute("ALTER TABLE sim_daily_nav ADD COLUMN cash_jump_reason TEXT")
+
+
+def _ensure_sim_account_events_index(cur) -> None:
+    """确保 sim_account_events 有索引。"""
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_acct_events_account ON sim_account_events(account_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_acct_events_date ON sim_account_events(event_date)")
 
 
 def ensure_sim_trades_detail_columns(cur=None) -> None:
@@ -811,4 +845,147 @@ def format_discrepancy_warning(discrepancy: dict) -> str:
         f"\n"
         f"> PnL 计算以 config.yaml 为准。若需同步,可运行:\n"
         f"> `python -c \"from sim.db import sync_account_initial_cash; sync_account_initial_cash({discrepancy['account_id']}, source='config')\"`"
+    )
+
+
+# ============================================================
+# 账户事件记录(REQ-001: 资金口径变更追踪)
+# ============================================================
+
+def record_account_event(
+    account_id: int = 1,
+    event_type: str = "reset",
+    event_date=None,
+    old_initial_cash: float | None = None,
+    new_initial_cash: float | None = None,
+    old_total_value: float | None = None,
+    new_total_value: float | None = None,
+    reason: str = "",
+    source: str = "system",
+) -> int:
+    """记录一条账户事件到 sim_account_events 表。返回 row id。"""
+    from datetime import date
+    if event_date is None:
+        event_date = date.today()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO sim_account_events
+            (account_id, event_type, event_date,
+             old_initial_cash, new_initial_cash,
+             old_total_value, new_total_value,
+             reason, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            account_id, event_type, str(event_date),
+            old_initial_cash, new_initial_cash,
+            old_total_value, new_total_value,
+            reason, source,
+        ))
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def fetch_account_events(account_id: int = 1, limit: int = 20) -> list[dict]:
+    """获取账户事件历史，按时间倒序。"""
+    conn = get_conn()
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM sim_account_events WHERE account_id=? ORDER BY created_at DESC LIMIT ?",
+            (account_id, limit),
+        )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+# ============================================================
+# 资金口径跳变检测(REQ-001)
+# ============================================================
+
+def detect_cash_jump(
+    account_id: int = 1,
+    current_total_value: float | None = None,
+    current_cash: float | None = None,
+    threshold_pct: float = 0.50,  # 50% 跳变阈值
+) -> dict | None:
+    """检测账户资金是否发生跳变(与上一净值日对比)。
+
+    返回 None 表示无跳变;返回 dict 含跳变详情。
+    """
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        # 获取上一净值日记录
+        cur.execute(
+            "SELECT * FROM sim_daily_nav WHERE account_id=? ORDER BY trade_date DESC LIMIT 1",
+            (account_id,),
+        )
+        prev = cur.fetchone()
+        if not prev:
+            return None  # 无历史记录，无法判断
+
+        prev_total = float(prev["total_value"])
+        prev_cash = float(prev["cash"])
+        prev_date = prev["trade_date"]
+
+        # 获取当前账户
+        cur.execute("SELECT * FROM sim_account WHERE id=?", (account_id,))
+        acct = cur.fetchone()
+        if not acct:
+            return None
+
+        current_total = current_total_value if current_total_value is not None else float(acct["total_value"])
+        current_c = current_cash if current_cash is not None else float(acct["cash"])
+
+        # 计算跳变幅度
+        total_jump_pct = (current_total - prev_total) / prev_total if prev_total > 0 else 0
+        cash_jump_pct = (current_c - prev_cash) / prev_cash if prev_cash > 0 else 0
+
+        # 检查是否超过阈值
+        if abs(total_jump_pct) < threshold_pct and abs(cash_jump_pct) < threshold_pct:
+            return None  # 无显著跳变
+
+        # 判断跳变类型
+        jump_type = "total_value"
+        if abs(cash_jump_pct) > abs(total_jump_pct):
+            jump_type = "cash"
+
+        severity = "error" if max(abs(total_jump_pct), abs(cash_jump_pct)) >= 1.0 else "warn"
+
+        return {
+            "account_id": account_id,
+            "prev_date": prev_date,
+            "prev_total_value": prev_total,
+            "current_total_value": current_total,
+            "total_jump_pct": total_jump_pct,
+            "prev_cash": prev_cash,
+            "current_cash": current_c,
+            "cash_jump_pct": cash_jump_pct,
+            "jump_type": jump_type,
+            "severity": severity,
+            "threshold_pct": threshold_pct,
+        }
+    finally:
+        conn.close()
+
+
+def format_cash_jump_warning(jump: dict) -> str:
+    """将跳变检测结果格式化为人类可读的警告文本。"""
+    icon = "🚨" if jump["severity"] == "error" else "⚠️"
+    label = "学习账户" if jump["account_id"] == 1 else "真实账户"
+    return (
+        f"{icon} **资金口径跳变检测 [{label}]**\n"
+        f"- 上一净值日({jump['prev_date']}): ¥{jump['prev_total_value']:,.2f}\n"
+        f"- 当前: ¥{jump['current_total_value']:,.2f}\n"
+        f"- 总资产跳变: {jump['total_jump_pct']*100:+.2f}%\n"
+        f"- 现金跳变: {jump['cash_jump_pct']*100:+.2f}%\n"
+        f"- 阈值: {jump['threshold_pct']*100:.0f}%\n"
+        f"\n"
+        f"> 跨日收益率对比已暂停。请确认资金变化原因后，\n"
+        f"> 运行 `python -c \"from sim.db import record_account_event; ...\"` 记录事件。"
     )

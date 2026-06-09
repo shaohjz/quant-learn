@@ -13,9 +13,10 @@ output/next_watchlists/
 data/next_watchlists/
 vnpy_xtquant_main.zip
 
-# 周末清理：不入库的内容
+# 周末清理：不入库的内容 + 一次性脚本归档
 *_archive/
 scripts/_archive/
+scripts/_archive_*/
 data/_archive/
 output/intraday_*.json
 output/portfolio_*.json

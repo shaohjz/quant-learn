@@ -1,0 +1,538 @@
+{
+  "check_time": "2026-06-09T19:35:38.198900",
+  "summary": {
+    "total_files": 31,
+    "total_nulls": 4,
+    "files_with_gaps": 0,
+    "files_with_jumps": 25,
+    "latest_date": "2026-05-22"
+  },
+  "details": [
+    {
+      "file": "000301.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-11-14: 10.1%",
+        "2026-03-03: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "000333.csv",
+      "status": "ok",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "000708.csv",
+      "status": "ok",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "000858.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-26: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "000967.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2025-02-18: 10.0%",
+        "2025-02-20: 10.0%",
+        "2025-02-21: 10.1%",
+        "2026-04-16: 10.0%",
+        "2026-04-28: 10.0%",
+        "2026-05-06: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002256.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-08-16: 10.2%",
+        "2024-10-09: 10.1%",
+        "2024-10-10: 10.2%",
+        "2024-10-11: 10.2%",
+        "2024-11-11: 10.1%",
+        "2025-08-28: 10.2%",
+        "2025-09-12: 10.1%",
+        "2025-11-10: 10.0%",
+        "2025-12-12: 10.1%",
+        "2026-03-17: 10.1%",
+        "2026-03-20: 10.0%",
+        "2026-04-22: 10.0%",
+        "2026-05-08: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002405.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-08-09: 10.1%",
+        "2024-08-26: 10.0%",
+        "2024-09-23: 10.1%",
+        "2024-10-08: 10.0%",
+        "2025-04-07: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002415.csv",
+      "status": "ok",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002453.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-19: 10.0%",
+        "2024-09-24: 10.0%",
+        "2024-10-30: 10.1%",
+        "2024-10-31: 10.0%",
+        "2024-11-01: 10.0%",
+        "2025-01-23: 10.0%",
+        "2025-04-11: 10.1%",
+        "2025-04-17: 10.1%",
+        "2025-07-30: 10.1%",
+        "2025-09-19: 10.1%",
+        "2025-09-22: 10.1%",
+        "2025-09-24: 10.0%",
+        "2025-09-25: 10.0%",
+        "2025-09-26: 10.0%",
+        "2025-09-29: 10.0%",
+        "2025-11-12: 10.0%",
+        "2025-12-01: 10.0%",
+        "2026-04-30: 10.0%",
+        "2026-05-22: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002475.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2025-09-11: 10.0%",
+        "2026-04-20: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002594.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2025-02-06: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002906.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-07-10: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "002920.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-07-10: 10.0%",
+        "2024-10-08: 10.0%",
+        "2025-02-06: 10.0%",
+        "2025-05-29: 10.0%",
+        "2026-01-06: 10.0%",
+        "2026-05-21: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "300059.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-24: 11.5%",
+        "2024-09-26: 13.5%",
+        "2024-09-27: 20.0%",
+        "2024-09-30: 20.0%",
+        "2024-10-08: 20.0%",
+        "2024-10-10: 17.5%",
+        "2024-10-18: 15.3%",
+        "2024-11-05: 10.4%",
+        "2024-11-07: 13.5%",
+        "2025-04-07: 13.9%",
+        "2025-06-25: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "300124.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-30: 15.0%",
+        "2024-10-08: 19.9%",
+        "2024-10-09: 13.5%",
+        "2025-02-06: 10.0%",
+        "2025-04-07: 11.2%",
+        "2025-09-08: 11.8%",
+        "2026-04-29: 10.2%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "300750.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-27: 10.4%",
+        "2024-09-30: 11.1%",
+        "2024-10-08: 18.7%",
+        "2024-10-09: 14.7%",
+        "2025-04-07: 11.5%",
+        "2025-08-29: 10.4%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "300760.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-27: 11.2%",
+        "2024-09-30: 10.6%",
+        "2024-10-08: 10.8%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600036.csv",
+      "status": "ok",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600130.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 4,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-20: 10.1%",
+        "2024-09-23: 10.0%",
+        "2024-10-30: 10.1%",
+        "2024-10-31: 10.1%",
+        "2024-11-06: 10.1%",
+        "2025-01-21: 10.0%",
+        "2026-05-07: 10.0%",
+        "2026-05-08: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600276.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2025-07-28: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600310.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-05-27: 10.1%",
+        "2025-03-28: 10.0%",
+        "2026-03-26: 10.1%",
+        "2026-04-23: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600330.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2025-08-18: 10.0%",
+        "2025-09-19: 10.0%",
+        "2025-12-09: 10.0%",
+        "2025-12-16: 10.0%",
+        "2025-12-24: 10.0%",
+        "2026-01-22: 10.0%",
+        "2026-02-03: 10.0%",
+        "2026-02-04: 10.0%",
+        "2026-02-09: 10.0%",
+        "2026-03-10: 10.0%",
+        "2026-04-17: 10.0%",
+        "2026-05-11: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600519.csv",
+      "status": "ok",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600563.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2026-05-19: 10.0%",
+        "2026-05-20: 10.0%",
+        "2026-05-22: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600703.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-10-08: 10.0%",
+        "2026-01-16: 10.0%",
+        "2026-03-05: 10.0%",
+        "2026-04-22: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "600887.csv",
+      "status": "ok",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "601012.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-30: 10.0%",
+        "2024-10-09: 10.0%",
+        "2025-04-07: 10.0%",
+        "2025-10-29: 10.0%",
+        "2026-01-23: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "601318.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-30: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "603013.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2025-04-07: 10.0%",
+        "2025-07-14: 10.0%",
+        "2025-08-20: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "603260.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-10-23: 10.0%",
+        "2025-11-07: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    },
+    {
+      "file": "603290.csv",
+      "status": "warning",
+      "first_date": "2024-05-24",
+      "last_date": "2026-05-22",
+      "row_count": 483,
+      "null_count": 0,
+      "gap_dates": [],
+      "price_jumps": [
+        "2024-09-30: 10.0%",
+        "2024-10-08: 10.0%",
+        "2024-11-07: 10.0%"
+      ],
+      "negative_values": [],
+      "errors": []
+    }
+  ]
+}

@@ -191,3 +191,124 @@ _当日无交易_
 ======================================================================
 ======================================================================
 ===== [2026/05/29 ���� 15:30:03.46] daily review END   ===== 
+===== [2026/06/08 ��һ 15:30:02.65] daily review START ===== 
+2026-06-08 15:30:03,516 [INFO] === ��ʼ���� 2026-06-08 ===
+  0%|          | 0/3 [00:00<?, ?it/s] 33%|��������      | 1/3 [00:00<00:01,  1.90it/s] 67%|��������������   | 2/3 [00:00<00:00,  2.04it/s]100%|��������������������| 3/3 [00:01<00:00,  2.13it/s]                                             Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 2012, in <module>
+    main()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 1983, in main
+    full_md = generate_full_md(target_date)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 1844, in generate_full_md
+    parts.append(render_account_section(acct, target_date, sentiment))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 1555, in render_account_section
+    account = fetch_account(acct['id'])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 54, in fetch_account
+    r = c.execute('SELECT * FROM sim_account WHERE id=?', (account_id,)).fetchone()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such table: sim_account
+===== [2026/06/08 ��һ 15:30:15.62] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 ������ {target_date} ��ע�أ�{len(candidates)} ֻ")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/06/08 ��һ 15:30:17.57] next watchlist END   ===== 
+===== [2026/06/08 ��һ 15:30:17.57] daily review END   ===== 
+===== [2026/06/09 �ܶ� 15:30:02.59] daily review START ===== 
+2026-06-09 15:30:03,403 [INFO] === ��ʼ���� 2026-06-09 ===
+  0%|          | 0/3 [00:00<?, ?it/s] 33%|��������      | 1/3 [00:00<00:00,  2.27it/s] 67%|��������������   | 2/3 [00:00<00:00,  2.32it/s]100%|��������������������| 3/3 [00:01<00:00,  2.26it/s]                                             2026-06-09 15:30:14,300 [WARNING] fetch kline failed for 001896: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:14,695 [WARNING] fetch kline failed for 603178: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:15,117 [WARNING] fetch kline failed for 000899: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:15,547 [WARNING] fetch kline failed for 600130: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:16,024 [WARNING] fetch kline failed for 600310: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:16,512 [WARNING] fetch kline failed for 600330: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:16,934 [WARNING] fetch kline failed for 002453: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:17,355 [WARNING] fetch kline failed for 603601: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:17,387 [INFO] \u2713 �������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-06-09.md
+  0%|          | 0/3 [00:00<?, ?it/s] 33%|��������      | 1/3 [00:00<00:00,  2.29it/s] 67%|��������������   | 2/3 [00:00<00:00,  2.10it/s]100%|��������������������| 3/3 [00:02<00:00,  1.09it/s]                                             2026-06-09 15:30:28,873 [WARNING] fetch kline failed for 001896: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:29,291 [WARNING] fetch kline failed for 603178: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:29,707 [WARNING] fetch kline failed for 000899: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:30,131 [WARNING] fetch kline failed for 600130: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:30,553 [WARNING] fetch kline failed for 600310: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:30,981 [WARNING] fetch kline failed for 600330: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:31,392 [WARNING] fetch kline failed for 002453: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:31,805 [WARNING] fetch kline failed for 603601: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-09 15:30:31,832 [INFO] \u2713 ������Ѵ�: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\reviews\2026-06-09_summary.md
+2026-06-09 15:30:32,187 [INFO] ���� �ɹ�: {"errcode":0,"errmsg":"ok"}
+# 📊 2026/6/9 日复盘
+
+🌡️ 市场情绪：偏强/情绪活跃 | 涨停 130 / 跌停 9 | 北向 N/A | HS300 -1.70%
+⚠️ 盘中采样覆盖不完整：12 点，范围 13:00 -> 14:50；请检查 QuantLearn_PortfolioAlert 计划任务。
+
+## ⚠️ 🤖 学习账户
+💰 ¥101,481 (暂停对比 / 累计 +1.48%)
+📐 绩效：最大回撤 -2.77% | 夏普 -12.08 | 胜率 16.67%（1/6）
+🔒 平仓复盘：6 笔，胜率 16.67% | 净实现 -3,364 | 盈亏比 0.02 | PF 0.00
+  🟢 最大盈利 广西能源 +15
+  🔴 最大亏损 天通股份 -1,818
+  个股贡献：天通股份 -1,818；巨力索具 -480；兆新股份 -452
+🧩 配置：仓位 74.0% / 目标 70% (偏强)；当前仓位 74.0% 接近偏强目标区间，暂以持仓质量筛选为主。
+🎯 信号盈亏：6 段，净实现 -3,364，覆盖 2 类信号
+  🔴 初始化建仓快照（用户真实持仓） -3,378 | 胜率 0.0% (0/5) | PF 0.00
+  🟢 buy_zone +15 | 胜率 100.0% (1/1) | PF ∞
+⚠️ 账户资金口径变更：已暂停跨日收益率对比
+📝 交易 3 笔（买 0 / 卖 3）
+- 🔴 卖 再升科技 100股 @¥14.24
+- 🔴 卖 广西能源 1200股 @¥5.08
+- 🔴 卖 广西能源 600股 @¥5.08
+💵 实现盈亏 **-344.61** 😢
+📦 持仓 5 只 浮动 +2,036.24
+  🟢 豫能控股 1200股 → +8.20% (+1961)
+  🔴 圣龙股份 1200股 → -0.25% (-5)
+  🟢 赣能股份 1200股 → +0.55% (+88)
+🧭 盈亏归因：净 +1,692（盈利 +2,061 / 亏损 -369）
+  🟢 豫能控股 +1,961 (浮 +1,961 / 实 +0, 贡献 80.7%)
+  🔴 再升科技 -359 (浮 +0 / 实 -359, 贡献 14.8%)
+  🟢 赣能股份 +88 (浮 +88 / 实 +0, 贡献 3.6%)
+  … 其余 3 只合计 +2
+
+## ⚠️ 💼 真实账户
+💰 ¥24,641 (-1.43% / 累计 -1.43%)
+📐 绩效：最大回撤 0.00% | 夏普 样本不足 | 胜率 样本不足（0/0）
+🧩 配置：仓位 60.9% / 目标 70% (偏强)；当前仓位 60.9% 接近偏强目标区间，暂以持仓质量筛选为主。
+⚠️ 异动/警示
+- 🚨 天通股份(600330) 浮亏 -13.83% / -1,815，已跌破警戒线 -8.0%
+- ⚠️ 天通股份(600330) 单票市值占总资产 45.9%（¥11,312），仓位较集中
+_当日无交易_
+📦 持仓 3 只 浮动 -1,844.30
+  🔴 天通股份 400股 → -13.83% (-1815)
+  🔴 华软科技 300股 → -3.20% (-62)
+  🟢 再升科技 100股 → +1.85% (+33)
+🧭 盈亏归因：净 -1,844（盈利 +33 / 亏损 -1,877）
+  🔴 天通股份 -1,815 (浮 -1,815 / 实 +0, 贡献 95.0%)
+  🔴 华软科技 -62 (浮 -62 / 实 +0, 贡献 3.3%)
+  🟢 再升科技 +33 (浮 +33 / 实 +0, 贡献 1.7%)
+
+## 🧭 双账户执行一致性诊断
+
+执行模式：`sim` | 学习自动交易：True | 真实自动交易：False
+
+- 学习/sim：持仓 5 只，今日交易 3 笔（买 0 / 卖 3），资金利用率 74.0%，成交额 ¥10,560
+- 真实/QMT：持仓 3 只，今日交易 0 笔（买 0 / 卖 0），资金利用率 60.9%，成交额 ¥0
+
+**结论/归因：** 未开启实盘：config.yaml broker.mode 当前为 sim，策略只写模拟成交；账户配置差异：accounts.real.auto_trade=false，真实账户定位为持仓镜像/复盘，不自动跟单
+**建议：** 若确认要联动 QMT，先把 broker.mode 切到 qmt/live，并在小额白名单内验证；如需真实账户自动执行，必须显式启用 real.auto_trade 并配置风控上限
+
+
+======================================================================
+======================================================================
+===== [2026/06/09 �ܶ� 15:30:32.29] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 ������ {target_date} ��ע�أ�{len(candidates)} ֻ")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/06/09 �ܶ� 15:30:36.49] next watchlist END   ===== 
+===== [2026/06/09 �ܶ� 15:30:36.49] daily review END   ===== 

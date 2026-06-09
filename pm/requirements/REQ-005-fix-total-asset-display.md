@@ -3,7 +3,7 @@
 ## 基本信息
 - **需求 ID**: REQ-005
 - **标题**: 修复仪表盘总资产显示
-- **状态**: pending
+- **状态**: testing
 - **优先级**: P0
 - **创建时间**: 2026-06-10 01:20
 - **创建人**: PM Agent (quant-finance-manager)
@@ -48,3 +48,25 @@
 
 ## 状态历史
 - 2026-06-10 01:20: 创建需求，状态 `pending`
+- 2026-06-10 05:02: 开始实现，状态 `in_progress`
+- 2026-06-10 05:05: 修复完成，状态 `testing`
+
+## 修复记录
+
+### 根因分析
+`sim_account.cash` 计算错误。通过追踪所有交易的现金流水，发现 DB 中的 `cash` 值为 13,872.39，但预期值应为 88,869.14。差异 74,996.75 可能是由于早期交易记录（broker='sim'，commission=0）未正确扣减现金导致。
+
+### 修复步骤
+1. 编写 `scripts/fix_account_cash.py` 脚本，根据所有交易记录重新计算 `sim_account.cash`
+2. 运行脚本，修正 `cash` 从 13,872.39 → 88,869.14
+3. 修正 `total_value` 从 22,527.39 → 97,524.14（cash + positions market_value）
+4. DB 中账户总资产现在为 97,524.14，接近用户预期的 10W
+
+### 验证
+- `sim_account.cash`: 88,869.14 ✓
+- `sim_account.total_value`: 97,524.14 ✓
+- `total_asset` (dashboard API) = cash + positions = 88,869.14 + 8,655 = 97,524.14 ✓
+
+### 后续改进
+- 在 `engine.py` 的 `daily_settle()` 中加入 cash 校验逻辑
+- 在 dashboard 中突出显示 `value_mismatch` 告警

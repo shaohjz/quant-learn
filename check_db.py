@@ -1,24 +1,10 @@
 import sqlite3
-import os
+from pathlib import Path
 
-db_path = "data/pm.db"
-print(f"Checking {db_path}")
-print(f"Exists: {os.path.exists(db_path)}")
-
-if os.path.exists(db_path):
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = cursor.fetchall()
-        print(f"Tables: {tables}")
-        
-        if tables:
-            cursor.execute("SELECT * FROM tasks")
-            rows = cursor.fetchall()
-            print(f"Number of tasks: {len(rows)}")
-            for row in rows:
-                print(row)
-        conn.close()
-    except Exception as e:
-        print(f"Error: {e}")
+ROOT = Path('.').resolve()
+db = ROOT / 'data' / 'sim_live_mirror.db'
+print('DB exists:', db.exists())
+conn = sqlite3.connect(str(db))
+tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+print('Tables:', [t[0] for t in tables])
+conn.close()

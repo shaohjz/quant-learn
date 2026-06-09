@@ -7902,3 +7902,1271 @@ logout success!
 2026-06-01 01:30:04,619 [INFO] ==== 运行开始 run_id=013004 ====
 2026-06-01 01:30:04,620 [INFO] 非交易时段，退出
 📴 非交易时段 (2026-06-01 01:30 Monday)，跳过
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 62, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB missing or empty: {DB_PATH}")
+RuntimeError: sim_live_mirror DB missing or empty: C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 636, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\portfolio_alert.py", line 329, in main
+    RULES = load_all_alert_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 251, in load_all_alert_rules
+    for h in load_real_holdings():
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 225, in load_real_holdings
+    positions = fetch_positions(real_account_id())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 79, in fetch_positions
+    c = _connect_ro()
+        ^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\sim\portfolio.py", line 73, in _connect_ro
+    raise RuntimeError(f"sim_live_mirror DB schema incomplete: missing {sorted(missing)} in {DB_PATH}")
+RuntimeError: sim_live_mirror DB schema incomplete: missing ['sim_account', 'sim_positions'] in C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db
+2026-06-09 13:00:04,869 [INFO] ==== 运行开始 run_id=130004 ====
+2026-06-09 13:00:04,869 [INFO] 准备拉取 28 只股票行情: ['002067', '301120', '600310', '301179', '603693', '002149', '603256', '600309', '603005', '600863', '001896', '002453', '601222', '605006', '000899', '601991', '000725', '603601', '603757', '601728', '002290', '600021', '600186', '002654', '000600', '600330', '002156', '002709']
+2026-06-09 13:00:05,158 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 13:00:05,160 [INFO] 今日已推送阈值数: 0
+2026-06-09 13:00:05,262 [INFO] P2 跟踪止损更新了 3/9 个仓位
+2026-06-09 13:00:05,264 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 13:00:05,268 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 13:00:05,270 [INFO] 跳过卖出提醒: 600330 无学习账户持仓 level=stop_loss
+2026-06-09 13:00:05,271 [INFO] 跳过卖出提醒: 002453 无学习账户持仓 level=stop_loss_tight
+2026-06-09 13:00:05,272 [INFO] 跳过卖出提醒: 002453 无学习账户持仓 level=stop_loss
+2026-06-09 13:00:05,284 [WARNING] ✅ 已记录模拟交易: 603601_stop_loss → 卖出 100股 @¥14.24
+2026-06-09 13:00:05,284 [WARNING] 🔔 触发阈值: 603601_stop_loss 价=14.24 阈值=16.31 below
+2026-06-09 13:00:05,286 [INFO] 跳过卖出提醒: 603601 无学习账户持仓 level=hard_stop
+2026-06-09 13:00:18,862 [WARNING] 🔔 触发阈值: 002709_buy_zone 价=46.32 阈值=57.33 below
+2026-06-09 13:00:18,863 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:29,400 [WARNING] 🔔 触发阈值: 002709_buy_strong 价=46.32 阈值=57.05 below
+2026-06-09 13:00:29,401 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:30,661 [WARNING] 🔔 触发阈值: 002149_buy_zone 价=59.93 阈值=71.63 below
+2026-06-09 13:00:30,662 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:31,939 [WARNING] 🔔 触发阈值: 002149_buy_strong 价=59.93 阈值=67.7 below
+2026-06-09 13:00:31,941 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:34,249 [WARNING] 🔔 触发阈值: 603757_buy_zone 价=53.9 阈值=61.81 below
+2026-06-09 13:00:34,250 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:38,161 [WARNING] 🔔 触发阈值: 603757_buy_strong 价=53.9 阈值=56.85 below
+2026-06-09 13:00:38,162 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:38,163 [WARNING] 🔔 触发阈值: 600309_trend_break_warn 价=68.86 阈值=77.82 below
+2026-06-09 13:00:38,163 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:48,214 [WARNING] 🔔 触发阈值: 601728_buy_zone 价=6.16 阈值=6.42 below
+2026-06-09 13:00:48,215 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:00:54,080 [WARNING] 🔔 触发阈值: 601728_buy_strong 价=6.16 阈值=6.2 below
+2026-06-09 13:00:54,081 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:02,845 [WARNING] 🔔 触发阈值: 002290_buy_zone 价=81.05 阈值=95.58 below
+2026-06-09 13:01:02,847 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:11,408 [WARNING] 🔔 触发阈值: 002290_buy_strong 价=81.05 阈值=89.06 below
+2026-06-09 13:01:11,409 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:13,171 [WARNING] 🔔 触发阈值: 002654_buy_zone 价=14.76 阈值=17.4 below
+2026-06-09 13:01:13,173 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:14,240 [WARNING] 🔔 触发阈值: 002654_buy_strong 价=14.76 阈值=16.01 below
+2026-06-09 13:01:14,242 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:14,243 [WARNING] 🔔 触发阈值: 301120_trend_break_warn 价=19.55 阈值=21.83 below
+2026-06-09 13:01:14,244 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:14,245 [WARNING] 🔔 触发阈值: 301179_trend_break 价=20.7 阈值=23.46 below
+2026-06-09 13:01:14,246 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:14,247 [WARNING] 🔔 触发阈值: 301179_trend_break_warn 价=20.7 阈值=23.74 below
+2026-06-09 13:01:14,248 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:24,056 [WARNING] 🔔 触发阈值: 600021_buy_zone 价=18.04 阈值=18.11 below
+2026-06-09 13:01:24,058 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:24,059 [WARNING] 🔔 触发阈值: 002067_trend_break 价=4.52 阈值=4.65 below
+2026-06-09 13:01:24,059 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:24,060 [WARNING] 🔔 触发阈值: 002067_trend_break_warn 价=4.52 阈值=4.76 below
+2026-06-09 13:01:24,062 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:34,997 [WARNING] 🔔 触发阈值: 600310_buy_zone 价=5.1 阈值=5.31 below
+2026-06-09 13:01:34,998 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:43,729 [WARNING] 🔔 触发阈值: 600310_buy_strong 价=5.1 阈值=5.26 below
+2026-06-09 13:01:43,731 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:43,732 [WARNING] 🔔 触发阈值: 601222_trend_break 价=5.98 阈值=5.98 below
+2026-06-09 13:01:43,733 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:43,734 [WARNING] 🔔 触发阈值: 601222_trend_break_warn 价=5.98 阈值=5.99 below
+2026-06-09 13:01:43,736 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:44,009 [WARNING] 🔔 触发阈值: 603693_buy_zone 价=14.48 阈值=16.78 below
+2026-06-09 13:01:44,010 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:44,292 [WARNING] 🔔 触发阈值: 603693_buy_strong 价=14.48 阈值=16.11 below
+2026-06-09 13:01:44,293 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:44,294 [WARNING] 🔔 触发阈值: 603693_trend_break 价=14.48 阈值=14.51 below
+2026-06-09 13:01:44,294 [WARNING] 更新 watchlist_history 失败: no such table: watchlist_history
+2026-06-09 13:01:44,299 [INFO] 检查完成: 检查了 80 个阈值, 跳过已推送 4 个, 本次触发 27 个
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+login success!
+logout success!
+🔔 盘中提醒 2026-06-09 13:00
+========================================
+【再升科技 603601】
+现价 ¥14.24 ↓ 阈值 ¥16.31
+🚨 再升科技跌破 MA20×0.97 (16.31)！止损线
+✅ 已记录模拟交易: 卖出 100股 @¥14.24
+----------------------------------------
+【天赐材料 002709】
+现价 ¥46.32 ↓ 阈值 ¥57.33
+⚠️💰 天赐材料跌至 57.33！接近 MA10(57.33)，试探建仓
+📐 交易计划（盈亏比 1.87:1）
+├ 建议买入：¥46.32
+├ 止损：¥42.61（-8.0%，-8%止损）
+├ 止盈①：¥53.27（+15%）
+├ 止盈②：¥57.90（+25%）
+├ 盈亏比：1.87:1 ✅ 可行
+├ 止盈概率：26% | 止损概率：22%
+├ 期望收益：+2.21% ✅ 可行
+└ 仓位建议：100 股 ≈ ¥4,632
+----------------------------------------
+【天赐材料 002709】
+现价 ¥46.32 ↓ 阈值 ¥57.05
+⚠️💰💰 天赐材料跌至 57.05！回踩 MA20(57.05)，优质建仓区
+📐 交易计划（盈亏比 1.87:1）
+├ 建议买入：¥46.32
+├ 止损：¥42.61（-8.0%，-8%止损）
+├ 止盈①：¥53.27（+15%）
+├ 止盈②：¥57.90（+25%）
+├ 盈亏比：1.87:1 ✅ 可行
+├ 止盈概率：26% | 止损概率：22%
+├ 期望收益：+2.21% ✅ 可行
+└ 仓位建议：100 股 ≈ ¥4,632
+----------------------------------------
+【西部材料 002149】
+现价 ¥59.93 ↓ 阈值 ¥71.63
+⚠️💰 西部材料跌至 71.63！接近 MA10(71.63)，试探建仓
+📐 交易计划（盈亏比 1.88:1）
+├ 建议买入：¥59.93
+├ 止损：¥55.14（-8.0%，-8%止损）
+├ 止盈①：¥68.92（+15%）
+├ 止盈②：¥74.91（+25%）
+├ 盈亏比：1.88:1 ✅ 可行
+├ 止盈概率：50% | 止损概率：40%
+├ 期望收益：+4.30% ⭐ 优秀
+├ Kelly仓位：23.3%（≈¥17,979）
+└ 仓位建议：100 股 ≈ ¥5,993
+----------------------------------------
+【西部材料 002149】
+现价 ¥59.93 ↓ 阈值 ¥67.70
+⚠️💰💰 西部材料跌至 67.7！回踩 MA20(67.7)，优质建仓区
+📐 交易计划（盈亏比 1.88:1）
+├ 建议买入：¥59.93
+├ 止损：¥55.14（-8.0%，-8%止损）
+├ 止盈①：¥68.92（+15%）
+├ 止盈②：¥74.91（+25%）
+├ 盈亏比：1.88:1 ✅ 可行
+├ 止盈概率：50% | 止损概率：40%
+├ 期望收益：+4.30% ⭐ 优秀
+├ Kelly仓位：23.3%（≈¥17,979）
+└ 仓位建议：100 股 ≈ ¥5,993
+----------------------------------------
+【大元泵业 603757】
+现价 ¥53.90 ↓ 阈值 ¥61.81
+⚠️💰 大元泵业跌至 61.81！接近 MA10(61.81)，试探建仓
+📐 交易计划（盈亏比 2.14:1）
+├ 建议买入：¥53.90
+├ 止损：¥50.13（-7.0%，跌破 trend_break）
+├ 止盈①：¥61.98（+15%）
+├ 止盈②：¥67.38（+25%）
+├ 盈亏比：2.14:1 ✅ 优秀
+├ 止盈概率：29% | 止损概率：53%
+├ 期望收益：+0.67% ❓ 一般
+└ 仓位建议：100 股 ≈ ¥5,390
+----------------------------------------
+【大元泵业 603757】
+现价 ¥53.90 ↓ 阈值 ¥56.85
+⚠️💰💰 大元泵业跌至 56.85！回踩 MA20(56.85)，优质建仓区
+📐 交易计划（盈亏比 2.14:1）
+├ 建议买入：¥53.90
+├ 止损：¥50.13（-7.0%，跌破 trend_break）
+├ 止盈①：¥61.98（+15%）
+├ 止盈②：¥67.38（+25%）
+├ 盈亏比：2.14:1 ✅ 优秀
+├ 止盈概率：29% | 止损概率：53%
+├ 期望收益：+0.67% ❓ 一般
+└ 仓位建议：100 股 ≈ ¥5,390
+----------------------------------------
+【万华化学 600309】
+现价 ¥68.86 ↓ 阈值 ¥77.82
+⚠️ 万华化学跳破 77.82 (MA60×0.95)！趋势实质走坏
+----------------------------------------
+【中国电信 601728】
+现价 ¥6.16 ↓ 阈值 ¥6.42
+CT droped to 6.42, require_support: need price near support (MA60=5.98 or 60d-low=5.59) + today not shrinking-volume
+📐 交易计划（盈亏比 1.88:1）
+├ 建议买入：¥6.16
+├ 止损：¥5.67（-8.0%，-8%止损）
+├ 止盈①：¥7.08（+15%）
+├ 止盈②：¥7.70（+25%）
+├ 盈亏比：1.88:1 ✅ 可行
+├ 止盈概率：6% | 止损概率：6%
+├ 期望收益：+0.38% ❓ 一般
+└ 仓位建议：800 股 ≈ ¥4,928
+----------------------------------------
+【中国电信 601728】
+现价 ¥6.16 ↓ 阈值 ¥6.20
+CT droped to 6.2, require_support: need price in support zone + ignition signal (red bar with vol_ratio>=1)
+📐 交易计划（盈亏比 1.88:1）
+├ 建议买入：¥6.16
+├ 止损：¥5.67（-8.0%，-8%止损）
+├ 止盈①：¥7.08（+15%）
+├ 止盈②：¥7.70（+25%）
+├ 盈亏比：1.88:1 ✅ 可行
+├ 止盈概率：6% | 止损概率：6%
+├ 期望收益：+0.38% ❓ 一般
+└ 仓位建议：800 股 ≈ ¥4,928
+----------------------------------------
+【禾盛新材 002290】
+现价 ¥81.05 ↓ 阈值 ¥95.58
+⚠️💰 禾盛新材跌至 95.58！接近 MA10(95.58)，试探建仓
+📐 交易计划（盈亏比 3.31:1）
+├ 建议买入：¥81.05
+├ 止损：¥77.38（-4.5%，跌破 trend_break）
+├ 止盈①：¥93.21（+15%）
+├ 止盈②：¥101.31（+25%）
+├ 盈亏比：3.31:1 ✅ 优秀
+├ 止盈概率：38% | 止损概率：29%
+├ 期望收益：+4.42% ⭐ 优秀
+├ Kelly仓位：19.6%（≈¥16,210）
+└ 仓位建议：100 股 ≈ ¥8,105
+----------------------------------------
+【禾盛新材 002290】
+现价 ¥81.05 ↓ 阈值 ¥89.06
+⚠️💰💰 禾盛新材跌至 89.06！回踩 MA20(89.06)，优质建仓区
+📐 交易计划（盈亏比 3.31:1）
+├ 建议买入：¥81.05
+├ 止损：¥77.38（-4.5%，跌破 trend_break）
+├ 止盈①：¥93.21（+15%）
+├ 止盈②：¥101.31（+25%）
+├ 盈亏比：3.31:1 ✅ 优秀
+├ 止盈概率：38% | 止损概率：29%
+├ 期望收益：+4.42% ⭐ 优秀
+├ Kelly仓位：19.6%（≈¥16,210）
+└ 仓位建议：100 股 ≈ ¥8,105
+----------------------------------------
+【万润科技 002654】
+现价 ¥14.76 ↓ 阈值 ¥17.40
+⚠️💰 万润科技跌至 17.40！接近 MA10(17.40)，试探建仓
+📐 交易计划（盈亏比 1.87:1）
+├ 建议买入：¥14.76
+├ 止损：¥13.58（-8.0%，-8%止损）
+├ 止盈①：¥16.97（+15%）
+├ 止盈②：¥18.45（+25%）
+├ 盈亏比：1.87:1 ✅ 可行
+├ 止盈概率：17% | 止损概率：39%
+├ 期望收益：-0.54% ⚠️ 负期望，建议观望
+└ 仓位建议：300 股 ≈ ¥4,428
+----------------------------------------
+【万润科技 002654】
+现价 ¥14.76 ↓ 阈值 ¥16.01
+⚠️💰💰 万润科技跌至 16.01！回踩 MA20(16.01)，优质建仓区
+📐 交易计划（盈亏比 1.87:1）
+├ 建议买入：¥14.76
+├ 止损：¥13.58（-8.0%，-8%止损）
+├ 止盈①：¥16.97（+15%）
+├ 止盈②：¥18.45（+25%）
+├ 盈亏比：1.87:1 ✅ 可行
+├ 止盈概率：17% | 止损概率：39%
+├ 期望收益：-0.54% ⚠️ 负期望，建议观望
+└ 仓位建议：300 股 ≈ ¥4,428
+----------------------------------------
+【新特电气 301120】
+现价 ¥19.55 ↓ 阈值 ¥21.83
+⚠️ 新特电气跳破 21.83 (MA60×0.95)！趋势实质走坏
+----------------------------------------
+【泽宇智能 301179】
+现价 ¥20.70 ↓ 阈值 ¥23.46
+⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
+----------------------------------------
+【泽宇智能 301179】
+现价 ¥20.70 ↓ 阈值 ¥23.74
+⚠️ 泽宇智能跳破 23.74 (MA60×0.95)！趋势实质走坏
+----------------------------------------
+【上海电力 600021】
+现价 ¥18.04 ↓ 阈值 ¥18.11
+⚠️💰 上海电力跌至 18.11！接近 MA10(18.11)，试探建仓
+📐 交易计划（盈亏比 1.91:1）
+├ 建议买入：¥18.04
+├ 止损：¥16.62（-7.9%，跌破 trend_break）
+├ 止盈①：¥20.75（+15%）
+├ 止盈②：¥22.55（+25%）
+├ 盈亏比：1.91:1 ✅ 可行
+├ 止盈概率：7% | 止损概率：24%
+├ 期望收益：-0.85% ⚠️ 负期望，建议观望
+└ 仓位建议：200 股 ≈ ¥3,608
+----------------------------------------
+【景兴纸业 002067】
+现价 ¥4.52 ↓ 阈值 ¥4.65
+⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
+----------------------------------------
+【景兴纸业 002067】
+现价 ¥4.52 ↓ 阈值 ¥4.76
+⚠️ 景兴纸业跳破 4.76 (MA60×0.95)！趋势实质走坏
+----------------------------------------
+【广西能源 600310】
+现价 ¥5.10 ↓ 阈值 ¥5.31
+⚠️💰 广西能源跌至 5.31！接近 MA10(5.31)，试探建仓
+📐 交易计划（盈亏比 5.43:1）
+├ 建议买入：¥5.10
+├ 止损：¥4.96（-2.7%，跌破 trend_break）
+├ 止盈①：¥5.86（+15%）
+├ 止盈②：¥6.38（+25%）
+├ 盈亏比：5.43:1 ✅ 优秀
+├ 止盈概率：22% | 止损概率：27%
+├ 期望收益：+2.54% ✅ 可行
+├ Kelly仓位：7.7%（≈¥7,650）
+└ 仓位建议：900 股 ≈ ¥4,590
+----------------------------------------
+【广西能源 600310】
+现价 ¥5.10 ↓ 阈值 ¥5.26
+⚠️💰💰 广西能源跌至 5.26！回踩 MA20(5.26)，优质建仓区
+📐 交易计划（盈亏比 5.43:1）
+├ 建议买入：¥5.10
+├ 止损：¥4.96（-2.7%，跌破 trend_break）
+├ 止盈①：¥5.86（+15%）
+├ 止盈②：¥6.38（+25%）
+├ 盈亏比：5.43:1 ✅ 优秀
+├ 止盈概率：22% | 止损概率：27%
+├ 期望收益：+2.54% ✅ 可行
+├ Kelly仓位：7.7%（≈¥7,650）
+└ 仓位建议：900 股 ≈ ¥4,590
+----------------------------------------
+【林洋能源 601222】
+现价 ¥5.98 ↓ 阈值 ¥5.98
+⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
+----------------------------------------
+【林洋能源 601222】
+现价 ¥5.98 ↓ 阈值 ¥5.99
+⚠️ 林洋能源跳破 5.99 (MA60×0.95)！趋势实质走坏
+----------------------------------------
+【江苏新能 603693】
+现价 ¥14.48 ↓ 阈值 ¥16.78
+💰 江苏新能跌至 16.78！接近 MA10(16.78)，试探建仓
+----------------------------------------
+【江苏新能 603693】
+现价 ¥14.48 ↓ 阈值 ¥16.11
+💰💰 江苏新能跌至 16.11！回踩 MA20(16.11)，优质建仓区
+----------------------------------------
+【江苏新能 603693】
+现价 ¥14.48 ↓ 阈值 ¥14.51
+⚠️ 江苏新能破 14.51！跌破 MA20-1.5ATR，趋势可能反转
+----------------------------------------
+2026-06-09 13:01:44,574 [INFO] webhook 推送成功
+2026-06-09 13:01:44,575 [INFO] webhook 推送 成功 | 27 条警报
+2026-06-09 13:01:44,575 [INFO] 推送 27 条警报给用户
+2026-06-09 13:01:44,575 [INFO] ==== 运行结束 run_id=130004 ====
+
+
+2026-06-09 13:10:05,475 [INFO] ==== 运行开始 run_id=131005 ====
+2026-06-09 13:10:05,476 [INFO] 准备拉取 28 只股票行情: ['301179', '002654', '603757', '600330', '000600', '605006', '601728', '001896', '002453', '600309', '000899', '002067', '601991', '301120', '603005', '603693', '002156', '603256', '000725', '002709', '600863', '002149', '002290', '600186', '600310', '603601', '601222', '600021']
+2026-06-09 13:10:05,792 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 13:10:05,794 [INFO] 今日已推送阈值数: 31
+2026-06-09 13:10:05,970 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 13:10:05,973 [WARNING] 🚨 自动止损触发: 000899 现价 13.11 <= 跟踪止损 13.25 (浮盈亏 0.92%)
+2026-06-09 13:10:17,524 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:10:17,524 [WARNING] 🚨 自动止损触发: 600310 现价 5.10 <= 跟踪止损 5.11 (浮盈亏 1.90%)
+2026-06-09 13:10:19,968 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:10:19,968 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 13:10:19,973 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 13:10:19,977 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 13:10:19,978 [INFO] 无新警报，静默返回
+2026-06-09 13:10:19,978 [INFO] ==== 运行结束 run_id=131005 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 13:10 无新警报 | 301179:20.68 / 002654:14.75 / 603757:53.12 / 600330:29.40 / 000600:10.62 / 605006:19.15 / 601728:6.17 / 001896:19.13 / 002453:5.49 / 600309:68.80 / 000899:13.08 / 002067:4.51 / 601991:7.54 / 301120:19.50 / 603005:46.47 / 603693:14.48 / 002156:64.14 / 603256:207.25 / 000725:6.44 / 002709:46.36 / 600863:6.07 / 002149:60.39 / 002290:80.50 / 600186:10.90 / 600310:5.06 / 603601:14.30 / 601222:5.98 / 600021:18.03
+2026-06-09 13:20:05,235 [INFO] ==== 运行开始 run_id=132005 ====
+2026-06-09 13:20:05,235 [INFO] 准备拉取 28 只股票行情: ['000725', '601991', '601222', '600330', '603693', '002067', '603005', '000600', '001896', '002149', '600186', '002156', '600021', '000899', '603601', '601728', '002453', '002709', '600863', '603256', '605006', '603757', '301120', '301179', '002654', '002290', '600310', '600309']
+2026-06-09 13:20:05,507 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 13:20:05,508 [INFO] 今日已推送阈值数: 31
+2026-06-09 13:20:05,599 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 13:20:05,601 [WARNING] 🚨 自动止损触发: 000899 现价 13.08 <= 跟踪止损 13.25 (浮盈亏 0.69%)
+2026-06-09 13:20:08,927 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:20:08,928 [WARNING] 🚨 自动止损触发: 600310 现价 5.06 <= 跟踪止损 5.11 (浮盈亏 1.10%)
+2026-06-09 13:20:12,591 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:20:12,592 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 13:20:12,596 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 13:20:12,602 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 13:20:12,602 [INFO] 无新警报，静默返回
+2026-06-09 13:20:12,602 [INFO] ==== 运行结束 run_id=132005 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 13:20 无新警报 | 000725:6.38 / 601991:7.53 / 601222:5.98 / 600330:29.46 / 603693:14.49 / 002067:4.52 / 603005:46.17 / 000600:10.57 / 001896:19.09 / 002149:60.39 / 600186:11.18 / 002156:64.21 / 600021:18.04 / 000899:13.13 / 603601:14.42 / 601728:6.17 / 002453:5.47 / 002709:46.37 / 600863:6.06 / 603256:207.34 / 605006:19.15 / 603757:54.10 / 301120:19.55 / 301179:20.76 / 002654:14.76 / 002290:80.80 / 600310:5.07 / 600309:68.84
+2026-06-09 13:30:05,124 [INFO] ==== 运行开始 run_id=133005 ====
+2026-06-09 13:30:05,125 [INFO] 准备拉取 28 只股票行情: ['600863', '601991', '603757', '000899', '301179', '002453', '601728', '603005', '600310', '600309', '000600', '001896', '601222', '002149', '002654', '600021', '002067', '603601', '002156', '002709', '600186', '603693', '605006', '603256', '301120', '000725', '002290', '600330']
+2026-06-09 13:30:05,408 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 13:30:05,411 [INFO] 今日已推送阈值数: 31
+2026-06-09 13:30:05,505 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 13:30:05,507 [WARNING] 🚨 自动止损触发: 000899 现价 13.13 <= 跟踪止损 13.25 (浮盈亏 1.08%)
+2026-06-09 13:30:13,072 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:30:13,072 [WARNING] 🚨 自动止损触发: 600310 现价 5.07 <= 跟踪止损 5.11 (浮盈亏 1.30%)
+2026-06-09 13:30:22,380 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:30:22,380 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 13:30:22,385 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 13:30:22,393 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 13:30:22,393 [INFO] 无新警报，静默返回
+2026-06-09 13:30:22,393 [INFO] ==== 运行结束 run_id=133005 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 13:30 无新警报 | 600863:6.10 / 601991:7.70 / 603757:53.80 / 000899:13.13 / 301179:20.72 / 002453:5.45 / 601728:6.15 / 603005:46.24 / 600310:5.09 / 600309:68.73 / 000600:10.57 / 001896:19.33 / 601222:6.00 / 002149:60.24 / 002654:14.72 / 600021:18.08 / 002067:4.51 / 603601:14.36 / 002156:64.06 / 002709:46.26 / 600186:11.26 / 603693:14.61 / 605006:19.15 / 603256:207.34 / 301120:19.68 / 000725:6.37 / 002290:80.68 / 600330:29.46
+2026-06-09 13:40:05,171 [INFO] ==== 运行开始 run_id=134005 ====
+2026-06-09 13:40:05,172 [INFO] 准备拉取 28 只股票行情: ['601222', '000725', '600863', '603256', '301179', '603005', '000600', '603601', '000899', '601991', '002067', '002654', '002156', '001896', '600021', '600310', '600186', '601728', '002290', '603693', '002149', '605006', '301120', '600330', '600309', '002453', '603757', '002709']
+2026-06-09 13:40:05,482 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 13:40:05,484 [INFO] 今日已推送阈值数: 31
+2026-06-09 13:40:05,583 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 13:40:05,586 [WARNING] 🚨 自动止损触发: 000899 现价 13.13 <= 跟踪止损 13.25 (浮盈亏 1.08%)
+2026-06-09 13:40:06,697 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:40:06,697 [WARNING] 🚨 自动止损触发: 600310 现价 5.09 <= 跟踪止损 5.11 (浮盈亏 1.70%)
+2026-06-09 13:40:08,836 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:40:08,837 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 13:40:08,842 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 13:40:08,846 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 13:40:08,847 [INFO] 无新警报，静默返回
+2026-06-09 13:40:08,847 [INFO] ==== 运行结束 run_id=134005 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 13:40 无新警报 | 601222:6.00 / 000725:6.41 / 600863:6.07 / 603256:207.34 / 301179:20.66 / 603005:46.36 / 000600:10.53 / 603601:14.22 / 000899:13.12 / 601991:7.67 / 002067:4.53 / 002654:14.75 / 002156:63.98 / 001896:19.03 / 600021:18.06 / 600310:5.08 / 600186:11.20 / 601728:6.17 / 002290:80.60 / 603693:14.57 / 002149:60.00 / 605006:19.15 / 301120:19.67 / 600330:29.46 / 600309:68.85 / 002453:5.46 / 603757:53.71 / 002709:46.35
+2026-06-09 13:50:05,020 [INFO] ==== 运行开始 run_id=135004 ====
+2026-06-09 13:50:05,022 [INFO] 准备拉取 28 只股票行情: ['600330', '600186', '000725', '301120', '001896', '002453', '605006', '601728', '301179', '603601', '603693', '002709', '002290', '600021', '600309', '601991', '603005', '002067', '601222', '600310', '002156', '000600', '000899', '603256', '002149', '603757', '002654', '600863']
+2026-06-09 13:50:05,291 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 13:50:05,293 [INFO] 今日已推送阈值数: 31
+2026-06-09 13:50:05,383 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 13:50:05,385 [WARNING] 🚨 自动止损触发: 000899 现价 13.12 <= 跟踪止损 13.25 (浮盈亏 1.00%)
+2026-06-09 13:50:06,091 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:50:06,091 [WARNING] 🚨 自动止损触发: 600310 现价 5.08 <= 跟踪止损 5.11 (浮盈亏 1.50%)
+2026-06-09 13:50:09,973 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 13:50:09,974 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 13:50:09,977 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 13:50:09,983 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 13:50:09,983 [INFO] 无新警报，静默返回
+2026-06-09 13:50:09,983 [INFO] ==== 运行结束 run_id=135004 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 13:50 无新警报 | 600330:29.46 / 600186:11.54 / 000725:6.43 / 301120:19.78 / 001896:19.05 / 002453:5.45 / 605006:19.15 / 601728:6.18 / 301179:20.63 / 603601:14.26 / 603693:14.60 / 002709:46.55 / 002290:80.88 / 600021:17.97 / 600309:68.84 / 601991:7.64 / 603005:46.13 / 002067:4.53 / 601222:5.99 / 600310:5.06 / 002156:64.12 / 000600:10.51 / 000899:13.13 / 603256:207.34 / 002149:60.65 / 603757:53.79 / 002654:14.76 / 600863:6.04
+2026-06-09 14:00:05,083 [INFO] ==== 运行开始 run_id=140004 ====
+2026-06-09 14:00:05,084 [INFO] 准备拉取 28 只股票行情: ['002709', '000600', '600186', '000725', '002067', '301179', '002654', '002453', '601222', '600330', '603601', '600021', '001896', '002156', '601728', '600863', '601991', '603757', '301120', '000899', '600309', '603693', '605006', '002290', '603005', '600310', '002149', '603256']
+2026-06-09 14:00:05,359 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 14:00:05,360 [INFO] 今日已推送阈值数: 31
+2026-06-09 14:00:05,453 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 14:00:05,455 [WARNING] 🚨 自动止损触发: 000899 现价 13.13 <= 跟踪止损 13.25 (浮盈亏 1.08%)
+2026-06-09 14:00:09,038 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:00:09,038 [WARNING] 🚨 自动止损触发: 600310 现价 5.06 <= 跟踪止损 5.11 (浮盈亏 1.10%)
+2026-06-09 14:00:10,911 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:00:10,912 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 14:00:10,917 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 14:00:10,924 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 14:00:10,925 [INFO] 无新警报，静默返回
+2026-06-09 14:00:10,925 [INFO] ==== 运行结束 run_id=140004 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 14:00 无新警报 | 002709:46.50 / 000600:10.50 / 600186:11.49 / 000725:6.59 / 002067:4.52 / 301179:20.56 / 002654:14.73 / 002453:5.47 / 601222:6.00 / 600330:29.46 / 603601:14.15 / 600021:17.89 / 001896:19.29 / 002156:64.05 / 601728:6.18 / 600863:6.04 / 601991:7.64 / 603757:53.51 / 301120:19.67 / 000899:13.13 / 600309:68.94 / 603693:14.59 / 605006:19.15 / 002290:81.00 / 603005:46.21 / 600310:5.04 / 002149:60.10 / 603256:207.34
+2026-06-09 14:10:05,272 [INFO] ==== 运行开始 run_id=141005 ====
+2026-06-09 14:10:05,272 [INFO] 准备拉取 28 只股票行情: ['000600', '002709', '603601', '000725', '603256', '603005', '601991', '002453', '002654', '601222', '601728', '301120', '600863', '301179', '600021', '002067', '605006', '600310', '000899', '002149', '600330', '603757', '600186', '001896', '002290', '002156', '603693', '600309']
+2026-06-09 14:10:05,540 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 14:10:05,541 [INFO] 今日已推送阈值数: 31
+2026-06-09 14:10:05,636 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 14:10:05,639 [WARNING] 🚨 自动止损触发: 000899 现价 13.13 <= 跟踪止损 13.25 (浮盈亏 1.08%)
+2026-06-09 14:10:09,046 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:10:09,046 [WARNING] 🚨 自动止损触发: 600310 现价 5.04 <= 跟踪止损 5.11 (浮盈亏 0.70%)
+2026-06-09 14:10:11,195 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:10:11,195 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 14:10:11,200 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 14:10:11,204 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 14:10:11,205 [INFO] 无新警报，静默返回
+2026-06-09 14:10:11,205 [INFO] ==== 运行结束 run_id=141005 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 14:10 无新警报 | 000600:10.60 / 002709:46.56 / 603601:14.55 / 000725:6.59 / 603256:207.34 / 603005:46.71 / 601991:7.64 / 002453:5.49 / 002654:14.77 / 601222:6.02 / 601728:6.19 / 301120:19.73 / 600863:6.06 / 301179:20.65 / 600021:18.04 / 002067:4.54 / 605006:19.15 / 600310:5.07 / 000899:13.16 / 002149:60.35 / 600330:29.46 / 603757:53.48 / 600186:11.54 / 001896:19.98 / 002290:82.18 / 002156:64.28 / 603693:14.68 / 600309:69.15
+2026-06-09 14:20:05,089 [INFO] ==== 运行开始 run_id=142004 ====
+2026-06-09 14:20:05,090 [INFO] 准备拉取 28 只股票行情: ['600330', '000899', '603693', '600863', '601728', '605006', '600310', '601222', '600021', '603601', '603256', '601991', '001896', '002453', '600186', '301179', '000600', '002654', '603005', '002067', '301120', '002156', '002149', '002709', '603757', '002290', '000725', '600309']
+2026-06-09 14:20:05,398 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 14:20:05,400 [INFO] 今日已推送阈值数: 31
+2026-06-09 14:20:05,532 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 14:20:05,534 [WARNING] 🚨 自动止损触发: 000899 现价 13.16 <= 跟踪止损 13.25 (浮盈亏 1.31%)
+2026-06-09 14:20:13,857 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥13.25 但 量比0.68× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:20:13,857 [WARNING] 🚨 自动止损触发: 600310 现价 5.07 <= 跟踪止损 5.11 (浮盈亏 1.30%)
+2026-06-09 14:20:16,197 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.11 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:20:16,198 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 14:20:16,202 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 14:20:16,208 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 14:20:16,208 [INFO] 无新警报，静默返回
+2026-06-09 14:20:16,208 [INFO] ==== 运行结束 run_id=142004 ====
+
+login success!
+logout success!
+login success!
+logout success!
+✓ 14:20 无新警报 | 600330:29.46 / 000899:13.27 / 603693:14.67 / 600863:6.06 / 601728:6.20 / 605006:19.15 / 600310:5.07 / 601222:6.03 / 600021:18.04 / 603601:14.46 / 603256:207.34 / 601991:7.64 / 001896:20.38 / 002453:5.47 / 600186:11.54 / 301179:20.69 / 000600:10.58 / 002654:14.76 / 603005:46.52 / 002067:4.54 / 301120:19.79 / 002156:64.04 / 002149:60.16 / 002709:46.86 / 603757:53.43 / 002290:81.78 / 000725:6.57 / 600309:69.19
+2026-06-09 14:30:05,227 [INFO] ==== 运行开始 run_id=143005 ====
+2026-06-09 14:30:05,227 [INFO] 准备拉取 28 只股票行情: ['601728', '603005', '600186', '002453', '301120', '001896', '605006', '600330', '002654', '000899', '002290', '000725', '600863', '600021', '000600', '601991', '002149', '603757', '002067', '603256', '301179', '603693', '603601', '002156', '600309', '601222', '600310', '002709']
+2026-06-09 14:30:05,483 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 14:30:05,484 [INFO] 今日已推送阈值数: 31
+2026-06-09 14:30:05,581 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 14:30:05,583 [WARNING] 🚨 自动止损触发: 600310 现价 5.07 <= 跟踪止损 5.17 (浮盈亏 1.30%)
+2026-06-09 14:30:12,846 [INFO] ℹ️ 止损提醒已评估: 软止损预警（不自动卖): ⚠️ 跌破¥5.17 但 量比0.75× 未放量，软预警 — 等尾盘检查是否反包
+2026-06-09 14:30:12,846 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 14:30:12,850 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 14:30:12,854 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 0 个
+2026-06-09 14:30:12,854 [INFO] 无新警报，静默返回
+2026-06-09 14:30:12,854 [INFO] ==== 运行结束 run_id=143005 ====
+
+login success!
+logout success!
+✓ 14:30 无新警报 | 601728:6.20 / 603005:46.52 / 600186:11.54 / 002453:5.48 / 301120:19.77 / 001896:20.67 / 605006:19.15 / 600330:29.46 / 002654:14.79 / 000899:13.26 / 002290:81.81 / 000725:6.54 / 600863:6.08 / 600021:18.09 / 000600:10.62 / 601991:7.64 / 002149:60.69 / 603757:53.64 / 002067:4.56 / 603256:207.34 / 301179:20.68 / 603693:14.70 / 603601:14.45 / 002156:64.07 / 600309:69.33 / 601222:6.06 / 600310:5.08 / 002709:48.00
+2026-06-09 14:40:05,287 [INFO] ==== 运行开始 run_id=144005 ====
+2026-06-09 14:40:05,287 [INFO] 准备拉取 28 只股票行情: ['000899', '002149', '301179', '002067', '605006', '000725', '600186', '603601', '600309', '603757', '002290', '601222', '301120', '001896', '002156', '601991', '002709', '002453', '601728', '600330', '600310', '002654', '603256', '600863', '603005', '603693', '000600', '600021']
+2026-06-09 14:40:05,557 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 14:40:05,560 [INFO] 今日已推送阈值数: 31
+2026-06-09 14:40:05,672 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 14:40:05,674 [WARNING] 🚨 自动止损触发: 600310 现价 5.08 <= 跟踪止损 5.17 (浮盈亏 0.30%)
+2026-06-09 14:40:11,549 [INFO] ✅ 已记录模拟止损卖单: 卖出 1200股 @¥5.08
+2026-06-09 14:40:11,549 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 14:40:11,556 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 14:40:11,565 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 1 个
+2026-06-09 14:40:11,736 [INFO] webhook 推送成功
+2026-06-09 14:40:11,736 [INFO] webhook 推送 成功 | 1 条警报
+2026-06-09 14:40:11,737 [INFO] 推送 1 条警报给用户
+2026-06-09 14:40:11,737 [INFO] ==== 运行结束 run_id=144005 ====
+
+login success!
+logout success!
+🔔 盘中提醒 2026-06-09 14:40
+========================================
+🚨 模拟止损卖单: 600310 现价¥5.08 触发跟踪止损¥5.17 → 卖出 1200股 @¥5.08
+----------------------------------------
+
+2026-06-09 14:50:05,223 [INFO] ==== 运行开始 run_id=145005 ====
+2026-06-09 14:50:05,223 [INFO] 准备拉取 28 只股票行情: ['001896', '603693', '600863', '002149', '601222', '002654', '603005', '600330', '603256', '600309', '601728', '603601', '605006', '600186', '601991', '000899', '002709', '002156', '301179', '603757', '600310', '000600', '002067', '000725', '002290', '002453', '600021', '301120']
+2026-06-09 14:50:05,520 [INFO] 行情拉取成功，返回 28 条
+2026-06-09 14:50:05,522 [INFO] 今日已推送阈值数: 31
+2026-06-09 14:50:05,621 [INFO] P2 跟踪止损更新了 3/8 个仓位
+2026-06-09 14:50:05,624 [WARNING] 🚨 自动止损触发: 600310 现价 5.08 <= 跟踪止损 5.17 (浮盈亏 0.30%)
+2026-06-09 14:50:06,635 [INFO] ✅ 已记录模拟止损卖单: 卖出 600股 @¥5.08
+2026-06-09 14:50:06,635 [WARNING] 🚨 自动止损触发: 600330 现价 28.28 <= -8%原始止损 30.19 (浮盈亏 -13.83%)
+2026-06-09 14:50:06,643 [WARNING] ⚠️ 止损提醒未下单: 无持仓可卖 600330
+2026-06-09 14:50:06,651 [INFO] 检查完成: 检查了 49 个阈值, 跳过已推送 31 个, 本次触发 1 个
+2026-06-09 14:50:06,849 [INFO] webhook 推送成功
+2026-06-09 14:50:06,849 [INFO] webhook 推送 成功 | 1 条警报
+2026-06-09 14:50:06,849 [INFO] 推送 1 条警报给用户
+2026-06-09 14:50:06,849 [INFO] ==== 运行结束 run_id=145005 ====
+
+login success!
+logout success!
+🔔 盘中提醒 2026-06-09 14:50
+========================================
+🚨 模拟止损卖单: 600310 现价¥5.08 触发跟踪止损¥5.17 → 卖出 600股 @¥5.08
+----------------------------------------
+

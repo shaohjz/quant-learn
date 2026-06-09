@@ -1,0 +1,23 @@
+commit e1c0124443f65a7fe25d9906a2e7a1fae7a32743
+Author: jizhouhu <jizhouhu@tencent.com>
+Date:   Mon Jun 1 01:32:07 2026 +0800
+
+    feat: 支持持仓数量上限与单日新建仓位数硬性风控 (Closes #REQ-038)
+    
+    - 新增 check_position_limit: 检查持仓数量上限
+    - 新增 check_daily_trade_limit: 检查单日新建仓位数上限
+    - 新增 evaluate_buy_risk_with_limits: 统一风控检查（大盘+单票+仓位+单日交易）
+    - 新增 10 个测试用例，覆盖所有新功能
+    - 所有 12 个测试通过
+
+commit e0f1b752cc86a975ea9e787185bd52501b9c696c
+Author: Jizhou Hu <jizhouhu@tencent.com>
+Date:   Tue May 26 03:10:09 2026 +0800
+
+    test: 每日回归测试完成，修复bat中文编码问题，验证REQ-008
+
+commit d3fddb31ed5955e9fac4d3664be0d21ffae55bef
+Author: Jizhou Hu <jizhouhu@tencent.com>
+Date:   Tue May 26 02:53:37 2026 +0800
+
+    pm: 需求Agent提出新需求

@@ -1,0 +1,69 @@
+=== STATUS ===
+done 41
+fixed 5
+in_progress 13
+testing 7
+verified 10
+=== PRIORITY ===
+P0 10
+P1 23
+P2 24
+P3 1
+S1 11
+S2 7
+=== TYPE ===
+bug 18
+story 58
+=== IN_PROGRESS ===
+REQ-046 | story | 现有持仓止损自动触发：严重浮亏个股自动卖出机制 | P0 | 
+REQ-049 | story | 提升买入信号执行率：19触发→1执行（5%） | P0 | 
+REQ-001 | story | 测试任务 - 子代理验证 | P1 | 
+REQ-011 | story | 接入vnpy OmsEngine实现详细订单成交回放 | P1 | test-agent
+REQ-026 | story | 支持针对严重浮亏个股自动生成风控建议 | P1 | 
+REQ-036 | story | 支持持仓行业/板块集中度风控 | P1 | 
+REQ-043 | story | 量化通知/盘中盯盘 cron 去大模型化 — agentTurn → systemEvent | P1 | 
+REQ-045 | story | 现金过低预警（当前 1.6%）→ 优化仓位管理 | P1 | 
+REQ-051 | story | 同一股票同日多信号去重：避免重复买入 | P1 | 
+REQ-058 | story | SELL成交signal_reason为空：卖出操作无法溯源信号 | P1 | agent
+REQ-005 | story | REQ-005: 观察列表K线缩略图 | P2 | PM-Agent-dev-3
+REQ-013 | story | 建立系统级别和策略级别异常监控与告警模块 | P2 | agent
+REQ-019 | story | 支持实时同步并展示QMT订单/成交状态流 | P2 | quant-learn-dev-agent-2
+=== TESTING ===
+REQ-048 | story | 止损执行链路 Bug：threshold_state 已标记 executed 但 sim_posi | P0 | 
+REQ-057 | story | 盘中14信号executed但0笔买入成交：信号-执行链路断裂复发 | P0 | 研发Agent#2
+REQ-015 | story | 支持自动获取用户手工填写的复盘要点分析 | P2 | agent
+REQ-020 | story | 双账户复盘支持交易异动或异常提醒 | P2 | agent
+REQ-027 | story | 支持交易纪律打卡与知行合一评分 | P2 | agent
+REQ-030 | story | 支持自动统计策略信号触发的交易盈亏并在复盘中展示 | P2 | quant-learn-dev-agent-2
+REQ-047-TEST | story | 测试自动建需求机制 | P2 | 
+=== BLOCKED ===
+=== DONE THIS WEEK ===
+REQ-044 | story | 职业理财经理 Agent — 定时复盘 + 提改进需求 | P0
+REQ-054 | story | 量化仪表盘与需求大盘互跳 + 资金/观察列表/PM看板口径修复 | P0
+REQ-056 | story | 策略控制大盘：买入/卖出/仓位控制可视化 | P0
+REQ-034 | story | 支持双账户执行一致性诊断与镜像差异归因 | P1
+REQ-035 | story | 支持账户资金口径变更检测与复盘提示 | P1
+REQ-038 | story | 支持持仓数量上限与单日新建仓位数硬性风控 | P1
+REQ-042 | story | 量化通知/盘中盯盘 去大模型化 — 纯代码 + 企微 Webhook 直推 | P1
+REQ-055 | story | 敏捷看板列内按时间排序 | P1
+REQ-002 | story | 测试改进的任务添加脚本 | P2
+REQ-006 | story | REQ-006: 快捷操作面板 | P2
+REQ-014 | story | 添加策略绩效指标(最大回撤/夏普比率)到复盘报告 | P2
+REQ-016 | story | 模拟盘初始建仓增加成本价计算精度配置 | P2
+REQ-017 | story | 支持自动分析大盘情绪指标 | P2
+REQ-021 | story | 支持自动分析QMT账户收益分布 | P2
+REQ-022 | story | 支持自动生成下个交易日的关注股票池 | P2
+REQ-023 | story | 支持从实盘/模拟盘中提取已平仓交易的历史盈亏分析 | P2
+REQ-025 | story | 支持持仓股票技术面破位分析与预警 | P2
+REQ-029 | story | 支持从双账户复盘报告中自动提取建仓快照并关联用户策略 | P2
+REQ-031 | story | 支持大类资产配置看板与策略动态配比 | P2
+REQ-037 | story | 工作日当日复盘报告缺失自动监测与告警 | P2
+REQ-041 | story | 智能止损 P2：跟踪止损 trailing stop | P2
+REQ-047 | story | 工作日复盘报告缺失自动告警 | P2
+REQ-053 | story | [TODO] 可以集成实时行情API获取收盘价 | P2
+REQ-007 | story | REQ-007: 暗色/浅色主题切换 | P3
+BUG-013 | bug | QMT mini 账户长期零成交，双账户镜像未实际生效 | S1
+BUG-005 | bug | 每日复盘报告数据点收集范围异常 | S2
+BUG-007 | bug | 部分持仓数据可能因缺失自动同步或未对齐导致QMT资产无法展示明细 | S2
+BUG-015 | bug | 非交易时段 cron 任务空跑浪费资源（runner + portfolio_alert 每10分钟 | S2
+BUG-018 | bug | 每日复盘报告缺失：2026-05-27 未生成 | S2

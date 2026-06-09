@@ -24,9 +24,14 @@ def _ensure_db_dir():
 
 
 def get_conn() -> sqlite3.Connection:
-    """获取一个 SQLite 连接(启用外键,使用 Row 工厂方便按列名取值)。"""
-    _ensure_db_dir()
-    conn = sqlite3.connect(str(DB_PATH), timeout=30, isolation_level=None)  # autocommit
+    """获取一个 SQLite 连接(启用外键,使用 Row 工厂方便按列名取值)。
+    
+    [REQ-001] 每次调用都动态检查 QUANT_DB_PATH 环境变量，
+    确保模块加载后修改环境变量依然生效。
+    """
+    db_path = Path(os.environ.get("QUANT_DB_PATH", str(_DEFAULT_DB)))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path), timeout=30, isolation_level=None)  # autocommit
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")  # 写并发更友好

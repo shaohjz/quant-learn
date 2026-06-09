@@ -31,6 +31,77 @@ class SimEngine:
 
     def __init__(self, account_id: int = 1):
         self.account_id = account_id
+        # [REQ-001] 启动时校验账户映射一致性（config vs DB）
+        self._validate_account_consistency()
+
+    def _validate_account_consistency(self):
+        """[REQ-001] 校验 config.yaml 与 sim_account DB 的一致性。
+
+        检查项：
+        1. config initial_cash vs DB initial_cash（本金变更检测）
+        2. 记录变更事件到 sim_account_events
+        3. 自动同步 DB 中的 initial_cash 使之与 config 一致
+        """
+        try:
+            from sim.config import get_account_config
+            acct_cfg = get_account_config(self.account_id)
+            cfg_initial_cash = float(acct_cfg.get("initial_cash", 100000.0))
+        except Exception:
+            return  # config 读取失败，跳过校验
+
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT initial_cash, cash, total_value FROM sim_account WHERE id = ?",
+                (self.account_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return
+
+            db_initial_cash = float(row["initial_cash"])
+            db_cash = float(row["cash"])
+            db_total = float(row["total_value"])
+
+            if abs(db_initial_cash - cfg_initial_cash) > 0.01:
+                # config 与 DB 不一致，记录事件并同步 DB
+                try:
+                    from sim.db import record_account_event
+                    reason = (
+                        f"本金不一致: DB.initial_cash={db_initial_cash:,.0f}, "
+                        f"config.initial_cash={cfg_initial_cash:,.0f}, "
+                        f"已自动同步 DB 至 config 值"
+                    )
+                    record_account_event(
+                        account_id=self.account_id,
+                        event_type="config_sync",
+                        event_date=Date.today(),
+                        old_initial_cash=db_initial_cash,
+                        new_initial_cash=cfg_initial_cash,
+                        old_total_value=db_total,
+                        new_total_value=db_total,
+                        reason=reason,
+                        source="engine.init",
+                    )
+                except Exception:
+                    pass
+
+                # 同步 DB initial_cash 为 config 值
+                cur.execute(
+                    "UPDATE sim_account SET initial_cash = ?, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ?",
+                    (cfg_initial_cash, self.account_id),
+                )
+                # 同时修正 cash：如果 cash 相对 initial_cash 比例异常，也修正
+                # （避免 old data 里 cash 被旧 initial_cash 污染）
+                # 仅当 cash 明显不合理时（如 initial_cash 改动很大）给出警告
+                print(
+                    f"[REQ-001] 账户 {self.account_id} initial_cash "
+                    f"已从 ¥{db_initial_cash:,.0f} 同步为 ¥{cfg_initial_cash:,.0f}"
+                )
+        finally:
+            conn.close()
 
     def _count_new_positions_today(self, trade_date: str) -> int:
         """统计今天新建的仓位数（首次买入某股票，非加仓）"""
@@ -59,7 +130,13 @@ class SimEngine:
             conn.close()
 
     # ---------- 账户 ----------
-    def get_account(self) -> dict:
+    def get_account(self, use_config_initial_cash: bool = True) -> dict:
+        """获取账户信息。
+
+        Args:
+            use_config_initial_cash: 是否用 config 的 initial_cash 覆盖 DB 值。
+                设为 True（默认）可确保收益率计算基准与 config 一致。
+        """
         conn = get_conn()
         try:
             cur = conn.cursor()
@@ -71,7 +148,7 @@ class SimEngine:
             row = cur.fetchone()
             if not row:
                 raise ValueError(f"账户 {self.account_id} 不存在")
-            return {
+            result = {
                 "id": row["id"],
                 "account_name": row["account_name"],
                 "initial_cash": float(row["initial_cash"]),
@@ -79,6 +156,15 @@ class SimEngine:
                 "total_value": float(row["total_value"]),
                 "updated_at": row["updated_at"],
             }
+            # [REQ-001] 若启用，用 config 值覆盖（确保收益率基准正确）
+            if use_config_initial_cash:
+                try:
+                    from sim.config import get_account_config
+                    acct_cfg = get_account_config(self.account_id)
+                    result["initial_cash"] = float(acct_cfg.get("initial_cash", result["initial_cash"]))
+                except Exception:
+                    pass
+            return result
         finally:
             conn.close()
 
@@ -463,7 +549,9 @@ class SimEngine:
         - 跳变时 daily_return 设为 None，cumulative_return 重新基于 initial_cash 计算
         """
         trade_date = trade_date or Date.today()
-        acct = self.get_account()
+        # [REQ-001] 使用 config 的 initial_cash 作为基准（不受 DB 脏数据影响）
+        acct = self.get_account(use_config_initial_cash=True)
+        config_initial_cash = acct["initial_cash"]
         positions = self.get_positions()
 
         market_value = sum(float(p["market_value"] or 0) for p in positions)
@@ -478,12 +566,13 @@ class SimEngine:
                 (round(total_value, 2), self.account_id),
             )
 
-            initial_cash = acct["initial_cash"]
+            initial_cash = config_initial_cash  # [REQ-001] 始终以 config 为基准
             cumulative_return = (total_value - initial_cash) / initial_cash if initial_cash else 0
 
             # 前一日净值
             cur.execute(
-                "SELECT total_value, cash, trade_date FROM sim_daily_nav "
+                "SELECT total_value, cash, trade_date, cash_jump_detected "
+                "FROM sim_daily_nav "
                 "WHERE account_id = ? AND trade_date < ? "
                 "ORDER BY trade_date DESC LIMIT 1",
                 (self.account_id, str(trade_date)),
@@ -491,7 +580,7 @@ class SimEngine:
             prev = cur.fetchone()
             prev_value = float(prev["total_value"]) if prev else initial_cash
 
-            # [REQ-001] 资金口径跳变检测
+            # [REQ-001] 资金口径跳变检测（阈值降低到 20%）
             cash_jump_detected = 0
             cash_jump_reason = None
             if prev:
@@ -499,21 +588,39 @@ class SimEngine:
                 prev_cash = float(prev["cash"])
                 total_jump = (total_value - prev_total) / prev_total if prev_total > 0 else 0
                 cash_jump = (acct["cash"] - prev_cash) / prev_cash if prev_cash > 0 else 0
-                if abs(total_jump) >= 0.50 or abs(cash_jump) >= 0.50:
+                # 检测跳变 或 config 本金变更
+                config_changed = False
+                try:
+                    from sim.db import fetch_account_events
+                    events = fetch_account_events(self.account_id, limit=10)
+                    for ev in events:
+                        if ev["event_type"] in ("config_sync", "reset") and str(ev["event_date"]) >= str(prev["trade_date"]):
+                            config_changed = True
+                            break
+                except Exception:
+                    pass
+
+                if abs(total_jump) >= 0.20 or abs(cash_jump) >= 0.20 or config_changed:
                     cash_jump_detected = 1
-                    cash_jump_reason = (
-                        f"总资产跳变 {total_jump*100:+.2f}% (¥{prev_total:,.2f}→¥{total_value:,.2f}), "
-                        f"现金跳变 {cash_jump*100:+.2f}% (¥{prev_cash:,.2f}→¥{acct['cash']:,.2f})"
+                    reasons = []
+                    if abs(total_jump) >= 0.20:
+                        reasons.append(f"总资产跳变 {total_jump*100:+.2f}%")
+                    if abs(cash_jump) >= 0.20:
+                        reasons.append(f"现金跳变 {cash_jump*100:+.2f}%")
+                    if config_changed:
+                        reasons.append("config initial_cash 变更")
+                    cash_jump_reason = "; ".join(reasons) + (
+                        f" (¥{prev_total:,.2f}→¥{total_value:,.2f})"
                     )
                     # 记录账户事件
                     try:
                         from sim.db import record_account_event
                         record_account_event(
                             account_id=self.account_id,
-                            event_type="reset",
+                            event_type="jump_detected",
                             event_date=trade_date,
-                            old_initial_cash=initial_cash,
-                            new_initial_cash=initial_cash,
+                            old_initial_cash=None,
+                            new_initial_cash=None,
                             old_total_value=prev_total,
                             new_total_value=total_value,
                             reason=cash_jump_reason,
@@ -522,10 +629,11 @@ class SimEngine:
                     except Exception:
                         pass
 
-            # 计算日收益率（跳变时设为 None）
+            # 计算日收益率（跳变时设为 None，避免曲线失真）
             if cash_jump_detected:
                 daily_return = None
             else:
+                # [REQ-001] 使用 initial_cash（config 基准）计算日收益
                 daily_return = (total_value - prev_value) / prev_value if prev_value else 0
 
             # 历史峰值（包含当前）

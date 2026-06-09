@@ -96,19 +96,24 @@ def query_db(sql, params=()):
 # ====================================================================
 @app.route('/api/portfolio')
 def api_portfolio():
-    positions = query_db("SELECT * FROM sim_positions WHERE account_id=1 AND quantity > 0")
-    acc = query_db("SELECT * FROM sim_account WHERE id=1")
-    acc = acc[0] if acc else {'cash': 0, 'initial_cash': 0}
+    account_id = int(request.args.get('account_id', 1))
+    positions = query_db("SELECT * FROM sim_positions WHERE account_id=? AND quantity > 0", (account_id,))
+    acc_rows = query_db("SELECT * FROM sim_account WHERE id=?", (account_id,))
+    acc = acc_rows[0] if acc_rows else {'cash': 0, 'initial_cash': 0, 'total_value': 0}
     cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
+
+    # 根据 account_id 读取对应配置
+    acct_key = 'learn' if account_id == 1 else 'real'
     initial_cash = float(
-        cfg.get('accounts', {}).get('learn', {}).get(
+        cfg.get('accounts', {}).get(acct_key, {}).get(
             'initial_cash', acc.get('initial_cash') or 200000
         )
     )
-    
+    account_name = cfg.get('accounts', {}).get(acct_key, {}).get('account_name', acc.get('account_name', ''))
+
     codes = [p['stock_code'] for p in positions]
     rt = get_sina_prices(codes)
-    
+
     result = []
     total_mv = 0
     total_pnl = 0
@@ -124,14 +129,14 @@ def api_portfolio():
         pnl_pct = (cur - cost) / cost * 100 if cost > 0 else 0
         total_mv += mv
         total_pnl += pnl
-        
+
         # 查交易理由
         trades = query_db(
             "SELECT signal_reason, trade_date FROM sim_trades WHERE stock_code=? AND direction='BUY' ORDER BY created_at LIMIT 1",
             (code,)
         )
         reason = trades[0]['signal_reason'] if trades and trades[0].get('signal_reason') else '阈值触发自动买入'
-        
+
         result.append({
             'code': code,
             'name': p.get('stock_name', rt.get(code, {}).get('name', '')),
@@ -147,80 +152,53 @@ def api_portfolio():
             'low': rt.get(code, {}).get('low', 0),
             'amount': rt.get(code, {}).get('amount', 0),
         })
-    
-    total_asset = acc.get('cash', 0) + total_mv
-    return jsonify({
-        'account': {
-            'cash': round(acc.get('cash', 0), 2),
-            'initial_cash': round(initial_cash, 2),
-            'total_asset': round(total_asset, 2),
-            'total_return_pct': round((total_asset - initial_cash) / initial_cash * 100, 2) if initial_cash > 0 else 0,
-            'position_pct': round(total_mv / total_asset * 100, 1) if total_asset > 0 else 0,
-        },
-        'positions': result,
-        'total_market_value': round(total_mv, 2),
-        'total_pnl': round(total_pnl, 2),
-        'updated_at': datetime.now().strftime('%H:%M:%S'),
-    })
 
-# ====================================================================
-#  API: 实盘
-# ====================================================================
-@app.route('/api/real_portfolio')
-def api_real_portfolio():
-    real_path = ROOT / "config_real.yaml"
-    if not real_path.exists():
-        return jsonify({'error': 'no config_real.yaml'})
-    data = yaml.safe_load(real_path.read_text(encoding='utf-8'))
-    acc = data.get('account', {})
-    positions = data.get('positions', [])
-    
-    codes = [p['code'] for p in positions]
-    rt = get_sina_prices(codes)
-    
-    result = []
-    total_mv = 0
-    total_pnl = 0
-    for p in positions:
-        code = p['code']
-        cur = rt.get(code, {}).get('price', p['avg_cost'])
-        pct_today = rt.get(code, {}).get('pct', 0)
-        qty = p['quantity']
-        cost = p['avg_cost']
-        mv = cur * qty
-        pnl = (cur - cost) * qty
-        pnl_pct = (cur - cost) / cost * 100 if cost > 0 else 0
-        total_mv += mv
-        total_pnl += pnl
-        result.append({
-            'code': code,
-            'name': p.get('name', rt.get(code, {}).get('name', '')),
-            'quantity': qty,
-            'avg_cost': round(cost, 3),
-            'current_price': round(cur, 2),
-            'pct_today': round(pct_today, 2),
-            'market_value': round(mv, 2),
-            'pnl': round(pnl, 2),
-            'pnl_pct': round(pnl_pct, 2),
-            'buy_reason': p.get('reason', '手动买入'),
-            'high': rt.get(code, {}).get('high', 0),
-            'low': rt.get(code, {}).get('low', 0),
-            'amount': rt.get(code, {}).get('amount', 0),
-        })
-    
-    cash = acc.get('cash', 0)
-    init = acc.get('initial_capital', 25000)
-    total_asset = cash + total_mv
+    # [REQ-005] 正确计算总资产：现金 + 持仓市值
+    cash = float(acc.get('cash', 0) or 0)
+    total_asset = round(cash + total_mv, 2)
+    total_mv = round(total_mv, 2)
+
+    # [REQ-005] 数据校验：对比 DB total_value 与计算结果
+    # 说明：total_asset 使用实时行情价计算，DB total_value 是上次 daily_settle 的收盘值
+    # 两者在交易时段会有差异，仅当差异 >5% 时告警
+    db_total_value = float(acc.get('total_value', 0) or 0)
+    value_mismatch = False
+    mismatch_msg = ''
+    if db_total_value > 0 and total_asset > 0:
+        mismatch_ratio = abs(db_total_value - total_asset) / max(db_total_value, total_asset)
+        if mismatch_ratio > 0.05:  # 差异超过 5%
+            value_mismatch = True
+            mismatch_msg = f"总资产偏差 {mismatch_ratio*100:.1f}%: DB({db_total_value:,.2f}) vs 实时({total_asset:,.2f})"
+
+    # [REQ-005] 数据校验：总资产 vs 现金+持仓市值 核对
+    asset_check = {
+        'cash': round(cash, 2),
+        'total_market_value': total_mv,
+        'total_asset_computed': total_asset,
+        'db_total_value': round(db_total_value, 2),
+        'value_mismatch': value_mismatch,
+        'mismatch_msg': mismatch_msg,
+    }
+
+    total_return_pct = round((total_asset - initial_cash) / initial_cash * 100, 2) if initial_cash > 0 else 0
+    position_pct = round(total_mv / total_asset * 100, 1) if total_asset > 0 else 0
+
     return jsonify({
         'account': {
+            'account_id': account_id,
+            'account_name': account_name,
             'cash': round(cash, 2),
-            'total_asset': round(total_asset, 2),
-            'total_return_pct': round((total_asset - init) / init * 100, 2),
-            'position_pct': round(total_mv / total_asset * 100, 1) if total_asset > 0 else 0,
+            'initial_cash': round(initial_cash, 2),
+            'total_asset': total_asset,
+            'total_return_pct': total_return_pct,
+            'position_pct': position_pct,
+            'value_mismatch': value_mismatch,
+            'mismatch_msg': mismatch_msg,
         },
         'positions': result,
-        'total_market_value': round(total_mv, 2),
+        'total_market_value': total_mv,
         'total_pnl': round(total_pnl, 2),
+        'asset_check': asset_check,
         'updated_at': datetime.now().strftime('%H:%M:%S'),
     })
 
@@ -379,35 +357,32 @@ def _collect_watch_rules(watchlist, auto_cfg):
 @app.route('/api/strategy_control')
 def api_strategy_control():
     """策略控制大盘：规则、仓位限制、现金水位、最近命中/执行结果。"""
+    account_id = int(request.args.get('account_id', 1))
     cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
     risk = cfg.get('risk', {}) or {}
     accounts = cfg.get('accounts', {}) or {}
-    learn_cfg = accounts.get('learn', {}) or {}
+    # 根据 account_id 选择对应配置
+    acct_key = 'learn' if account_id == 1 else 'real'
+    acct_cfg = accounts.get(acct_key, {}) or {}
 
-    account = query_db("SELECT * FROM sim_account WHERE id=1")
-    account = account[0] if account else {'cash': 0, 'initial_cash': learn_cfg.get('initial_cash', cfg.get('account', {}).get('initial_cash', 0))}
-    positions = query_db("SELECT stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct FROM sim_positions WHERE account_id=1 AND quantity > 0")
+    account = query_db("SELECT * FROM sim_account WHERE id=?", (account_id,))
+    account = account[0] if account else {'cash': 0, 'initial_cash': acct_cfg.get('initial_cash', cfg.get('account', {}).get('initial_cash', 0))}
+    positions = query_db("SELECT stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct FROM sim_positions WHERE account_id=? AND quantity > 0", (account_id,))
     total_market_value = sum(float(p.get('market_value') or 0) for p in positions)
     cash = float(account.get('cash') or 0)
     total_asset = cash + total_market_value
     today = date.today().isoformat()
     today_new_positions = query_db(
-        "SELECT COUNT(DISTINCT stock_code) AS cnt FROM sim_trades WHERE account_id=1 AND direction='BUY' AND trade_date=?",
-        (today,),
+        "SELECT COUNT(DISTINCT stock_code) AS cnt FROM sim_trades WHERE account_id=? AND direction='BUY' AND trade_date=?",
+        (account_id, today),
     )[0]['cnt']
     today_buy_amount = query_db(
-        "SELECT COALESCE(SUM(amount), 0) AS amt FROM sim_trades WHERE account_id=1 AND direction='BUY' AND trade_date=?",
-        (today,),
+        "SELECT COALESCE(SUM(amount), 0) AS amt FROM sim_trades WHERE account_id=? AND direction='BUY' AND trade_date=?",
+        (account_id, today),
     )[0]['amt']
 
-    holding_rules = []
-    for code, info in (cfg.get('real_portfolio_rules', {}) or {}).items():
-        rules = info.get('rules', {}) if isinstance(info, dict) else {}
-        holding_rules.append({
-            'code': str(code),
-            'name': info.get('name', ''),
-            'sell_rules': [_rule_text(k, v) for k, v in rules.items() if not str(k).startswith('buy')],
-        })
+    holding_rules = []  # 实盘已移除，holding_rules 从 config.yaml watchlist 的 sell 规则提取
+    initial_cash = float(acct_cfg.get('initial_cash', account.get('initial_cash', 100000.0)))
 
     auto_path = ROOT / "config_auto.yaml"
     auto_cfg = yaml.safe_load(auto_path.read_text(encoding='utf-8')) if auto_path.exists() else {}
@@ -415,19 +390,23 @@ def api_strategy_control():
 
     recent_trades = query_db(
         "SELECT trade_date, trade_time, stock_code, stock_name, direction, quantity, price, amount, signal_reason, trade_context, signal_detail, created_at "
-        "FROM sim_trades WHERE account_id=1 ORDER BY created_at DESC LIMIT 12"
+        "FROM sim_trades WHERE account_id=? ORDER BY created_at DESC LIMIT 12",
+        (account_id,),
     )
     recent_orders = query_db(
         "SELECT order_time, order_id, broker_order_id, broker, stock_code, stock_name, direction, quantity, traded, price, status, strategy_name, signal_reason, created_at "
-        "FROM sim_orders WHERE account_id=1 ORDER BY COALESCE(order_time, created_at) DESC LIMIT 12"
+        "FROM sim_orders WHERE account_id=? ORDER BY COALESCE(order_time, created_at) DESC LIMIT 12",
+        (account_id,),
     )
     qmt_orders = query_db(
         "SELECT order_time, order_id, broker_order_id, broker, stock_code, stock_name, direction, quantity, traded, price, status, strategy_name, signal_reason, created_at "
-        "FROM sim_orders WHERE account_id=1 AND broker LIKE 'qmt%' ORDER BY COALESCE(order_time, created_at) DESC LIMIT 20"
+        "FROM sim_orders WHERE account_id=? AND broker LIKE 'qmt%' ORDER BY COALESCE(order_time, created_at) DESC LIMIT 20",
+        (account_id,),
     )
     qmt_fills = query_db(
         "SELECT trade_time, order_id, broker_trade_id, broker, stock_code, stock_name, direction, trade_volume, trade_price, trade_amount, strategy_name, created_at "
-        "FROM sim_fills WHERE account_id=1 AND broker LIKE 'qmt%' ORDER BY COALESCE(trade_time, created_at) DESC LIMIT 20"
+        "FROM sim_fills WHERE account_id=? AND broker LIKE 'qmt%' ORDER BY COALESCE(trade_time, created_at) DESC LIMIT 20",
+        (account_id,),
     )
     for row in recent_trades:
         for key in ('trade_context', 'signal_detail'):
@@ -451,13 +430,13 @@ def api_strategy_control():
             'holding_rules': holding_rules,
         },
         'position_controls': {
-            'auto_trade': bool(learn_cfg.get('auto_trade', False)),
+            'auto_trade': bool(acct_cfg.get('auto_trade', False)),
             'max_position_pct': _pct(risk.get('max_position_pct', 0)),
             'max_total_positions': int(risk.get('max_total_positions', 0) or 0),
             'max_daily_new_positions': int(risk.get('max_daily_new_positions', 0) or 0),
             'max_daily_trades': int(risk.get('max_daily_trades', 0) or 0),
             'max_daily_build_amount_pct': _pct(risk.get('max_daily_build_amount_pct', 0)),
-            'max_total_value': float(learn_cfg.get('max_total_value', 0) or 0),
+            'max_total_value': float(acct_cfg.get('max_total_value', 0) or 0),
             'current_positions': len(positions),
             'today_new_positions': int(today_new_positions or 0),
             'today_buy_amount': round(float(today_buy_amount or 0), 2),
@@ -630,11 +609,12 @@ def api_position_notes(code):
 # ====================================================================
 @app.route('/api/stats')
 def api_stats():
+    account_id = int(request.args.get('account_id', 1))
     # 近7天交易统计
     since_week = (date.today() - timedelta(days=7)).isoformat()
     week_trades = query_db(
-        "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=1 AND trade_date >= ?",
-        (since_week,)
+        "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=? AND trade_date >= ?",
+        (account_id, since_week,)
     )
     week_buy_count = sum(1 for t in week_trades if t['direction'] == 'BUY')
     week_sell_count = sum(1 for t in week_trades if t['direction'] == 'SELL')
@@ -644,8 +624,8 @@ def api_stats():
     # 本月交易统计
     since_month = date.today().replace(day=1).isoformat()
     month_trades = query_db(
-        "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=1 AND trade_date >= ?",
-        (since_month,)
+        "SELECT trade_date, direction, amount FROM sim_trades WHERE account_id=? AND trade_date >= ?",
+        (account_id, since_month,)
     )
     month_buy_count = sum(1 for t in month_trades if t['direction'] == 'BUY')
     month_sell_count = sum(1 for t in month_trades if t['direction'] == 'SELL')
@@ -653,10 +633,10 @@ def api_stats():
     month_sell_amount = sum(t.get('amount', 0) or 0 for t in month_trades if t['direction'] == 'SELL')
     
     # 总交易统计
-    all_trades = query_db("SELECT id, trade_date, direction, price, stock_code FROM sim_trades WHERE account_id=1")
+    all_trades = query_db("SELECT id, trade_date, direction, price, stock_code FROM sim_trades WHERE account_id=?", (account_id,))
     total_trades = len(all_trades)
     
-    closed_data = analyze_closed_trades(1, conn_factory=_sim_conn, limit=20)
+    closed_data = analyze_closed_trades(account_id, conn_factory=_sim_conn, limit=20)
     closed_summary = closed_data['summary']
     max_profit = closed_summary.get('max_profit_trade') or {}
     max_loss = closed_summary.get('max_loss_trade') or {}
@@ -709,40 +689,43 @@ def api_stats():
 # ====================================================================
 @app.route('/api/equity_curve')
 def api_equity_curve():
-    """获取近30天收益率曲线数据"""
-    # 查询近30天的快照数据
+    """获取近30天收益率曲线数据，支持 account_id 参数"""
+    account_id = int(request.args.get('account_id', 1))
     since_date = (date.today() - timedelta(days=30)).isoformat()
     snapshots = query_db(
-        "SELECT snapshot_date, total_asset FROM daily_snapshot WHERE account_type='sim' AND snapshot_date >= ? ORDER BY snapshot_date",
-        (since_date,)
+        "SELECT trade_date, total_value, cumulative_return FROM sim_daily_nav "
+        "WHERE account_id=? AND trade_date >= ? ORDER BY trade_date",
+        (account_id, since_date)
     )
     
     if not snapshots:
-        return jsonify({
-            'dates': [],
-            'returns': [],
-            'benchmark': []
-        })
+        return jsonify({'dates': [], 'total_asset': [], 'benchmark': [], 'returns': []})
     
-    # 计算收益率
-    dates = [s['snapshot_date'] for s in snapshots]
-    initial_asset = snapshots[0]['total_asset']
+    # 获取 initial_cash 用于计算收益率
+    cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
+    acct_key = 'learn' if account_id == 1 else 'real'
+    initial_cash = float(
+        cfg.get('accounts', {}).get(acct_key, {}).get('initial_cash', 100000.0)
+    )
     
-    if initial_asset == 0:
-        returns = [0] * len(snapshots)
-    else:
-        returns = [
-            round((s['total_asset'] - initial_asset) / initial_asset * 100, 2)
-            for s in snapshots
-        ]
+    dates = [s['trade_date'] for s in snapshots]
+    total_assets = [round(float(s['total_value']), 2) for s in snapshots]
     
-    # 基准线（假设为0，即不涨不跌）
+    # 收益率（相对于 initial_cash）
+    returns = [
+        round((float(s['total_value']) - initial_cash) / initial_cash * 100, 2)
+        for s in snapshots
+    ]
+    
+    # 基准线（沪深300 近似：这里用 0 代替，前端可叠加真实基准）
     benchmark = [0] * len(dates)
     
     return jsonify({
         'dates': dates,
+        'total_asset': total_assets,
         'returns': returns,
-        'benchmark': benchmark
+        'benchmark': benchmark,
+        'initial_cash': initial_cash,
     })
 
 

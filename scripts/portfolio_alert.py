@@ -611,9 +611,15 @@ def main():
     if now_time >= dtime(15, 0) and now_time <= dtime(15, 30):
         # 收盘后且在15:30之前，检查采样覆盖率
         try:
-            from scripts.sampling_coverage_check import check_coverage
+            import importlib.util, pathlib as _pl
+            _spec = importlib.util.spec_from_file_location(
+                "sampling_coverage_check",
+                _pl.Path(__file__).resolve().parents[1] / "scripts" / "sampling_coverage_check.py"
+            )
+            _mod = importlib.util.module_from_spec(_spec)
+            _spec.loader.exec_module(_mod)
             from datetime import date
-            coverage_result = check_coverage(date.today())
+            coverage_result = _mod.check_coverage(date.today())
             
             if coverage_result.get('alert'):
                 alert_msg = coverage_result.get('alert_msg', f"⚠️ {date.today()} 采样覆盖不完整")

@@ -3,7 +3,7 @@
 ## 基本信息
 - **需求 ID**: REQ-003
 - **标题**: K线数据质量监控
-- **状态**: pending
+- **状态**: testing
 - **优先级**: P1
 - **创建时间**: 2026-06-09 18:12
 - **创建人**: PM Agent (quant-finance-manager)
@@ -21,7 +21,7 @@
    - 区分"数据缺失"和"停牌/未上市"
 
 2. **自动补全**：
-   - 从行情源（如：新浪财经、东财等）自动补全缺失数据
+   - 从行情源（如：BaoStock、AKShare）自动补全缺失数据
    - 补全失败时记录日志并告警
 
 3. **数据质量日报**：
@@ -43,10 +43,17 @@
 ## 相关数据文件
 - `output/reviews/2026-06-09.md`
 - `data/` 目录下的行情数据库
-- 行情获取脚本（`scripts/` 或 `data/`）
+- `scripts/kline_quality_check.py`（新增）
+- `scripts/daily_review.py`（修改）
 
 ## 优先级理由
 - P1：影响技术面破位监控和止损决策，可能导致止损失效
 
 ## 状态历史
 - 2026-06-09 18:12: 创建需求，状态 `pending`
+- 2026-06-10 13:05: 开始实现，状态 `in_progress`
+- 2026-06-10 13:08: 实现完成，状态 `testing`
+  - 新增 `scripts/kline_quality_check.py`：检测K线数据不足（<20/60根），区分数据缺失/停牌/新股
+  - 生成 `pm/data/YYYY-MM-DD-data.md` 数据质量日报
+  - 修改 `scripts/daily_review.py`：`format_position_technical_breaks()` 在K线不足时显示"已暂停技术面策略"并给出降级策略说明
+  - 支持 `--auto-backfill` 参数自动补全数据

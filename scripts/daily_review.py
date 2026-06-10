@@ -567,18 +567,22 @@ def format_position_technical_breaks(analyses: list[dict], compact: bool = False
     issues = [a for a in analyses if a.get('status') in ('critical', 'warn')]
     unavailable = [a for a in analyses if a.get('status') == 'unavailable']
     if compact:
-        if not issues:
+        if not issues and not unavailable:
             return ''
         shown = issues[:(limit or 3)]
         lines = ['🧭 技术面破位']
+        if unavailable:
+            lines.append(f"⚠️ {len(unavailable)} 只K线数据不足，已暂停技术面策略")
     else:
         shown = issues[:(limit or 20)]
         lines = ['### 🧭 持仓技术面破位', '']
         if not issues:
             if unavailable:
-                lines.append('- ℹ️ 部分持仓K线数据不足，无法判断均线/支撑破位。')
-                for item in unavailable[:3]:
-                    lines.append(f"  - {item.get('message', '')}")
+                lines.append(f"⚠️ **{len(unavailable)} 只持仓K线数据不足**，已暂停以下持仓的技术面破位监控：")
+                for item in unavailable[:5]:
+                    lines.append(f"  - {item.get('message','')}")
+                lines.append('')
+                lines.append('**降级策略**：数据不足期间，暂停均线止损/支撑破位止损，切换为固定止损（-8%）或人工判断。')
             else:
                 lines.append('- ✅ 持仓未见明显均线/支撑破位。')
             return '\n'.join(lines)

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-daily_review.py — 每日复盘（15:10）
+post_market_review.py — 收盘复盘（15:05）
 
-生成完整的每日复盘报告，推送到企微群。
+生成当日收盘复盘报告，推送到企微群。
 
 用法：
     cd C:/Users/Administrator/.openclaw/workspace/quant-learn
-    python scripts/daily_review.py
+    python scripts/post_market_review.py
 """
 
 import sys
@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT))
 import json
 import yaml
 import urllib.request
-from datetime import datetime, date as Date, timedelta
+from datetime import datetime, date as Date
 
 # 现在可以安全导入sim模块
 from sim.db import get_conn
@@ -73,12 +73,9 @@ def push_to_wecom(content: str) -> bool:
         return False
 
 
-def generate_daily_review() -> str:
-    """生成完整的每日复盘报告"""
-    today = Date.today()
-    today_str = today.isoformat()
-    yesterday = today - timedelta(days=1)
-    yesterday_str = yesterday.isoformat()
+def generate_review_report() -> str:
+    """生成收盘复盘报告"""
+    today = Date.today().isoformat()
     now = datetime.now().strftime("%H:%M")
     
     conn = get_conn()
@@ -90,25 +87,13 @@ def generate_daily_review() -> str:
         ).fetchone()
         
         if not acct:
-            return f"⚠️ **每日复盘** {today_str} {now}\n\n账户不存在，请检查数据库。"
+            return f"⚠️ **收盘复盘** {today} {now}\n\n账户不存在，请检查数据库。"
         
         cash = acct["cash"]
         total_value = acct["total_value"]
         initial_cash = acct["initial_cash"] or 20000
         pnl = total_value - initial_cash
         pnl_pct = (pnl / initial_cash * 100) if initial_cash else 0
-        
-        # 读取昨日账户信息（用于计算收益率）
-        # 使用sim_daily_nav表获取昨日总资产
-        yesterday_acct = conn.execute(
-            "SELECT total_value FROM sim_daily_nav "
-            "WHERE account_id = 1 AND trade_date = ?",
-            (yesterday_str,)
-        ).fetchone()
-        
-        daily_return = 0
-        if yesterday_acct:
-            daily_return = (total_value - yesterday_acct["total_value"]) / yesterday_acct["total_value"] * 100
         
         # 读取持仓
         positions = conn.execute("""
@@ -126,39 +111,24 @@ def generate_daily_review() -> str:
             FROM sim_trades
             WHERE account_id = 1 AND trade_date = ?
             ORDER BY created_at ASC
-        """, (today_str,)).fetchall()
-        
-        # 读取今日警报（如果sim_alerts表存在）
-        try:
-            alerts = conn.execute("""
-                SELECT message, created_at
-                FROM sim_alerts
-                WHERE date(created_at) = ?
-                ORDER BY created_at DESC
-            """, (today_str,)).fetchall()
-        except:
-            alerts = []  # 表不存在时，使用空列表
+        """, (today,)).fetchall()
         
         # 构建报告
         lines = []
-        lines.append(f"## 📋 每日复盘 {today_str} {now}")
+        lines.append(f"## 📊 收盘复盘 {today} {now}")
         lines.append("")
         
-        # 账户表现
-        lines.append("### 📊 账户表现")
+        # 账户概况
+        lines.append("### 💰 账户概况")
         lines.append(f"- 总资产: ¥{total_value:,.2f}")
         lines.append(f"- 现金: ¥{cash:,.2f}")
         lines.append(f"- 初始资金: ¥{initial_cash:,.2f}")
-        lines.append(f"- 总盈亏: ¥{pnl:,.2f} ({pnl_pct:+.2f}%)")
-        
-        return_sign = "📈" if daily_return >= 0 else "📉"
-        lines.append(f"- 今日收益率: {return_sign} {daily_return:+.2f}%")
+        lines.append(f"- 盈亏: ¥{pnl:,.2f} ({pnl_pct:+.2f}%)")
         lines.append("")
         
-        # 持仓分析
+        # 持仓情况
         if positions:
-            lines.append("### 📈 持仓分析")
-            total_pos_pnl = 0
+            lines.append("### 📈 持仓情况")
             for pos in positions:
                 code = pos["stock_code"]
                 name = pos["stock_name"]
@@ -168,73 +138,46 @@ def generate_daily_review() -> str:
                 mkt_val = pos["market_value"]
                 pos_pnl = pos["pnl"]
                 pos_pnl_pct = pos["pnl_pct"]
-                total_pos_pnl += pos_pnl
                 
                 emoji = "🟢" if pos_pnl >= 0 else "🔴"
                 lines.append(f"{emoji} **{name}** ({code})")
                 lines.append(f"   - 持仓: {qty}股 @ ¥{cost:.2f}")
                 lines.append(f"   - 现价: ¥{price:.2f} | 市值: ¥{mkt_val:,.2f}")
                 lines.append(f"   - 盈亏: ¥{pos_pnl:,.2f} ({pos_pnl_pct:+.2f}%)")
-                
-                # 止损止盈检查
-                stop_loss = cost * 0.92  # 8%止损
-                take_profit = cost * 1.15  # 15%止盈
-                
-                if price <= stop_loss:
-                    lines.append(f"   - ⚠️ 触发止损线 ¥{stop_loss:.2f}")
-                elif price >= take_profit:
-                    lines.append(f"   - 🎯 触发止盈线 ¥{take_profit:.2f}")
                 lines.append("")
-            
-            lines.append(f"**持仓总盈亏**: ¥{total_pos_pnl:,.2f}")
-            lines.append("")
         else:
-            lines.append("### 📈 持仓分析")
+            lines.append("### 📈 持仓情况")
             lines.append("（无持仓）")
             lines.append("")
         
-        # 交易总结
+        # 今日交易
         if trades:
-            lines.append("### 🔄 交易总结")
+            lines.append("### 🔄 今日交易")
             buy_trades = [t for t in trades if t["direction"] == "BUY"]
             sell_trades = [t for t in trades if t["direction"] == "SELL"]
             
             if buy_trades:
-                total_buy = sum(t["amount"] for t in buy_trades)
-                lines.append(f"**买入**: {len(buy_trades)}笔，合计 ¥{total_buy:,.2f}")
+                lines.append("**买入**:")
                 for t in buy_trades:
                     lines.append(f"   - {t['stock_name']} ({t['stock_code']}) @ ¥{t['price']:.2f} × {t['quantity']}股")
+                    lines.append(f"     原因: {t['signal_reason']}")
             
             if sell_trades:
-                total_sell = sum(t["amount"] for t in sell_trades)
-                total_sell_pnl = 0  # 简化：假设交易记录中有pnl字段
-                lines.append(f"**卖出**: {len(sell_trades)}笔，合计 ¥{total_sell:,.2f}")
+                lines.append("**卖出**:")
                 for t in sell_trades:
                     lines.append(f"   - {t['stock_name']} ({t['stock_code']}) @ ¥{t['price']:.2f} × {t['quantity']}股")
+                    lines.append(f"     原因: {t['signal_reason']}")
             
             lines.append("")
         else:
-            lines.append("### 🔄 交易总结")
+            lines.append("### 🔄 今日交易")
             lines.append("（无交易）")
             lines.append("")
         
-        # 风险提示
-        lines.append("### ⚠️ 风险提示")
-        if alerts:
-            lines.append(f"今日触发 {len(alerts)} 个警报:")
-            for alert in alerts[:5]:  # 只显示前5个
-                lines.append(f"   - {alert['message']}")
-            if len(alerts) > 5:
-                lines.append(f"   - ... 还有 {len(alerts)-5} 个警报")
-        else:
-            lines.append("今日无风险警报")
-        lines.append("")
-        
-        # 明日关注
-        lines.append("### 🔮 明日关注")
-        lines.append("- 检查持仓止损止盈情况")
-        lines.append("- 关注市场整体走势")
-        lines.append("- 准备盘中盯盘策略")
+        # 提醒
+        lines.append("### ⏰ 提醒")
+        lines.append("- 15:30 将生成完整复盘报告")
+        lines.append("- 请检查持仓止损止盈情况")
         
         return "\n".join(lines)
         
@@ -244,7 +187,7 @@ def generate_daily_review() -> str:
 
 def main():
     """主函数"""
-    report = generate_daily_review()
+    report = generate_review_report()
     print(report)
     
     # 推送到企微

@@ -38,14 +38,47 @@
 4. ✅ 复盘报告在 15:05 后生成
 5. ✅ `portfolio_alert_runner.bat` 或 cron 配置正确
 
-## 相关数据文件
-- `output/reviews/2026-06-09.md`
-- `output/portfolio_alert.log`
-- `portfolio_alert.py`
-- Cron 配置（`QuantLearn_PortfolioAlert`）
+## 实现记录
 
-## 优先级理由
-- P1：影响盘中风险监控，可能错过止损时机
+### 1. Windows任务计划程序配置
+- 任务名称：`QuantLearn_PortfolioAlert`
+- 开始时间：09:30
+- 重复间隔：每10分钟
+- 持续时间：6小时（到15:30）
+- 运行权限：最高权限
+
+### 2. 采样覆盖监控
+- 创建 `scripts/check_sampling_coverage.py`
+- 检查上午盘和下午盘采样覆盖率
+- 覆盖率 < 80% 时输出告警
+
+### 3. 集成到 portfolio_alert.py
+- 在收盘后（15:00-15:30）自动检查覆盖率
+- 覆盖率不足时通过 webhook 推送告警到企微群
+
+### 4. 验证复盘报告调度
+- `QuantLearn_DailyReview` 任务在 15:30 运行
+- 满足"复盘报告在 15:05 后生成"的需求
+
+## 测试验证
+```bash
+# 检查任务配置
+schtasks /Query /TN "QuantLearn_PortfolioAlert" /FO LIST
+
+# 手动运行采样覆盖检查（检查2026-06-09）
+python scripts/check_sampling_coverage.py 2026-06-09
+
+# 输出示例：
+# 📊 2026-06-09 采样覆盖报告
+# 总采样数: 12
+# 上午盘 (09:30-11:30): 0 个采样 (0.0%)
+# 下午盘 (13:00-15:00): 12 个采样 (100.0%)
+# 总覆盖率: 50.0%
+# ⚠️ 2026-06-09 上午盘采样覆盖不足
+```
 
 ## 状态历史
 - 2026-06-09 18:11: 创建需求，状态 `pending`
+- 2026-06-10 11:02: 开始实现，状态 `in_progress`
+- 2026-06-10 11:30: 实现完成，状态 `testing`
+- 2026-06-10 11:02: 开始实现，状态 `in_progress`

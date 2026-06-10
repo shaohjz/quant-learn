@@ -606,6 +606,31 @@ def main():
     
     logger.info(f"检查完成: 检查了 {checked_count} 个阈值, 跳过已推送 {skipped_already} 个, 本次触发 {len(triggered_msgs)} 个")
 
+    # REQ-002: 采样覆盖监控 - 收盘后检查当日覆盖率
+    now_time = now.time()
+    if now_time >= dtime(15, 0) and now_time <= dtime(15, 30):
+        # 收盘后且在15:30之前，检查采样覆盖率
+        try:
+            from scripts.sampling_coverage_check import check_coverage
+            from datetime import date
+            coverage_result = check_coverage(date.today())
+            
+            if coverage_result.get('alert'):
+                alert_msg = coverage_result.get('alert_msg', f"⚠️ {date.today()} 采样覆盖不完整")
+                logger.warning(f"采样覆盖率告警: {alert_msg}")
+                
+                # 通过 webhook 推送告警
+                if WEBHOOK_URL:
+                    push_webhook(alert_msg)
+                    logger.info("已推送采样覆盖率告警到企微群")
+                
+                # 也打印到 stdout
+                print(alert_msg)
+            else:
+                logger.info(f"采样覆盖率正常: {coverage_result.get('total_coverage', 'N/A')}")
+        except Exception as cov_ex:
+            logger.warning(f"采样覆盖率检查异常: {cov_ex}")
+
     # 输出（stdout 供调试/cron 可读，企微推送走 webhook）
     if triggered_msgs:
         # 拼接完整消息

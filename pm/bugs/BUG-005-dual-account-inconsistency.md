@@ -47,5 +47,22 @@
 3. ✅ 复盘报告中说明差异原因
 4. ✅ 提供实盘跟单配置指引（如需要）
 
+## 修复记录（2026-06-10）
+
+### 验收标准核对
+1. ✅ 明确双账户执行逻辑并文档化 — `_diagnose_execution_gap()` 已实现，逻辑清晰
+2. ✅ 检测双账户不一致并告警 — `render_execution_consistency_section()` 在完整版和企微摘要中均输出差异、原因和建议
+3. ✅ 复盘报告中说明差异原因 — 每日复盘报告"🧭 双账户执行一致性诊断"章节详细列出
+4. ✅ 提供实盘跟单配置指引 — 新建 `docs/real-trading-setup.md`，包含逐步配置指引、风控建议、FAQ
+
+### 修改文件
+- `scripts/daily_review.py`：`render_execution_consistency_section()` compact 模式附加操作提示
+- `docs/real-trading-setup.md`：新增，实盘跟单配置指引
+
+---
+
 ## 状态历史
-- 2026-06-09 18:09: 创建 Bug，状态 `open`
+| 时间 | 状态 | 说明 |
+|------|------|------|
+| 2026-06-09 18:09 | open | Bug 创建 |
+| 2026-06-10 14:02 | fixed | 双账户诊断已实现，新增配置指引文档 |

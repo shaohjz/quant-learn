@@ -753,6 +753,9 @@ def render_execution_consistency_section(target_date: date, compact: bool = Fals
     if compact:
         lines.append('**结论/归因：** ' + '；'.join(diag['causes'][:2]))
         lines.append('**建议：** ' + '；'.join(diag['suggestions'][:2]))
+        # 附加快速操作提示（企微摘要专用）
+        if diag.get('real_auto_trade') is False and diag.get('broker_mode') == 'sim':
+            lines.append('> 💡 如需开启真实账户自动跟单，详见 `docs/real-trading-setup.md`')
         return '\n'.join(lines)
 
     lines.append('### 差异')

@@ -3,7 +3,7 @@
 ## 基本信息
 - **需求 ID**: REQ-002
 - **标题**: 完善盘中采样覆盖
-- **状态**: done
+- **状态**: deployed
 - **优先级**: P1
 - **创建时间**: 2026-06-09 18:11
 - **创建人**: PM Agent (quant-finance-manager)
@@ -111,3 +111,4 @@ python scripts/sampling_coverage_check.py 2026-06-10
 - 2026-06-10 14:42: dev-manager 开始实现，状态 `in_progress`
 - 2026-06-10 14:45: 实现完成，状态 `testing`
 - 2026-06-10 18:30: QA 验收通过，状态 `done`
+- 2026-06-10 18:15: 部署上线，状态 `deployed`

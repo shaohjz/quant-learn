@@ -3,7 +3,7 @@
 ## 基本信息
 - **需求 ID**: REQ-003
 - **标题**: K线数据质量监控
-- **状态**: done
+- **状态**: deployed
 - **优先级**: P1
 - **创建时间**: 2026-06-09 18:12
 - **创建人**: PM Agent (quant-finance-manager)
@@ -54,6 +54,7 @@
 - 2026-06-10 13:05: 开始实现，状态 `in_progress`
 - 2026-06-10 13:08: 实现完成，状态 `testing`
 - 2026-06-10 18:30: QA 验收通过，状态 `done`
+- 2026-06-10 18:15: 部署上线，状态 `deployed`
   - 新增 `scripts/kline_quality_check.py`：检测K线数据不足（<20/60根），区分数据缺失/停牌/新股
   - 生成 `pm/data/YYYY-MM-DD-data.md` 数据质量日报
   - 修改 `scripts/daily_review.py`：`format_position_technical_breaks()` 在K线不足时显示"已暂停技术面策略"并给出降级策略说明

@@ -3,7 +3,7 @@
 **Bug ID**: DATA-20260609-001  
 **创建时间**: 2026-06-09 19:40  
 **优先级**: 🔴 高（数据滞后 18 天，影响策略信号）  
-**状态**: Verified  
+**状态**: deployed
 **报告人**: 数据 Agent (data-agent)
 
 ---
@@ -107,7 +107,7 @@ python scripts/backfill_data.py
 |------|------|------|
 | 2026-06-09 19:40 | open | Bug 创建 |
 | 2026-06-10 06:10 | fixed | BaoStock 主力 + AKShare 备选，重试机制，全量补录成功 |
-| 2026-06-10 18:30 | verified | QA 验收通过 |
+| 2026-06-11 18:42 | deployed | 部署到 production |
 
 ---
 

@@ -1,0 +1,1 @@
+[{"code": "000001", "name": "TestLoss", "qty": 100, "cost": 10.0, "current": 8.0, "market_value": 800.0, "pnl": -200.0, "pnl_pct": -0.2, "rules": [{"level": "stop_loss", "trigger": 9.0, "dir": "below", "msg": "Test Stop Loss"}]}]

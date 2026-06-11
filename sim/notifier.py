@@ -25,7 +25,18 @@ _WEBHOOK_TIMEOUT = 6  # 秒
 
 
 def _wecom_webhook_url() -> Optional[str]:
-    return os.environ.get("WECOM_WEBHOOK") or cfg_get("notifier.wecom_webhook")
+    """Return the single canonical WeCom webhook URL.
+
+    Priority:
+      1. WECOM_WEBHOOK env var for emergency override
+      2. config.local.yaml/config.yaml: notifier.wecom_webhook (canonical)
+      3. legacy alias: notify.wecom_webhook
+    """
+    return (
+        os.environ.get("WECOM_WEBHOOK")
+        or cfg_get("notifier.wecom_webhook")
+        or cfg_get("notify.wecom_webhook")
+    )
 
 
 def _enabled() -> bool:

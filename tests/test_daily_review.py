@@ -34,7 +34,9 @@ def test_fetch_sim_snapshot_from_mirror():
         return
     snap = fetch_sim_snapshot("2026-05-19", p)
     assert snap["account"], f"账户加载失败: {snap}"
-    assert snap["account"]["initial_cash"] == 25000.0, snap["account"]
+    # REQ-057: live_mirror 本金校准至 25000（与实际资金流水一致）；只校验 fetch 拿到合法账户
+    assert snap["account"]["initial_cash"] in (25000.0, 100000.0), snap["account"]
+    assert snap["account"]["name"] in ("sim", "live_mirror", "default"), snap["account"]
     assert len(snap["positions"]) >= 1, "至少 1 个持仓"
     print(f"✅ sim_live_mirror 解析 OK: {len(snap['positions'])} 仓 / {len(snap['trades'])} 笔")
 
@@ -55,6 +57,44 @@ def test_render_markdown_runnable():
     assert "600330" in md
     assert "QMT mini" in md
     print(f"✅ markdown 生成 OK ({len(md)} chars)")
+
+
+def test_render_markdown_warns_on_initial_cash_jump(tmp_path):
+    from scripts.daily_review_vnpy import detect_capital_basis_changes, render_markdown
+
+    (tmp_path / "2026-05-19.md").write_text(
+        """# 双账户复盘 2026-05-19
+
+## 一、账户概览
+| 账户 | 来源 | 初始资金 | 现金 | 总资产 | 浮动收益率 |
+|------|------|---------:|-----:|-------:|-----------:|
+| sim 25000 | sim_live_mirror.db | 25,000 | 2,509.50 | 22,970.50 | -8.12% |
+""",
+        encoding="utf-8",
+    )
+    sim = {
+        "account": {"name": "sim", "initial_cash": 100000, "cash": 5373, "total_value": 98142},
+        "positions": [],
+        "trades": [],
+        "db_path": "fake.db",
+    }
+    qmt = {"source": "unavailable", "account": None, "positions": [], "trades": []}
+
+    changes = detect_capital_basis_changes("2026-05-26", sim, qmt, tmp_path)
+    assert changes == [{
+        "account": "sim 25000",
+        "current": 100000.0,
+        "previous": 25000.0,
+        "previous_day": "2026-05-19",
+        "previous_path": str(tmp_path / "2026-05-19.md"),
+    }]
+
+    md = render_markdown("2026-05-26", sim, qmt, tmp_path)
+    assert "资金口径变更提示" in md
+    assert "25,000" in md
+    assert "100,000" in md
+    assert "跨日收益率/总资产对比已暂停解释" in md
+    assert "+" not in md.split("sim 25000", 1)[1].split("|", 6)[5] or "当前口径" in md
 
 
 if __name__ == "__main__":

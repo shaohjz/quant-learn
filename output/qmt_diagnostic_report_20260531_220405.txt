@@ -1,0 +1,30 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 QMT 诊断报告
+⏰ 2026-05-31T22:04:05.314813
+🏦 账户：90072426
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ qmt_connection: failed
+   - ⚠️ QMT 客户端未运行，请先启动 QMT 并登录
+❌ order_submission: error
+❌ signals_consistency: failed
+   - ⚠️ 未找到信号文件，请先运行策略生成信号
+❌ live_mirror_config: failed
+   - ⚠️ live_mirror 未启用或配置不完整
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔬 根因分析：
+   - QMT 连接异常（客户端未启动/xtquant 未安装/配置缺失）
+   - 订单未提交或未成交（可能 dry_run=True 或 QMT 接口异常）
+   - sim/live 信号不一致（可能配置或策略逻辑差异）
+   - live_mirror 配置异常（未启用 broker 或 broker ≠ qmt）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 建议：
+   1. 确认 QMT 客户端已启动并登录成功
+   2. 检查 config.yaml 中 live_mirror.broker = qmt
+   3. 检查 gateways/qmt_config.json 配置是否正确
+   4. 确认 dry_run = False 以实际下单
+   5. 检查 QMT 客户端日志（userdata_mini/logs/）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

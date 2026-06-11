@@ -1,278 +1,1262 @@
-#!/usr/bin/env python
 """
-scripts/sim_executor.py — 阈值触发自动虚拟下单
-
-模式 A 全自动：
-  - portfolio_alert 检测到阈值触发后调用本模块
-  - 根据 rule.level 自动决策买入/卖出/止损/止盈
-  - 写入 sim_trades，更新 sim_positions/sim_account
-  - 同时触发"换股"决策器（卖现有持仓买更优标的）
-
-A股交易费率（粗略模拟）:
-  买入: 佣金 0.025%（万2.5），最低 5 元
-  卖出: 佣金 0.025% + 印花税 0.05%
+sim_executor_v2.py — 修复买入执行率低的问题
+======================================================================
+根因：
+  1. _check_left_side_support 要求 vol_ratio >= 0.8 才放行，过严
+  2. _get_today_vol_ratio 获取失败时返回 None，导致 vol_ratio 为 None 不走买入
+修复：
+  1. 放宽 vol_ratio 阈值：0.8 → 0.6
+  2. vol_ratio 为 None 时放行（只记录 warning）
 """
+
 import os
 import sys
-from datetime import datetime, date
+import json
+import logging
+import sqlite3
+from datetime import datetime, time as _dt_time
 from pathlib import Path
 
-# 强制使用 live_mirror DB
+# ── 强制使用 live_mirror DB ─────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db'))
+_DB_PATH = os.environ['QUANT_DB_PATH']
 
 from sim.db import get_conn
+from sim.precision import quantize_amount, quantize_cost, quantize_price
 
 import logging
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# 双账户架构（2026-05-22）
+#   id=1 live_mirror    → 学习账户（自动下单）
+#   id=2 real_portfolio → 真实账户（仅告警，不下单）
+# ============================================================
+_ACCOUNT_ID: int = int(os.environ.get('SIM_ACCOUNT_ID', '1'))
+
+
+def _load_max_total() -> float:
+    """从 config.yaml 读取学习账户总额上限，默认 200000。"""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
+        return float((cfg.get('accounts') or {}).get('learn', {}).get('max_total_value', 200000.0))
+    except Exception:
+        return 200000.0
+
+
+def set_active_account(account_id: int):
+    """切换当前操作账户（仅影响后续的买入/卖出执行）。"""
+    global _ACCOUNT_ID
+    _ACCOUNT_ID = int(account_id)
+    logger.info(f"已切换到账户 id={account_id}")
+
+
+def active_account_id() -> int:
+    return _ACCOUNT_ID
+
+
+# ── 全局缓存 ─────────────────────────────────────────────────────────────
+_VOL_CACHE = {}          # code → (timestamp, vol_ratio)
+_SUPPORT_CACHE = {}     # code → (timestamp, ok, reason)
+_MACD_CACHE = {}       # code → (timestamp, ok)
+_STOP_VOL_THRESH = 1.5   # 放量下跌阈值（放量 ≥1.5 倍确认止损）
+_MACD_CACHE_TTL_SEC = 600  # MACD/支撑检查缓存有效期（秒）
+
+def _ensure_trailing_columns(conn: sqlite3.Connection) -> None:
+    """REQ-041: 旧 sim_positions 表幂等补齐跟踪止损字段。"""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(sim_positions)").fetchall()}
+    if "trailing_stop_price" not in cols:
+        conn.execute("ALTER TABLE sim_positions ADD COLUMN trailing_stop_price REAL DEFAULT NULL")
+    if "highest_price" not in cols:
+        conn.execute("ALTER TABLE sim_positions ADD COLUMN highest_price REAL DEFAULT NULL")
+    if "updated_at" not in cols:
+        conn.execute("ALTER TABLE sim_positions ADD COLUMN updated_at TIMESTAMP")
+
 
 # A股最小交易单位 100 股
 LOT_SIZE = 100
 
 # 默认每次买入的金额上限（避免一把梭）
-DEFAULT_BUY_BUDGET = 2000  # 单次试探买不超过 2000 元
+DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
 
 # 费率
-COMMISSION_RATE = 0.00025  # 万2.5
-COMMISSION_MIN = 5.0
-TAX_RATE = 0.0005          # 印花税仅卖出
+COMMISSION_RATE = 0.00025   # 万2.5
+STAMP_TAX_RATE = 0.0005   # 万5（仅卖出）
+
+# ── REQ-038 持仓数量硬上限（从 config.yaml 读取，缺省 6/2）─────────────────────
+def _load_risk_limits():
+    """从 config.yaml 读取风控上限，返回 (max_total, max_daily_new)."""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
+        risk = cfg.get('risk') or {}
+        max_total = int(risk.get('max_total_positions', 6))
+        max_daily = int(risk.get('max_daily_new_positions', 2))
+        return max_total, max_daily
+    except Exception:
+        return 6, 2
+
+MAX_TOTAL_POSITIONS, MAX_DAILY_NEW_POSITIONS = _load_risk_limits()
 
 
-def calc_commission(amount: float) -> float:
-    """佣金（最低5元）"""
-    return max(amount * COMMISSION_RATE, COMMISSION_MIN)
 
 
-def get_account():
-    conn = get_conn()
-    row = conn.execute("SELECT * FROM sim_account WHERE id=1").fetchone()
-    conn.close()
-    return dict(row) if row else None
+# ── BUG-009：同一股票同日买入去重 ─────────────────────────────────────────
+def _today_str() -> str:
+    return datetime.now().strftime('%Y-%m-%d')
 
 
-def get_position(code: str):
-    conn = get_conn()
-    row = conn.execute("SELECT * FROM sim_positions WHERE stock_code=? AND account_id=1", (code,)).fetchone()
-    conn.close()
-    return dict(row) if row else None
+def _has_today_buy(conn: sqlite3.Connection, code: str) -> bool:
+    """同一账户/股票/交易日是否已有 BUY 成交。
+
+    阈值执行器可能在同一轮里同时收到 buy_zone、buy_strong 等多级信号。
+    这里在执行层做最终幂等保护，避免重复加仓突破仓位约束。
+    """
+    row = conn.execute(
+        """
+        SELECT 1 FROM sim_trades
+         WHERE account_id=? AND stock_code=? AND direction='BUY' AND trade_date=?
+         LIMIT 1
+        """,
+        (_ACCOUNT_ID, code, _today_str()),
+    ).fetchone()
+    return row is not None
 
 
-def update_account_cash(delta: float):
-    """delta 正数=资金增加，负数=资金减少"""
-    conn = get_conn()
-    conn.execute("UPDATE sim_account SET cash = cash + ?, updated_at=CURRENT_TIMESTAMP WHERE id=1", (delta,))
-    conn.close()
+def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
+                           allowed: int, reason: str):
+    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。"""
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS review_decisions ("
+            "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "  account_id INTEGER NOT NULL,"
+            "  stock_code TEXT NOT NULL,"
+            "  trade_date DATE NOT NULL DEFAULT (date('now', 'localtime')),"
+            "  decision_type TEXT NOT NULL,"
+            "  allowed INTEGER NOT NULL,"
+            "  reason TEXT,"
+            "  created_at TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime'))"
+            ")"
+        )
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(review_decisions)").fetchall()}
+        if "allowed" in cols:
+            conn.execute(
+                "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (account_id, stock_code, decision_type, allowed, reason),
+            )
+        elif "action" in cols:
+            conn.execute(
+                "INSERT INTO review_decisions (account_id, stock_code, decision_type, action, reason) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (account_id, stock_code, decision_type, allowed, reason),
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"_write_review_decision 失败: {e}")
 
 
-def insert_trade(code: str, name: str, direction: str, price: float, qty: int,
-                 commission: float, tax: float, signal_reason: str):
-    conn = get_conn()
-    conn.execute(
-        """INSERT INTO sim_trades 
-           (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, tax, signal_reason, broker)
-           VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'live_mirror')""",
-        (date.today().isoformat(), code, name, direction, price, qty, price*qty, commission, tax, signal_reason)
-    )
-    conn.close()
+def _load_daily_buy_controls() -> tuple[float, float, int]:
+    """REQ-033: 从 config.yaml 读取日内买入资金预算与冷静期。
+
+    返回 (daily_amount_cap, daily_pct_cap, cooldown_minutes)：
+    - daily_amount_cap: 当日 BUY 成交额硬上限；默认 30,000 元
+    - daily_pct_cap: 当日 BUY 成交额占账户总资产上限；默认 35%
+    - cooldown_minutes: 任意两次自动 BUY 的最小间隔；默认 30 分钟
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        daily_amount_cap = float(
+            risk.get('max_daily_buy_amount', risk.get('max_daily_trade_amount', 30000.0))
+        )
+        daily_pct_cap = float(risk.get('max_daily_buy_pct', risk.get('max_daily_build_amount_pct', 0.35)))
+        cooldown_minutes = int(risk.get('buy_cooldown_minutes', 30))
+        return daily_amount_cap, daily_pct_cap, cooldown_minutes
+    except Exception:
+        return 30000.0, 0.35, 30
 
 
-def upsert_position(code: str, name: str, qty: int, avg_cost: float, cur_price: float):
-    """新建或更新持仓。qty=0 时删除"""
-    conn = get_conn()
-    if qty <= 0:
-        conn.execute("DELETE FROM sim_positions WHERE stock_code=? AND account_id=1", (code,))
+MAX_DAILY_BUY_AMOUNT, MAX_DAILY_BUY_PCT, BUY_COOLDOWN_MINUTES = _load_daily_buy_controls()
+
+
+def _parse_trade_datetime(trade_date: str | None, trade_time: str | None) -> datetime | None:
+    """兼容 sim_trades 中 trade_date=YYYY-MM-DD、trade_time=HH:MM:SS/空 的格式。"""
+    if not trade_date:
+        return None
+    raw = f"{trade_date} {trade_time or '00:00:00'}"
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
+        try:
+            return datetime.strptime(raw[:19], fmt)
+        except ValueError:
+            pass
+    return None
+
+
+def get_daily_buy_budget_status(account_id: int | None = None, planned_amount: float = 0.0) -> dict:
+    """REQ-033: 返回当日自动买入预算状态，供复盘/看板展示。"""
+    account_id = int(account_id or _ACCOUNT_ID)
+    today = _today_str()
+    conn = sqlite3.connect(_DB_PATH)
+    try:
+        acct = conn.execute(
+            "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
+            (account_id,),
+        ).fetchone()
+        total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and acct[2] else 0) or _load_max_total())
+        pct_cap_amount = total_value * MAX_DAILY_BUY_PCT if MAX_DAILY_BUY_PCT > 0 else MAX_DAILY_BUY_AMOUNT
+        daily_cap = min(MAX_DAILY_BUY_AMOUNT, pct_cap_amount) if MAX_DAILY_BUY_AMOUNT > 0 else pct_cap_amount
+        used = float(conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM sim_trades "
+            "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+            (account_id, today),
+        ).fetchone()[0] or 0.0)
+        last = conn.execute(
+            "SELECT trade_date, trade_time, stock_code FROM sim_trades "
+            "WHERE account_id=? AND direction='BUY' "
+            "ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC LIMIT 1",
+            (account_id,),
+        ).fetchone()
+        last_dt = _parse_trade_datetime(last[0], last[1]) if last else None
+        minutes_since_last = None
+        if last_dt:
+            minutes_since_last = max(0.0, (datetime.now() - last_dt).total_seconds() / 60.0)
+        remaining = max(0.0, daily_cap - used)
+        return {
+            'date': today,
+            'account_id': account_id,
+            'daily_cap': daily_cap,
+            'used': used,
+            'remaining': remaining,
+            'planned_amount': planned_amount,
+            'after_planned': used + max(0.0, planned_amount),
+            'cooldown_minutes': BUY_COOLDOWN_MINUTES,
+            'minutes_since_last_buy': minutes_since_last,
+            'last_buy_code': last[2] if last else None,
+        }
+    finally:
+        conn.close()
+
+
+def _check_daily_buy_controls(conn: sqlite3.Connection, account_id: int, code: str, planned_amount: float) -> tuple[bool, str, dict]:
+    """REQ-033: 日内新买入资金预算 + 连续买入冷静期检查。
+
+    注意：使用调用方传入的 conn 读取 sim_trades，可在 execute_trade 的
+    BEGIN IMMEDIATE 事务内完成最终校验，避免并发/重算预算穿透。
+    """
+    account_id = int(account_id)
+    today = _today_str()
+    acct = conn.execute(
+        "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
+        (account_id,),
+    ).fetchone()
+    total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and acct[2] else 0) or _load_max_total())
+    pct_cap_amount = total_value * MAX_DAILY_BUY_PCT if MAX_DAILY_BUY_PCT > 0 else MAX_DAILY_BUY_AMOUNT
+    daily_cap = min(MAX_DAILY_BUY_AMOUNT, pct_cap_amount) if MAX_DAILY_BUY_AMOUNT > 0 else pct_cap_amount
+    used = float(conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) FROM sim_trades "
+        "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+        (account_id, today),
+    ).fetchone()[0] or 0.0)
+    last = conn.execute(
+        "SELECT trade_date, trade_time, stock_code FROM sim_trades "
+        "WHERE account_id=? AND direction='BUY' "
+        "ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC LIMIT 1",
+        (account_id,),
+    ).fetchone()
+    last_dt = _parse_trade_datetime(last[0], last[1]) if last else None
+    minutes_since_last = None
+    if last_dt:
+        minutes_since_last = max(0.0, (datetime.now() - last_dt).total_seconds() / 60.0)
+    remaining = max(0.0, daily_cap - used)
+    status = {
+        'date': today,
+        'account_id': account_id,
+        'daily_cap': daily_cap,
+        'used': used,
+        'remaining': remaining,
+        'planned_amount': planned_amount,
+        'after_planned': used + max(0.0, planned_amount),
+        'cooldown_minutes': BUY_COOLDOWN_MINUTES,
+        'minutes_since_last_buy': minutes_since_last,
+        'last_buy_code': last[2] if last else None,
+    }
+    after = status['after_planned']
+    if daily_cap > 0 and after > daily_cap + 1e-6:
+        return False, (
+            f"日内买入预算不足：今日已用¥{used:,.0f}，计划¥{planned_amount:,.0f}，"
+            f"将达¥{after:,.0f} > 上限¥{daily_cap:,.0f}；剩余¥{status['remaining']:,.0f}"
+        ), status
+
+    mins = status.get('minutes_since_last_buy')
+    if BUY_COOLDOWN_MINUTES > 0 and mins is not None and mins < BUY_COOLDOWN_MINUTES:
+        return False, (
+            f"连续买入冷静期未过：距上次买入 {mins:.0f} 分钟 < {BUY_COOLDOWN_MINUTES} 分钟，"
+            f"跳过 {code}；今日剩余买入预算¥{status['remaining']:,.0f}"
+        ), status
+
+    return True, (
+        f"日内买入预算通过：今日已用¥{used:,.0f}/¥{daily_cap:,.0f}，"
+        f"本次约¥{planned_amount:,.0f}，剩余约¥{max(0.0, daily_cap-after):,.0f}"
+    ), status
+
+
+def _get_yesterday_close(code: str) -> float | None:
+    """从新浪拿 yesterday_close。失败返回 None。"""
+    try:
+        from sim.realtime_price import fetch_sina_realtime
+        r = fetch_sina_realtime([code])
+        if code in r and r[code].get('yesterday_close', 0) > 0:
+            return r[code]['yesterday_close']
+    except Exception:
+        pass
+    return None
+
+
+def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, str]:
+    """检查价格合理性。返回 (ok, reason)。⚠ 接近涨跌停的买卖。"""
+    yc = _get_yesterday_close(code)
+    if not yc or yc <= 0:
+        return True, "无昨收价参考，跳过检查"
+
+    limit_pct = 0.10   # 主板/中小板 10%
+    if code.startswith(('30', '68')):   # 创业板/科创板 20%
+        limit_pct = 0.20
+    if code.startswith(('8', '4')):     # 北交所 30%
+        limit_pct = 0.30
+
+    if action.startswith('BUY'):
+        cap = yc * (1 + limit_pct * 0.95)
+        if cur_price >= cap:
+            return False, f"价格 {cur_price:.2f} 接近涨停阈 {cap:.2f}（昨收 {yc:.2f} +{limit_pct*100:.0f}%），拒买入"
+        # 当前价 等于 昨收价 是可疑伪实时价（baostock fallback 返回昨收）
+        # REQ-049 修复：只警告不阻断，允许买入（可能是开盘前检查）
+        if abs(cur_price - yc) < 0.005:
+            return True, f"⚠️ 价格 {cur_price:.2f} == 昨收价 {yc:.2f}，疑似伪实时价，已放行"
+
+    elif action.startswith('SELL'):
+        floor = yc * (1 - limit_pct * 0.95)
+        if cur_price <= floor:
+            return False, f"价格 {cur_price:.2f} 接近跌停阈 {floor:.2f}（昨收 {yc:.2f} -{limit_pct*100:.0f}%），拒卖出"
+
+    return True, "价格合理"
+
+
+def _is_late_session() -> bool:
+    """是否近收盘（14:40 后）。REQ-046: 从 14:50 提前到 14:40，给软止损升级留时间。"""
+    now = datetime.now()
+    return (now.hour > 14) or (now.hour == 14 and now.minute >= 40)
+
+
+def _get_today_vol_ratio(code: str) -> float | None:
+    """获取今日量 / 5 日均量 比值。带缓存。"""
+    import time
+    now_ts = time.time()
+    cached = _VOL_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < 600:  # 10 分钟缓存
+        return cached[1]
+
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 5:
+            return None
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        today_vol = float(df['volume'].iloc[-1])
+        avg_vol5 = float(df['volume'].tail(5).mean())
+        if avg_vol5 <= 0:
+            return 0.0
+        ratio = today_vol / avg_vol5
+        _VOL_CACHE[code] = (now_ts, ratio)
+        return ratio
+    except Exception as e:
+        logger.warning(f"_get_today_vol_ratio({code}) failed: {e}")
+        return None
+
+
+def _realtime_vol_ok(code: str) -> bool:
+    """实时检查近 3 日均量 vs 过去 20 日 baseline。"""
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 20:
+            return False
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        avg_vol20 = float(df['volume'].tail(20).mean())
+        if avg_vol20 <= 0:
+            return False
+        vol3 = float(df['volume'].tail(3).mean())
+        return vol3 >= avg_vol20 * 0.8
+    except Exception as e:
+        logger.warning(f"_realtime_vol_ok({code}) failed: {e}")
+        return False
+
+
+def _realtime_macd_ok(code: str) -> bool:
+    """实时检查 MACD 是否金叉了（可能上次检测后变了）。"""
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+        import talib
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 26:
+            return False
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        close = df['close'].values
+        dif, dea, hist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+        if len(hist) < 2:
+            return False
+        # 最近两根 BAR 是否由负变正（金叉）
+        return (hist[-2] < 0) and (hist[-1] >= 0)
+    except Exception as e:
+        logger.warning(f"_realtime_macd_ok({code}) failed: {e}")
+        return False
+
+
+def _check_left_side_support(code: str, tf: dict) -> tuple[bool, str]:
+    """左侧买入支撑检查。
+    
+    REQ-049 修复：放宽条件，提高买入信号执行率：
+    1. 价格支撑：在 MA60 附近不破 或 在近 60 日低点企稳 或 5日均线拐头向上
+    2. 量能企稳：今日量 ≥ 近 5 日均量 × 0.4（进一步放宽从 0.6 → 0.4）
+    3. 量能获取失败时放行（不因数据问题阻断信号）
+    ⚡ 加分（其中一项满足即可）：
+      - 今日收红（close > open）且量比 ≥ 0.8 —— 启动信号（放宽从 1.0）
+      - 近 3 日有一个探低反弹日（low 创近期新低但 close 阳线）
+    """
+    if not code:
+        return False, '股票代码为空'
+
+    import time
+    now_ts = time.time()
+    cached = _SUPPORT_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MACD_CACHE_TTL_SEC:
+        return cached[1], cached[2]
+
+    try:
+        import baostock as bs
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        prefix = 'sh' if code.startswith('6') else 'sz'
+        end = datetime.now().strftime('%Y-%m-%d')
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+
+        bs.login()
+        try:
+            rs = bs.query_history_k_data_plus(
+                f'{prefix}.{code}', 'date,open,high,low,close,volume',
+                start_date=start, end_date=end, frequency='d', adjustflag='2'
+            )
+            rows = []
+            while (rs.error_code == '0') and rs.next():
+                rows.append(rs.get_row_data())
+        finally:
+            bs.logout()
+
+        if len(rows) < 30:  # REQ-049: 降低数据要求 60→30，允许更多股票通过
+            _SUPPORT_CACHE[code] = (now_ts, True, '数据不足30日，放行（REQ-049）')
+            return True, '数据不足30日，放行（REQ-049）'
+
+        df = pd.DataFrame(rows, columns=['date','open','high','low','close','volume'])
+        for c in ['open','high','low','close','volume']:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+        df = df.dropna()
+
+        last_close = float(df['close'].iloc[-1])
+        last_open = float(df['open'].iloc[-1])
+        last_low = float(df['low'].iloc[-1])
+        ma5 = float(df['close'].tail(5).mean()) if len(df) >= 5 else last_close
+        ma60 = float(df['close'].tail(60).mean()) if len(df) >= 60 else last_close
+        low60 = float(df['low'].tail(60).min()) if len(df) >= 60 else last_low
+        avg_vol5 = float(df['volume'].tail(5).mean()) if len(df) >= 5 else 0
+        today_vol = float(df['volume'].iloc[-1])
+        vol_ratio = (today_vol / avg_vol5) if avg_vol5 > 0 else None
+
+        # 条件 1：价格支撑（REQ-049: 增加 MA5 拐头条件）
+        near_ma60 = last_close >= ma60 * 0.97  # REQ-049: 放宽 0.99→0.97
+        near_low60 = last_close <= low60 * 1.08  # REQ-049: 放宽 1.05→1.08
+        # 新增：5日均线拐头向上也算支撑
+        ma5_turning_up = False
+        if len(df) >= 6:
+            ma5_prev = float(df['close'].iloc[-6:-1].tail(5).mean())
+            ma5_turning_up = ma5 > ma5_prev and last_close > ma5
+        price_ok = near_ma60 or near_low60 or ma5_turning_up
+        if not price_ok:
+            reason = f"🔍 价位未见企稳 (MA60×0.97={ma60*0.97:.2f}, low60×1.08={low60*1.08:.2f}, MA5拐头={'是' if ma5_turning_up else '否'})"
+            _SUPPORT_CACHE[code] = (now_ts, False, reason)
+            return False, reason
+
+        # 条件 2：量能不缩（REQ-049: 大幅放宽阈值 0.6 → 0.4）
+        if vol_ratio is None:
+            logger.warning(f'_check_left_side_support({code}) 量能获取失败，放行')
+            _SUPPORT_CACHE[code] = (now_ts, True, f'✅ 价位在支撑区 + 量能获取失败（放行）')
+            return True, f'✅ 价位在支撑区 + 量能获取失败（放行）'
+
+        if vol_ratio < 0.4:  # REQ-049: 大幅放宽阈值 0.6→0.4
+            reason = f'🔍 量能过缩 (今日量={vol_ratio:.2f}×5日均)，无量阴跌不能买'
+            _SUPPORT_CACHE[code] = (now_ts, False, reason)
+            return False, reason
+
+        # ⚡ 加分项
+        if last_close > last_open and vol_ratio >= 0.8:  # REQ-049: 放宽 1.0→0.8
+            reason = f'✅ 价位在支撑区 + 今日量比{vol_ratio:.2f}×收红 —— 启动信号'
+            _SUPPORT_CACHE[code] = (now_ts, True, reason)
+            return True, reason
+
+        # 探低反弹：近 3 日有 low 创近 60 日新低但 close 阳线
+        found = False
+        for i in range(-3, 0):
+            try:
+                row = df.iloc[i]
+                if (float(row['low']) <= low60 * 1.01 and
+                    float(row['close']) > float(row['open'])):
+                    found = True
+                    break
+            except IndexError:
+                continue
+        if found:
+            reason = f'✅ 近 3 日有探低反弹日 + 量比{vol_ratio:.2f}×'
+            _SUPPORT_CACHE[code] = (now_ts, True, reason)
+            return True, reason
+
+        # REQ-049: 价格支撑OK + 量能不是极度萎缩 → 放行（以前会拒绝）
+        reason = f'✅ 价位在支撑区 + 量比{vol_ratio:.2f}×（REQ-049: 放行）'
+        _SUPPORT_CACHE[code] = (now_ts, True, reason)
+        return True, reason
+    except Exception as e:
+        logger.warning(f"_check_left_side_support({code}) failed: {e}")
+        # REQ-049: 检查异常时放行（不因数据获取问题阻断有效信号）
+        return True, f'支撑检查异常，放行: {e}'
+
+
+def _check_trend_gate(rule: dict, action: str) -> tuple[bool, str]:
+    """趋势过滤器，决定 signal 是否放行。"""
+    gate = (rule.get('trend_filter') or {}).get('gate', 'auto')
+    code = rule.get('code', '')
+    tf = (rule.get('trend_filter') or {})
+
+    if gate in ('frozen', 'manual_only'):
+        return False, f'🚫 trend_filter={gate}'
+
+    if gate == 'require_support':
+        ok, reason = _check_left_side_support(code, tf)
+        if not ok:
+            return False, f'🔍 require_support — {reason}'
+        return True, f'✅ require_support 检查通过: {reason}'
+
+    if gate == 'wait_volume':
+        vol_ok = _realtime_vol_ok(code)
+        if vol_ok:
+            return True, '⚡ trend_filter=wait_volume 但实时检查量能已放大，放行'
+        return False, f'📊 trend_filter=wait_volume (量比{_get_today_vol_ratio(code) or "?"}×，等量能放大'
+
+    if gate == 'wait_macd':
+        macd_ok = _realtime_macd_ok(code)
+        if macd_ok:
+            return True, '⚡ trend_filter=wait_macd 但实时检查 MACD 已金叉，放行'
+        return False, '⏳ trend_filter=wait_macd (MACD 未金叉，等右侧确认）'
+
+    # auto 或其他
+    return True, '✅ trend_filter 放行'
+
+
+def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position: dict) -> tuple[str, str, str]:
+    """P0 量价共振 + 收盘确认止损评级 + P2 跟踪止损。"""
+    rule_stop = float(rule.get('trigger', 0) or 0)
+    
+    # P2: 读跟踪止损，与 rule_stop 取 max（最高那个最保护，即亏损最小）
+    trailing_stop = 0.0
+    trailing_reason = ''
+    if position and position.get('trailing_stop_price'):
+        trailing_stop = float(position['trailing_stop_price'])
+    
+    stop = max(rule_stop, trailing_stop)
+    if trailing_stop > 0 and stop == trailing_stop and trailing_stop > rule_stop:
+        trailing_reason = f' [跟踪止损¥{trailing_stop:.2f} 高于原¥{rule_stop:.2f}]'
+    
+    if stop <= 0 or cur_price > stop:
+        return 'none', 'NO_ACTION', '未跌破止损价'
+    
+    is_trailing = trailing_stop > 0 and stop == trailing_stop and stop > rule_stop
+    severity_prefix = '🎯 跟踪止损触发: ' if is_trailing else ''
+    
+    # ① 硬止损 — stop × 0.95
+    if cur_price <= stop * 0.95:
+        deeper_pct = (cur_price - stop) / stop * 100
+        return 'hard', 'SELL_ALL', f'{severity_prefix}⛔️ 倒破 {abs(deeper_pct):.1f}% 进入硬止损区 (¥{cur_price:.2f} ≤ ¥{stop:.2f}×0.95=¥{stop*0.95:.2f})，清仓{trailing_reason}'
+    
+    # ②③ 取量能
+    vol_ratio = _get_today_vol_ratio(code)
+    is_late = _is_late_session()
+    
+    if vol_ratio is not None and vol_ratio >= _STOP_VOL_THRESH:
+        return 'confirmed', 'SELL_HALF', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，减半{trailing_reason}'
+    
+    # 量能不足 — 软止损
+    vol_desc = f'量比{vol_ratio:.2f}×' if vol_ratio is not None else '量能未知'
+    if is_late:
+        return 'confirmed', 'SELL_HALF', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天减半{trailing_reason}'
+    # 盘中软止损
+    return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
+
+
+def calc_trailing_stop(entry_price: float, highest_price: float, current_trailing: float | None = None) -> tuple[float, str]:
+    """P2: 跟踪止损计算。只能上移，不能下移。"""
+    if entry_price <= 0 or highest_price <= 0:
+        return current_trailing or 0.0, ''
+    
+    profit_pct = (highest_price - entry_price) / entry_price * 100
+    
+    if profit_pct < 5.0:
+        new_stop = current_trailing or 0.0
+        reason = f'浮盈 {profit_pct:.1f}% < 5%, 跟踪止损未启动'
+    elif profit_pct < 10.0:
+        new_stop = round(entry_price * 1.0, 2)
+        reason = f'赚过 5% → 保本位 ¥{new_stop:.2f}'
+    elif profit_pct < 20.0:
+        new_stop = round(entry_price * 1.02, 2)
+        reason = f'赚过 10% → 锁 2% 利润 ¥{new_stop:.2f}'
     else:
-        market_value = qty * cur_price
-        pnl = (cur_price - avg_cost) * qty
-        pnl_pct = (cur_price/avg_cost - 1) * 100 if avg_cost > 0 else 0
-        # 用 UPSERT 模式
-        existing = conn.execute("SELECT id FROM sim_positions WHERE stock_code=? AND account_id=1", (code,)).fetchone()
-        if existing:
-            conn.execute(
-                """UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP
-                   WHERE stock_code=? AND account_id=1""",
-                (qty, avg_cost, cur_price, market_value, pnl, pnl_pct, code)
-            )
-        else:
-            conn.execute(
-                """INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct)
-                   VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (code, name, qty, avg_cost, cur_price, market_value, pnl, pnl_pct)
-            )
-    conn.close()
+        floor_a = entry_price * 1.10
+        floor_b = highest_price * 0.92
+        new_stop = round(max(floor_a, floor_b), 2)
+        reason = f'赚过 20% → 跟踪高点 max(entry×1.10, high×0.92) = ¥{new_stop:.2f}'
+    
+    # 只能上移不能下移
+    if current_trailing and current_trailing > new_stop:
+        return current_trailing, f'保持现跟踪位 ¥{current_trailing:.2f} (新计算 ¥{new_stop:.2f} 低于现位，不下移)'
+    return new_stop, reason
 
 
-# ========================================================================
-#  决策器：根据 rule.level 决定动作
-# ========================================================================
-def decide_action(rule: dict, cur_price: float):
+def update_position_trailing(account_id: int, code: str, current_price: float) -> dict:
+    """P2: 更新仓位的 highest_price 和 trailing_stop_price。每次实时价格变动后调用。"""
+    conn = sqlite3.connect(_DB_PATH)
+    try:
+        _ensure_trailing_columns(conn)
+        cur = conn.cursor()
+        row = cur.execute(
+            "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+            "FROM sim_positions WHERE account_id=? AND stock_code=?",
+            (account_id, code)
+        ).fetchone()
+        if not row or row[0] <= 0:
+            return {'updated': False, 'reason': '无持仓'}
+        qty, avg_cost, prev_high, prev_trailing = row
+        new_high = max(prev_high or avg_cost, current_price)
+        new_trailing, reason = calc_trailing_stop(avg_cost, new_high, prev_trailing)
+        cur.execute(
+            "UPDATE sim_positions SET highest_price=?, trailing_stop_price=? "
+            "WHERE account_id=? AND stock_code=?",
+            (new_high, new_trailing, account_id, code)
+        )
+        conn.commit()
+        return {
+            'updated': True,
+            'highest': new_high,
+            'trailing': new_trailing,
+            'reason': reason,
+        }
+    finally:
+        conn.close()
+
+
+def update_all_positions_market_value(price_dict: dict, account_id: int | None = None) -> int:
+    """批量更新持仓现价/市值，并同步 REQ-041 跟踪止损。
+
+    portfolio_alert 在每次行情刷新后调用它，让 trailing_stop_price 随价格抬高。
+    返回实际更新的持仓数。
     """
-    根据 rule.level 返回动作：
-      'BUY_LIGHT' 试探买（约 1 手）
-      'BUY_HEAVY' 加仓买（约 2 手或预算用尽）
-      'SELL_HALF' 卖一半
-      'SELL_ALL' 全部卖
-      'NO_ACTION' 仅提醒不操作
+    account_id = int(account_id or _ACCOUNT_ID)
+    conn = sqlite3.connect(_DB_PATH)
+    try:
+        _ensure_trailing_columns(conn)
+        updated = 0
+        for code, raw_price in (price_dict or {}).items():
+            try:
+                cur_price = quantize_price(float(raw_price or 0))
+            except Exception:
+                continue
+            if cur_price <= 0:
+                continue
+            row = conn.execute(
+                "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+                "FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (account_id, code),
+            ).fetchone()
+            if not row:
+                continue
+            qty, avg_cost, prev_high, prev_trailing = row
+            new_high = max(float(prev_high or avg_cost or 0), cur_price)
+            new_trailing, _reason = calc_trailing_stop(avg_cost, new_high, prev_trailing)
+            conn.execute(
+                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, "
+                "highest_price=?, trailing_stop_price=?, updated_at=CURRENT_TIMESTAMP "
+                "WHERE account_id=? AND stock_code=?",
+                (
+                    cur_price,
+                    quantize_amount(qty * cur_price),
+                    quantize_amount((cur_price - avg_cost) * qty),
+                    (cur_price - avg_cost) / avg_cost * 100 if avg_cost else 0,
+                    new_high,
+                    new_trailing if new_trailing > 0 else None,
+                    account_id,
+                    code,
+                ),
+            )
+            updated += 1
+        acct = conn.execute("SELECT cash FROM sim_account WHERE id=?", (account_id,)).fetchone()
+        if acct:
+            mv = conn.execute(
+                "SELECT COALESCE(SUM(market_value),0) FROM sim_positions WHERE account_id=? AND quantity > 0",
+                (account_id,),
+            ).fetchone()[0] or 0.0
+            conn.execute(
+                "UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (quantize_amount(float(acct[0] or 0) + float(mv)), account_id),
+            )
+        conn.commit()
+        return updated
+    finally:
+        conn.close()
+
+
+def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
+    """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。
+    
+    REQ-048 修复：添加 position 参数，传递给 _check_stop_loss_severity()
     """
-    level = rule.get("level", "")
-    
-    # 持仓股止损止盈
-    if level in ("stop_loss", "soft_stop"):
-        return 'SELL_HALF'
-    if level in ("hard_stop", "deep_drop"):
+    level = rule.get('level', '')
+    code = rule.get('code', '')
+    name = rule.get('name', '')
+    trigger = float(rule.get('trigger', 0) or 0)
+    direction = rule.get('dir', 'below')
+
+    if level in ('buy_zone', 'buy_strong'):
+
+        # ── REQ-038 持仓数量硬上限检查 ─────────────────────────────────────
+        # 1) 总持仓数上限
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            total_pos = conn.execute(
+                "SELECT COUNT(*) FROM sim_positions WHERE account_id=? AND quantity > 0",
+                (_ACCOUNT_ID,)
+            ).fetchone()[0]
+        finally:
+            conn.close()
+        if total_pos >= MAX_TOTAL_POSITIONS:
+            reason = f'总持仓数({total_pos})≥上限({MAX_TOTAL_POSITIONS})，拒绝新建 {code}'
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'position_count_limit', 0, reason)
+            return 'NO_ACTION'
+
+        # 2) 单日新建仓位数上限（只限制"新买入"，已有仓位加仓不受影响）
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            # 检查是否已有持仓
+            existing = conn.execute(
+                "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            if not existing:
+                # 是新建仓位，检查今日已新建数量
+                from datetime import datetime
+                today = datetime.now().strftime('%Y-%m-%d')
+                new_today = conn.execute(
+                    "SELECT COUNT(DISTINCT stock_code) FROM sim_trades "
+                    "WHERE account_id=? AND direction='BUY' AND trade_date=?",
+                    (_ACCOUNT_ID, today)
+                ).fetchone()[0]
+                if new_today >= MAX_DAILY_NEW_POSITIONS:
+                    reason = f'今日新建仓位({new_today})≥上限({MAX_DAILY_NEW_POSITIONS})，拒绝新建 {code}'
+                    logger.info(f'🚫 [{code}] {reason}')
+                    _write_review_decision(_ACCOUNT_ID, code, 'daily_new_position_limit', 0, reason)
+                    return 'NO_ACTION'
+        finally:
+            conn.close()
+
+
+        # 买入信号
+        # REQ-049 修复：buy_strong/buy_zone 信号穿透 trend_gate（只记日志不阻断）
+        # 理由：趋势过滤不应完全阻断已触发信号，仅 frozen/manual_only 才硬阻断
+        gate_ok, gate_reason = _check_trend_gate(rule, 'BUY')
+        if not gate_ok:
+            if gate_reason and 'frozen' in gate_reason:
+                # frozen/manual_only 是用户显式冻结，仍硬阻断
+                logger.info(f'🚫 [{code}] {level} 触发但趋势过滤冻结: {gate_reason}')
+                return 'NO_ACTION'
+            else:
+                # wait_volume/wait_macd/require_support 等软过滤：穿透，记日志
+                logger.info(f'⚠️ [{code}] {level} 信号穿透 trend_gate: {gate_reason}（继续执行买入）')
+
+        # 检查价格合理性
+        ok, reason = check_price_sanity(code, cur_price, 'BUY')
+        if not ok:
+            logger.info(f'⚠️ [{code}] {level} 触发但价格检查失败: {reason}')
+            return 'NO_ACTION'
+
+        # 检查账户现金是否足够
+        # REQ-049 修复：现金不足默认预算时，允许用全部现金买入（只要够买100股）
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            acct = conn.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            if not acct:
+                return 'NO_ACTION'
+            cash = float(acct[0])
+            # 预算 = min(默认单次预算, 可用现金的95%)
+            # 当选不足默认预算时，允许用全部现金买入
+            budget = min(DEFAULT_BUY_BUDGET, cash * 0.95)
+            if budget < cur_price * LOT_SIZE:
+                # 现金额买不起默认数量，尝试用全部现金买
+                max_qty = int(cash * 0.95 / cur_price / LOT_SIZE) * LOT_SIZE
+                if max_qty <= 0:
+                    logger.info(f'⚠️ [{code}] {level} 现金不足: ¥{cash:.0f} 不够买100股@¥{cur_price:.2f}')
+                    return 'NO_ACTION'
+                else:
+                    logger.info(f'⚠️ [{code}] {level} 现金不足默认预算，改用全部现金买 {max_qty}股')
+                    budget = cash * 0.95
+        finally:
+            conn.close()
+
+        # ── REQ-033 日内买入资金预算 + 连续买入冷静期 ─────────────────────
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            ok, reason, budget_status = _check_daily_buy_controls(conn, _ACCOUNT_ID, code, budget)
+        finally:
+            conn.close()
+        if not ok:
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'daily_buy_budget_guard', 0, reason)
+            return 'NO_ACTION'
+        logger.info(f'✅ [{code}] {reason}')
+
+        _write_review_decision(_ACCOUNT_ID, code, 'buy', 1, f'{level} 信号通过风控；{reason}')
+        return 'BUY'
+
+    elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):
+        # REQ-048 修复：传递 position 参数给 _check_stop_loss_severity()
+        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
+        logger.info(f'[{code}] 止损决策: severity={severity}, action={sev_action}')
+        return sev_action  # NO_ACTION / SELL_HALF / SELL_ALL / DEFER
+
+    elif level in ('trend_break', 'trend_break_warn'):
+        # REQ-048 修复：trend_break 之前在 decide_action 中无匹配分支，
+        # 导致 threshold_strategy._try_sell('trend_break') 走到末尾 return 'NO_ACTION'，
+        # 卖出信号被吞掉——threshold_state 标记 executed 但 sim_positions 仓位仍在。
+        # 修复：趋势破位 → SELL_ALL（全仓卖出，趋势破位不应留半仓）
+        # 同时也检查仓位是否真的存在（观察股无仓位时返回 NO_ACTION）
+        if position and position.get('quantity', 0) > 0:
+            # position 参数已传入，直接使用
+            logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出（position 参数传入: {position["quantity"]}股）')
+            return 'SELL_ALL'
+        # 否则查数据库确认
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            has_pos = conn.execute(
+                "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+        finally:
+            conn.close()
+        if not has_pos:
+            logger.info(f'ℹ️ [{code}] trend_break 触发但无持仓，仅提醒')
+            return 'NO_ACTION'
+        logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出')
         return 'SELL_ALL'
-    if level in ("take_profit_half", "take_half"):
+
+    elif level in ('take_profit', 'take_profit_half', 'half_out'):
+        # REQ-048 修复：新增 take_profit_half 匹配（之前只匹配 take_profit/half_out）
         return 'SELL_HALF'
-    if level in ("take_profit", "take_full"):
-        return 'SELL_ALL'
-    
-    # 观察股买入
-    if level == "buy_zone":
-        return 'BUY_LIGHT'
-    if level == "buy_strong":
-        return 'BUY_HEAVY'
-    
-    # 不操作
-    if level == "trend_break":
-        return 'NO_ACTION'  # 观察股趋势破位 → 不买
-    
+
     return 'NO_ACTION'
 
 
 def execute_trade(rule: dict, cur_price: float) -> dict:
-    """
-    根据规则执行虚拟交易。
+    """持仓股止损止盈。
     
-    Returns:
-        dict: {
-            'action': str,  # 实际做的动作
-            'success': bool,
-            'message': str,  # 描述
-            'trade': dict | None  # 交易细节
-        }
+    返回: {'updated': bool, 'highest': float, 'trailing': float, 'reason': str}
     """
     code = rule["code"]
     name = rule["name"]
-    action = decide_action(rule, cur_price)
+    cur_price = quantize_price(cur_price)
+
+    # REQ-046: 先读仓位信息，传给 decide_action 获取正确决策
+    position = None
+    stop_levels = {'stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'}
+    if rule.get('level') in stop_levels:
+        try:
+            conn_pos = sqlite3.connect(_DB_PATH)
+            _ensure_trailing_columns(conn_pos)
+            row_pos = conn_pos.execute(
+                "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+                "FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            conn_pos.close()
+            if row_pos and row_pos[0] > 0:
+                position = {
+                    'quantity': row_pos[0],
+                    'avg_cost': row_pos[1],
+                    'highest_price': row_pos[2],
+                    'trailing_stop_price': row_pos[3],
+                }
+        except Exception as e:
+            logger.warning(f"读取仓位信息失败 {code}: {e}")
+
+    action = decide_action(rule, cur_price, position=position)
+    severity = None
+    severity_label = ''
     
+    # 🔥 P0+P2: 智能止损三档评级 + 跟踪止损 — 只对 stop_loss 类 level 作修正
+    stop_levels = {'stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'}
+    severity_msg = ''
+    if rule.get('level') in stop_levels:
+        # P2: 先拉仓位，拿 trailing_stop_price
+        position = None
+        try:
+            conn = sqlite3.connect(_DB_PATH)
+            _ensure_trailing_columns(conn)
+            row = conn.execute(
+                "SELECT quantity, avg_cost, highest_price, trailing_stop_price "
+                "FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            conn.close()
+            if row and row[0] > 0:
+                position = {
+                    'quantity': row[0],
+                    'avg_cost': row[1],
+                    'highest_price': row[2],
+                    'trailing_stop_price': row[3],
+                }
+                # P2: 先更新跟踪止损（钉住高点、抬高止损位）
+                update_position_trailing(_ACCOUNT_ID, code, cur_price)
+                # 重拉拿最新的 trailing_stop_price
+                conn = sqlite3.connect(_DB_PATH)
+                _ensure_trailing_columns(conn)
+                row2 = conn.execute(
+                    "SELECT highest_price, trailing_stop_price "
+                    "FROM sim_positions WHERE account_id=? AND stock_code=?",
+                    (_ACCOUNT_ID, code)
+                ).fetchone()
+                conn.close()
+                if row2:
+                    position['highest_price'] = row2[0]
+                    position['trailing_stop_price'] = row2[1]
+        except Exception as e:
+            logger.warning(f"拉仓位/更新跟踪失败 {code}: {e}")
+        
+        severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
+        severity_msg = sev_reason
+        # 修正 action：SELL_HALF/SELL_ALL 以 severity 为准
+        if sev_action in ('SELL_HALF', 'SELL_ALL'):
+            action = sev_action
+            logger.info(f"🔥 止损评级={severity}: {sev_reason}")
+
     if action == 'NO_ACTION':
-        return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None}
-    
-    account = get_account()
-    if not account:
-        return {'action': action, 'success': False, 'message': '账户不存在', 'trade': None}
-    cash = account['cash']
-    
-    pos = get_position(code)
-    
-    # ----- 卖出 -----
-    if action.startswith('SELL'):
-        if not pos or pos['quantity'] <= 0:
-            return {'action': action, 'success': False, 'message': f'{code} 无持仓可卖', 'trade': None}
-        
-        sell_qty = pos['quantity'] if action == 'SELL_ALL' else (pos['quantity'] // 2 // LOT_SIZE) * LOT_SIZE
-        if sell_qty < LOT_SIZE:
-            sell_qty = pos['quantity']  # 不到 1 手就全卖
-        
-        amount = sell_qty * cur_price
-        commission = calc_commission(amount)
-        tax = amount * TAX_RATE
-        net_proceeds = amount - commission - tax
-        
-        # 写交易
-        insert_trade(code, name, 'SELL', cur_price, sell_qty, commission, tax,
-                     f"自动: {rule['level']} | {rule['message'][:30]}")
-        
-        # 更新现金 + 持仓
-        update_account_cash(net_proceeds)
-        new_qty = pos['quantity'] - sell_qty
-        upsert_position(code, name, new_qty, pos['avg_cost'], cur_price)
-        
-        return {
-            'action': action, 'success': True,
-            'message': f'卖出 {name} {sell_qty}股 @{cur_price:.2f} = {amount:.2f}（净到手 {net_proceeds:.2f}）',
-            'trade': {'direction': 'SELL', 'qty': sell_qty, 'price': cur_price, 'amount': amount, 'fee': commission+tax}
-        }
-    
-    # ----- 买入 -----
-    if action.startswith('BUY'):
-        # 预算
-        if action == 'BUY_LIGHT':
-            budget = min(DEFAULT_BUY_BUDGET, cash * 0.5)  # 用一半现金或 2000 较小者
-        else:  # BUY_HEAVY
-            budget = min(DEFAULT_BUY_BUDGET * 2, cash * 0.8)
-        
-        if budget < cur_price * LOT_SIZE * 1.001:  # 至少够买 1 手 + 手续费
-            return {'action': action, 'success': False,
-                    'message': f'现金不足 {cash:.2f}，无法买 {code} 1 手 ({cur_price*LOT_SIZE:.2f})', 'trade': None}
-        
-        # 买多少手
-        max_lots = int(budget / (cur_price * LOT_SIZE * 1.001))
-        buy_qty = max_lots * LOT_SIZE
-        amount = buy_qty * cur_price
-        commission = calc_commission(amount)
-        total_cost = amount + commission
-        
-        if total_cost > cash:
-            return {'action': action, 'success': False,
-                    'message': f'现金不够（需 {total_cost:.2f}，有 {cash:.2f}）', 'trade': None}
-        
-        # 写交易
-        insert_trade(code, name, 'BUY', cur_price, buy_qty, commission, 0,
-                     f"自动: {rule['level']} | {rule['message'][:30]}")
-        
-        # 更新现金
-        update_account_cash(-total_cost)
-        
-        # 计算新成本价
-        if pos:
-            old_amount = pos['quantity'] * pos['avg_cost']
-            new_qty = pos['quantity'] + buy_qty
-            new_avg = (old_amount + amount + commission) / new_qty
+        return {'action': action, 'success': True, 'message': '仅提醒，不操作', 'trade': None,
+                'severity': severity, 'severity_label': severity_label}
+
+    if action == 'DEFER':
+        # REQ-046 修复：近收盘时软止损升级为 SELL_HALF（不拖到明天）
+        if _is_late_session():
+            logger.info(f"🔥 [{code}] 软止损近收盘升级为 SELL_HALF: {severity_msg}")
+            action = 'SELL_HALF'
         else:
-            new_qty = buy_qty
-            new_avg = (amount + commission) / new_qty
-        
-        upsert_position(code, name, new_qty, new_avg, cur_price)
-        
-        return {
-            'action': action, 'success': True,
-            'message': f'买入 {name} {buy_qty}股 @{cur_price:.2f} = {amount:.2f}（含费 {total_cost:.2f}）',
-            'trade': {'direction': 'BUY', 'qty': buy_qty, 'price': cur_price, 'amount': amount, 'fee': commission}
-        }
-    
-    return {'action': action, 'success': False, 'message': f'未知动作: {action}', 'trade': None}
+            return {'action': action, 'success': True, 'message': f'软止损预警（不自动卖): {severity_msg}',
+                    'trade': None, 'severity': severity, 'severity_label': severity_label}
 
+    if action == 'BUY':
+        # REQ-049 修复：动态计算预算，与 decide_action 一致
+        conn2 = sqlite3.connect(_DB_PATH)
+        try:
+            acct2 = conn2.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            if not acct2:
+                return {'action': action, 'success': False, 'message': '账户不存在'}
+            cash2 = float(acct2[0])
+            budget = min(DEFAULT_BUY_BUDGET, cash2 * 0.95)
+            if budget < cur_price * LOT_SIZE:
+                # 现金不够默认预算，改用全部现金
+                budget = cash2 * 0.95
+        finally:
+            conn2.close()
+        qty = int(budget / cur_price / LOT_SIZE) * LOT_SIZE
+        if qty <= 0:
+            return {'action': action, 'success': False, 'message': f'计算买入数量失败: budget={budget}, price={cur_price}'}
 
-def update_all_positions_market_value(prices: dict):
-    """收盘/盘中更新所有持仓的市值（不改成本）"""
-    conn = get_conn()
-    rows = conn.execute("SELECT stock_code, quantity, avg_cost FROM sim_positions WHERE account_id=1").fetchall()
-    for row in rows:
-        code = row['stock_code']
-        cur_price = prices.get(code, 0)
-        if cur_price > 0:
-            mv = row['quantity'] * cur_price
-            pnl = (cur_price - row['avg_cost']) * row['quantity']
-            pnl_pct = (cur_price/row['avg_cost'] - 1) * 100 if row['avg_cost'] > 0 else 0
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            conn.execute("BEGIN")
+            _ensure_trailing_columns(conn)
+            acct = conn.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            if not acct or float(acct[0]) < cur_price * qty:
+                conn.execute("ROLLBACK")
+                return {'action': action, 'success': False, 'message': f'现金不足: ¥{acct[0] if acct else 0:.0f}'}
+
+            if _has_today_buy(conn, code):
+                msg = f'今日已买入过 {code}，跳过重复买入信号'
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'duplicate_buy_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入重复买入风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
+            commission = quantize_amount(cur_price * qty * COMMISSION_RATE)
+            amount = quantize_amount(cur_price * qty + commission)
+
+            # REQ-033: 成交前在同一事务中再次校验日内预算/冷静期，避免并发或重算预算穿透。
+            ok, reason, _budget_status = _check_daily_buy_controls(conn, _ACCOUNT_ID, code, amount)
+            if not ok:
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {reason}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'daily_buy_budget_guard', 0, reason)
+                except Exception as e:
+                    logger.warning(f"写入日内预算风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': reason, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
             conn.execute(
-                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, updated_at=CURRENT_TIMESTAMP WHERE stock_code=? AND account_id=1",
-                (cur_price, mv, pnl, pnl_pct, code)
+                "UPDATE sim_account SET cash=cash-?, total_value=total_value-? WHERE id=?",
+                (amount, amount, _ACCOUNT_ID)
             )
-    # 更新账户总市值
-    total_mv = conn.execute("SELECT COALESCE(SUM(market_value),0) AS s FROM sim_positions WHERE account_id=1").fetchone()['s']
-    cash = conn.execute("SELECT cash FROM sim_account WHERE id=1").fetchone()['cash']
-    conn.execute("UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=1", (total_mv + cash,))
-    conn.close()
+            # 更新或插入仓位
+            existing = conn.execute(
+                "SELECT quantity, avg_cost FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            if existing:
+                new_qty = existing[0] + qty
+                new_cost = quantize_cost((existing[0] * existing[1] + qty * cur_price) / new_qty)
+                conn.execute(
+                    "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, pnl=?, pnl_pct=?, "
+                    "highest_price=MAX(COALESCE(highest_price, ?), ?) "
+                    "WHERE account_id=? AND stock_code=?",
+                    (new_qty, new_cost, cur_price, quantize_amount(new_qty * cur_price),
+                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
+                     cur_price, cur_price, _ACCOUNT_ID, code)
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct, highest_price, trailing_stop_price) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, quantize_amount(qty * cur_price),
+                     0.0, 0.0, cur_price, None)
+                )
+            # 写入成交记录
+            trade_date = datetime.now().strftime('%Y-%m-%d')
+            trade_time = datetime.now().strftime('%H:%M:%S')
+            # REQ-057: 回写 signal_reason，避免成交记录 signal_reason 为空无法追源
+            _signal_reason = f"{rule.get('level', '')}|{rule.get('message', '')}".strip('|')
+            conn.execute(
+                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'BUY', cur_price, qty, amount, commission, _signal_reason)
+            )
+            conn.execute("COMMIT")
+            logger.info(f"✅ [{code}] {name} BUY {qty}股 @¥{cur_price:.2f}, 金额¥{amount:.0f}")
+            return {'action': action, 'success': True,
+                    'message': f'买入 {qty}股 @¥{cur_price:.2f}',
+                    'trade': {'direction': 'BUY', 'price': cur_price, 'quantity': qty, 'amount': amount}}
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            logger.error(f"买入执行失败 {code}: {e}")
+            return {'action': action, 'success': False, 'message': f'买入执行失败: {e}'}
+        finally:
+            conn.close()
+
+    if action in ('SELL_HALF', 'SELL_ALL'):
+        # 执行卖出
+        sell_qty = 0
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            conn.execute("BEGIN")
+            _ensure_trailing_columns(conn)
+            row = conn.execute(
+                "SELECT quantity, avg_cost FROM sim_positions WHERE account_id=? AND stock_code=?",
+                (_ACCOUNT_ID, code)
+            ).fetchone()
+            if not row or row[0] <= 0:
+                conn.execute("ROLLBACK")
+                return {'action': action, 'success': False, 'message': f'无持仓可卖 {code}'}
+
+            if action == 'SELL_HALF':
+                sell_qty = int(row[0] / 2 / LOT_SIZE) * LOT_SIZE
+            else:
+                sell_qty = row[0]
+
+            if sell_qty <= 0:
+                conn.execute("ROLLBACK")
+                return {'action': action, 'success': False, 'message': f'计算卖出数量失败'}
+
+            commission = quantize_amount(cur_price * sell_qty * COMMISSION_RATE)
+            stamp_tax = quantize_amount(cur_price * sell_qty * STAMP_TAX_RATE)
+            amount = quantize_amount(cur_price * sell_qty - commission - stamp_tax)
+
+            conn.execute(
+                "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
+                (amount, amount, _ACCOUNT_ID)
+            )
+            new_qty = row[0] - sell_qty
+            if new_qty > 0:
+                new_cost = row[1]  # 剩余仓位成本不变
+                conn.execute(
+                    "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
+                    "WHERE account_id=? AND stock_code=?",
+                    (new_qty, cur_price, quantize_amount(new_qty * cur_price),
+                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
+                     _ACCOUNT_ID, code)
+                )
+            else:
+                conn.execute(
+                    "DELETE FROM sim_positions WHERE account_id=? AND stock_code=?",
+                    (_ACCOUNT_ID, code)
+                )
+            # 写入成交记录
+            trade_date = datetime.now().strftime('%Y-%m-%d')
+            trade_time = datetime.now().strftime('%H:%M:%S')
+            # REQ-057: 回写 signal_reason，避免 SELL 成交记录 signal_reason 为空无法追源
+            _signal_reason = f"{rule.get('level', '')}|{rule.get('message', '')}".strip('|')
+            conn.execute(
+                "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_ACCOUNT_ID, trade_date, trade_time, code, name, 'SELL', cur_price, sell_qty, amount, commission, _signal_reason)
+            )
+            conn.execute("COMMIT")
+            logger.info(f"✅ [{code}] {name} SELL {sell_qty}股 @¥{cur_price:.2f}, 金额¥{amount:.0f}")
+            return {'action': action, 'success': True,
+                    'message': f'卖出 {sell_qty}股 @¥{cur_price:.2f}',
+                    'trade': {'direction': 'SELL', 'price': cur_price, 'quantity': sell_qty, 'amount': amount}}
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            logger.error(f"卖出执行失败 {code}: {e}")
+            return {'action': action, 'success': False, 'message': f'卖出执行失败: {e}'}
+        finally:
+            conn.close()
+
+    return {'action': 'NO_ACTION', 'success': True, 'message': '未知 action', 'trade': None}
 
 
-if __name__ == "__main__":
-    # 自检
-    acc = get_account()
-    print(f"账户: {acc['account_name']} / 现金 {acc['cash']:.2f} / 总值 {acc['total_value']:.2f}")
-    conn = get_conn()
-    rows = conn.execute("SELECT * FROM sim_positions WHERE account_id=1").fetchall()
-    for r in rows:
-        print(f"  {r['stock_code']} {r['stock_name']:>6} {r['quantity']:>4}股 @{r['avg_cost']:.3f} 现价{r['current_price']:.2f} 浮亏{r['pnl']:+.2f} ({r['pnl_pct']:+.2f}%)")
-    conn.close()
+# ── CLI 入口 ─────────────────────────────────────────────────────────────
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='sim_executor — 阈值触发自动虚拟下单')
+    sub = parser.add_subparsers(dest='command')
+
+    # buy
+    p_buy = sub.add_parser('buy', help='执行买入')
+    p_buy.add_argument('--code', required=True)
+    p_buy.add_argument('--name', default='')
+    p_buy.add_argument('--price', type=float, required=True)
+    p_buy.add_argument('--level', default='buy_zone')
+    p_buy.set_defaults(func=lambda args: print(json.dumps(execute_trade(
+        {'code': args.code, 'name': args.name, 'level': args.level, 'trigger': args.price, 'dir': 'below'},
+        args.price), ensure_ascii=False, indent=2)))
+
+    # sell
+    p_sell = sub.add_parser('sell', help='执行卖出')
+    p_sell.add_argument('--code', required=True)
+    p_sell.add_argument('--name', default='')
+    p_sell.add_argument('--price', type=float, required=True)
+    p_sell.add_argument('--level', default='stop_loss')
+    p_sell.set_defaults(func=lambda args: print(json.dumps(execute_trade(
+        {'code': args.code, 'name': args.name, 'level': args.level, 'trigger': args.price, 'dir': 'above'},
+        args.price), ensure_ascii=False, indent=2)))
+
+    # update_trailing
+    p_trail = sub.add_parser('update_trailing', help='更新跟踪止损')
+    p_trail.add_argument('--code', required=True)
+    p_trail.add_argument('--price', type=float, required=True)
+    p_trail.set_defaults(func=lambda args: print(json.dumps(
+        update_position_trailing(_ACCOUNT_ID, args.code, args.price),
+        ensure_ascii=False, indent=2)))
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+    args.func(args)

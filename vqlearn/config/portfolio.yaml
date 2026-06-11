@@ -1,0 +1,137 @@
+holdings:
+- symbol: '600330'
+  name: 天通股份
+  qty: 400
+  cost: 32.818
+  rules:
+    trend_break: 28.05
+    take_profit: 34.6
+- symbol: '002453'
+  name: 华软科技
+  qty: 300
+  cost: 6.467
+  rules:
+    trend_break: 5.65
+    take_profit: 6.67
+- symbol: '603601'
+  name: 再升科技
+  qty: 0
+  cost: 0
+  rules:
+    trend_break: 16.37
+    take_profit: 20.34
+watchlist:
+- symbol: 002428
+  name: 云南锗业
+  rules:
+    buy_zone: 78.97
+    buy_strong: 72.26
+    trend_break: 65.54
+- symbol: '600130'
+  name: 波导股份
+  rules:
+    buy_zone: 5.19
+    buy_strong: 4.62
+    trend_break: 4.05
+- symbol: '603178'
+  name: 圣龙股份
+  rules:
+    buy_zone: 19.16
+    buy_strong: 17.5
+    trend_break: 15.84
+- symbol: '603986'
+  name: 兆易创新
+  rules:
+    buy_zone: 329.2
+    buy_strong: 303.97
+    trend_break: 278.73
+- symbol: '301120'
+  name: 新特电气
+  rules:
+    buy_zone: 20.88
+    buy_strong: 19.67
+    trend_break: 18.46
+- symbol: '301179'
+  name: 泽宇智能
+  rules:
+    buy_zone: 24.89
+    buy_strong: 23.43
+    trend_break: 21.98
+- symbol: '600021'
+  name: 上海电力
+  rules:
+    buy_zone: 17.35
+    buy_strong: 16.64
+    trend_break: 15.92
+- symbol: '000600'
+  name: 建投能源
+  rules:
+    buy_zone: 9.49
+    buy_strong: 9.0
+    trend_break: 8.52
+- symbol: '002067'
+  name: 景兴纸业
+  rules:
+    buy_zone: 4.81
+    buy_strong: 4.64
+    trend_break: 4.46
+- symbol: 000899
+  name: 赣能股份
+  rules:
+    buy_zone: 12.95
+    buy_strong: 12.25
+    trend_break: 11.54
+- symbol: 001896
+  name: 豫能控股
+  rules:
+    buy_zone: 15.78
+    buy_strong: 14.22
+    trend_break: 12.66
+- symbol: '600310'
+  name: 广西能源
+  rules:
+    buy_zone: 4.98
+    buy_strong: 4.62
+    trend_break: 4.25
+- symbol: '601222'
+  name: 林洋能源
+  rules:
+    buy_zone: 6.13
+    buy_strong: 5.89
+    trend_break: 5.66
+- symbol: '600863'
+  name: 华能蒙电
+  rules:
+    buy_zone: 4.72
+    buy_strong: 4.5
+    trend_break: 4.28
+- symbol: '605006'
+  name: 山东玻纤
+  rules:
+    buy_zone: 12.5
+    buy_strong: 11.18
+    trend_break: 9.85
+- symbol: '603757'
+  name: 大元泵业
+  rules:
+    buy_zone: 54.19
+    buy_strong: 50.06
+    trend_break: 45.93
+- symbol: '002156'
+  name: 通富微电
+  rules:
+    buy_zone: 52.7
+    buy_strong: 48.97
+    trend_break: 45.23
+- symbol: 002709
+  name: 天赐材料
+  rules:
+    buy_zone: 54.52
+    buy_strong: 50.85
+    trend_break: 47.19
+- symbol: 002149
+  name: 西部材料
+  rules:
+    buy_zone: 64.03
+    buy_strong: 58.76
+    trend_break: 53.48

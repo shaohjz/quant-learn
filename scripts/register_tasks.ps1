@@ -1,0 +1,52 @@
+# scripts/register_tasks.ps1 — 注册新的 Windows 计划任务
+# 使用：powershell -ExecutionPolicy Bypass -File scripts\register_tasks.ps1
+
+$ProjectRoot = "C:\Users\Administrator\.openclaw\workspace\quant-learn"
+
+# 任务1: 盘中异动扫描（每30分钟，9:30-14:30）
+Write-Host "注册任务: QuantLearn_IntradayScanner"
+schtasks /create /tn "QuantLearn_IntradayScanner" `
+    /tr "$ProjectRoot\scripts\intraday_scanner_runner.bat" `
+    /sc MINUTE /mo 30 /st 09:30 /et 15:00 `
+    /sd 01/01/2026 `
+    /f /rl HIGHEST
+
+# 任务2: 观察池淘汰器（每日8:00）
+Write-Host "注册任务: QuantLearn_CleanupWatchlist"
+schtasks /create /tn "QuantLearn_CleanupWatchlist" `
+    /tr "$ProjectRoot\scripts\cleanup_watchlist_runner.bat" `
+    /sc DAILY /st 08:00 `
+    /sd 01/01/2026 `
+    /f /rl HIGHEST
+
+# 任务5: 理财经理日报（交易日 15:30）
+Write-Host "注册任务: QuantLearn_FinanceManager"
+schtasks /create /tn "QuantLearn_FinanceManager" `
+    /tr "$ProjectRoot\scripts\finance_manager_runner.bat" `
+    /sc WEEKLY /d MON,TUE,WED,THU,FRI /st 15:30 `
+    /sd 01/01/2026 `
+    /f /rl HIGHEST
+
+Write-Host "`n✓ 计划任务注册完成！"
+Write-Host "`n查看任务状态："
+Write-Host "  schtasks /query /tn QuantLearn_IntradayScanner /fo LIST /v"
+Write-Host "  schtasks /query /tn QuantLearn_CleanupWatchlist /fo LIST /v"
+Write-Host "`n手动触发测试："
+Write-Host "  schtasks /run /tn QuantLearn_IntradayScanner"
+Write-Host "  schtasks /run /tn QuantLearn_CleanupWatchlist"
+
+# 任务3: 每日PM工作流（每日18:30）
+Write-Host "注册任务: QuantLearn_DailyPM_Workflow"
+schtasks /create /tn "QuantLearn_DailyPM_Workflow" ` 
+    /tr "$ProjectRoot\scripts\daily_pm_runner.bat" ` 
+    /sc DAILY /st 18:30 ` 
+    /sd 01/01/2026 ` 
+    /f /rl HIGHEST
+
+# 任务4: 工作日复盘缺失检查（每日18:30；脚本内部按交易日历跳过节假日）
+Write-Host "注册任务: QuantLearn_ReviewMissingCheck"
+schtasks /create /tn "QuantLearn_ReviewMissingCheck" `
+    /tr "$ProjectRoot\scripts\review_missing_check_runner.bat" `
+    /sc DAILY /st 18:30 `
+    /sd 01/01/2026 `
+    /f /rl HIGHEST

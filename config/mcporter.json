@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "gongfeng": {
+      "url": "https://git.woa.com/api/mcp/mcp",
+      "headers": {
+        "OAUTH-TOKEN": "c472c7924b7415414885ff1f95551709",
+        "X-USERNAME": "jizhouhu"
+      }
+    },
+    "itfs": {
+      "command": "itfscli",
+      "args": [
+        "mcp-server",
+        "--base-url",
+        "https://itfs.mcp.it.woa.com"
+      ],
+      "env": {
+        "ITFS_TAI_TOKEN": "tai_pat_6iXuUzEJ14GzcyiuTZq6p9xtP9GYlPM7VWI03x8DXQ8.9XSSBPXAZ4hEqrqLrCheD0MEklU9n3b6KsLdnqzbUdU"
+      }
+    },
+    "iwiki": {
+      "url": "https://prod.mcp.it.woa.com/app_iwiki_mcp/mcp3",
+      "headers": {
+        "Authorization": "Bearer tai_pat_6iXuUzEJ14GzcyiuTZq6p9xtP9GYlPM7VWI03x8DXQ8.9XSSBPXAZ4hEqrqLrCheD0MEklU9n3b6KsLdnqzbUdU"
+      }
+    },
+    "lexiang": {
+      "url": "https://mcp.lexiang-app.com/mcp?company_from=csig&preset=meta",
+      "headers": {
+        "Authorization": "Bearer c472c7924b7415414885ff1f95551709"
+      }
+    },
+    "tapd": {
+      "url": "http://mcp-idc.tapd.woa.com/mcp/",
+      "headers": {
+        "OAUTH-TOKEN": "c472c7924b7415414885ff1f95551709",
+        "X-USERNAME": "jizhouhu",
+        "X-Tools-Set": "lookup_tapd_tool,lookup_tool_param_schema,proxy_execute_tool",
+        "X-Keep-Links": "true"
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "date": "2026-06-02",
+  "universe_size": 705,
+  "filtered_size": 3,
+  "scored_size": 3,
+  "top": [
+    {
+      "code": "000001",
+      "price": 10.99,
+      "pct_chg": 0.548947849954251,
+      "ma5": 10.825999999999999,
+      "ma10": 10.782,
+      "ma20": 10.9955,
+      "ma60": null,
+      "vol_ratio": 0.9678065121340005,
+      "atr_pct": 1.3258806707396316,
+      "trend_quality_mult": 1.0,
+      "score": 52.0,
+      "factors": {
+        "trend": 12,
+        "breakout": 10,
+        "volume": 5,
+        "zone": 25
+      },
+      "name": "平安银行",
+      "amount": 753872143.0
+    },
+    {
+      "code": "000002",
+      "price": 3.47,
+      "pct_chg": -2.2535211267605493,
+      "ma5": 3.41,
+      "ma10": 3.478,
+      "ma20": 3.7095,
+      "ma60": null,
+      "vol_ratio": 1.4012110014475512,
+      "atr_pct": 3.705228489090161,
+      "trend_quality_mult": 1.0,
+      "score": 31.0,
+      "factors": {
+        "trend": 6,
+        "breakout": 5,
+        "volume": 15,
+        "zone": 5
+      },
+      "name": "万 科Ａ",
+      "amount": 652886235.0
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+2026-05-19 17:09:05,106 [INFO] run_intraday | 启动 vnpy 主引擎 dry_run=True duration=20
+没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容
+2026-05-19 17:09:05.149 | INFO | MainEngine | 连接登录 -> QMT
+2026-05-19 17:09:05.355 | INFO | QMT | ✅ QMT trader 连接成功 acct=90072426 session=970525 dry_run=True
+2026-05-19 17:09:05.368 | INFO | CtaStrategy | CTA策略引擎初始化成功
+2026-05-19 17:09:05,370 [INFO] run_intraday | cta_engine 初始化完成 已注册策略类: ['AtrRsiStrategy', 'BollChannelStrategy', 'DoubleMaStrategy', 'DualThrustStrategy', 'KingKeltnerStrategy', 'MultiSignalStrategy', 'MultiTimeframeStrategy', 'TestStrategy', 'TurtleSignalStrategy', 'ThresholdAlertStrategy', 'FusionStrategy']
+2026-05-19 17:09:05,370 [INFO] run_intraday | 阈值策略将覆盖 10 只股票: ['002149', '002156', '002256', '002342', '002453', '002709', '600330', '603601', '603757', '605006']
+2026-05-19 17:09:05.370 | INFO | CtaStrategy | alert_002149开始执行初始化
+2026-05-19 17:09:05.372 | INFO | CtaStrategy | [alert_002149]  策略初始化 002149 命中规则数=2
+2026-05-19 17:09:05.372 | INFO | CtaStrategy | [alert_002149]  行情订阅失败，找不到合约002149.SZSE
+2026-05-19 17:09:05.375 | INFO | CtaStrategy | alert_002149初始化完成
+2026-05-19 17:09:05.375 | INFO | CtaStrategy | [alert_002149]  策略启动
+2026-05-19 17:09:05,399 [INFO] notifier.wecom_notifier | [dry-run/notifier] 🟢 ThresholdAlert 启动 002149 共 2 条规则
+2026-05-19 17:09:05,399 [INFO] run_intraday | ✅ 启动策略 alert_002149 -> 002149.SZSE
+2026-05-19 17:09:05,400 [INFO] run_intraday | ✅ 启动策略 alert_002156 -> 002156.SZSE
+[dry-run wecom] 🟢 ThresholdAlert 启动 002149 共 2 条规则
+2026-05-19 17:09:05.400 | INFO | CtaStrategy | 策略alert_002156启动失败，请先初始化
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | alert_002156开始执行初始化
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | [alert_002156]  策略初始化 002156 命中规则数=2
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | [alert_002156]  行情订阅失败，找不到合约002156.SZSE
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | alert_002156初始化完成
+2026-05-19 17:09:05,401 [INFO] run_intraday | ✅ 启动策略 alert_002256 -> 002256.SZSE
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | 策略alert_002256启动失败，请先初始化
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | alert_002256开始执行初始化
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | [alert_002256]  策略初始化 002256 命中规则数=3
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | [alert_002256]  行情订阅失败，找不到合约002256.SZSE
+2026-05-19 17:09:05.401 | INFO | CtaStrategy | alert_002256初始化完成
+2026-05-19 17:09:05,401 [INFO] run_intraday | ✅ 启动策略 alert_002342 -> 002342.SZSE
+2026-05-19 17:09:05.403 | INFO | CtaStrategy | 策略alert_002342启动失败，请先初始化
+2026-05-19 17:09:05.403 | INFO | CtaStrategy | alert_002342开始执行初始化
+2026-05-19 17:09:05.403 | INFO | CtaStrategy | [alert_002342]  策略初始化 002342 命中规则数=4
+2026-05-19 17:09:05.403 | INFO | CtaStrategy | [alert_002342]  行情订阅失败，找不到合约002342.SZSE
+2026-05-19 17:09:05.403 | INFO | CtaStrategy | alert_002342初始化完成
+2026-05-19 17:09:05,403 [INFO] run_intraday | ✅ 启动策略 alert_002453 -> 002453.SZSE
+2026-05-19 17:09:05.403 | INFO | CtaStrategy | 策略alert_002453启动失败，请先初始化
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | alert_002453开始执行初始化
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | [alert_002453]  策略初始化 002453 命中规则数=4
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | [alert_002453]  行情订阅失败，找不到合约002453.SZSE
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | alert_002453初始化完成
+2026-05-19 17:09:05,404 [INFO] run_intraday | ✅ 启动策略 alert_002709 -> 002709.SZSE
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | 策略alert_002709启动失败，请先初始化
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | alert_002709开始执行初始化
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | [alert_002709]  策略初始化 002709 命中规则数=2
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | [alert_002709]  行情订阅失败，找不到合约002709.SZSE
+2026-05-19 17:09:05.404 | INFO | CtaStrategy | alert_002709初始化完成
+2026-05-19 17:09:05,406 [INFO] run_intraday | ✅ 启动策略 alert_600330 -> 600330.SSE
+2026-05-19 17:09:05.406 | INFO | CtaStrategy | 策略alert_600330启动失败，请先初始化
+2026-05-19 17:09:05.406 | INFO | CtaStrategy | alert_600330开始执行初始化
+2026-05-19 17:09:05.406 | INFO | CtaStrategy | [alert_600330]  策略初始化 600330 命中规则数=3
+2026-05-19 17:09:05.406 | INFO | CtaStrategy | [alert_600330]  行情订阅失败，找不到合约600330.SSE
+2026-05-19 17:09:05.406 | INFO | CtaStrategy | alert_600330初始化完成
+2026-05-19 17:09:05,406 [INFO] run_intraday | ✅ 启动策略 alert_603601 -> 603601.SSE
+2026-05-19 17:09:05.406 | INFO | CtaStrategy | 策略alert_603601启动失败，请先初始化
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | alert_603601开始执行初始化
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | [alert_603601]  策略初始化 603601 命中规则数=4
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | [alert_603601]  行情订阅失败，找不到合约603601.SSE
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | alert_603601初始化完成
+2026-05-19 17:09:05,408 [INFO] run_intraday | ✅ 启动策略 alert_603757 -> 603757.SSE
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | 策略alert_603757启动失败，请先初始化
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | alert_603757开始执行初始化
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | [alert_603757]  策略初始化 603757 命中规则数=3
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | [alert_603757]  行情订阅失败，找不到合约603757.SSE
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | alert_603757初始化完成
+2026-05-19 17:09:05,408 [INFO] run_intraday | ✅ 启动策略 alert_605006 -> 605006.SSE
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | 策略alert_605006启动失败，请先初始化
+2026-05-19 17:09:05,408 [INFO] run_intraday | Fusion 策略覆盖 5 只: ['002149', '002156', '002709', '603757', '605006']
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | alert_605006开始执行初始化
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | [alert_605006]  策略初始化 605006 命中规则数=3
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | [alert_605006]  行情订阅失败，找不到合约605006.SSE
+2026-05-19 17:09:05.408 | INFO | CtaStrategy | alert_605006初始化完成
+2026-05-19 17:09:05,411 [INFO] run_intraday | ✅ 启动 Fusion fusion_002149 -> 002149.SZSE
+2026-05-19 17:09:05.411 | INFO | CtaStrategy | 策略fusion_002149启动失败，请先初始化
+2026-05-19 17:09:05.411 | INFO | CtaStrategy | fusion_002149开始执行初始化
+2026-05-19 17:09:05.412 | INFO | CtaStrategy | [fusion_002149]  FusionStrategy 初始化 002149 持仓股=False qlib_signal=有
+2026-05-19 17:09:05,412 [INFO] run_intraday | ✅ 启动 Fusion fusion_002156 -> 002156.SZSE
+2026-05-19 17:09:05.412 | INFO | CtaStrategy | [fusion_002149]  行情订阅失败，找不到合约002149.SZSE
+2026-05-19 17:09:05.412 | INFO | CtaStrategy | fusion_002149初始化完成
+2026-05-19 17:09:05.415 | INFO | CtaStrategy | 策略fusion_002156启动失败，请先初始化
+2026-05-19 17:09:05,415 [INFO] run_intraday | ✅ 启动 Fusion fusion_002709 -> 002709.SZSE
+2026-05-19 17:09:05.415 | INFO | CtaStrategy | fusion_002156开始执行初始化
+2026-05-19 17:09:05.415 | INFO | CtaStrategy | [fusion_002156]  FusionStrategy 初始化 002156 持仓股=False qlib_signal=有
+2026-05-19 17:09:05.415 | INFO | CtaStrategy | [fusion_002156]  行情订阅失败，找不到合约002156.SZSE
+2026-05-19 17:09:05.416 | INFO | CtaStrategy | fusion_002156初始化完成
+2026-05-19 17:09:05.417 | INFO | CtaStrategy | 策略fusion_002709启动失败，请先初始化
+2026-05-19 17:09:05,417 [INFO] run_intraday | ✅ 启动 Fusion fusion_603757 -> 603757.SSE
+2026-05-19 17:09:05.417 | INFO | CtaStrategy | fusion_002709开始执行初始化
+2026-05-19 17:09:05.417 | INFO | CtaStrategy | [fusion_002709]  FusionStrategy 初始化 002709 持仓股=False qlib_signal=有
+2026-05-19 17:09:05.417 | INFO | CtaStrategy | [fusion_002709]  行情订阅失败，找不到合约002709.SZSE
+2026-05-19 17:09:05.417 | INFO | CtaStrategy | fusion_002709初始化完成
+2026-05-19 17:09:05.419 | INFO | CtaStrategy | 策略fusion_603757启动失败，请先初始化
+2026-05-19 17:09:05.419 | INFO | CtaStrategy | fusion_603757开始执行初始化
+2026-05-19 17:09:05,419 [INFO] run_intraday | ✅ 启动 Fusion fusion_605006 -> 605006.SSE
+2026-05-19 17:09:05.419 | INFO | CtaStrategy | [fusion_603757]  FusionStrategy 初始化 603757 持仓股=False qlib_signal=有
+2026-05-19 17:09:05,419 [INFO] run_intraday | ===== 引擎运行中 =====
+2026-05-19 17:09:05.421 | INFO | CtaStrategy | [fusion_603757]  行情订阅失败，找不到合约603757.SSE
+2026-05-19 17:09:05.421 | INFO | CtaStrategy | fusion_603757初始化完成
+2026-05-19 17:09:05.421 | INFO | CtaStrategy | 策略fusion_605006启动失败，请先初始化
+2026-05-19 17:09:05.421 | INFO | CtaStrategy | fusion_605006开始执行初始化
+2026-05-19 17:09:05.422 | INFO | CtaStrategy | [fusion_605006]  FusionStrategy 初始化 605006 持仓股=False qlib_signal=有
+2026-05-19 17:09:05.422 | INFO | CtaStrategy | [fusion_605006]  行情订阅失败，找不到合约605006.SSE
+2026-05-19 17:09:05.422 | INFO | CtaStrategy | fusion_605006初始化完成
+2026-05-19 17:09:25,438 [INFO] run_intraday | 达到 --duration=20 秒，退出
+2026-05-19 17:09:25,438 [INFO] run_intraday | 关闭 main_engine ...
+2026-05-19 17:09:26,135 [INFO] run_intraday | 已关闭

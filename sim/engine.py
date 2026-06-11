@@ -7,7 +7,13 @@ sim/engine.py
 """
 
 from datetime import date as Date
-from sim.db import get_conn
+from sim.db import (
+    get_conn,
+    ensure_sim_trades_detail_columns,
+    ensure_sim_positions_trailing_columns,
+    calc_trailing_stop_price,
+)
+from sim.config import risk_params
 
 
 # 费用常量（A 股个人投资者参数）
@@ -25,9 +31,112 @@ class SimEngine:
 
     def __init__(self, account_id: int = 1):
         self.account_id = account_id
+        # [REQ-001] 启动时校验账户映射一致性（config vs DB）
+        self._validate_account_consistency()
+
+    def _validate_account_consistency(self):
+        """[REQ-001] 校验 config.yaml 与 sim_account DB 的一致性。
+
+        检查项：
+        1. config initial_cash vs DB initial_cash（本金变更检测）
+        2. 记录变更事件到 sim_account_events
+        3. 自动同步 DB 中的 initial_cash 使之与 config 一致
+        """
+        try:
+            from sim.config import get_account_config
+            acct_cfg = get_account_config(self.account_id)
+            cfg_initial_cash = float(acct_cfg.get("initial_cash", 100000.0))
+        except Exception:
+            return  # config 读取失败，跳过校验
+
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT initial_cash, cash, total_value FROM sim_account WHERE id = ?",
+                (self.account_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return
+
+            db_initial_cash = float(row["initial_cash"])
+            db_cash = float(row["cash"])
+            db_total = float(row["total_value"])
+
+            if abs(db_initial_cash - cfg_initial_cash) > 0.01:
+                # config 与 DB 不一致，记录事件并同步 DB
+                try:
+                    from sim.db import record_account_event
+                    reason = (
+                        f"本金不一致: DB.initial_cash={db_initial_cash:,.0f}, "
+                        f"config.initial_cash={cfg_initial_cash:,.0f}, "
+                        f"已自动同步 DB 至 config 值"
+                    )
+                    record_account_event(
+                        account_id=self.account_id,
+                        event_type="config_sync",
+                        event_date=Date.today(),
+                        old_initial_cash=db_initial_cash,
+                        new_initial_cash=cfg_initial_cash,
+                        old_total_value=db_total,
+                        new_total_value=db_total,
+                        reason=reason,
+                        source="engine.init",
+                    )
+                except Exception:
+                    pass
+
+                # 同步 DB initial_cash 为 config 值
+                cur.execute(
+                    "UPDATE sim_account SET initial_cash = ?, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ?",
+                    (cfg_initial_cash, self.account_id),
+                )
+                # 同时修正 cash：如果 cash 相对 initial_cash 比例异常，也修正
+                # （避免 old data 里 cash 被旧 initial_cash 污染）
+                # 仅当 cash 明显不合理时（如 initial_cash 改动很大）给出警告
+                print(
+                    f"[REQ-001] 账户 {self.account_id} initial_cash "
+                    f"已从 ¥{db_initial_cash:,.0f} 同步为 ¥{cfg_initial_cash:,.0f}"
+                )
+        finally:
+            conn.close()
+
+    def _count_new_positions_today(self, trade_date: str) -> int:
+        """统计今天新建的仓位数（首次买入某股票，非加仓）"""
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            # 找出今天账户内所有首次出现的持仓（即今天之前无持仓，今天有买入）
+            # 方法：统计今天有 BUY 交易、且在今天之前没有该 stock_code 持仓记录的股票数
+            cur.execute("""
+                SELECT COUNT(DISTINCT stock_code)
+                FROM sim_trades t
+                WHERE t.account_id = ?
+                  AND t.direction = 'BUY'
+                  AND t.trade_date = ?
+                  AND stock_code NOT IN (
+                      SELECT DISTINCT stock_code
+                      FROM sim_trades
+                      WHERE account_id = ?
+                        AND direction = 'BUY'
+                        AND trade_date < ?
+                  )
+            """, (self.account_id, trade_date, self.account_id, trade_date))
+            row = cur.fetchone()
+            return int(row[0]) if row else 0
+        finally:
+            conn.close()
 
     # ---------- 账户 ----------
-    def get_account(self) -> dict:
+    def get_account(self, use_config_initial_cash: bool = True) -> dict:
+        """获取账户信息。
+
+        Args:
+            use_config_initial_cash: 是否用 config 的 initial_cash 覆盖 DB 值。
+                设为 True（默认）可确保收益率计算基准与 config 一致。
+        """
         conn = get_conn()
         try:
             cur = conn.cursor()
@@ -39,7 +148,7 @@ class SimEngine:
             row = cur.fetchone()
             if not row:
                 raise ValueError(f"账户 {self.account_id} 不存在")
-            return {
+            result = {
                 "id": row["id"],
                 "account_name": row["account_name"],
                 "initial_cash": float(row["initial_cash"]),
@@ -47,6 +156,15 @@ class SimEngine:
                 "total_value": float(row["total_value"]),
                 "updated_at": row["updated_at"],
             }
+            # [REQ-001] 若启用，用 config 值覆盖（确保收益率基准正确）
+            if use_config_initial_cash:
+                try:
+                    from sim.config import get_account_config
+                    acct_cfg = get_account_config(self.account_id)
+                    result["initial_cash"] = float(acct_cfg.get("initial_cash", result["initial_cash"]))
+                except Exception:
+                    pass
+            return result
         finally:
             conn.close()
 
@@ -55,9 +173,11 @@ class SimEngine:
         conn = get_conn()
         try:
             cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
             cur.execute(
                 "SELECT id, stock_code, stock_name, quantity, avg_cost, "
-                "current_price, market_value, pnl, pnl_pct "
+                "current_price, market_value, pnl, pnl_pct, "
+                "trailing_stop_price, highest_price "
                 "FROM sim_positions WHERE account_id = ? AND quantity > 0",
                 (self.account_id,),
             )
@@ -81,11 +201,27 @@ class SimEngine:
         finally:
             conn.close()
 
+    def _has_buy_today(self, stock_code: str, trade_date: str) -> bool:
+        """REQ-051: 检查今日是否已买入同一股票（用于多信号去重）"""
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM sim_trades "
+                "WHERE account_id = ? AND stock_code = ? AND trade_date = ? "
+                "AND direction = 'BUY' LIMIT 1",
+                (self.account_id, stock_code, trade_date),
+            )
+            return cur.fetchone() is not None
+        finally:
+            conn.close()
+
     # ---------- 买入 ----------
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
             trade_date: Date = None,
-            broker: str = "sim", broker_order_id: str = None) -> dict:
+            broker: str = "sim", broker_order_id: str = None,
+            signal_detail: dict = None) -> dict:
         """
         买入（佣金万3，最低5元）
         返回 {success, msg, amount, commission}
@@ -94,6 +230,71 @@ class SimEngine:
         """
         if quantity <= 0 or price <= 0:
             return {"success": False, "msg": "价格/数量无效"}
+
+        # ---- REQ-051: 同一股票同日多信号去重 ----
+        # 若今日已有该股票的 BUY 成交，拒绝重复买入（避免同日多信号重复执行）
+        trade_date = trade_date or Date.today()
+        if self._has_buy_today(stock_code, str(trade_date)):
+            return {
+                "success": False,
+                "msg": f"REQ-051: {stock_code} 今日已有买入成交，拒绝重复买入",
+            }
+
+        # ---- REQ-038 硬上限检查 ----
+        risk = risk_params()
+
+        # 1) 总持仓数上限（含本次新建）
+        positions = self.get_positions()
+        existing_codes = {p["stock_code"] for p in positions}
+        if stock_code not in existing_codes:
+            # 本次是新建仓（非加仓），总持仓数会 +1
+            if len(existing_codes) >= risk.get("max_total_positions", 6):
+                return {
+                    "success": False,
+                    "msg": f"持仓数量达到硬上限 {risk.get('max_total_positions', 6)}，无法新建 {stock_code}",
+                }
+
+        # 2) 单日新建仓位数上限
+        trade_date = trade_date or Date.today()
+        new_positions_today = self._count_new_positions_today(str(trade_date))
+        if stock_code not in existing_codes:
+            # 只有新建仓（非加仓）才计入单日新建上限
+            if new_positions_today >= risk.get("max_daily_new_positions", 3):
+                return {
+                    "success": False,
+                    "msg": f"今日新建仓位已达上限 {risk.get('max_daily_new_positions', 3)}，无法新建 {stock_code}",
+                }
+
+        # 重置 trade_date（上面可能已赋值）
+        trade_date = trade_date or Date.today()
+
+        # ---- REQ-045: 现金过低预警 + 仓位管理 ----
+        acct = self.get_account()
+        try:
+            from sim.cash_warning import check_cash_ratio, suggest_position_size
+            _cw = check_cash_ratio(acct["cash"], acct["total_value"])
+            if _cw.level == "critical" and stock_code not in existing_codes:
+                return {
+                    "success": False,
+                    "msg": f"REQ-045: {_cw.message}",
+                }
+            if _cw.level == "low":
+                original_qty = quantity
+                quantity = suggest_position_size(quantity, _cw)
+                if quantity < original_qty:
+                    import logging as _logging
+                    _logging.getLogger(__name__).warning(
+                        "REQ-045: 现金占比 %.1f%% 偏低，买入量 %d→%d",
+                        _cw.cash_pct * 100, original_qty, quantity,
+                    )
+                if quantity == 0:
+                    return {
+                        "success": False,
+                        "msg": f"REQ-045: 现金占比 {_cw.cash_pct:.1%} 过低，建议买入量缩减为0",
+                    }
+        except Exception as _e:
+            import logging as _logging
+            _logging.getLogger(__name__).debug("REQ-045 check failed: %s", _e)
 
         # 数量向下取整到 100 股
         quantity = (quantity // 100) * 100
@@ -112,6 +313,7 @@ class SimEngine:
         conn = get_conn()
         try:
             cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
             # 1. 扣减现金
             new_cash = acct["cash"] - total_cost
             cur.execute("UPDATE sim_account SET cash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
@@ -127,36 +329,61 @@ class SimEngine:
                 cur.execute(
                     "UPDATE sim_positions SET quantity = ?, avg_cost = ?, "
                     "current_price = ?, market_value = ?, pnl = ?, pnl_pct = ?, "
+                    "highest_price = MAX(COALESCE(highest_price, ?), ?), "
                     "updated_at = CURRENT_TIMESTAMP "
                     "WHERE id = ?",
                     (new_qty, round(new_avg, 4), price,
                      round(price * new_qty, 2),
                      round((price - new_avg) * new_qty, 2),
                      round((price - new_avg) / new_avg, 4) if new_avg else 0,
+                     price, price,
                      pos["id"]),
                 )
             else:
                 cur.execute(
                     "INSERT INTO sim_positions "
                     "(account_id, stock_code, stock_name, quantity, avg_cost, "
-                    "current_price, market_value, pnl, pnl_pct) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "current_price, market_value, pnl, pnl_pct, "
+                    "highest_price, trailing_stop_price) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (self.account_id, stock_code, stock_name, quantity,
                      round(price, 4), round(price, 4),
-                     round(price * quantity, 2), 0, 0),
+                     round(price * quantity, 2), 0, 0,
+                     round(price, 4), None),
                 )
 
-            # 3. 写交易记录
-            cur.execute(
-                "INSERT INTO sim_trades "
-                "(account_id, trade_date, stock_code, stock_name, direction, "
-                "price, quantity, amount, commission, tax, signal_reason, "
-                "broker, broker_order_id) "
-                "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?)",
-                (self.account_id, str(trade_date), stock_code, stock_name,
-                 round(price, 4), quantity, round(amount, 2),
-                 round(commission, 2), signal_reason, broker, broker_order_id),
-            )
+            # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失
+            import json as _json
+            ensure_sim_trades_detail_columns(cur)
+            _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
+            # 动态检测 signal_detail 列是否存在（兼容旧表/异常迁移场景）
+            _cols = [r[1] for r in cur.execute('PRAGMA table_info(sim_trades)').fetchall()]
+            _has_detail = 'signal_detail' in _cols
+            if _has_detail:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id, signal_detail) "
+                    "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                          round(price, 4), quantity, round(amount, 2),
+                          round(commission, 2), signal_reason,
+                          broker, broker_order_id, _detail_str)
+            else:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id) "
+                    "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                          round(price, 4), quantity, round(amount, 2),
+                          round(commission, 2), signal_reason,
+                          broker, broker_order_id)
+            cur.execute(_sql, _params)
         finally:
             conn.close()
 
@@ -171,10 +398,20 @@ class SimEngine:
     def sell(self, stock_code: str, price: float, quantity: int,
              stock_name: str = "", signal_reason: str = "",
              trade_date: Date = None,
-             broker: str = "sim", broker_order_id: str = None) -> dict:
+             broker: str = "sim", broker_order_id: str = None,
+             signal_detail: dict = None) -> dict:
         """卖出（佣金万3最低5元 + 印花税千1）"""
         if quantity <= 0 or price <= 0:
             return {"success": False, "msg": "价格/数量无效"}
+
+        # REQ-058: SELL 必须可溯源 —— 禁止写入空 signal_reason，
+        # 缺失时用标准格式回填占位（规则名+触发价），避免成交记录 NULL 无法对账。
+        if not (signal_reason or "").strip():
+            try:
+                from sim.sell_signal_audit import build_sell_signal_reason
+                signal_reason = build_sell_signal_reason("manual_sell", trigger_price=price)
+            except Exception:
+                signal_reason = f"manual_sell|触发价{price:.3f}"
 
         pos = self._get_position(stock_code)
         if not pos:
@@ -217,18 +454,37 @@ class SimEngine:
                     (pos["id"],),
                 )
 
-            # 3. 写交易记录
-            cur.execute(
-                "INSERT INTO sim_trades "
-                "(account_id, trade_date, stock_code, stock_name, direction, "
-                "price, quantity, amount, commission, tax, signal_reason, "
-                "broker, broker_order_id) "
-                "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?)",
-                (self.account_id, str(trade_date), stock_code, stock_name,
-                 round(price, 4), quantity, round(amount, 2),
-                 round(commission, 2), round(tax, 2), signal_reason,
-                 broker, broker_order_id),
-            )
+            # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失
+            import json as _json
+            ensure_sim_trades_detail_columns(cur)
+            _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
+            _cols = [r[1] for r in cur.execute('PRAGMA table_info(sim_trades)').fetchall()]
+            _has_detail = 'signal_detail' in _cols
+            if _has_detail:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id, signal_detail) "
+                    "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                           round(price, 4), quantity, round(amount, 2),
+                           round(commission, 2), round(tax, 2), signal_reason,
+                           broker, broker_order_id, _detail_str)
+            else:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id) "
+                    "VALUES (?, ?, ?, ?, 'SELL', ?, ?, ?, ?, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                           round(price, 4), quantity, round(amount, 2),
+                           round(commission, 2), round(tax, 2), signal_reason,
+                           broker, broker_order_id)
+            cur.execute(_sql, _params)
         finally:
             conn.close()
 
@@ -242,29 +498,60 @@ class SimEngine:
 
     # ---------- 更新持仓价格 ----------
     def update_prices(self, price_dict: dict):
-        """price_dict: {stock_code: latest_price}"""
+        """price_dict: {stock_code: latest_price}
+
+        价格刷新时同步抬高 P2 跟踪止损：
+        - 浮盈 > 5%  ：止损位 → entry*1.0（保本）
+        - 浮盈 > 10% ：止损位 → entry*1.02（保 2% 利润）
+        - 浮盈 > 20% ：止损位 → max(entry*1.10, high*0.92)
+        止损位和持仓最高价只能上移，不能下移。
+        """
         conn = get_conn()
         try:
             cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
             for code, p in price_dict.items():
+                cur.execute(
+                    "SELECT id, avg_cost, highest_price, trailing_stop_price "
+                    "FROM sim_positions WHERE account_id = ? AND stock_code = ? AND quantity > 0",
+                    (self.account_id, code),
+                )
+                row = cur.fetchone()
+                if not row:
+                    continue
+                latest = float(p)
+                entry = float(row["avg_cost"] or 0)
+                highest = max(float(row["highest_price"] or entry or 0), latest)
+                trailing, _reason = calc_trailing_stop_price(entry, highest, row["trailing_stop_price"])
                 cur.execute(
                     "UPDATE sim_positions SET "
                     "current_price = ?, "
                     "market_value = quantity * ?, "
                     "pnl = (quantity * ?) - (quantity * avg_cost), "
                     "pnl_pct = CASE WHEN avg_cost > 0 THEN (? - avg_cost) / avg_cost ELSE 0 END, "
+                    "highest_price = ?, trailing_stop_price = ?, "
                     "updated_at = CURRENT_TIMESTAMP "
-                    "WHERE account_id = ? AND stock_code = ? AND quantity > 0",
-                    (p, p, p, p, self.account_id, code),
+                    "WHERE id = ?",
+                    (latest, latest, latest, latest,
+                     round(highest, 4), trailing if trailing > 0 else None,
+                     row["id"]),
                 )
         finally:
             conn.close()
 
     # ---------- 每日结算 ----------
     def daily_settle(self, trade_date: Date = None) -> dict:
-        """每日结算：刷新总资产、记录净值。SQLite UPSERT 写法。"""
+        """每日结算：刷新总资产、记录净值。SQLite UPSERT 写法。
+
+        新增 REQ-001 资金口径跳变检测：
+        - 检测总资产/现金相对上一净值日是否跳变超过 50%
+        - 跳变时记录事件到 sim_account_events
+        - 跳变时 daily_return 设为 None，cumulative_return 重新基于 initial_cash 计算
+        """
         trade_date = trade_date or Date.today()
-        acct = self.get_account()
+        # [REQ-001] 使用 config 的 initial_cash 作为基准（不受 DB 脏数据影响）
+        acct = self.get_account(use_config_initial_cash=True)
+        config_initial_cash = acct["initial_cash"]
         positions = self.get_positions()
 
         market_value = sum(float(p["market_value"] or 0) for p in positions)
@@ -279,19 +566,75 @@ class SimEngine:
                 (round(total_value, 2), self.account_id),
             )
 
-            initial_cash = acct["initial_cash"]
+            initial_cash = config_initial_cash  # [REQ-001] 始终以 config 为基准
             cumulative_return = (total_value - initial_cash) / initial_cash if initial_cash else 0
 
             # 前一日净值
             cur.execute(
-                "SELECT total_value FROM sim_daily_nav "
+                "SELECT total_value, cash, trade_date, cash_jump_detected "
+                "FROM sim_daily_nav "
                 "WHERE account_id = ? AND trade_date < ? "
                 "ORDER BY trade_date DESC LIMIT 1",
                 (self.account_id, str(trade_date)),
             )
             prev = cur.fetchone()
             prev_value = float(prev["total_value"]) if prev else initial_cash
-            daily_return = (total_value - prev_value) / prev_value if prev_value else 0
+
+            # [REQ-001] 资金口径跳变检测（阈值降低到 20%）
+            cash_jump_detected = 0
+            cash_jump_reason = None
+            if prev:
+                prev_total = float(prev["total_value"])
+                prev_cash = float(prev["cash"])
+                total_jump = (total_value - prev_total) / prev_total if prev_total > 0 else 0
+                cash_jump = (acct["cash"] - prev_cash) / prev_cash if prev_cash > 0 else 0
+                # 检测跳变 或 config 本金变更
+                config_changed = False
+                try:
+                    from sim.db import fetch_account_events
+                    events = fetch_account_events(self.account_id, limit=10)
+                    for ev in events:
+                        if ev["event_type"] in ("config_sync", "reset") and str(ev["event_date"]) >= str(prev["trade_date"]):
+                            config_changed = True
+                            break
+                except Exception:
+                    pass
+
+                if abs(total_jump) >= 0.20 or abs(cash_jump) >= 0.20 or config_changed:
+                    cash_jump_detected = 1
+                    reasons = []
+                    if abs(total_jump) >= 0.20:
+                        reasons.append(f"总资产跳变 {total_jump*100:+.2f}%")
+                    if abs(cash_jump) >= 0.20:
+                        reasons.append(f"现金跳变 {cash_jump*100:+.2f}%")
+                    if config_changed:
+                        reasons.append("config initial_cash 变更")
+                    cash_jump_reason = "; ".join(reasons) + (
+                        f" (¥{prev_total:,.2f}→¥{total_value:,.2f})"
+                    )
+                    # 记录账户事件
+                    try:
+                        from sim.db import record_account_event
+                        record_account_event(
+                            account_id=self.account_id,
+                            event_type="jump_detected",
+                            event_date=trade_date,
+                            old_initial_cash=None,
+                            new_initial_cash=None,
+                            old_total_value=prev_total,
+                            new_total_value=total_value,
+                            reason=cash_jump_reason,
+                            source="engine.daily_settle",
+                        )
+                    except Exception:
+                        pass
+
+            # 计算日收益率（跳变时设为 None，避免曲线失真）
+            if cash_jump_detected:
+                daily_return = None
+            else:
+                # [REQ-001] 使用 initial_cash（config 基准）计算日收益
+                daily_return = (total_value - prev_value) / prev_value if prev_value else 0
 
             # 历史峰值（包含当前）
             cur.execute(
@@ -303,22 +646,28 @@ class SimEngine:
             peak = max(peak, total_value)
             max_drawdown = (peak - total_value) / peak if peak > 0 else 0
 
-            # SQLite UPSERT
+            # SQLite UPSERT (含跳变标记)
             cur.execute(
                 "INSERT INTO sim_daily_nav "
                 "(account_id, trade_date, total_value, cash, market_value, "
-                "daily_return, cumulative_return, max_drawdown) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+                "daily_return, cumulative_return, max_drawdown, "
+                "cash_jump_detected, cash_jump_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(account_id, trade_date) DO UPDATE SET "
                 "total_value = excluded.total_value, cash = excluded.cash, "
                 "market_value = excluded.market_value, daily_return = excluded.daily_return, "
                 "cumulative_return = excluded.cumulative_return, "
-                "max_drawdown = excluded.max_drawdown",
+                "max_drawdown = excluded.max_drawdown, "
+                "cash_jump_detected = excluded.cash_jump_detected, "
+                "cash_jump_reason = excluded.cash_jump_reason",
                 (self.account_id, str(trade_date),
                  round(total_value, 2), round(acct["cash"], 2),
                  round(market_value, 2),
-                 round(daily_return, 4), round(cumulative_return, 4),
-                 round(max_drawdown, 4)),
+                 daily_return,  # 跳变时 None
+                 round(cumulative_return, 4),
+                 round(max_drawdown, 4),
+                 cash_jump_detected,
+                 cash_jump_reason),
             )
         finally:
             conn.close()
@@ -328,7 +677,9 @@ class SimEngine:
             "total_value": round(total_value, 2),
             "cash": round(acct["cash"], 2),
             "market_value": round(market_value, 2),
-            "daily_return": round(daily_return, 4),
+            "daily_return": daily_return,  # 跳变时 None
             "cumulative_return": round(cumulative_return, 4),
             "max_drawdown": round(max_drawdown, 4),
+            "cash_jump_detected": bool(cash_jump_detected),
+            "cash_jump_reason": cash_jump_reason,
         }

@@ -39,12 +39,14 @@ class SimBroker(IBroker):
     # ---------- 下单 ----------
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
-            trade_date: Optional[Date] = None) -> OrderResult:
+            trade_date: Optional[Date] = None,
+            signal_detail: dict = None) -> OrderResult:
         exec_price = price * (1 + self.slippage) if self.slippage else price
         r = self.engine.buy(
             stock_code=stock_code, price=exec_price, quantity=quantity,
             stock_name=stock_name, signal_reason=signal_reason,
             trade_date=trade_date, broker=self.name,
+            signal_detail=signal_detail,
         )
         return OrderResult(
             success=r.get("success", False),
@@ -60,12 +62,14 @@ class SimBroker(IBroker):
 
     def sell(self, stock_code: str, price: float, quantity: int,
              stock_name: str = "", signal_reason: str = "",
-             trade_date: Optional[Date] = None) -> OrderResult:
+             trade_date: Optional[Date] = None,
+             signal_detail: dict = None) -> OrderResult:
         exec_price = price * (1 - self.slippage) if self.slippage else price
         r = self.engine.sell(
             stock_code=stock_code, price=exec_price, quantity=quantity,
             stock_name=stock_name, signal_reason=signal_reason,
             trade_date=trade_date, broker=self.name,
+            signal_detail=signal_detail,
         )
         return OrderResult(
             success=r.get("success", False),

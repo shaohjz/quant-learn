@@ -1,0 +1,6 @@
+strategy_id,avg_return,avg_annual,avg_drawdown,avg_sharpe,avg_winrate,avg_pf,avg_trades,n_stocks,score
+bollinger,3.59,1.62,4.59,0.43,65.64,9.93,11.77,22,60.78
+sma_cross,7.74,3.46,7.99,0.45,42.21,1.96,24.73,22,42.15
+macd,6.34,2.8,8.08,0.36,37.18,2.14,32.23,22,40.76
+composite,9.6,4.14,11.16,0.36,34.85,1.79,37.0,22,38.38
+threshold_alert,-25.47,-13.82,39.82,-0.51,24.98,0.37,322.77,22,6.53

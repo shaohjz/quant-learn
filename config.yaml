@@ -1,55 +1,1082 @@
-# config.yaml — 量化交易系统配置（提交时不要写敏感信息）
-#
-# 推荐用法：把账户敏感配置放到 config.local.yaml（已加入 .gitignore），
-# config.local.yaml 会覆盖本文件的同名字段。
-
-# ========== 资金 ==========
 account:
-  initial_cash: 10000   # 初始资金 1 万（贴近真实可交易金额）
   account_id: 1
-
-# ========== 股票池 ==========
-# 国金 mini-QMT 模拟账户（90072426）支持沪深两市
-stock_pool:
-  - code: "000967"
-    name: "盈峰环境"
-    enabled: true
-  - code: "002256"
-    name: "兆新股份"
-    enabled: true
-  - code: "002453"
-    name: "华软科技"
-    enabled: false   # 暂未启用，开仓前再切
-
-# ========== 风控 ==========
-risk:
-  max_position_pct: 0.60      # 单只股票最大仓位
-  max_daily_trades: 5         # 每日最大交易笔数
-  stop_loss_pct: -0.08        # 止损线
-  take_profit_pct: 0.15       # 止盈线
-
-# ========== 费用模型 ==========
+  initial_cash: 200000
+accounts:
+  learn:
+    account_id: 1
+    account_name: live_mirror
+    auto_trade: true
+    description: vqlearn 量化策略自学习账户（2026-06-09 调升至10万：存量仓位按市值占比等比加仓，差额以现金形式保留作为后续建仓资金）
+    initial_cash: 100000.0
+    max_total_value: 25000.0
+  real:
+    account_id: 2
+    account_name: real_portfolio
+    auto_trade: false
+    description: 用户实际持仓镜像，由 scripts/sync_real_position.py 维护
+    initial_cash: 25000.0
+broker:
+  live:
+    session_id: 123456
+  mode: sim
+  sim:
+    slippage: 0.0
 fees:
-  commission_rate: 0.0003     # 佣金万3
-  min_commission: 5.0         # 最低佣金 5 元
-  stamp_tax_rate: 0.001       # 印花税千1（仅卖出）
-  unit_size: 100              # 交易单位（A 股 100 股）
-
-# ========== 推送通知 ==========
+  commission_rate: 0.00025
+  min_commission: 5.0
+  stamp_tax_rate: 0.0005
+  unit_size: 100
+legacy_watch:
+  '002342':
+    enabled: false
+    name: 巨力索具
+    note: 5/19 暴跌后清仓
 notifier:
   enabled: true
-  # 企微群机器人 webhook URL
-  # 获取方法：建个企微群 → 右上角 → 添加群机器人 → 拿 webhook
-  # 详细文档：https://developer.work.weixin.qq.com/document/path/91770
-  # 敏感：实际值建议写到 config.local.yaml不交仓库
-  wecom_webhook: ""
-
-# ========== 交易模式 ==========
-broker:
-  mode: "sim"                 # sim / live
-  sim:
-    slippage: 0.0             # 模拟盘滑点
-  live:
-    # qmt_path / qmt_account 不要写在这里，
-    # 通过环境变量 QMT_USERDATA_MINI / QMT_ACCOUNT_ID 注入
-    session_id: 123456
+notify:
+  wecom_webhook: ''
+precision:
+  amount_decimals: 2
+  cost_decimals: 3
+  price_decimals: 3
+  rounding: ROUND_HALF_UP
+real_portfolio_rules:
+  '002453':
+    name: 华软科技
+    rules:
+      half_out:
+        dir: above
+        msg: 📈 涨到 6.80！建议挂卖 150 股
+        trigger: 6.8
+      stop_loss:
+        dir: below
+        msg: 🚨 跌破 5.80！硬止损卖出 300 股
+        trigger: 5.8
+      stop_loss_tight:
+        dir: below
+        msg: ⚠️ 华软科技跌破 MA20×0.98 (5.69)！接近止损线
+        trigger: 5.69
+      take_profit:
+        dir: above
+        msg: 🎉 华软科技涨至 7.44！(成本×1.15 或 MA20+2ATR)，建议止盈
+        trigger: 7.44
+  '600330':
+    name: 天通股份
+    rules:
+      half_out:
+        dir: above
+        msg: ✅ 回到 32 回本线！建议挂卖 200 股 @32.00
+        trigger: 32.0
+      stop_loss:
+        dir: below
+        msg: 🚨 天通股份跌破 MA20×0.97 (27.94)！止损线
+        trigger: 27.94
+      take_profit:
+        dir: above
+        msg: 🎉 天通股份涨至 33.92！(MA20+2ATR)，建议止盈
+        trigger: 33.92
+  '603601':
+    name: 再升科技
+    rules:
+      hard_stop:
+        dir: below
+        msg: 🚨🚨 再升科技跌破 15.00！硬止损（-15.8%）必须卖 100 股
+        trigger: 15.0
+      stop_loss:
+        dir: below
+        msg: 🚨 再升科技跌破 MA20×0.97 (16.31)！止损线
+        trigger: 16.31
+      take_profit:
+        dir: above
+        msg: 🎉🎉 涨到 21.00！题材股高位，清仓 100 股
+        trigger: 21.0
+      take_profit_half:
+        dir: above
+        msg: 🎉 再升科技涨至 19.89！(MA20+2ATR)，建议止盈
+        trigger: 19.89
+  '603757':
+    name: 大元泵业
+    rules:
+      stop_loss:
+        dir: below
+        msg: 🚨 大元泵业跌破 50.00！浮亏超 -10%，硬止损必须卖出
+        trigger: 50.0
+      stop_loss_soft:
+        dir: below
+        msg: ⚠️ 大元泵业跌破 55.00！浮亏约 -8%，接近止损线，密切关注
+        trigger: 55.0
+      take_profit:
+        dir: above
+        msg: 🎉 大元泵业涨至 65.00，回本线附近，可考虑减仓
+        trigger: 65.0
+risk:
+  cash_ratio_crit: 0.02
+  cash_ratio_warn: 0.05
+  liquidity_release_loss_threshold: 0.08
+  max_daily_build_amount_pct: 0.3
+  max_daily_new_positions: 3
+  max_daily_trades: 10
+  max_industry_pct: 0.3
+  max_position_pct: 0.2
+  max_sector_pct: 0.35
+  max_total_positions: 6
+  stop_loss_pct: -0.08
+  take_profit_pct: 0.15
+  warn_industry_pct: 0.25
+  warn_sector_pct: 0.3
+stock_pool: []
+watchlist:
+  auto_discovered: {}
+  user_manual:
+    '000600':
+      added_at: '2026-05-27'
+      added_price: 10.48
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 建投能源
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区
+          trigger: 9.9
+        buy_zone:
+          dir: below
+          msg: 💰 建投能源跌至 10.17！接近 MA10(10.17)，试探建仓
+          trigger: 10.17
+        trend_break:
+          dir: below
+          msg: ⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 9.26
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 6.43
+        atr_stop_basis: 2*ATR=12.9% (裁到 [5,15])
+        atr_stop_pct: 12.86
+        gate: auto
+        last: 12.45
+        last_vs_ma60_pct: 28.4
+        ma20_vs_ma60_pct: 8.2
+        ma60: 9.7
+        macd_golden: true
+        status: HEALTHY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.47
+    '000725':
+      added_at: 2026-05-22
+      added_price: 5.16
+      added_reason: 5/22 涨停 +10.02%，摸顶 4.69 启动；面板/存储/AI 硬件复苏龙头
+      enabled: true
+      name: 京东方A
+      notes: 当前涨停，不追高。等回踩前高 4.69 附近不破才买
+      recommended_by: 涛哥
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 京东方A跌至 4.27！回踩 MA20(4.27)，优质建仓区
+          trigger: 4.27
+        buy_zone:
+          dir: below
+          msg: 💰 京东方A跌至 4.36！接近 MA10(4.36)，试探建仓
+          trigger: 4.36
+      source: 涛哥推荐
+      tags:
+      - 面板
+      - 半导体
+      - 央企
+      trend_filter:
+        atr_pct: 6.77
+        atr_stop_basis: 2*ATR=13.5% (裁到 [5,15])
+        atr_stop_pct: 13.54
+        gate: auto
+        last: 5.59
+        last_vs_ma60_pct: 28.9
+        ma20_vs_ma60_pct: 10.6
+        ma60: 4.34
+        macd_golden: true
+        status: HEALTHY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.79
+    000899:
+      added_at: '2026-05-27'
+      added_price: 12.83
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 赣能股份
+      recommended_by: 泛舟财海
+      rules:
+        right_side_confirm:
+          dir: above
+          msg: ✅ 赣能股份站上 13.79 (MA60×1.02)！右侧确认信号，可考虑解冻
+          trigger: 13.79
+        trend_break:
+          dir: below
+          msg: ⚠️ 赣能股份破 12.52！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 12.52
+        trend_break_warn:
+          dir: below
+          msg: ⚠️ 赣能股份跳破 12.84 (MA60×0.95)！趋势实质走坏
+          trigger: 12.84
+      rules_backup_2026-05-27:
+        buy_strong:
+          dir: below
+          msg: 💰💰 赣能股份跌至 13.23！回踩 MA20(13.23)，优质建仓区
+          trigger: 13.23
+        buy_zone:
+          dir: below
+          msg: 💰 赣能股份跌至 13.29！接近 MA10(13.29)，试探建仓
+          trigger: 13.29
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 5.85
+        atr_stop_basis: 2*ATR=11.7% (裁到 [5,15])
+        atr_stop_pct: 11.7
+        gate: auto
+        last: 15.01
+        last_vs_ma60_pct: 11.0
+        ma20_vs_ma60_pct: 0.7
+        ma60: 13.52
+        macd_golden: true
+        status: HEALTHY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.59
+    001896:
+      added_at: '2026-05-27'
+      added_price: 16.55
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 豫能控股
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 豫能控股跌至 16.28！回踩 MA20(16.28)，优质建仓区
+          trigger: 16.28
+        buy_zone:
+          dir: below
+          msg: 💰 豫能控股跌至 16.12！接近 MA10(16.12)，试探建仓
+          trigger: 16.12
+        trend_break:
+          dir: below
+          msg: ⚠️ 豫能控股破 15.09！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 15.09
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 8.64
+        atr_stop_basis: 2*ATR=17.3% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 20.08
+        last_vs_ma60_pct: 26.8
+        ma20_vs_ma60_pct: 4.8
+        ma60: 15.83
+        macd_golden: true
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.26
+    '002067':
+      added_at: '2026-05-27'
+      added_price: 5.41
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 景兴纸业
+      recommended_by: 泛舟财海
+      rules:
+        right_side_confirm:
+          dir: above
+          msg: ✅ 景兴纸业站上 5.11 (MA60×1.02)！右侧确认信号，可考虑解冻
+          trigger: 5.11
+        trend_break:
+          dir: below
+          msg: ⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 4.65
+        trend_break_warn:
+          dir: below
+          msg: ⚠️ 景兴纸业跳破 4.76 (MA60×0.95)！趋势实质走坏
+          trigger: 4.76
+      rules_backup_2026-06-04:
+        buy_strong:
+          dir: below
+          msg: 💰💰 景兴纸业跌至 4.98！回踩 MA20(4.98)，优质建仓区
+          trigger: 4.98
+        buy_zone:
+          dir: below
+          msg: 💰 景兴纸业跌至 5.09！接近 MA10(5.09)，试探建仓
+          trigger: 5.09
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 5.77
+        atr_stop_basis: 2*ATR=11.5% (裁到 [5,15])
+        atr_stop_pct: 11.54
+        gate: frozen
+        last: 4.9
+        last_vs_ma60_pct: -2.3
+        ma20_vs_ma60_pct: 0.3
+        ma60: 5.01
+        macd_golden: false
+        status: BROKEN
+        updated_at: '2026-06-04'
+        vol_ratio: 0.8
+    002149:
+      added_at: 2026-05-19
+      added_price: 68.24
+      added_reason: 玄鉴录推荐
+      enabled: true
+      name: 西部材料
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 西部材料跌至 67.7！回踩 MA20(67.7)，优质建仓区
+          trigger: 67.7
+        buy_zone:
+          dir: below
+          msg: 💰 西部材料跌至 71.63！接近 MA10(71.63)，试探建仓
+          trigger: 71.63
+      source: 玄鉴录
+      tags:
+      - 有色金属
+      - 钛材
+      trend_filter:
+        atr_pct: 9.08
+        atr_stop_basis: 2*ATR=18.2% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 61.7
+        last_vs_ma60_pct: 8.8
+        ma20_vs_ma60_pct: 20.3
+        ma60: 56.7
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 0.68
+    '002156':
+      added_at: 2026-05-19
+      added_price: 58.86
+      added_reason: 玄鉴录推荐量化首选
+      enabled: true
+      name: 通富微电
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 通富微电跌至 56.04！回踩 MA20(56.04)，优质建仓区
+          trigger: 56.04
+        buy_zone:
+          dir: below
+          msg: 💰 通富微电跌至 60.04！接近 MA10(60.04)，试探建仓
+          trigger: 60.04
+      source: 玄鉴录
+      tags:
+      - 半导体
+      - 封装测试
+      trend_filter:
+        atr_pct: 7.62
+        atr_stop_basis: 2*ATR=15.2% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: wait_macd
+        last: 70.22
+        last_vs_ma60_pct: 35.7
+        ma20_vs_ma60_pct: 22.1
+        ma60: 51.73
+        macd_golden: false
+        status: CAUTION
+        updated_at: '2026-06-04'
+        vol_ratio: 0.92
+    002290:
+      added_at: 2026-05-25
+      added_price: 99.13
+      added_reason: 用户观察，当前高位震荡(MA20=89.06)，等回调MA10附近再入
+      enabled: true
+      name: 禾盛新材
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 禾盛新材跌至 89.06！回踩 MA20(89.06)，优质建仓区
+          trigger: 89.06
+        buy_zone:
+          dir: below
+          msg: 💰 禾盛新材跌至 95.58！接近 MA10(95.58)，试探建仓
+          trigger: 95.58
+        trend_break:
+          dir: below
+          msg: ⚠️ 禾盛新材破 77.38！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 77.38
+      source: 用户指定
+      tags:
+      - 新材料
+      - 薄膜
+      trend_filter:
+        atr_pct: 8.3
+        atr_stop_basis: 2*ATR=16.6% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 89.27
+        last_vs_ma60_pct: 16.5
+        ma20_vs_ma60_pct: 23.3
+        ma60: 76.61
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 0.57
+    '002654':
+      added_at: 2026-05-26
+      added_reason: 玄鉴录推荐
+      enabled: true
+      name: 万润科技
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 万润科技跌至 16.01！回踩 MA20(16.01)，优质建仓区
+          trigger: 16.01
+        buy_zone:
+          dir: below
+          msg: 💰 万润科技跌至 17.40！接近 MA10(17.40)，试探建仓
+          trigger: 17.4
+      source: 玄鉴录
+      trend_filter:
+        atr_pct: 8.29
+        atr_stop_basis: 2*ATR=16.6% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 15.27
+        last_vs_ma60_pct: 0.1
+        ma20_vs_ma60_pct: 8.1
+        ma60: 15.26
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 0.52
+    002709:
+      added_at: 2026-05-19
+      added_price: 54.44
+      added_reason: 玄鉴录推荐
+      enabled: true
+      name: 天赐材料
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 天赐材料跌至 57.05！回踩 MA20(57.05)，优质建仓区
+          trigger: 57.05
+        buy_zone:
+          dir: below
+          msg: 💰 天赐材料跌至 57.33！接近 MA10(57.33)，试探建仓
+          trigger: 57.33
+      source: 玄鉴录
+      tags:
+      - 锂电池
+      - 新能源材料
+      trend_filter:
+        atr_pct: 6.27
+        atr_stop_basis: 2*ATR=12.5% (裁到 [5,15])
+        atr_stop_pct: 12.54
+        gate: wait_macd
+        last: 51.3
+        last_vs_ma60_pct: 1.9
+        ma20_vs_ma60_pct: 10.4
+        ma60: 50.36
+        macd_golden: false
+        status: CAUTION
+        updated_at: '2026-06-04'
+        vol_ratio: 0.55
+    '301120':
+      added_at: '2026-05-27'
+      added_price: 22.8
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 新特电气
+      recommended_by: 泛舟财海
+      rules:
+        right_side_confirm:
+          dir: above
+          msg: ✅ 新特电气站上 23.44 (MA60×1.02)！右侧确认信号，可考虑解冻
+          trigger: 23.44
+        trend_break:
+          dir: below
+          msg: ⚠️ 新特电气破 18.93！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 18.93
+        trend_break_warn:
+          dir: below
+          msg: ⚠️ 新特电气跳破 21.83 (MA60×0.95)！趋势实质走坏
+          trigger: 21.83
+      rules_backup_2026-05-27:
+        buy_strong:
+          dir: below
+          msg: 💰💰 新特电气跌至 21.38！回踩 MA20(21.38)，优质建仓区
+          trigger: 21.38
+        buy_zone:
+          dir: below
+          msg: 💰 新特电气跌至 22.54！接近 MA10(22.54)，试探建仓
+          trigger: 22.54
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 8.25
+        atr_stop_basis: 2*ATR=16.5% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 24.36
+        last_vs_ma60_pct: 5.8
+        ma20_vs_ma60_pct: -0.4
+        ma60: 23.02
+        macd_golden: true
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.52
+    '301179':
+      added_at: '2026-05-27'
+      added_price: 24.9
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 泽宇智能
+      recommended_by: 泛舟财海
+      rules:
+        right_side_confirm:
+          dir: above
+          msg: ✅ 泽宇智能站上 25.49 (MA60×1.02)！右侧确认信号，可考虑解冻
+          trigger: 25.49
+        trend_break:
+          dir: below
+          msg: ⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 23.46
+        trend_break_warn:
+          dir: below
+          msg: ⚠️ 泽宇智能跳破 23.74 (MA60×0.95)！趋势实质走坏
+          trigger: 23.74
+      rules_backup_2026-06-04:
+        buy_strong:
+          dir: below
+          msg: 💰💰 泽宇智能跌至 25.21！回踩 MA20(25.21)，优质建仓区
+          trigger: 25.21
+        buy_zone:
+          dir: below
+          msg: 💰 泽宇智能跌至 25.83！接近 MA10(25.83)，试探建仓
+          trigger: 25.83
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 7.35
+        atr_stop_basis: 2*ATR=14.7% (裁到 [5,15])
+        atr_stop_pct: 14.7
+        gate: frozen
+        last: 22.77
+        last_vs_ma60_pct: -8.9
+        ma20_vs_ma60_pct: -0.3
+        ma60: 24.99
+        macd_golden: false
+        status: BROKEN
+        updated_at: '2026-06-04'
+        vol_ratio: 0.51
+    '600021':
+      added_at: '2026-05-27'
+      added_price: 20.39
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 上海电力
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 上海电力跌至 17.84！回踩 MA20(17.84)，优质建仓区
+          trigger: 17.84
+        buy_zone:
+          dir: below
+          msg: 💰 上海电力跌至 18.11！接近 MA10(18.11)，试探建仓
+          trigger: 18.11
+        trend_break:
+          dir: below
+          msg: ⚠️ 上海电力破 16.62！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 16.62
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 6.57
+        atr_stop_basis: 2*ATR=13.1% (裁到 [5,15])
+        atr_stop_pct: 13.14
+        gate: auto
+        last: 20.86
+        last_vs_ma60_pct: 10.5
+        ma20_vs_ma60_pct: 0.2
+        ma60: 18.88
+        macd_golden: true
+        status: HEALTHY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.6
+    '600186':
+      added_at: 2026-05-25
+      added_price: 12.93
+      added_reason: 今日涨停+10.04%，不追高，等回踩确认
+      enabled: true
+      name: 莲花控股
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 莲花控股跌至 10.42！回踩 MA20(10.42)，优质建仓区
+          trigger: 10.42
+        buy_zone:
+          dir: below
+          msg: 💰 莲花控股跌至 10.74！接近 MA10(10.74)，试探建仓
+          trigger: 10.74
+        trend_break:
+          dir: below
+          msg: ⚠️ 莲花控股破 9.1！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 9.1
+      source: 用户指定
+      tags:
+      - 食品
+      - 味精
+      - 重组
+      trend_filter:
+        atr_pct: 10.34
+        atr_stop_basis: 2*ATR=20.7% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 9.55
+        last_vs_ma60_pct: 9.9
+        ma20_vs_ma60_pct: 25.0
+        ma60: 8.69
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 0.75
+    '600309':
+      added_at: 2026-05-22
+      added_price: 78.0
+      added_reason: 化工龙头高位回调，近 60 日高 94.32 低 75.01，在 MA20/MA60 下方整理
+      enabled: true
+      name: 万华化学
+      notes: 当前 MA60 下方，右侧交易，等回调到位
+      recommended_by: 涛哥
+      rules:
+        right_side_confirm:
+          dir: above
+          msg: ✅ 万华化学站上 83.56 (MA60×1.02)！右侧确认信号，可考虑解冻
+          trigger: 83.56
+        trend_break_warn:
+          dir: below
+          msg: ⚠️ 万华化学跳破 77.82 (MA60×0.95)！趋势实质走坏
+          trigger: 77.82
+      rules_backup_2026-05-27:
+        buy_strong:
+          dir: below
+          msg: 💰💰 万华化学跌至 84.46！回踩 MA20(84.46)，优质建仓区
+          trigger: 84.46
+        buy_zone:
+          dir: below
+          msg: 💰 万华化学跌至 80.78！接近 MA10(80.78)，试探建仓
+          trigger: 80.78
+      source: 涛哥推荐
+      tags:
+      - 化工
+      - 白马
+      - 龙头
+      trend_filter:
+        atr_pct: 3.11
+        atr_stop_basis: 2*ATR=6.2% (裁到 [5,15])
+        atr_stop_pct: 6.22
+        gate: frozen
+        last: 74.17
+        last_vs_ma60_pct: -9.5
+        ma20_vs_ma60_pct: -4.8
+        ma60: 81.92
+        macd_golden: false
+        status: BROKEN
+        updated_at: '2026-06-04'
+        vol_ratio: 1.22
+    '600310':
+      added_at: '2026-05-27'
+      added_price: 5.53
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 广西能源
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 广西能源跌至 5.26！回踩 MA20(5.26)，优质建仓区
+          trigger: 5.26
+        buy_zone:
+          dir: below
+          msg: 💰 广西能源跌至 5.31！接近 MA10(5.31)，试探建仓
+          trigger: 5.31
+        trend_break:
+          dir: below
+          msg: ⚠️ 广西能源破 4.96！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 4.96
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 7.49
+        atr_stop_basis: 2*ATR=15.0% (裁到 [5,15])
+        atr_stop_pct: 14.98
+        gate: wait_volume
+        last: 6.35
+        last_vs_ma60_pct: 24.7
+        ma20_vs_ma60_pct: 8.0
+        ma60: 5.09
+        macd_golden: true
+        status: OK_NO_VOL
+        updated_at: '2026-06-04'
+        vol_ratio: 0.9
+    '600863':
+      added_at: '2026-05-27'
+      added_price: 6.1
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 华能蒙电
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 华能蒙电跌至 5.04！回踩 MA20(5.04)，优质建仓区
+          trigger: 5.04
+        buy_zone:
+          dir: below
+          msg: 💰 华能蒙电跌至 5.34！接近 MA10(5.34)，试探建仓
+          trigger: 5.34
+        trend_break:
+          dir: below
+          msg: ⚠️ 华能蒙电破 4.37！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 4.37
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 8.81
+        atr_stop_basis: 2*ATR=17.6% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 7.39
+        last_vs_ma60_pct: 40.2
+        ma20_vs_ma60_pct: 10.1
+        ma60: 5.27
+        macd_golden: true
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 2.84
+    '601222':
+      added_at: '2026-05-27'
+      added_price: 6.32
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 林洋能源
+      recommended_by: 泛舟财海
+      rules:
+        right_side_confirm:
+          dir: above
+          msg: ✅ 林洋能源站上 6.44 (MA60×1.02)！右侧确认信号，可考虑解冻
+          trigger: 6.44
+        trend_break:
+          dir: below
+          msg: ⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 5.98
+        trend_break_warn:
+          dir: below
+          msg: ⚠️ 林洋能源跳破 5.99 (MA60×0.95)！趋势实质走坏
+          trigger: 5.99
+      rules_backup_2026-06-04:
+        buy_strong:
+          dir: below
+          msg: 💰💰 林洋能源跌至 6.28！回踩 MA20(6.28)，优质建仓区
+          trigger: 6.28
+        buy_zone:
+          dir: below
+          msg: 💰 林洋能源跌至 6.41！接近 MA10(6.41)，试探建仓
+          trigger: 6.41
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 4.31
+        atr_stop_basis: 2*ATR=8.6% (裁到 [5,15])
+        atr_stop_pct: 8.62
+        gate: frozen
+        last: 6.25
+        last_vs_ma60_pct: -1.0
+        ma20_vs_ma60_pct: 1.4
+        ma60: 6.31
+        macd_golden: false
+        status: BROKEN
+        updated_at: '2026-06-04'
+        vol_ratio: 1.15
+    '601728':
+      added_at: 2026-05-22
+      added_price: 6.16
+      added_reason: 央企运营商，今日 -2.99% 跌破 MA20 (6.19)，接近 MA60 5.96 主趋势线
+      enabled: true
+      name: 中国电信
+      notes: 防御型、稳健型选手，适合低吸
+      recommended_by: 涛哥
+      rules:
+        buy_strong: &id001
+          dir: below
+          msg: 'CT droped to 6.2, require_support: need price in support zone + ignition
+            signal (red bar with vol_ratio>=1)'
+          trigger: 6.2
+        buy_zone: &id002
+          dir: below
+          msg: 'CT droped to 6.42, require_support: need price near support (MA60=5.98
+            or 60d-low=5.59) + today not shrinking-volume'
+          trigger: 6.42
+        right_side_confirm:
+          dir: above
+          msg: ✅ 中国电信站上 6.30 (MA20上方有效)！可考虑解除自动买入冻结
+          trigger: 6.3
+        trend_watch:
+          dir: below
+          msg: ⚠️ 中国电信跌破 5.96 (MA60关键支撑)！趋势恐实质性走坏，仅警示
+          trigger: 5.96
+      rules_backup_2026-05-27:
+        buy_strong: *id001
+        buy_zone: *id002
+      source: 涛哥推荐
+      tags:
+      - 运营商
+      - 央企
+      - 高股息
+      trend_filter:
+        atr_pct: 4.35
+        atr_stop_basis: 2*ATR=8.7% (裁到 [5,15])
+        atr_stop_pct: 8.7
+        gate: require_support
+        gate_locked: true
+        last: 6.12
+        last_vs_ma60_pct: 1.9
+        ma20_vs_ma60_pct: 3.8
+        ma60: 6.0
+        macd_golden: false
+        note: 'left-side low-buy locked: need price near MA60 or 60d-low + volume
+          floor + ignition'
+        status: CAUTION
+        updated_at: '2026-06-04'
+        vol_ratio: 0.52
+    '601991':
+      added_at: '2026-05-27'
+      added_price: 7.16
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 大唐发电
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 大唐发电跌至 6.17！回踩 MA20(6.17)，优质建仓区
+          trigger: 6.17
+        buy_zone:
+          dir: below
+          msg: 💰 大唐发电跌至 7.48！接近 MA10(7.48)，试探建仓
+          trigger: 7.48
+        trend_break:
+          dir: below
+          msg: ⚠️ 大唐发电破 3.87！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 3.87
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 9.69
+        atr_stop_basis: 2*ATR=19.4% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 9.1
+        last_vs_ma60_pct: 74.1
+        ma20_vs_ma60_pct: 42.8
+        ma60: 5.23
+        macd_golden: true
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.27
+    '603005':
+      added_at: 2026-05-26
+      added_reason: 玄鉴录推荐
+      enabled: true
+      name: 晶方科技
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 晶方科技跌至 33.43！回踩 MA20(33.43)，优质建仓区
+          trigger: 33.43
+        buy_zone:
+          dir: below
+          msg: 💰 晶方科技跌至 35.28！接近 MA10(35.28)，试探建仓
+          trigger: 35.28
+      source: 玄鉴录
+      trend_filter:
+        atr_pct: 8.69
+        atr_stop_basis: 2*ATR=17.4% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 40.53
+        last_vs_ma60_pct: 27.2
+        ma20_vs_ma60_pct: 16.3
+        ma60: 31.87
+        macd_golden: true
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.07
+    '603256':
+      added_at: 2026-05-25
+      added_price: 170.2
+      added_reason: 今日+6.80%创新高，不追高，等回踩MA5/MA10
+      enabled: true
+      name: 宏和科技
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 宏和科技跌至 131.92！回踩 MA20(131.92)，优质建仓区
+          trigger: 131.92
+        buy_zone:
+          dir: below
+          msg: 💰 宏和科技跌至 143.84！接近 MA10(143.84)，试探建仓
+          trigger: 143.84
+        trend_break:
+          dir: below
+          msg: ⚠️ 宏和科技破 115.31！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 115.31
+      source: 用户指定
+      tags:
+      - 电子材料
+      - 玻纤布
+      trend_filter:
+        atr_pct: 7.91
+        atr_stop_basis: 2*ATR=15.8% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: wait_volume
+        last: 197.37
+        last_vs_ma60_pct: 79.4
+        ma20_vs_ma60_pct: 47.6
+        ma60: 110.03
+        macd_golden: true
+        status: OK_NO_VOL
+        updated_at: '2026-06-04'
+        vol_ratio: 0.9
+    '603693':
+      added_at: '2026-05-27'
+      added_price: 17.87
+      added_reason: 泛舟财海推荐绿色电力板块
+      enabled: true
+      name: 江苏新能
+      recommended_by: 泛舟财海
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 江苏新能跌至 16.11！回踩 MA20(16.11)，优质建仓区
+          trigger: 16.11
+        buy_zone:
+          dir: below
+          msg: 💰 江苏新能跌至 16.78！接近 MA10(16.78)，试探建仓
+          trigger: 16.78
+        trend_break:
+          dir: below
+          msg: ⚠️ 江苏新能破 14.51！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 14.51
+      source: 泛舟财海(@Blazing_Sun1)
+      tags:
+      - 绿电
+      - 电力
+      trend_filter:
+        atr_pct: 8.87
+        atr_stop_basis: 2*ATR=17.7% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 17.46
+        last_vs_ma60_pct: 11.2
+        ma20_vs_ma60_pct: 7.4
+        ma60: 15.71
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 0.86
+    '603757':
+      added_at: 2026-05-19
+      added_price: 63.66
+      added_reason: 玄鉴录推荐
+      enabled: true
+      name: 大元泵业
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 大元泵业跌至 56.85！回踩 MA20(56.85)，优质建仓区
+          trigger: 56.85
+        buy_zone:
+          dir: below
+          msg: 💰 大元泵业跌至 61.81！接近 MA10(61.81)，试探建仓
+          trigger: 61.81
+        trend_break:
+          dir: below
+          msg: ⚠️ 大元泵业破 50.13！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 50.13
+      source: 玄鉴录
+      tags:
+      - 机械设备
+      - 泵阀
+      trend_filter:
+        atr_pct: 9.89
+        atr_stop_basis: 2*ATR=19.8% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 56.43
+        last_vs_ma60_pct: 8.1
+        ma20_vs_ma60_pct: 13.4
+        ma60: 52.23
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.36
+    '605006':
+      added_at: 2026-05-19
+      added_price: 14.9
+      added_reason: 玄鉴录推荐
+      enabled: true
+      name: 山东玻纤
+      rules:
+        buy_strong:
+          dir: below
+          msg: 💰💰 山东玻纤跌至 13.61！回踩 MA20(13.61)，优质建仓区
+          trigger: 13.61
+        buy_zone:
+          dir: below
+          msg: 💰 山东玻纤跌至 15.33！接近 MA10(15.33)，试探建仓
+          trigger: 15.33
+        trend_break:
+          dir: below
+          msg: ⚠️ 山东玻纤破 11.49！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 11.49
+      source: 玄鉴录
+      tags:
+      - 玻纤
+      - 新材料
+      trend_filter:
+        atr_pct: 9.79
+        atr_stop_basis: 2*ATR=19.6% (裁到 [5,15])
+        atr_stop_pct: 15.0
+        gate: manual_only
+        last: 17.19
+        last_vs_ma60_pct: 43.8
+        ma20_vs_ma60_pct: 35.3
+        ma60: 11.95
+        macd_golden: false
+        status: DIRTY
+        updated_at: '2026-06-04'
+        vol_ratio: 1.03

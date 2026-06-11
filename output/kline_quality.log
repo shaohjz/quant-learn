@@ -1,0 +1,64 @@
+2026-06-10 13:05:07,933 [INFO] 开始检查 31 只股票的K线数据质量...
+2026-06-10 13:05:08,083 [INFO] 质量报告已生成: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data.md
+2026-06-10 13:05:08,084 [INFO] JSON 结果已保存: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data-check.json
+2026-06-10 15:38:09,591 [WARNING] 读取持仓失败: no such table: position
+2026-06-10 15:38:09,591 [WARNING] 持仓为空，检查所有CSV
+2026-06-10 15:38:09,593 [INFO] 开始检查 31 只股票的K线数据质量...
+2026-06-10 15:38:09,715 [INFO] 质量报告已生成: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data.md
+2026-06-10 15:38:09,717 [INFO] JSON 结果已保存: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data-check.json
+2026-06-10 16:00:59,073 [WARNING] 读取持仓失败: no such table: position
+2026-06-10 16:00:59,073 [WARNING] 持仓为空，检查所有CSV
+2026-06-10 16:00:59,074 [INFO] 开始检查 31 只股票的K线数据质量...
+2026-06-10 16:00:59,229 [INFO] 质量报告已生成: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data.md
+2026-06-10 16:00:59,231 [INFO] JSON 结果已保存: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data-check.json
+2026-06-10 18:37:13,044 [WARNING] 读取持仓失败: no such table: position
+2026-06-10 18:37:13,045 [WARNING] 持仓为空，检查所有CSV
+2026-06-10 18:37:13,046 [INFO] 开始检查 31 只股票的K线数据质量...
+2026-06-10 18:37:13,090 [INFO]   000967: outdated - 
+2026-06-10 18:37:13,096 [INFO]   002256: outdated - 
+2026-06-10 18:37:13,113 [INFO]   002453: outdated - 
+2026-06-10 18:37:13,186 [INFO]   600330: outdated - 
+2026-06-10 18:37:13,240 [INFO] 质量报告已生成: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data.md
+2026-06-10 18:37:13,240 [INFO] 自动补全 4 只股票的数据...
+2026-06-10 18:37:13,241 [INFO] 开始补数据: 4 只股票
+2026-06-10 18:45:14,633 [INFO] 补数据完成: returncode=0
+2026-06-10 18:45:14,633 [INFO] stdout: /31):
+login success!
+logout success!
+📈 600887 (26/31):
+login success!
+logout success!
+📈 601012 (27/31):
+login success!
+logout success!
+📈 601318 (28/31):
+login success!
+logout success!
+📈 603013 (29/31):
+login success!
+logout success!
+📈 603260 (30/31):
+login success!
+logout success!
+📈 603290 (31/31):
+login success!
+logout success!
+
+============================================================
+完成: 成功 31, 失败 0, 跳过 0
+日志: output\backfill.log
+============================================================
+
+2026-06-10 18:45:14,633 [WARNING] stderr: 03013 [BaoStock] 1 条
+2026-06-10 18:44:52,277 [INFO]   ✓ 603013: 补了 1 条，现共 496 条
+2026-06-10 18:44:53,780 [INFO]   603260: 补数据 2026-06-10 ~ 2026-06-10
+2026-06-10 18:45:04,694 [INFO]   ✓ 603260 [BaoStock] 1 条
+2026-06-10 18:45:04,701 [INFO]   ✓ 603260: 补了 1 条，现共 496 条
+2026-06-10 18:45:05,373 [INFO]   603290: 补数据 2026-06-10 ~ 2026-06-10
+2026-06-10 18:45:13,878 [INFO]   ✓ 603290 [BaoStock] 1 条
+2026-06-10 18:45:13,885 [INFO]   ✓ 603290: 补了 1 条，现共 496 条
+2026-06-10 18:45:14,560 [INFO] 补数据完成: 成功=31, 失败=0
+
+2026-06-10 18:45:14,633 [INFO] 补全完成，重新检查...
+2026-06-10 18:45:14,651 [INFO] 质量报告已生成: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data.md
+2026-06-10 18:45:14,652 [INFO] JSON 结果已保存: C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\data\2026-06-10-data-check.json

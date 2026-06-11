@@ -9,9 +9,9 @@ scripts/intraday_watch.py — 盘中实时监控
   python scripts/intraday_watch.py post       # 收盘复盘（15:05 跑）
 
 输出：
-  - 控制台打印
   - 写入 output/intraday_log.jsonl
-  - 返回 stdout 文本（cron 把这个 push 给用户）
+  - 有通知时统一走 sim.notifier 里的单一企微 webhook
+  - stdout 保持为空，避免 OpenClaw cron/计划任务把文本当聊天消息发送
 """
 
 import os
@@ -22,32 +22,40 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sim.notifier import send_text
 from sim.realtime_price import get_latest_prices
+
+
+def _push_webhook(content: str) -> bool:
+    """统一通过 sim.notifier 的单一企微 webhook 推送。"""
+    ok = send_text(content)
+    _log({'mode': 'webhook', 'ok': ok})
+    return ok
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 LOG_FILE = PROJECT_DIR / "output" / "intraday_log.jsonl"
 ALERT_STATE = PROJECT_DIR / "output" / "alert_state.json"
 
-# 你的持仓（来自 5/14 02:17 截图）
-PORTFOLIO = [
-    {"code": "002256", "name": "兆新股份", "qty": 700, "cost": 5.246},
-    {"code": "000967", "name": "盈峰环境", "qty": 400, "cost": 12.660},
-    {"code": "002453", "name": "华软科技", "qty": 300, "cost": 6.467},
-    {"code": "600330", "name": "天通股份", "qty": 300, "cost": 33.774},
-]
+# 持仓 + 阈值（2026-05-22 重构：从 config.yaml + 数据库加载）
+#   - 持仓 ← sim_live_mirror.db (account_id=2)
+#   - 阈值规则 ← config.yaml: real_portfolio_rules / watchlist
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+from sim.portfolio import load_real_holdings, load_all_alert_rules  # noqa: E402
 
-# 关键阈值（最重要的报警线）
-ALERTS = [
-    {"code": "002256", "name": "兆新股份", "level": "loss",   "trigger": 4.83,  "msg": "止损 -8% 触发！建议全部卖出"},
-    {"code": "002256", "name": "兆新股份", "level": "loss2",  "trigger": 4.72,  "msg": "深度亏损 -10%！必须砍仓"},
-    {"code": "000967", "name": "盈峰环境", "level": "profit", "trigger": 13.29, "msg": "止盈 +5% 跌破，建议落袋"},
-    {"code": "000967", "name": "盈峰环境", "level": "loss",   "trigger": 11.65, "msg": "罕见止损线触发"},
-    {"code": "002453", "name": "华软科技", "level": "loss",   "trigger": 5.95,  "msg": "止损 -8% 触发"},
-    {"code": "002453", "name": "华软科技", "level": "ma10",   "trigger": 6.03,  "msg": "跌破 MA10，建议减仓观察"},
-    {"code": "600330", "name": "天通股份", "level": "loss",   "trigger": 31.07, "msg": "止损 -8% 触发"},
-    {"code": "600330", "name": "天通股份", "level": "ma10",   "trigger": 29.67, "msg": "跌破 MA10，建议减仓"},
-]
+_holdings = load_real_holdings()
+PORTFOLIO = [{
+    "code": h["code"], "name": h["name"],
+    "qty": h["qty"], "cost": h["cost"],
+} for h in _holdings]
 
+# ALERTS 兼容老格式：[{code,name,level,trigger,msg}]
+ALERTS = [{
+    "code": r["code"], "name": r["name"],
+    "level": r["level"], "trigger": r["trigger"],
+    "msg": r["message"],
+} for r in load_all_alert_rules()]
 CODES = [p["code"] for p in PORTFOLIO]
 
 
@@ -149,9 +157,11 @@ def cmd_auction():
         lines.append("\n✅ 暂无触发关键阈值")
 
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "auction", "is_premarket": is_premarket, "prices": prices})
-    return out
+    # 只在有关键阈值时通知；通知直推企微 webhook，不走 OpenClaw cron 聊天回复。
+    if triggered:
+        _push_webhook(out)
+    return ""
 
 
 # ========== 模式 2：完整持仓快照 ==========
@@ -181,9 +191,9 @@ def cmd_monitor():
 
     lines.append(f"\n💼 总市值 ¥{total_market:,.2f}  盈亏 ¥{total_pnl:+,.2f}")
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "monitor", "total_market": total_market, "total_pnl": total_pnl})
-    return out
+    _push_webhook(out)
+    return ""
 
 
 # ========== 模式 3：触发预警（每 5 分钟跑一次） ==========
@@ -233,9 +243,12 @@ def cmd_check():
         lines.append(f"   → {a['msg']}")
     lines.append("\n⚠️ 立刻去东财 App 看一眼，决定是否执行操作")
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "check", "alerts": new_alerts})
-    return out
+
+    # ✅ REQ-042 去大模型化：直接推 Webhook，不依赖 cron agent 读 stdout
+    _push_webhook(out)
+
+    return ""
 
 
 # ========== 模式 4：收盘复盘 ==========
@@ -268,8 +281,15 @@ def cmd_post():
     lines.append(f"\n👉 用 `python scripts/portfolio_analyze.py` 看明日策略建议")
 
     out = "\n".join(lines)
-    print(out)
     _log({"mode": "post", "today_pnl": total_pnl_today, "overall_pnl": total_pnl_overall})
+    
+    # ✅ BUG-016 修复：推送收盘复盘报告
+    try:
+        from sim.notifier import send_markdown
+        send_markdown(out)
+    except Exception as e:
+        print(f"⚠️ 推送失败：{e}")
+    
     return out
 
 

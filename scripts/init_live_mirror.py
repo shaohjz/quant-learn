@@ -27,6 +27,7 @@ os.environ['QUANT_DB_PATH'] = str(ROOT / 'data' / 'sim_live_mirror.db')
 os.environ['QUANT_INITIAL_CASH'] = '25000'
 
 from sim.db import get_conn, init_tables, DB_PATH
+from sim.precision import fmt_cost, quantize_amount, quantize_cost, quantize_price
 
 INITIAL_CASH = 25000.00
 
@@ -53,9 +54,21 @@ def main():
     cur = conn.cursor()
     
     # 2. 重置账户
-    market_value = sum(p[5] for p in POSITIONS)
-    cash = INITIAL_CASH - sum(q*c for _,_,q,c,_,_,_ in POSITIONS)  # 现金 = 本金 - 已用市值（按成本算）
-    total_value = market_value + cash
+    normalized_positions = [
+        (
+            code,
+            name,
+            qty,
+            quantize_cost(cost),
+            quantize_price(cur_price),
+            quantize_amount(mv),
+            quantize_amount(pnl),
+        )
+        for code, name, qty, cost, cur_price, mv, pnl in POSITIONS
+    ]
+    market_value = quantize_amount(sum(p[5] for p in normalized_positions))
+    cash = quantize_amount(INITIAL_CASH - sum(q * c for _, _, q, c, _, _, _ in normalized_positions))  # 现金 = 本金 - 已用成本
+    total_value = quantize_amount(market_value + cash)
     
     print(f"\n💵 现金（本金-成本）: {cash:,.2f}")
     print(f"📦 当前市值: {market_value:,.2f}")
@@ -71,7 +84,7 @@ def main():
     
     # 3. 清空旧持仓 + 插入新持仓
     cur.execute("DELETE FROM sim_positions")
-    for code, name, qty, cost, cur_price, mv, pnl in POSITIONS:
+    for code, name, qty, cost, cur_price, mv, pnl in normalized_positions:
         pnl_pct = (cur_price/cost - 1) * 100
         cur.execute(
             "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct) "
@@ -83,11 +96,11 @@ def main():
     cur.execute("DELETE FROM sim_trades")
     from datetime import date
     today = date.today().isoformat()
-    for code, name, qty, cost, _, _, _ in POSITIONS:
+    for code, name, qty, cost, _, _, _ in normalized_positions:
         cur.execute(
             "INSERT INTO sim_trades (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, tax, signal_reason, broker) "
             "VALUES (1, ?, ?, ?, 'BUY', ?, ?, ?, 0, 0, '初始化建仓快照（用户真实持仓）', 'live_mirror_init')",
-            (today, code, name, cost, qty, qty*cost)
+            (today, code, name, cost, qty, quantize_amount(qty * cost))
         )
     
     conn.close()
@@ -96,11 +109,11 @@ def main():
     print("\n✅ 持仓已写入：")
     print(f"{'代码':<10} {'名称':<10} {'数量':>5} {'成本':>8} {'现价':>8} {'市值':>10} {'盈亏':>10} {'%':>7}")
     print("-" * 75)
-    for code, name, qty, cost, cur_p, mv, pnl in POSITIONS:
+    for code, name, qty, cost, cur_p, mv, pnl in normalized_positions:
         pnl_pct = (cur_p/cost - 1) * 100
-        print(f"{code:<10} {name:<10} {qty:>5} {cost:>8.2f} {cur_p:>8.2f} {mv:>10.2f} {pnl:>+10.2f} {pnl_pct:>+7.2f}%")
+        print(f"{code:<10} {name:<10} {qty:>5} {fmt_cost(cost):>8} {cur_p:>8.3f} {mv:>10.2f} {pnl:>+10.2f} {pnl_pct:>+7.2f}%")
     print("-" * 75)
-    print(f"{'TOTAL':<10} {'':<10} {sum(p[2] for p in POSITIONS):>5} {'':>8} {'':>8} {market_value:>10.2f} {sum(p[6] for p in POSITIONS):>+10.2f}")
+    print(f"{'TOTAL':<10} {'':<10} {sum(p[2] for p in normalized_positions):>5} {'':>8} {'':>8} {market_value:>10.2f} {sum(p[6] for p in normalized_positions):>+10.2f}")
     print(f"\n现金: {cash:,.2f}  总资产: {total_value:,.2f}  本金: {INITIAL_CASH:,.2f}  整体浮亏: {total_value - INITIAL_CASH:+.2f}")
 
 

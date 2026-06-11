@@ -1,0 +1,641 @@
+"""
+vqlearn/strategies/threshold_strategy.py — 阈值告警策略
+
+继承 vnpy CtaTemplate（兼容回测/实盘）。
+
+每只股票配置一组规则：
+- buy_zone:    回调到位价（轻仓买入信号 → 当下买）
+- buy_strong:  深度回调价（重仓买入信号 → 当下买）
+- trend_break: 趋势破位价（卖出信号 → **两段确认**才卖）
+- take_profit: 止盈价（半仓卖 → **两段确认**才卖）
+
+触发逻辑（v2 - 2026-05-21 升级）：
+- on_tick 检查每只股票当前价
+- 买入：当下立即触发（去重靠 sqlite threshold_state）
+- 卖出：两段确认（盘中 pending → 当日收盘 armed → 次日开盘 confirmed → 真卖）
+- 成交量过滤：触发时若 5 日均量数据可得，要求当日累计量 ≥ 0.5×5日均量×当时时段比例
+
+跨进程跨日持久化到 sqlite，保证 fired_today 不丢。
+"""
+from __future__ import annotations
+
+from datetime import datetime, time
+from typing import Any
+
+from vnpy_ctastrategy import CtaTemplate, StopOrder
+from vnpy.trader.object import TickData, BarData, OrderData, TradeData
+
+import os, sys
+from pathlib import Path as _Path
+_ROOT = _Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+os.environ.setdefault('QUANT_DB_PATH', str(_ROOT / 'data' / 'sim_live_mirror.db'))
+
+try:
+    from scripts.sim_executor import execute_trade as _sim_execute_trade
+except Exception:
+    _sim_execute_trade = None
+
+try:
+    from vqlearn.services.threshold_state import (
+        evaluate_sell_signal,
+        record_sell_executed,
+        should_buy_now,
+        record_buy_executed,
+        reset_stuck_confirmed,
+        audit_executed_without_trade,
+        cleanup_orphaned_executed,
+    )
+except Exception:
+    evaluate_sell_signal = None
+    record_sell_executed = None
+    should_buy_now = None
+    record_buy_executed = None
+    reset_stuck_confirmed = None
+    audit_executed_without_trade = None
+    cleanup_orphaned_executed = None
+
+
+# A 股交易时段判定（确定收盘价/开盘价时点）
+def _is_close_window() -> bool:
+    """14:55-15:00 视为收盘价确认窗口"""
+    n = datetime.now().time()
+    return time(14, 55) <= n <= time(15, 5)
+
+
+def _is_trading_hours() -> bool:
+    """是否在交易时段：9:30-11:30 或 13:00-15:00。周末不交易。"""
+    n = datetime.now()
+    if n.weekday() >= 5:  # 周六/周日
+        return False
+    t = n.time()
+    return (time(9, 30) <= t <= time(11, 30)) or (time(13, 0) <= t <= time(15, 0))
+
+
+def _send_wecom_notify(text: str) -> bool:
+    """推送到企微群机器人。从 config.local.yaml 读 webhook URL。失败不报错。"""
+    import os, json
+    import urllib.request
+    from pathlib import Path
+    url = os.getenv('WECOM_WEBHOOK_URL')
+    if not url:
+        try:
+            cfg = Path(__file__).resolve().parents[2] / 'config.local.yaml'
+            if cfg.exists():
+                import yaml
+                data = yaml.safe_load(cfg.read_text(encoding='utf-8')) or {}
+                url = (data.get('notifier') or {}).get('wecom_webhook')
+        except Exception:
+            pass
+    if not url:
+        return False
+    try:
+        body = json.dumps({"msgtype": "markdown", "markdown": {"content": text}}).encode('utf-8')
+        req = urllib.request.Request(url, data=body, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return b'"errcode":0' in resp.read()
+    except Exception:
+        return False
+
+
+# ============================================================
+# 未成交告警去重表（每天每只股每个 level 只推 1 次；
+# 现金不足全天只推 1 次总告警）
+# 进程内内存即可——盘中告警；进程重启重置（一天最多重复一次也能接受）
+# ============================================================
+_NOTIFY_DEDUP: set[str] = set()
+_CASH_INSUFFICIENT_NOTIFIED_DAY: dict[str, bool] = {}
+_LEARN_LIMIT_NOTIFIED_DAY: dict[str, bool] = {}
+
+
+def _notify_unfilled_once(code: str, name: str, rule_name: str, price: float,
+                          fail_reason: str | None = None) -> None:
+    """未成交告警：按 (code, level, day) 去重；
+    '现金不足' / '已达上限' 类原因走全天总告警（一天 1 条）。"""
+    today = datetime.now().strftime('%Y%m%d')
+
+    if not fail_reason:
+        fail_reason = ''
+    is_cash_issue = (
+        '现金不足' in fail_reason or 'insufficient' in fail_reason.lower()
+        or '余额不足' in fail_reason
+    )
+    is_limit_issue = ('上限' in fail_reason)
+
+    if is_limit_issue:
+        if _LEARN_LIMIT_NOTIFIED_DAY.get(today):
+            return
+        _LEARN_LIMIT_NOTIFIED_DAY[today] = True
+        _send_wecom_notify(
+            f"## 🎯 学习账户已达 10万上限\n"
+            f"今日有 buy 信号触发但**学习账户总额已达上限 ¥100,000**，后续不再买入。\n\n"
+            f"- 首次抦截: **{name} ({code})** @¥{price:.2f}\n"
+            f"- 失败原因: {fail_reason}\n"
+            f"- 时间: {datetime.now().strftime('%H:%M:%S')}\n"
+            f"- 备注: 同类告警今日不再提醒"
+        )
+        return
+
+    if is_cash_issue:
+        if _CASH_INSUFFICIENT_NOTIFIED_DAY.get(today):
+            return
+        _CASH_INSUFFICIENT_NOTIFIED_DAY[today] = True
+        _send_wecom_notify(
+            f"## ⚠️ vqlearn 现金不足\n"
+            f"今日有 buy_zone/buy_strong 触发但**账户现金不足以下 1 手**，"
+            f"后续此类信号将不再逐条提醒。\n\n"
+            f"- 首次触发: **{name} ({code})** @¥{price:.2f}\n"
+            f"- 失败原因: {fail_reason}\n"
+            f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
+        )
+        return
+
+    key = f"{code}_{rule_name}_{today}"
+    if key in _NOTIFY_DEDUP:
+        return
+    _NOTIFY_DEDUP.add(key)
+    _send_wecom_notify(
+        f"## ⚠️ vqlearn 信号未成交\n"
+        f"**{name} ({code})**\n\n"
+        f"- 触发: 🟢 `{rule_name}` @¥{price:.2f}\n"
+        f"- 失败原因: {fail_reason or '查看日志'}\n"
+        f"- 时间: {datetime.now().strftime('%H:%M:%S')}\n"
+        f"- 备注: 同一 level 当日不再重复提醒"
+    )
+
+
+def _trading_minutes_elapsed() -> float:
+    """返回当前已开盘多少分钟（用于估算 volume 完成度）。
+    上午 9:30-11:30 = 120 分钟，下午 13:00-15:00 = 120 分钟。
+    """
+    n = datetime.now().time()
+    if n < time(9, 30):
+        return 0
+    if n <= time(11, 30):
+        return (n.hour - 9) * 60 + n.minute - 30
+    if n < time(13, 0):
+        return 120
+    if n <= time(15, 0):
+        return 120 + (n.hour - 13) * 60 + n.minute
+    return 240  # 收盘后
+
+
+class ThresholdAlertStrategy(CtaTemplate):
+    """单只股票的阈值告警策略 v2"""
+
+    author = "vqlearn"
+
+    buy_zone = 0.0
+    buy_strong = 0.0
+    trend_break = 0.0
+    take_profit = 0.0
+    fixed_size = 100
+    auto_trade = False
+    volume_filter = True   # 成交量过滤开关
+
+    parameters = ["buy_zone", "buy_strong", "trend_break", "take_profit",
+                  "fixed_size", "auto_trade", "volume_filter"]
+    variables = ["last_price"]
+
+    def __init__(self, cta_engine: Any, strategy_name: str, vt_symbol: str, setting: dict) -> None:
+        super().__init__(cta_engine, strategy_name, vt_symbol, setting)
+        self.last_price = 0.0
+        # avg_vol_5d 由 runner 在加载策略后注入；缺失则不做量过滤
+        # stock_name 由 runner 注入
+        # last_volume = 缓存最近一个 tick 的当日累计量（akshare 给的是当日累计 volume）
+        # shadow 打点：记录上次 shadow 跱踪时间，用来限制为每分钟一次
+        self._last_shadow_minute = ''
+
+    # ----- 持久化辅助 -----
+    @property
+    def code(self) -> str:
+        return self.vt_symbol.split('.')[0]
+
+    @property
+    def stock_name_safe(self) -> str:
+        return getattr(self, 'stock_name', self.code)
+
+    # ----- vnpy lifecycle -----
+    def on_init(self) -> None:
+        self.write_log(f"策略初始化: {self.vt_symbol}")
+        self.write_log(
+            f"  规则: buy_zone={self.buy_zone} buy_strong={self.buy_strong} "
+            f"trend_break={self.trend_break} take_profit={self.take_profit} auto={self.auto_trade}"
+        )
+
+    def on_start(self) -> None:
+        self.write_log(f"策略启动: {self.vt_symbol}")
+        self.put_event()
+
+    def on_stop(self) -> None:
+        self.write_log(f"策略停止: {self.vt_symbol}")
+        self.put_event()
+
+    def on_tick(self, tick: TickData) -> None:
+        self.last_price = tick.last_price
+        self._check_rules(tick)
+        # 每分钟跳一次 shadow（多策略虚拟跱踪）
+        self._maybe_run_shadow(tick.last_price)
+        self.put_event()
+
+    def on_bar(self, bar: BarData) -> None:
+        self.last_price = bar.close_price
+        fake_tick = TickData(
+            gateway_name=bar.gateway_name,
+            symbol=bar.symbol,
+            exchange=bar.exchange,
+            datetime=bar.datetime,
+            last_price=bar.close_price,
+            volume=bar.volume,
+        )
+        self._check_rules(fake_tick)
+
+    def on_order(self, order: OrderData) -> None:
+        self.write_log(f"订单更新: {order.symbol} {order.direction.value} {order.volume}@{order.price:.2f} {order.status.value}")
+
+    def on_trade(self, trade: TradeData) -> None:
+        self.write_log(f"💰 成交: {trade.symbol} {trade.direction.value} {trade.volume}@{trade.price:.2f}")
+        self.put_event()
+
+    def on_stop_order(self, stop_order: StopOrder) -> None:
+        pass
+
+    # ----- 成交量过滤 -----
+    def _volume_ok(self, tick: TickData) -> tuple[bool, str]:
+        """检查当前成交量是否"足够"——避免开盘极短时间触发即认定。
+        返回 (ok, reason)。
+        """
+        if not self.volume_filter:
+            return True, "volume_filter off"
+
+        avg_vol = getattr(self, 'avg_vol_5d', None)
+        if not avg_vol or avg_vol <= 0:
+            return True, "no avg_vol_5d"
+
+        cur_vol = tick.volume or 0
+        if cur_vol <= 0:
+            return False, "tick.volume=0"
+
+        elapsed = _trading_minutes_elapsed()
+        if elapsed < 5:
+            # 开盘 5 分钟内不触发任何信号（防晨抖）
+            return False, f"开盘<5min 不触发 (elapsed={elapsed:.0f}m)"
+
+        # 当前累计量应该达到 5 日均量 × (elapsed/240) × 0.5（容忍清淡日）
+        expected_min = avg_vol * (elapsed / 240) * 0.5
+        if cur_vol < expected_min:
+            return False, f"量不足 cur={cur_vol:.0f} < 期望 {expected_min:.0f} (5d_avg={avg_vol:.0f}, elapsed={elapsed:.0f}m)"
+
+        return True, f"量OK cur={cur_vol:.0f} (5d_avg={avg_vol:.0f})"
+
+    # ----- 卖出执行：通过两段确认 -----
+    def _try_sell(self, rule_name: str, threshold: float, price: float, tick: TickData) -> None:
+        """卖出走两段确认状态机；只有 confirmed 才真下单。
+
+        REQ-048 修复：
+        - execute 失败时将 confirmed/armed 重置为 expired，避免永远卡住
+        - 成功但 record_sell_executed 未匹配行时也重置
+        """
+        if evaluate_sell_signal is None:
+            self.write_log(f"⚠️ threshold_state 未加载，回退当下卖")
+            self._exec_via_sim(rule_name, price, f"{self.vt_symbol} 触发 {rule_name}")
+            return
+
+        is_close = _is_close_window()
+        action, reason = evaluate_sell_signal(
+            self.code, self.stock_name_safe, rule_name, threshold, price,
+            is_close_price=is_close,
+        )
+
+        if action == 'wait':
+            self.write_log(f"⏱️ [{rule_name}] {self.vt_symbol} {price:.2f}: {reason}")
+        elif action == 'reset':
+            self.write_log(f"♻️ [{rule_name}] {self.vt_symbol} {price:.2f}: {reason}")
+        elif action == 'execute':
+            self.write_log(f"🚀 [{rule_name}] {self.vt_symbol} {price:.2f}: {reason}")
+            if self.auto_trade:
+                success, fail_reason = self._exec_via_sim(rule_name, price, reason)
+                if success and record_sell_executed:
+                    # REQ-048: 卖出成功后校验仓位是否真的被清除/减少
+                    self._verify_sell_executed(rule_name, price)
+                    # REQ-048: record_sell_executed 返回实际更新行数
+                    updated = record_sell_executed(self.code, rule_name, price, reason)
+                    if updated == 0:
+                        # 没有匹配的 armed/confirmed 行，可能是卡住的状态
+                        self.write_log(
+                            f"⚠️ [{rule_name}] {self.code} 卖出成功但 record_sell_executed 未匹配行，"
+                            f"尝试重置卡住状态"
+                        )
+                        if reset_stuck_confirmed:
+                            reset_stuck_confirmed(
+                                self.code, rule_name,
+                                f"卖出成交但record_sell_executed未匹配，重置; {reason}"
+                            )
+                elif not success:
+                    # REQ-048: 卖出失败 — 如果是「无持仓可卖」则重置 confirmed
+                    if fail_reason and '无持仓' in str(fail_reason):
+                        self.write_log(
+                            f"♻️ [{rule_name}] {self.code} 无持仓可卖，重置卡住的 confirmed/armed"
+                        )
+                        if reset_stuck_confirmed:
+                            reset_stuck_confirmed(
+                                self.code, rule_name,
+                                f"无持仓可卖，confirmed→expired; {fail_reason}"
+                            )
+                    else:
+                        self.write_log(
+                            f"⚠️ [{rule_name}] {self.code} 卖出执行失败: {fail_reason}"
+                        )
+
+    # ----- REQ-048: 卖出后持仓校验 -----
+    def _verify_sell_executed(self, rule_name: str, price: float) -> None:
+        """卖出成功后校验仓位是否真的被清除/减少。
+
+        REQ-048 防御：即使 execute_trade 返回 trade 非空（成功），
+        也需确认 sim_positions 中仓位已变，防止 DB 并发/回滚导致
+        threshold_state 标记 executed 但仓位仍在。
+        """
+        try:
+            import sqlite3 as _sq
+            conn = _sq.connect(str(_ROOT / 'data' / 'sim_live_mirror.db'))
+            row = conn.execute(
+                "SELECT quantity FROM sim_positions WHERE account_id=1 AND stock_code=? AND quantity > 0",
+                (self.code,)
+            ).fetchone()
+            conn.close()
+            if row and row[0] > 0:
+                self.write_log(
+                    f"⚠️ [{rule_name}] {self.code} 卖出成功但仓位仍在({row[0]}股)，"
+                    f"可能需要人工介入"
+                )
+                # 发企微告警
+                try:
+                    _send_wecom_notify(
+                        f"## ⚠️ 卖出校验失败\n"
+                        f"**{self.stock_name_safe} ({self.code})**\n\n"
+                        f"- 规则: `{rule_name}`\n"
+                        f"- 卖出价: ¥{price:.2f}\n"
+                        f"- 异常: threshold_state 标记 executed 但仓位仍在 {row[0]}股\n"
+                        f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
+                    )
+                except Exception:
+                    pass
+        except Exception as e:
+            self.write_log(f"⚠️ _verify_sell_executed 异常: {e}")
+
+    # ----- 买入执行：当下立即（仅靠 db 去重） -----
+    def _try_buy(self, rule_name: str, threshold: float, price: float, tick: TickData) -> None:
+        if should_buy_now is None:
+            # 退化：缺持久化时用内存去重（兼容性）
+            mem = getattr(self, '_mem_fired', {})
+            today = datetime.now().strftime('%Y-%m-%d')
+            if mem.get(rule_name) == today:
+                return
+            mem[rule_name] = today
+            self._mem_fired = mem
+            self.write_log(f"[{rule_name}] {self.vt_symbol} {price:.2f} ≤ {threshold:.2f}（无持久化）")
+            if self.auto_trade:
+                self._exec_via_sim(rule_name, price, f"{self.vt_symbol} 触发 {rule_name}")
+            return
+
+        # 量过滤
+        ok, vol_reason = self._volume_ok(tick)
+        if not ok:
+            # 量不足时只记录、不入库（让今天的盘后还有机会重新触发）
+            self.write_log(f"⚠️ [{rule_name}] {self.vt_symbol} {price:.2f} ≤ {threshold:.2f}，但 {vol_reason}")
+            return
+
+        allowed, reason = should_buy_now(self.code, rule_name)
+        if not allowed:
+            self.write_log(f"🔁 [{rule_name}] {self.vt_symbol} {price:.2f}: {reason}")
+            return
+
+        emoji = '🟢🟢' if rule_name == 'buy_strong' else '🟢'
+        self.write_log(f"{emoji} [{rule_name}] {self.vt_symbol} {price:.2f} ≤ {threshold:.2f} ({vol_reason})")
+
+        if self.auto_trade:
+            success, fail_reason = self._exec_via_sim(
+                rule_name, price, f"{self.vt_symbol} 触发 {rule_name} | {vol_reason}"
+            )
+            if success and record_buy_executed:
+                record_buy_executed(
+                    self.code, self.stock_name_safe, rule_name, threshold, price,
+                    notes=f"vol={tick.volume:.0f}"
+                )
+            elif not success:
+                # 触发但没成交（现金不足/价格不合理/涨跌停）发去重告警
+                _notify_unfilled_once(
+                    self.code, self.stock_name_safe, rule_name, price, fail_reason
+                )
+
+    # ----- sim_executor 真下单 -----
+    def _exec_via_sim(self, level: str, price: float, msg: str):
+        """返回 (filled, fail_reason)。
+
+        REQ-057 修复：filled=True **当且仅当** sim_executor 真正写入了一笔成交
+        （result['trade'] is not None）。此前用 result['success'] 作为返回值，
+        但 NO_ACTION / DEFER / 重复买入风控 / 日内预算风控 等分支都会返回
+        success=True 且 trade=None（仅提醒、不下单），导致上层把 threshold_state
+        误标记为 executed，造成「信号 executed 但 0 笔成交」的链路断裂。
+        现在只有真实成交（trade 非空）才返回 filled=True，executed 才会回写。
+        """
+        if _sim_execute_trade is None:
+            self.write_log("⚠️ sim_executor 未加载，跳过下单")
+            return False, 'sim_executor 未加载'
+        rule = {'code': self.code, 'name': self.stock_name_safe, 'level': level, 'message': msg}
+        try:
+            r = _sim_execute_trade(rule, price)
+            # REQ-057: 真实成交的唯一可信标志是 trade 字段非空（含 BUY/SELL 明细）。
+            # success=True 但 trade=None 表示「仅提醒/被风控拦截」，不算成交。
+            filled = r.get('trade') is not None
+            if r.get('success') and not filled:
+                # 信号被接受但未落地成交（观察股提醒 / 重复买入 / 预算风控等）
+                self.write_log(
+                    f"ℹ️ [sim_executor] {r.get('action')} 未成交（不回写executed）: {r.get('message')}"
+                )
+                return False, r.get('message') or '未成交（仅提醒/被风控拦截）'
+            if filled:
+                self.write_log(f"💰 [sim_executor] {r.get('action')} → {r.get('message')}")
+                # 发企微通知
+                action = r.get('action', level.upper())
+                msg_short = r.get('message', '')
+                # 判断买卖方向
+                is_buy = level in ('buy_zone', 'buy_strong') or 'BUY' in str(action).upper()
+                arrow = '🔴 买入' if is_buy else '🟢 卖出'
+                emoji_map = {'buy_zone': '🟢', 'buy_strong': '🟢🟢', 'trend_break': '🔴', 'take_profit': '🟡'}
+                rule_emoji = emoji_map.get(level, '⚪')
+                notify_text = (
+                    f"## {arrow} vqlearn 自动下单\n"
+                    f"**{self.stock_name_safe} ({self.code})**\n\n"
+                    f"- 规则: {rule_emoji} `{level}`\n"
+                    f"- 成交价: ¥{price:.2f}\n"
+                    f"- 详情: {msg_short}\n"
+                    f"- 时间: {datetime.now().strftime('%H:%M:%S')}"
+                )
+                _send_wecom_notify(notify_text)
+                return True, None
+            else:
+                fail_msg = r.get('message') or r.get('action') or '未知失败'
+                self.write_log(f"⚠️ [sim_executor] {r.get('action')}失败: {fail_msg}")
+                return False, fail_msg
+        except Exception as e:
+            self.write_log(f"❌ [sim_executor] 执行异常: {e}")
+            return False, f'异常: {e}'
+
+    # ----- 规则检查（核心） -----
+    def _check_rules(self, tick: TickData) -> None:
+        price = tick.last_price
+        if price <= 0:
+            return
+
+        # 交易时段守卫：中午/业余/周末不产生指令
+        # 例外：收盘窗口（14:55-15:05）需要推进状态机，保留
+        if not _is_trading_hours() and not _is_close_window():
+            return
+
+        # ---- 先看卖出（两段确认） ----
+        # 持仓股股性质由 runner 配；卖单只在持仓股有意义。但这里只判信号，
+        # 落地能不能卖由 sim_executor.decide_action 决定（持仓→真卖；观察股→NO_ACTION）
+        if self.trend_break > 0:
+            # 触发 OR 不触发都要喂给状态机（pending → close → next_day 推进）
+            if price <= self.trend_break or _is_close_window():
+                self._try_sell('trend_break', self.trend_break, price, tick)
+
+        if self.take_profit > 0:
+            if price >= self.take_profit or _is_close_window():
+                self._try_sell('take_profit', self.take_profit, price, tick)
+
+        # ---- 再看买入（当下） ----
+        # REQ-028 / BUG-010: 买入防接飞刀风控
+        # 1) 右侧确认：跌破昨日低点后，必须站回开盘价或从日内低点反弹 >= 1%。
+        # 2) 大盘熔断：主要指数跌幅 > 1% 或全市场下跌家数 > 80% 时暂停抄底。
+        # 3) 开盘暴跌过滤：开盘跌幅 > 5% + 放量 + 砸穿支撑，当日坚决不买。
+        right_side_confirmed = True
+        prev_close = 0.0
+        support_level = self.trend_break or self.buy_strong or self.buy_zone
+        try:
+            from vqlearn.services.history_loader import load_history
+            from datetime import timedelta
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
+            bars = load_history(self.code, start_date, end_date)
+            if not bars.empty and len(bars) >= 1:
+                last_bar = bars.iloc[-1]
+                prev_low = float(last_bar['low'])
+                prev_close = float(last_bar['close'])
+                support_level = self.trend_break or float(last_bar.get('low', 0) or 0) or support_level
+                if price < prev_low:  # 盘中跌破昨日最低价，且目前还在跌
+                    # 简单右侧确认：价格必须高于今日开盘价，或者盘中产生 1% 以上反弹
+                    tick_open = tick.open_price if getattr(tick, 'open_price', 0) > 0 else prev_close
+                    tick_low = tick.low_price if getattr(tick, 'low_price', 0) > 0 else price
+                    if price < tick_open and (price / max(tick_low, 0.01) - 1) < 0.01:
+                        right_side_confirmed = False
+        except Exception as e:
+            self.write_log(f"右侧确认检查异常: {e}")
+
+        try:
+            from vqlearn.services.buy_risk_guard import evaluate_buy_risk_guard
+            risk_decision = evaluate_buy_risk_guard(
+                code=self.code,
+                tick=tick,
+                db_path=str(_ROOT / 'data' / 'sim_live_mirror.db'),
+                account_id=1,
+                prev_close=prev_close,
+                support_level=support_level,
+                avg_vol_5d=getattr(self, 'avg_vol_5d', None),
+                max_positions=6,
+                max_daily_new=2,
+            )
+            if risk_decision.blocked:
+                self.write_log(f"⚠️ [{self.vt_symbol}] {risk_decision.reason}，暂停抄底买入")
+                return
+        except Exception as e:
+            # 风控模块异常不应让策略崩溃，但必须显式记日志，便于盘后验收。
+            self.write_log(f"买入风控检查异常: {e}")
+
+        # buy_strong 优先于 buy_zone（深的优先）
+        if self.buy_strong > 0 and price <= self.buy_strong:
+            if right_side_confirmed:
+                self._try_buy('buy_strong', self.buy_strong, price, tick)
+            else:
+                self.write_log(f"⏳ [{self.vt_symbol}] {price:.2f} ≤ buy_strong {self.buy_strong:.2f}，等待右侧确认")
+        elif self.buy_zone > 0 and price <= self.buy_zone:
+            if right_side_confirmed:
+                self._try_buy('buy_zone', self.buy_zone, price, tick)
+            else:
+                self.write_log(f"⏳ [{self.vt_symbol}] {price:.2f} ≤ buy_zone {self.buy_zone:.2f}，等待右侧确认")
+
+    # ----- shadow 多策略跳踪（不下单，仅记录虚拟信号）-----
+    def _maybe_run_shadow(self, price: float) -> None:
+        """每分钟跳一次，让 5 个纯策略都 decide 一次，记录信号到 db。
+        只在交易时段内跳，避免平白浪费。"""
+        if not _is_trading_hours():
+            return
+
+        cur_minute = datetime.now().strftime('%Y-%m-%d %H:%M')
+        if cur_minute == self._last_shadow_minute:
+            return
+        self._last_shadow_minute = cur_minute
+
+        try:
+            from vqlearn.services.history_loader import load_history
+            from vqlearn.strategies.pure_signals import ALL_STRATEGIES, get_strategy
+            from vqlearn.services.multi_strategy_shadow import record_shadow_signal
+            import pandas as _pd
+
+            # 拉历史数据（3 个月，足够算 ma60）。这里不含今天。
+            from datetime import timedelta as _td
+            today = datetime.now()
+            start = (today - _td(days=180)).strftime('%Y-%m-%d')
+            end = (today - _td(days=1)).strftime('%Y-%m-%d')  # 不含今天
+            bars = load_history(self.code, start, end)
+            if bars.empty or len(bars) < 30:
+                return
+
+            # 拼上今日实时价（模拟在跳动中调用）
+            today_row = _pd.DataFrame([{
+                'date': today.strftime('%Y-%m-%d'),
+                'open': price, 'high': price, 'low': price,
+                'close': price, 'volume': 0,
+            }])
+            # 调整列顺序与 bars 一致
+            for col in ['amount', 'turnover', 'pct']:
+                if col in bars.columns:
+                    today_row[col] = 0
+            full_bars = _pd.concat([bars, today_row], ignore_index=True)
+
+            # 获取当前持仓（从 sim_positions）
+            position = 0
+            try:
+                import sqlite3
+                conn = sqlite3.connect(str(_ROOT / 'data' / 'sim_live_mirror.db'))
+                row = conn.execute(
+                    "SELECT quantity FROM sim_positions WHERE stock_code=? AND quantity>0",
+                    (self.code,)
+                ).fetchone()
+                position = row[0] if row else 0
+                conn.close()
+            except Exception:
+                pass
+
+            rules = {
+                'buy_zone': self.buy_zone,
+                'buy_strong': self.buy_strong,
+                'trend_break': self.trend_break,
+                'take_profit': self.take_profit,
+            }
+
+            for sid in ALL_STRATEGIES:
+                try:
+                    strat = get_strategy(sid)
+                    sig = strat.decide(full_bars, position, rules)
+                    if sig.action != 'NO_ACTION':
+                        record_shadow_signal(sid, self.code, self.stock_name_safe,
+                                             price, position, sig)
+                except Exception:
+                    continue
+        except Exception as e:
+            # shadow 不能影响主逻辑
+            self.write_log(f"⚠️ shadow 异常（忽略）: {e}")
+

@@ -319,15 +319,25 @@ def generate_daily_report(target_date: date) -> str:
 
     # 3. 策略诊断
     lines.append('### 🔍 策略诊断')
-    # 触发但未执行的信号（从 strategy_shadow_signals 查）
+    # 检查 strategy_shadow_signals 表是否存在
     c = get_conn()
-    triggered = c.execute(
-        '''SELECT COUNT(*) as cnt FROM strategy_shadow_signals 
-           WHERE shadow_date=? AND signal_action IN ("BUY", "BUY_STRONG", "buy", "buy_strong")''',
-        (target_date.isoformat(),)
-    ).fetchone()
-    executed_codes = set(t['stock_code'] for t in trades if t['direction'] == 'BUY')
-    lines.append(f"- 今日触发买入信号：{triggered['cnt'] if triggered else '?'} 个")
+    try:
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='strategy_shadow_signals'")
+        table_exists = c.fetchone() is not None
+        
+        if table_exists:
+            triggered = c.execute(
+                '''SELECT COUNT(*) as cnt FROM strategy_shadow_signals 
+                   WHERE shadow_date=? AND signal_action IN ("BUY", "BUY_STRONG", "buy", "buy_strong")''',
+                (target_date.isoformat(),)
+            ).fetchone()
+            lines.append(f"- 今日触发买入信号：{triggered['cnt'] if triggered else '?'} 个")
+        else:
+            lines.append('- 今日触发买入信号：N/A（strategy_shadow_signals 表不存在）')
+    except Exception as e:
+        logger.warning(f'查询 strategy_shadow_signals 失败: {e}')
+        lines.append('- 今日触发买入信号：N/A（查询失败）')
+    
     lines.append(f"- 实际执行买入：{buy_n} 笔")
     if stop_loss_stocks:
         lines.append(f"- 近期连续卖出 ≥ 2 次：{', '.join(stop_loss_stocks)}（建议重新评估）")
@@ -378,16 +388,27 @@ def create_improvement_tasks(target_date: date, dry_run: bool = False) -> list[s
 
     # 规则 1：执行率过低 → 建需求
     c = get_conn()
-    triggered = c.execute(
-        '''SELECT COUNT(*) as cnt FROM strategy_shadow_signals 
-           WHERE shadow_date=? AND signal_action IN ("BUY", "BUY_STRONG", "buy", "buy_strong")''',
-        (target_date.isoformat(),)
-    ).fetchone()
+    try:
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='strategy_shadow_signals'")
+        table_exists = c.fetchone() is not None
+        
+        if table_exists:
+            triggered = c.execute(
+                '''SELECT COUNT(*) as cnt FROM strategy_shadow_signals 
+                   WHERE shadow_date=? AND signal_action IN ("BUY", "BUY_STRONG", "buy", "buy_strong")''',
+                (target_date.isoformat(),)
+            ).fetchone()
+            triggered_cnt = triggered['cnt'] if triggered else 0
+        else:
+            logger.warning('strategy_shadow_signals 表不存在，跳过执行率分析')
+            triggered_cnt = None
+    except Exception as e:
+        logger.warning(f'查询 strategy_shadow_signals 失败: {e}')
+        triggered_cnt = None
     c.close()
 
     buy_n = sum(1 for t in trades if t['direction'] == 'BUY')
-    triggered_cnt = triggered['cnt'] if triggered else 0
-    exec_rate = buy_n / triggered_cnt * 100 if triggered_cnt > 0 else None
+    exec_rate = buy_n / triggered_cnt * 100 if triggered_cnt and triggered_cnt > 0 else None
 
     if exec_rate is not None and exec_rate < 30 and triggered_cnt >= 3:
         title = f"提升买入信号执行率（当前 {exec_rate:.0f}%）"

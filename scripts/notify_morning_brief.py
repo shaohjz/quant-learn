@@ -20,7 +20,6 @@ sys.path.insert(0, str(ROOT))
 from sim.signal_generator import generate_signals
 from sim.notifier import send_markdown
 from sim.stock_pool import StockPool
-from sim.realtime_price import get_latest_prices
 from sim.config import get as cfg_get
 
 
@@ -31,9 +30,16 @@ def build_morning_brief() -> str:
     lines.append(f"## 🌅 多策略简报 {today}")
     lines.append("")
 
-    # 生成信号
+    # 遍历股票池，逐只生成信号
     try:
-        signals = generate_signals()
+        pool = StockPool()
+        signals = []
+        for code, name in pool.get_all().items():
+            try:
+                result = generate_signals(code, name)
+                signals.append(result)
+            except Exception as e:
+                print(f"  ⚠️ {code}({name}) 信号生成异常: {e}")
     except Exception as e:
         return f"⚠️ **多策略简报** {today}\n\n信号生成失败：{e}"
 

@@ -1080,3 +1080,237 @@ watchlist:
         status: DIRTY
         updated_at: '2026-06-04'
         vol_ratio: 1.03
+    '300308':
+      name: 中际旭创
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 1149.0
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，中际旭创(ZhongjiInnolight)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 1126.02
+          dir: below
+          msg: 💰 中际旭创小幅回调至 1126.02，接近入场观察区
+        buy_strong:
+          trigger: 1091.55
+          dir: below
+          msg: 💰💰 中际旭创回调至 1091.55，优质入场区
+        trend_break:
+          trigger: 1057.08
+          dir: below
+          msg: ⚠️ 中际旭创跌破 1057.08，趋势可能走弱
+    '300502':
+      name: 新易盛
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 506.46
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，新易盛(Eoptolink)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 496.33
+          dir: below
+          msg: 💰 新易盛小幅回调至 496.33，接近入场观察区
+        buy_strong:
+          trigger: 481.14
+          dir: below
+          msg: 💰💰 新易盛回调至 481.14，优质入场区
+        trend_break:
+          trigger: 465.94
+          dir: below
+          msg: ⚠️ 新易盛跌破 465.94，趋势可能走弱
+    '300394':
+      name: 天孚通信
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 280.95
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，天孚通信(TFCCommunication)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 275.33
+          dir: below
+          msg: 💰 天孚通信小幅回调至 275.33，接近入场观察区
+        buy_strong:
+          trigger: 266.9
+          dir: below
+          msg: 💰💰 天孚通信回调至 266.90，优质入场区
+        trend_break:
+          trigger: 258.47
+          dir: below
+          msg: ⚠️ 天孚通信跌破 258.47，趋势可能走弱
+    '601138':
+      name: 工业富联
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 70.13
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，工业富联(FoxconnIndustrialInternet)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 68.73
+          dir: below
+          msg: 💰 工业富联小幅回调至 68.73，接近入场观察区
+        buy_strong:
+          trigger: 66.62
+          dir: below
+          msg: 💰💰 工业富联回调至 66.62，优质入场区
+        trend_break:
+          trigger: 64.52
+          dir: below
+          msg: ⚠️ 工业富联跌破 64.52，趋势可能走弱
+    '002475':
+      name: 立讯精密
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 63.76
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，立讯精密(LuxsharePrecision)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 62.48
+          dir: below
+          msg: 💰 立讯精密小幅回调至 62.48，接近入场观察区
+        buy_strong:
+          trigger: 60.57
+          dir: below
+          msg: 💰💰 立讯精密回调至 60.57，优质入场区
+        trend_break:
+          trigger: 58.66
+          dir: below
+          msg: ⚠️ 立讯精密跌破 58.66，趋势可能走弱
+    '300750':
+      name: 宁德时代
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 394.85
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，宁德时代(CATL)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 386.95
+          dir: below
+          msg: 💰 宁德时代小幅回调至 386.95，接近入场观察区
+        buy_strong:
+          trigger: 375.11
+          dir: below
+          msg: 💰💰 宁德时代回调至 375.11，优质入场区
+        trend_break:
+          trigger: 363.26
+          dir: below
+          msg: ⚠️ 宁德时代跌破 363.26，趋势可能走弱
+    '603986':
+      name: 兆易创新
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 481.47
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，兆易创新(GigaDevice)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 471.84
+          dir: below
+          msg: 💰 兆易创新小幅回调至 471.84，接近入场观察区
+        buy_strong:
+          trigger: 457.4
+          dir: below
+          msg: 💰💰 兆易创新回调至 457.40，优质入场区
+        trend_break:
+          trigger: 442.95
+          dir: below
+          msg: ⚠️ 兆易创新跌破 442.95，趋势可能走弱
+    '688041':
+      name: 海光信息
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 280.0
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，海光信息(HygonInformation)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 274.4
+          dir: below
+          msg: 💰 海光信息小幅回调至 274.40，接近入场观察区
+        buy_strong:
+          trigger: 266.0
+          dir: below
+          msg: 💰💰 海光信息回调至 266.00，优质入场区
+        trend_break:
+          trigger: 257.6
+          dir: below
+          msg: ⚠️ 海光信息跌破 257.60，趋势可能走弱
+    '688256':
+      name: 寒武纪
+      enabled: true
+      source: ProShares ETF申请
+      recommended_by: ProShares
+      added_at: '2026-06-13'
+      added_price: 1240.0
+      added_reason: ProShares申请发行9只中国核心资产单票2倍做多杠杆ETF，寒武纪(Cambricon)入选
+      tags:
+      - ProShares
+      - 中国核心资产
+      - AI算力
+      - 半导体
+      rules:
+        buy_zone:
+          trigger: 1215.2
+          dir: below
+          msg: 💰 寒武纪小幅回调至 1215.20，接近入场观察区
+        buy_strong:
+          trigger: 1178.0
+          dir: below
+          msg: 💰💰 寒武纪回调至 1178.00，优质入场区
+        trend_break:
+          trigger: 1140.8
+          dir: below
+          msg: ⚠️ 寒武纪跌破 1140.80，趋势可能走弱

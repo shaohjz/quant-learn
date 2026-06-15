@@ -1,0 +1,27 @@
+{
+  "// 说明": "真实持仓数据文件。每日收盘后更新此文件，sync_live.py 会读取并同步到 sim.db",
+  "// 字段说明": {
+    "code": "股票代码，6位数字，如 000001",
+    "name": "股票名称",
+    "qty": "持仓数量（股）",
+    "cost": "持仓成本价（元/股）",
+    "current": "当前价格（元/股），不填则自动从 data/<code>.csv 读取最新收盘价",
+    "rules": "止损止盈规则（可选）",
+    "rules[].level": "stop_loss 或 take_profit",
+    "rules[].trigger": "触发价格",
+    "rules[].dir": "below（跌破触发）或 above（突破触发）"
+  },
+  "holdings": [
+    {
+      "code": "000001",
+      "name": "平安银行",
+      "qty": 1000,
+      "cost": 12.50,
+      "current": null,
+      "rules": [
+        {"level": "stop_loss", "trigger": 11.25, "dir": "below"},
+        {"level": "take_profit", "trigger": 15.00, "dir": "above"}
+      ]
+    }
+  ]
+}

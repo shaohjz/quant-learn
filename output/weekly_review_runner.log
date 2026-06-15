@@ -17,3 +17,17 @@
 ======================================================================
 ======================================================================
 ===== [2026/05/29 周五 15:35:03.54] weekly review END   ===== 
+===== [2026/06/12 周五 15:35:02.40] weekly review START ===== 
+2026-06-12 15:35:02,902 [INFO] === 周复盘 2026-06-08 ~ 2026-06-12 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\weekly_review.py", line 183, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\weekly_review.py", line 153, in main
+    parts.append(render_account(s, mon, fri))
+                 ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\weekly_review.py", line 89, in render_account
+    lines.append(f"- {n['trade_date']} \xa5{n['total_value']:,.2f} ({n['daily_return']:+.2f}%)")
+                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unsupported format string passed to NoneType.__format__
+===== [2026/06/12 周五 15:35:02.94] weekly review END   ===== 

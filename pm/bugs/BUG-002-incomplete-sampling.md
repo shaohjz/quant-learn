@@ -49,3 +49,4 @@
 ## 状态历史
 - 2026-06-09 18:06: 创建 Bug，状态 `open`
 - 2026-06-11 18:42: 部署到 production，状态 `deployed`
+| 2026-06-15 18:37 | deployed | 部署到 production |

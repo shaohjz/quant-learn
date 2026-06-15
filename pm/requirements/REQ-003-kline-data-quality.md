@@ -59,3 +59,4 @@
   - 生成 `pm/data/YYYY-MM-DD-data.md` 数据质量日报
   - 修改 `scripts/daily_review.py`：`format_position_technical_breaks()` 在K线不足时显示"已暂停技术面策略"并给出降级策略说明
   - 支持 `--auto-backfill` 参数自动补全数据
+| 2026-06-15 18:37 | deployed | 部署到 production |

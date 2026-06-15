@@ -112,3 +112,4 @@ python scripts/backfill_data.py
 ---
 
 **下一步**: 监控今日（2026-06-10）收盘后数据是否能正常自动补录。如 BaoStock 也失败，考虑接入 QMT 本地数据源。
+| 2026-06-15 18:37 | deployed | 部署到 production |

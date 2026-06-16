@@ -4,9 +4,10 @@
 - **Bug ID**: BUG-20260610-002
 - **创建时间**: 2026-06-10 19:05
 - **严重级别**: S2（功能缺失）
-- **状态**: ❌ 未修复（2026-06-12 巡检确认依然失败）
+- **状态**: fixed
+- **修复时间**: 2026-06-17
 - **影响组件**: QMT 网关模块（交易 API）
-- **连续天数**: 第3天
+- **连续天数**: 已修复（第7天）
 
 ## 问题描述
 xtquant 模块导入失败，导致 QMT 网关无法正常连接，交易 API 功能不可用。
@@ -89,11 +90,29 @@ else:
 - ⚠️ 当前 `broker.mode: sim`，不影响模拟交易
 - ⚠️ 如需启用 QMT 实盘，必须先安装 Python 3.11 并创建独立 venv
 
-## 后续行动
-1. **如下周需实盘**: 安装 Python 3.11，创建 `venv_qmt`
-2. **如不需实盘**: 在代码中明确禁用 QMT 导入，避免报错
-3. **长期**: 考虑容器化或固定 Python 3.11 环境
+## 修复确认（2026-06-17）
+
+### 修复方案已实施
+1. **venv_qmt 已创建**：`venv_qmt\Scripts\python.exe` → Python 3.11.9
+2. **xtquant 安装成功**：`venv_qmt\Scripts\pip.exe install xtquant` → 250516.1.1
+3. **导入验证通过**：
+   ```
+   ✅ xtquant.xtdata 导入成功
+   ✅ xtquant.xttrader 导入成功
+   ✅ QMT userdata_mini 存在
+   ✅ QMT 网关可以正常使用
+   ```
+4. **代码防护已添加**：`gateways/qmt_gateway.py` 添加 `_check_qmt_python_compat()`，Python >= 3.12 时自动禁用并提示
+5. **检查脚本已新增**：`scripts/check_qmt_status.py` 用于验证环境
+6. **启动脚本已新增**：`run_qmt_gateway.bat` 使用 venv_qmt 运行 QMT 脚本
+
+### 当前状态
+- ✅ `venv_qmt` 可用（Python 3.11.9 + xtquant）
+- ✅ 系统 Python 3.14 运行 QMT 网关时会自动禁用并提示使用 venv_qmt
+- ⚠️ `broker.mode: sim` 仍使用模拟交易，不影响当前运行
+- 📋 如需启用 QMT 实盘：使用 `run_qmt_gateway.bat` 启动
 
 ---
-**更新时间**: 2026-06-12 19:05
-**更新人**: ops-agent-daily
+**更新时间**: 2026-06-17 00:20
+**更新人**: dev-manager (quant-finance-manager)
+**状态**: fixed ✅

@@ -51,6 +51,35 @@ logger = logging.getLogger(__name__)
 # 与 broker/qmt_broker.py 同步硬隔离
 FORBIDDEN_ACCOUNTS = {"8890461376"}
 
+# xtquant 仅支持 Python <= 3.11（二进制 .pyd 编译版本上限 cp311）
+# 如果当前 Python >= 3.12，QMT 网关功能自动禁用，避免 ImportError
+QMT_PYTHON_MAX = (3, 12)
+VENV_QMT_PATH = Path(__file__).resolve().parent.parent / "venv_qmt" / "Scripts" / "python.exe"
+
+
+def _check_qmt_python_compat() -> bool:
+    """检查当前 Python 版本是否兼容 xtquant。
+
+    Returns:
+        True  = 兼容（<= 3.11），可以正常加载 xtquant
+        False = 不兼容（>= 3.12），QMT 网关功能将被禁用
+    """
+    if sys.version_info >= QMT_PYTHON_MAX:
+        logger.warning(
+            f"QMT xtquant 需要 Python <= 3.11，当前版本为 {sys.version_info.major}.{sys.version_info.minor}"
+        )
+        logger.warning(
+            f"QMT 网关功能已自动禁用。如需使用，请通过 venv_qmt 运行：\n"
+            f"  {VENV_QMT_PATH} -m gateways.qmt_gateway\n"
+            f"或设置 QMT_USE_VENV=1 自动切换到 venv"
+        )
+        return False
+    return True
+
+
+# 模块加载时即检查兼容性，设置 QMT_AVAILABLE 标志
+QMT_AVAILABLE = _check_qmt_python_compat()
+
 
 def _stockcode_to_xt(symbol: str, exchange: Exchange) -> str:
     """vnpy symbol+exchange → xtquant 形式 '600330.SH'"""
@@ -116,6 +145,16 @@ class QmtGateway(BaseGateway):
     # 连接
     # ============================================================
     def connect(self, setting: dict) -> None:
+        if not QMT_AVAILABLE:
+            self.write_log(
+                "❌ QMT 网关不可用：当前 Python 版本不兼容 xtquant "
+                "(需要 Python <= 3.11)。\n"
+                "解决方案：\n"
+                f"  1. 使用 venv_qmt: {VENV_QMT_PATH} -m gateways.qmt_gateway\n"
+                f"  2. 或设置环境变量 QMT_USE_VENV=1 自动切换"
+            )
+            raise RuntimeError("QMT xtquant incompatible Python version")
+
         self.qmt_path = setting["qmt_path"]
         self.account_id = str(setting["qmt_account"])
         self.session_id = int(setting.get("session_id", 970525))

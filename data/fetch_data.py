@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-A股日线数据获取脚本
-使用 AKShare 的 stock_zh_a_hist 接口拉取前复权日线数据，保存为 CSV。
-支持多数据源自动切换和重试机制。
+A股日线数据获取脚本（BaoStock 主力，AKShare 已永久移除）
+使用 BaoStock 拉取前复权日线数据，保存为 CSV。
+AKShare 已永久移除（连续 7 天不可用，2026-06-16）
 """
 
 import os
@@ -40,7 +40,7 @@ RETRY_DELAY = 2  # 秒
 
 def fetch_stock_data(symbol: str, start_date: str, end_date: str, adjust: str = "qfq") -> pd.DataFrame:
     """
-    拉取单只股票的日线数据（支持多数据源自动切换）
+    拉取单只股票的日线数据（BaoStock 主力，AKShare 已永久移除）
     
     Args:
         symbol: 股票代码，如 "000967"
@@ -53,34 +53,14 @@ def fetch_stock_data(symbol: str, start_date: str, end_date: str, adjust: str = 
     """
     logger.info(f"正在拉取 {symbol} 的日线数据 ({start_date} ~ {end_date})...")
     
-    # 策略1: 尝试 AKShare（带重试）
-    for attempt in range(MAX_RETRIES):
-        try:
-            import akshare as ak
-            logger.info(f"  尝试 AKShare (尝试 {attempt + 1}/{MAX_RETRIES})...")
-            df = ak.stock_zh_a_hist(
-                symbol=symbol,
-                period="daily",
-                start_date=start_date,
-                end_date=end_date,
-                adjust=adjust,
-            )
-            if df is not None and not df.empty:
-                logger.info(f"  ✓ AKShare 拉取成功")
-                return normalize_dataframe(df, source="akshare")
-        except Exception as e:
-            logger.warning(f"  ⚠ AKShare 拉取失败 (尝试 {attempt + 1}/{MAX_RETRIES}): {e}")
-            if attempt < MAX_RETRIES - 1:
-                time.sleep(RETRY_DELAY * (attempt + 1))  # 指数退避
-    
-    # 策略2: 尝试 BaoStock
-    logger.info(f"  尝试使用 BaoStock 备选方案...")
+    # 策略1: 尝试 BaoStock（主力数据源）
+    logger.info(f"  尝试 BaoStock...")
     df = fetch_with_baostock(symbol, start_date, end_date)
     if df is not None and not df.empty:
         logger.info(f"  ✓ BaoStock 拉取成功")
         return normalize_dataframe(df, source="baostock")
     
-    # 策略3: 尝试 Tushare (如果配置了 token)
+    # 策略2: 尝试 Tushare (如果配置了 token)
     logger.info(f"  尝试使用 Tushare 备选方案...")
     df = fetch_with_tushare(symbol, start_date, end_date)
     if df is not None and not df.empty:

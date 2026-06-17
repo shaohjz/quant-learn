@@ -1,0 +1,35 @@
+{
+  "date": "2026-06-16",
+  "account": {
+    "id": 1,
+    "account_name": "default",
+    "initial_cash": 100000.0,
+    "cash": 9000.0,
+    "total_value": 9800.0,
+    "created_at": "2026-06-11 10:41:05",
+    "updated_at": "2026-06-15 10:36:22"
+  },
+  "positions": [
+    {
+      "code": "000001",
+      "name": "平安银行",
+      "qty": 100,
+      "avg_cost": 10.0,
+      "cur_price": 10.94,
+      "price_source": "实时",
+      "market_value": 1094.0,
+      "pnl": 93.99999999999994,
+      "pnl_pct": 0.09399999999999994,
+      "stop_loss_price": 9.200000000000001,
+      "stop_triggered": false,
+      "tp_triggered": false,
+      "change_pct": -1.084990958408689
+    }
+  ],
+  "total_market_value": 1094.0,
+  "total_pnl": 93.99999999999994,
+  "data_issues": [
+    "sim_trades为空，交易溯源断裂",
+    "TestLoss脏数据未清理"
+  ]
+}

@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 # 数据源优先级（从高到低）
 # BaoStock 更稳定，作为主源；AKShare 作为备选
-DEFAULT_SOURCES = ["baostock", "akshare"]
+# BaoStock 为主源（稳定），新浪实时行情为盘中备选，AKShare 已连续 7 天不可用
+# 2026-06-16: 永久移除 AKShare 备选，改用新浪实时行情 + BaoStock
+DEFAULT_SOURCES = ["baostock", "sina"]
 
 
 def _baostock_code(symbol: str) -> str:
@@ -62,25 +64,32 @@ def _get_baostock_price(symbol: str, trade_date: str = None) -> Optional[float]:
         return None
 
 
-def _get_akshare_price(symbol: str, trade_date: str = None) -> Optional[float]:
-    """使用 AKShare 获取收盘价"""
+def _get_sina_price(symbol: str, trade_date: str = None) -> Optional[float]:
+    """使用新浪实时行情获取最新价（盘中实时，非收盘价）"""
     try:
-        import akshare as ak
-        if trade_date is None:
-            df = ak.stock_zh_a_spot_em()
-            if df is not None and not df.empty:
-                code_match = df[df["代码"] == symbol]
-                if not code_match.empty:
-                    return float(code_match.iloc[0]["最新价"])
-        else:
-            date_str = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:8]}"
-            df = ak.stock_zh_a_hist(symbol=symbol, period="daily",
-                                    start_date=date_str, end_date=date_str)
-            if df is not None and not df.empty:
-                return float(df.iloc[-1]["收盘"])
+        import requests
+        import re
+        prefix = "sh" if symbol.startswith(("6", "9")) else "sz"
+        url = f"https://hq.sinajs.cn/list={prefix}{symbol}"
+        headers = {
+            "Referer": "https://finance.sina.com.cn",
+            "User-Agent": "Mozilla/5.0",
+        }
+        resp = requests.get(url, headers=headers, timeout=10)
+        resp.encoding = "gbk"
+        text = resp.text.strip()
+        m = re.search(rf'var hq_str_{prefix}{symbol}="(.*)";', text)
+        if m:
+            parts = m.group(1).split(",")
+            if len(parts) >= 32:
+                price = float(parts[3]) if parts[3] else 0
+                yclose = float(parts[2]) if parts[2] else 0
+                if price == 0 and yclose > 0:
+                    price = yclose
+                return price if price > 0 else None
         return None
     except Exception as e:
-        logger.warning(f"AKShare 获取 {symbol} 价格失败: {e}")
+        logger.warning(f"新浪获取 {symbol} 价格失败: {e}")
         return None
 
 
@@ -124,7 +133,7 @@ class RealtimePriceGateway:
         self._source_status: Dict[str, bool] = {}  # 记录各数据源可用状态
         for s in self.sources:
             self._source_status[s] = True  # 初始假设可用
-        logger.info(f"实时行情网关初始化，数据源优先级: {self.sources}")
+        logger.info(f"实时行情网关初始化，数据源优先级: {self.sources} (AKShare 已永久移除，改用新浪实时)")
 
     def get_realtime_price(self, symbol: str, trade_date: str = None) -> Optional[float]:
         """
@@ -156,8 +165,8 @@ class RealtimePriceGateway:
         """从指定数据源获取价格"""
         if source == "baostock":
             return _get_baostock_price(symbol, trade_date)
-        elif source == "akshare":
-            return _get_akshare_price(symbol, trade_date)
+        elif source == "sina":
+            return _get_sina_price(symbol, trade_date)
         elif source == "tushare":
             if not self.token:
                 logger.error("Tushare 需要 token，请在初始化时传入")

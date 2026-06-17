@@ -312,3 +312,21 @@ Traceback (most recent call last):
 UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
 ===== [2026/06/09 周二 15:30:36.49] next watchlist END   ===== 
 ===== [2026/06/09 周二 15:30:36.49] daily review END   ===== 
+===== [2026/06/17 周三 15:30:02.64] daily review START ===== 
+============================================================
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 52, in <module>
+    print("\U0001f4ca 量化模拟盘 - 每日复盘报告")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 0: illegal multibyte sequence
+===== [2026/06/17 周三 15:30:03.31] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/06/17 周三 15:30:06.32] next watchlist END   ===== 
+===== [2026/06/17 周三 15:30:06.32] daily review END   ===== 

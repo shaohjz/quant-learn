@@ -1,0 +1,255 @@
+{
+  "timestamp": "2026-06-16T20:27:06.431015",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "step1_fix_trailing_zero": {
+    "fixed_count": 3,
+    "rows": [
+      {
+        "id": 17,
+        "account_id": 2,
+        "stock_code": "600330",
+        "stock_name": "天通股份",
+        "avg_cost": 32.818,
+        "highest_price": 32.88,
+        "trailing_stop_price": 0.0,
+        "current_price": 32.39
+      },
+      {
+        "id": 18,
+        "account_id": 2,
+        "stock_code": "002453",
+        "stock_name": "华软科技",
+        "avg_cost": 6.467,
+        "highest_price": 6.467,
+        "trailing_stop_price": 0.0,
+        "current_price": 5.24
+      },
+      {
+        "id": 19,
+        "account_id": 2,
+        "stock_code": "603601",
+        "stock_name": "再升科技",
+        "avg_cost": 17.83,
+        "highest_price": 17.83,
+        "trailing_stop_price": 0.0,
+        "current_price": 14.34
+      }
+    ]
+  },
+  "step2_recalc_trailing": {
+    "updated": 9,
+    "details": [
+      {
+        "stock_code": "603601",
+        "stock_name": "再升科技",
+        "old_trailing": null,
+        "new_trailing": 0.0,
+        "reason": "浮盈未超过5%，跟踪止损未启动"
+      },
+      {
+        "stock_code": "603178",
+        "stock_name": "圣龙股份",
+        "old_trailing": null,
+        "new_trailing": 0.0,
+        "reason": "浮盈未超过5%，跟踪止损未启动"
+      },
+      {
+        "stock_code": "001896",
+        "stock_name": "豫能控股",
+        "old_trailing": 17.13,
+        "new_trailing": 21.896,
+        "reason": "浮盈>20%，跟踪止损=max(entry*1.10, high*0.92)"
+      },
+      {
+        "stock_code": "000899",
+        "stock_name": "赣能股份",
+        "old_trailing": 13.25,
+        "new_trailing": 13.25,
+        "reason": "保持原跟踪止损，不下移"
+      },
+      {
+        "stock_code": "600310",
+        "stock_name": "广西能源",
+        "old_trailing": 5.11,
+        "new_trailing": 5.11,
+        "reason": "保持原跟踪止损，不下移"
+      },
+      {
+        "stock_code": "600130",
+        "stock_name": "波导股份",
+        "old_trailing": null,
+        "new_trailing": 0.0,
+        "reason": "浮盈未超过5%，跟踪止损未启动"
+      },
+      {
+        "stock_code": "600330",
+        "stock_name": "天通股份",
+        "old_trailing": null,
+        "new_trailing": 0.0,
+        "reason": "浮盈未超过5%，跟踪止损未启动"
+      },
+      {
+        "stock_code": "002453",
+        "stock_name": "华软科技",
+        "old_trailing": null,
+        "new_trailing": 0.0,
+        "reason": "浮盈未超过5%，跟踪止损未启动"
+      },
+      {
+        "stock_code": "603601",
+        "stock_name": "再升科技",
+        "old_trailing": null,
+        "new_trailing": 0.0,
+        "reason": "浮盈未超过5%，跟踪止损未启动"
+      }
+    ]
+  },
+  "step3_execute_armed": {
+    "executed": 3,
+    "skipped": 2,
+    "errors": 0,
+    "details": {
+      "executed": [
+        {
+          "success": true,
+          "msg": "卖出 603178 100股 @ 17.0100",
+          "amount": 1701.0,
+          "commission": 5.0,
+          "tax": 1.7,
+          "order_id": "SLF-603178-1781612826"
+        },
+        {
+          "success": true,
+          "msg": "卖出 002453 300股 @ 5.2400",
+          "amount": 1572.0,
+          "commission": 5.0,
+          "tax": 1.57,
+          "order_id": "SLF-002453-1781612826"
+        },
+        {
+          "success": true,
+          "msg": "卖出 600310 200股 @ 4.8400",
+          "amount": 968.0,
+          "commission": 5.0,
+          "tax": 0.97,
+          "order_id": "SLF-600310-1781612826"
+        }
+      ],
+      "skipped": [
+        {
+          "stock_code": "600330",
+          "stock_name": "天通股份",
+          "current_price": 32.39,
+          "stop_price": 28.05,
+          "rule": "trend_break"
+        },
+        {
+          "stock_code": "001896",
+          "stock_name": "豫能控股",
+          "current_price": 22.06,
+          "stop_price": 21.896,
+          "rule": "take_profit"
+        }
+      ],
+      "errors": []
+    }
+  },
+  "step4_severe_loss": {
+    "triggered": 4,
+    "safe": 2,
+    "errors": 0,
+    "details": {
+      "triggered": [
+        {
+          "stock_code": "603601",
+          "stock_name": "再升科技",
+          "account_id": 1,
+          "quantity": 100,
+          "avg_cost": 17.83,
+          "sell_price": 14.34,
+          "stop_price": 16.4036,
+          "loss_pct": -0.19573752103196854,
+          "result": {
+            "success": true,
+            "msg": "卖出 603601 100股 @ 14.3400",
+            "amount": 1434.0,
+            "commission": 5.0,
+            "tax": 1.43,
+            "order_id": "SLF-603601-1781612826"
+          }
+        },
+        {
+          "stock_code": "000899",
+          "stock_name": "赣能股份",
+          "account_id": 1,
+          "quantity": 100,
+          "avg_cost": 12.99,
+          "sell_price": 12.55,
+          "stop_price": 13.25,
+          "loss_pct": -0.03387220939183984,
+          "result": {
+            "success": true,
+            "msg": "卖出 000899 100股 @ 12.5500",
+            "amount": 1255.0,
+            "commission": 5.0,
+            "tax": 1.26,
+            "order_id": "SLF-000899-1781612826"
+          }
+        },
+        {
+          "stock_code": "600130",
+          "stock_name": "波导股份",
+          "account_id": 1,
+          "quantity": 100,
+          "avg_cost": 5.24,
+          "sell_price": 4.76,
+          "stop_price": 4.8208,
+          "loss_pct": -0.09160305343511459,
+          "result": {
+            "success": true,
+            "msg": "卖出 600130 100股 @ 4.7600",
+            "amount": 476.0,
+            "commission": 5.0,
+            "tax": 0.48,
+            "order_id": "SLF-600130-1781612826"
+          }
+        },
+        {
+          "stock_code": "603601",
+          "stock_name": "再升科技",
+          "account_id": 2,
+          "quantity": 100,
+          "avg_cost": 17.83,
+          "sell_price": 14.34,
+          "stop_price": 16.4036,
+          "loss_pct": -0.19573752103196854,
+          "result": {
+            "success": true,
+            "msg": "卖出 603601 100股 @ 14.3400",
+            "amount": 1434.0,
+            "commission": 5.0,
+            "tax": 1.43,
+            "order_id": "SLF-603601-1781612826"
+          }
+        }
+      ],
+      "safe": [
+        {
+          "stock_code": "001896",
+          "stock_name": "豫能控股",
+          "current_price": 22.06,
+          "stop_price": 21.896,
+          "loss_pct": 0.4775619557937039
+        },
+        {
+          "stock_code": "600330",
+          "stock_name": "天通股份",
+          "current_price": 32.39,
+          "stop_price": 30.1926,
+          "loss_pct": -0.013041623499299083
+        }
+      ],
+      "errors": []
+    }
+  }
+}

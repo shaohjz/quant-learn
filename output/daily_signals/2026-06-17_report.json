@@ -1,0 +1,466 @@
+{
+  "timestamp": "2026-06-17 15:05:11",
+  "date": "2026-06-17",
+  "hot_stocks": {
+    "date": "2026-06-17",
+    "total": 30,
+    "stocks": [
+      {
+        "code": "000695",
+        "name": "滨海能源",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "固态电池+硅碳负极+绿电降本"
+      },
+      {
+        "code": "600615",
+        "name": "鑫源智造",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "智能割草机器人+无人割草机+轻量化+比亚迪概念"
+      },
+      {
+        "code": "688766",
+        "name": "普冉股份",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "AI存储+拟收购诺亚长天+一季报增长"
+      },
+      {
+        "code": "603986",
+        "name": "兆易创新",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "存储芯片涨价+行业龙头+端侧AI+一季报增长"
+      },
+      {
+        "code": "300283",
+        "name": "温州宏丰",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "硬质合金棒材+PCB钻针+半导体封装+一季报扭亏"
+      },
+      {
+        "code": "688260",
+        "name": "昀冢科技",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "MLCC+电子陶瓷+定增扩产"
+      },
+      {
+        "code": "920122",
+        "name": "中纺标",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "中字头+央企+纺织品检测"
+      },
+      {
+        "code": "600579",
+        "name": "中化装备",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "中字头+资产重组+化工装备+机器人概念"
+      },
+      {
+        "code": "002161",
+        "name": "远望谷",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "RFID+AI赋能+文旅消费+券商看好"
+      },
+      {
+        "code": "603488",
+        "name": "展鹏科技",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "军工仿真+VR/XR+双主业"
+      },
+      {
+        "code": "000672",
+        "name": "上峰材料",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "半导体产业链+投资长鑫科技+半导体封装基板+水泥"
+      },
+      {
+        "code": "603929",
+        "name": "亚翔集成",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "半导体洁净室+新加坡布局+一季报倍增"
+      },
+      {
+        "code": "601117",
+        "name": "中国化学",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "脱硫技术+芯片+化学工程+中字头"
+      },
+      {
+        "code": "300475",
+        "name": "香农芯创",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "存储芯片+SK海力士代理+一季报暴增"
+      },
+      {
+        "code": "688082",
+        "name": "盛美上海",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "半导体设备+高温SPM+订单增长+H股上市"
+      },
+      {
+        "code": "300351",
+        "name": "永贵电器",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "机器人+液冷超充+轨交中标"
+      },
+      {
+        "code": "300584",
+        "name": "海辰药业",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "固态电池+电解液添加剂+兰地洛尔+仿制药"
+      },
+      {
+        "code": "603283",
+        "name": "赛腾股份",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "HBM检测+半导体设备+一季报增长"
+      },
+      {
+        "code": "603458",
+        "name": "勘设股份",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "数据中心+工程咨询+北斗技术+无人驾驶"
+      },
+      {
+        "code": "688598",
+        "name": "金博股份",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "半导体产业链+光伏热场+碳陶制动盘+人形机器人"
+      },
+      {
+        "code": "000100",
+        "name": "TCL科技",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "面板+回购+一季报增长"
+      },
+      {
+        "code": "600397",
+        "name": "江钨装备",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "钨钽铌并购+磁选装备+江西国资"
+      },
+      {
+        "code": "000679",
+        "name": "大连友谊",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "百货零售+大连地区+电商"
+      },
+      {
+        "code": "688323",
+        "name": "瑞华泰",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "PCB概念+PI薄膜+商业航天"
+      },
+      {
+        "code": "001223",
+        "name": "欧克科技",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "PCB概念+PI膜+锂电池隔膜设备"
+      },
+      {
+        "code": "603580",
+        "name": "*ST艾艾",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "摘帽进展+问询函延期+年报扭亏"
+      },
+      {
+        "code": "603324",
+        "name": "盛剑科技",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "电子化学品+半导体附属装备+股权激励"
+      },
+      {
+        "code": "603139",
+        "name": "康惠股份",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "AI算力+中药+资产重整"
+      },
+      {
+        "code": "300386",
+        "name": "飞天诚信",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "数字货币概念+安全芯片+车规级芯片"
+      },
+      {
+        "code": "002581",
+        "name": "*ST未名",
+        "close": 0,
+        "change_pct": 0.0,
+        "change_amt": 0.0,
+        "turnover_pct": 0.0,
+        "amount": 0,
+        "reason": "创新药+ST板块+营收增长"
+      }
+    ],
+    "top_tags": [
+      {
+        "tag": "一季报增长",
+        "count": 4
+      },
+      {
+        "tag": "中字头",
+        "count": 3
+      },
+      {
+        "tag": "固态电池",
+        "count": 2
+      },
+      {
+        "tag": "半导体产业链",
+        "count": 2
+      },
+      {
+        "tag": "半导体设备",
+        "count": 2
+      },
+      {
+        "tag": "PCB概念",
+        "count": 2
+      },
+      {
+        "tag": "硅碳负极",
+        "count": 1
+      },
+      {
+        "tag": "绿电降本",
+        "count": 1
+      },
+      {
+        "tag": "智能割草机器人",
+        "count": 1
+      },
+      {
+        "tag": "无人割草机",
+        "count": 1
+      },
+      {
+        "tag": "轻量化",
+        "count": 1
+      },
+      {
+        "tag": "比亚迪概念",
+        "count": 1
+      },
+      {
+        "tag": "AI存储",
+        "count": 1
+      },
+      {
+        "tag": "拟收购诺亚长天",
+        "count": 1
+      },
+      {
+        "tag": "存储芯片涨价",
+        "count": 1
+      }
+    ]
+  },
+  "northbound": {
+    "date": "2026-06-17",
+    "hgt_total": -9.28,
+    "sgt_total": -31.1,
+    "hgt_sgt_total": -40.38,
+    "direction": "温和流出",
+    "data_points": 262,
+    "latest_minutes": [
+      {
+        "time": "14:56",
+        "hgt": -10.07,
+        "sgt": -36.22
+      },
+      {
+        "time": "14:57",
+        "hgt": -10.87,
+        "sgt": -36.2
+      },
+      {
+        "time": "14:58",
+        "hgt": -10.52,
+        "sgt": -36.24
+      },
+      {
+        "time": "14:59",
+        "hgt": -10.03,
+        "sgt": -36
+      },
+      {
+        "time": "15:00",
+        "hgt": -9.28,
+        "sgt": -31.1
+      }
+    ]
+  },
+  "dragon_tiger": {
+    "date": "2026-06-17",
+    "total": 0,
+    "stocks": [],
+    "note": "无数据（非交易日或盘后未更新）"
+  },
+  "industry": {
+    "hot_sectors": [
+      "一季报增长",
+      "人形机器人",
+      "中字头",
+      "PCB概念",
+      "固态电池",
+      "定增扩产",
+      "央企",
+      "半导体产业链",
+      "半导体设备",
+      "机器人"
+    ],
+    "indices": [
+      {
+        "name": "上证指数",
+        "code": "000001",
+        "price": 10.78,
+        "change_pct": -1.46
+      },
+      {
+        "name": "深证成指",
+        "code": "399001",
+        "price": 15880.95,
+        "change_pct": 1.31
+      },
+      {
+        "name": "创业板指",
+        "code": "399006",
+        "price": 4167.05,
+        "change_pct": 1.56
+      },
+      {
+        "name": "上证50",
+        "code": "000016",
+        "price": 2.82,
+        "change_pct": -2.76
+      },
+      {
+        "name": "科创50",
+        "code": "000688",
+        "price": 40.8,
+        "change_pct": -2.32
+      },
+      {
+        "name": "中证1000",
+        "code": "399852",
+        "price": 8704.47,
+        "change_pct": 0.67
+      }
+    ],
+    "total": 10
+  }
+}

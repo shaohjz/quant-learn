@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-06-16T20:32:10.013954",
+  "mode": "live",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "scanned": 2,
+  "triggered": 0,
+  "safe": 2,
+  "errors": 0,
+  "dry_run": false,
+  "details": {
+    "triggered": [],
+    "safe": [
+      {
+        "stock_code": "001896",
+        "stock_name": "豫能控股",
+        "current_price": 22.06,
+        "stop_price": 21.896,
+        "loss_pct": 0.4775619557937039
+      },
+      {
+        "stock_code": "600330",
+        "stock_name": "天通股份",
+        "current_price": 32.39,
+        "stop_price": 30.1926,
+        "loss_pct": -0.013041623499299083
+      }
+    ],
+    "errors": []
+  }
+}

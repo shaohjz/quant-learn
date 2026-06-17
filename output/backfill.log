@@ -379,3 +379,225 @@
 2026-06-15 19:38:43,884 [INFO]   ✓ 603290 [BaoStock] 1 条
 2026-06-15 19:38:43,891 [INFO]   ✓ 603290: 补了 1 条，现共 499 条
 2026-06-15 19:38:44,885 [INFO] 补数据完成: 成功=31, 失败=0
+2026-06-17 02:04:47,560 [INFO] 开始补数据，共 31 只股票
+2026-06-17 02:04:53,840 [INFO] BaoStock 全局登录成功
+2026-06-17 02:04:53,844 [INFO]   000301: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:05:02,677 [WARNING]   ✗ 000301 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:05:03,726 [WARNING]   [AKShare] 000301 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:06,402 [WARNING]   [AKShare] 000301 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:11,458 [WARNING]   [AKShare] 000301 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:11,458 [WARNING]   ✗ 000301 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:05:11,458 [INFO]   000301: 无新数据（可能非交易日）
+2026-06-17 02:05:12,180 [INFO]   000333: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:05:17,410 [WARNING]   ✗ 000333 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:05:17,722 [WARNING]   [AKShare] 000333 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:20,800 [WARNING]   [AKShare] 000333 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:25,525 [WARNING]   [AKShare] 000333 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:25,525 [WARNING]   ✗ 000333 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:05:25,525 [INFO]   000333: 无新数据（可能非交易日）
+2026-06-17 02:05:25,960 [INFO]   000708: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:05:32,131 [WARNING]   ✗ 000708 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:05:32,443 [WARNING]   [AKShare] 000708 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:35,607 [WARNING]   [AKShare] 000708 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:40,169 [WARNING]   [AKShare] 000708 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:40,169 [WARNING]   ✗ 000708 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:05:40,169 [INFO]   000708: 无新数据（可能非交易日）
+2026-06-17 02:05:40,855 [INFO]   000858: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:05:46,511 [WARNING]   ✗ 000858 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:05:46,825 [WARNING]   [AKShare] 000858 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:49,607 [WARNING]   [AKShare] 000858 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:54,390 [WARNING]   [AKShare] 000858 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:05:54,391 [WARNING]   ✗ 000858 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:05:54,391 [INFO]   000858: 无新数据（可能非交易日）
+2026-06-17 02:05:54,933 [INFO]   000967: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:06:01,276 [WARNING]   ✗ 000967 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:06:01,603 [WARNING]   [AKShare] 000967 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:04,348 [WARNING]   [AKShare] 000967 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:09,080 [WARNING]   [AKShare] 000967 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:09,080 [WARNING]   ✗ 000967 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:06:09,080 [INFO]   000967: 无新数据（可能非交易日）
+2026-06-17 02:06:09,446 [INFO]   002256: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:06:16,464 [WARNING]   ✗ 002256 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:06:16,786 [WARNING]   [AKShare] 002256 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:19,474 [WARNING]   [AKShare] 002256 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:23,836 [WARNING]   [AKShare] 002256 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:23,836 [WARNING]   ✗ 002256 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:06:23,836 [INFO]   002256: 无新数据（可能非交易日）
+2026-06-17 02:06:24,527 [INFO]   002405: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:06:31,557 [WARNING]   ✗ 002405 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:06:31,890 [WARNING]   [AKShare] 002405 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:34,981 [WARNING]   [AKShare] 002405 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:39,560 [WARNING]   [AKShare] 002405 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:39,560 [WARNING]   ✗ 002405 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:06:39,560 [INFO]   002405: 无新数据（可能非交易日）
+2026-06-17 02:06:40,186 [INFO]   002415: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:06:45,575 [WARNING]   ✗ 002415 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:06:45,923 [WARNING]   [AKShare] 002415 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:48,865 [WARNING]   [AKShare] 002415 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:53,813 [WARNING]   [AKShare] 002415 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:53,813 [WARNING]   ✗ 002415 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:06:53,813 [INFO]   002415: 无新数据（可能非交易日）
+2026-06-17 02:06:53,909 [WARNING]   [AKShare] 600519 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:06:54,211 [INFO]   002453: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:06:55,237 [WARNING]   [AKShare] 600519 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:00,297 [WARNING]   ✗ 002453 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:07:00,629 [WARNING]   [AKShare] 002453 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:03,951 [WARNING]   [AKShare] 002453 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:08,314 [WARNING]   [AKShare] 002453 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:08,314 [WARNING]   ✗ 002453 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:07:08,314 [INFO]   002453: 无新数据（可能非交易日）
+2026-06-17 02:07:08,632 [INFO]   002475: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:07:14,780 [WARNING]   ✗ 002475 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:07:15,100 [WARNING]   [AKShare] 002475 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:17,747 [WARNING]   [AKShare] 002475 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:22,169 [WARNING]   [AKShare] 002475 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:22,169 [WARNING]   ✗ 002475 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:07:22,169 [INFO]   002475: 无新数据（可能非交易日）
+2026-06-17 02:07:22,700 [INFO]   002594: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:07:28,723 [WARNING]   ✗ 002594 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:07:29,054 [WARNING]   [AKShare] 002594 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:32,021 [WARNING]   [AKShare] 002594 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:36,852 [WARNING]   [AKShare] 002594 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:36,852 [WARNING]   ✗ 002594 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:07:36,852 [INFO]   002594: 无新数据（可能非交易日）
+2026-06-17 02:07:37,174 [INFO]   002906: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:07:43,176 [WARNING]   ✗ 002906 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:07:43,509 [WARNING]   [AKShare] 002906 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:46,219 [WARNING]   [AKShare] 002906 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:50,584 [WARNING]   [AKShare] 002906 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:07:50,584 [WARNING]   ✗ 002906 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:07:50,584 [INFO]   002906: 无新数据（可能非交易日）
+2026-06-17 02:07:51,088 [INFO]   002920: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:07:58,561 [WARNING]   ✗ 002920 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:07:58,887 [WARNING]   [AKShare] 002920 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:01,596 [WARNING]   [AKShare] 002920 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:05,987 [WARNING]   [AKShare] 002920 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:05,987 [WARNING]   ✗ 002920 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:08:05,987 [INFO]   002920: 无新数据（可能非交易日）
+2026-06-17 02:08:06,507 [INFO]   300059: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:08:14,017 [WARNING]   ✗ 300059 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:08:14,338 [WARNING]   [AKShare] 300059 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:17,530 [WARNING]   [AKShare] 300059 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:22,248 [WARNING]   [AKShare] 300059 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:22,248 [WARNING]   ✗ 300059 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:08:22,248 [INFO]   300059: 无新数据（可能非交易日）
+2026-06-17 02:08:22,652 [INFO]   300124: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:08:29,227 [WARNING]   ✗ 300124 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:08:29,541 [WARNING]   [AKShare] 300124 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:32,424 [WARNING]   [AKShare] 300124 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:37,130 [WARNING]   [AKShare] 300124 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:37,130 [WARNING]   ✗ 300124 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:08:37,130 [INFO]   300124: 无新数据（可能非交易日）
+2026-06-17 02:08:37,878 [INFO]   300750: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:08:43,594 [WARNING]   ✗ 300750 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:08:43,912 [WARNING]   [AKShare] 300750 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:46,946 [WARNING]   [AKShare] 300750 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:51,552 [WARNING]   [AKShare] 300750 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:08:51,553 [WARNING]   ✗ 300750 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:08:51,553 [INFO]   300750: 无新数据（可能非交易日）
+2026-06-17 02:08:52,264 [INFO]   300760: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:08:59,343 [WARNING]   ✗ 300760 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:08:59,655 [WARNING]   [AKShare] 300760 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:02,798 [WARNING]   [AKShare] 300760 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:07,142 [WARNING]   [AKShare] 300760 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:07,143 [WARNING]   ✗ 300760 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:09:07,143 [INFO]   300760: 无新数据（可能非交易日）
+2026-06-17 02:09:07,602 [INFO]   600036: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:09:14,519 [WARNING]   ✗ 600036 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:09:14,843 [WARNING]   [AKShare] 600036 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:17,769 [WARNING]   [AKShare] 600036 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:22,321 [WARNING]   [AKShare] 600036 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:22,321 [WARNING]   ✗ 600036 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:09:22,321 [INFO]   600036: 无新数据（可能非交易日）
+2026-06-17 02:09:22,743 [INFO]   600130: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:09:30,475 [WARNING]   ✗ 600130 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:09:30,794 [WARNING]   [AKShare] 600130 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:33,214 [WARNING]   [AKShare] 600130 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:38,205 [WARNING]   [AKShare] 600130 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:38,205 [WARNING]   ✗ 600130 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:09:38,205 [INFO]   600130: 无新数据（可能非交易日）
+2026-06-17 02:09:38,609 [INFO]   600276: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:09:46,344 [WARNING]   ✗ 600276 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:09:46,670 [WARNING]   [AKShare] 600276 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:49,294 [WARNING]   [AKShare] 600276 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:53,622 [WARNING]   [AKShare] 600276 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:09:53,622 [WARNING]   ✗ 600276 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:09:53,622 [INFO]   600276: 无新数据（可能非交易日）
+2026-06-17 02:09:54,021 [INFO]   600310: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:10:01,291 [WARNING]   ✗ 600310 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:10:01,601 [WARNING]   [AKShare] 600310 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:04,077 [WARNING]   [AKShare] 600310 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:09,193 [WARNING]   [AKShare] 600310 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:09,193 [WARNING]   ✗ 600310 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:10:09,193 [INFO]   600310: 无新数据（可能非交易日）
+2026-06-17 02:10:09,541 [INFO]   600330: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:10:16,994 [WARNING]   ✗ 600330 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:10:17,327 [WARNING]   [AKShare] 600330 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:20,059 [WARNING]   [AKShare] 600330 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:24,736 [WARNING]   [AKShare] 600330 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:24,736 [WARNING]   ✗ 600330 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:10:24,736 [INFO]   600330: 无新数据（可能非交易日）
+2026-06-17 02:10:25,082 [INFO]   600519: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:10:33,159 [WARNING]   ✗ 600519 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:10:33,484 [WARNING]   [AKShare] 600519 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:36,060 [WARNING]   [AKShare] 600519 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:40,763 [WARNING]   [AKShare] 600519 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:40,764 [WARNING]   ✗ 600519 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:10:40,764 [INFO]   600519: 无新数据（可能非交易日）
+2026-06-17 02:10:41,552 [INFO]   600563: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:10:48,914 [WARNING]   ✗ 600563 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:10:49,244 [WARNING]   [AKShare] 600563 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:51,730 [WARNING]   [AKShare] 600563 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:56,124 [WARNING]   [AKShare] 600563 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:10:56,124 [WARNING]   ✗ 600563 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:10:56,124 [INFO]   600563: 无新数据（可能非交易日）
+2026-06-17 02:10:56,504 [INFO]   600703: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:11:04,367 [WARNING]   ✗ 600703 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:11:04,704 [WARNING]   [AKShare] 600703 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:07,944 [WARNING]   [AKShare] 600703 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:12,701 [WARNING]   [AKShare] 600703 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:12,701 [WARNING]   ✗ 600703 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:11:12,701 [INFO]   600703: 无新数据（可能非交易日）
+2026-06-17 02:11:13,225 [INFO]   600887: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:11:19,534 [WARNING]   ✗ 600887 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:11:19,856 [WARNING]   [AKShare] 600887 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:22,361 [WARNING]   [AKShare] 600887 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:27,285 [WARNING]   [AKShare] 600887 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:27,285 [WARNING]   ✗ 600887 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:11:27,285 [INFO]   600887: 无新数据（可能非交易日）
+2026-06-17 02:11:27,686 [INFO]   601012: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:11:34,797 [WARNING]   ✗ 601012 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:11:35,118 [WARNING]   [AKShare] 601012 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:37,463 [WARNING]   [AKShare] 601012 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:42,580 [WARNING]   [AKShare] 601012 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:42,580 [WARNING]   ✗ 601012 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:11:42,580 [INFO]   601012: 无新数据（可能非交易日）
+2026-06-17 02:11:43,318 [INFO]   601318: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:11:51,290 [WARNING]   ✗ 601318 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:11:51,621 [WARNING]   [AKShare] 601318 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:54,495 [WARNING]   [AKShare] 601318 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:59,271 [WARNING]   [AKShare] 601318 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:11:59,271 [WARNING]   ✗ 601318 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:11:59,271 [INFO]   601318: 无新数据（可能非交易日）
+2026-06-17 02:11:59,763 [INFO]   603013: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:12:07,128 [WARNING]   ✗ 603013 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:12:07,458 [WARNING]   [AKShare] 603013 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:10,781 [WARNING]   [AKShare] 603013 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:15,131 [WARNING]   [AKShare] 603013 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:15,131 [WARNING]   ✗ 603013 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:12:15,131 [INFO]   603013: 无新数据（可能非交易日）
+2026-06-17 02:12:15,703 [INFO]   603260: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:12:22,312 [WARNING]   ✗ 603260 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:12:22,647 [WARNING]   [AKShare] 603260 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:24,980 [WARNING]   [AKShare] 603260 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:30,065 [WARNING]   [AKShare] 603260 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:30,065 [WARNING]   ✗ 603260 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:12:30,065 [INFO]   603260: 无新数据（可能非交易日）
+2026-06-17 02:12:30,397 [INFO]   603290: 补数据 2026-06-17 ~ 2026-06-17
+2026-06-17 02:12:36,964 [WARNING]   ✗ 603290 BaoStock 失败，尝试 AKShare...
+2026-06-17 02:12:37,290 [WARNING]   [AKShare] 603290 异常(尝试1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:39,766 [WARNING]   [AKShare] 603290 异常(尝试2): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:44,474 [WARNING]   [AKShare] 603290 异常(尝试3): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-06-17 02:12:44,475 [WARNING]   ✗ 603290 所有数据源均无数据（2026-06-17~2026-06-17）
+2026-06-17 02:12:44,475 [INFO]   603290: 无新数据（可能非交易日）
+2026-06-17 02:12:51,974 [INFO] 补数据完成: 成功=31, 失败=0

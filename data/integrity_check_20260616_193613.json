@@ -1,0 +1,16 @@
+{
+  "check_time": "2026-06-16T19:36:13.119867",
+  "database": {},
+  "csv_files": [
+    {
+      "code": "000301",
+      "rows": 499,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 

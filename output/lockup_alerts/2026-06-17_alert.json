@@ -1,0 +1,2314 @@
+{
+  "timestamp": "2026-06-17 09:26:36",
+  "date": "2026-06-17",
+  "total_checked": 45,
+  "new_alerts": [],
+  "alert_count": 0,
+  "all_results": [
+    {
+      "code": "000301",
+      "history": [
+        {
+          "date": "2025-01-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.168195566029
+        },
+        {
+          "date": "2023-01-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.048496497406
+        },
+        {
+          "date": "2022-05-18",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.572541191292
+        },
+        {
+          "date": "2022-01-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.162005038813
+        },
+        {
+          "date": "2021-01-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.271962478565
+        },
+        {
+          "date": "2020-09-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.033781330189
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "东方盛虹"
+    },
+    {
+      "code": "603260",
+      "history": [
+        {
+          "date": "2024-07-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.091389553092
+        },
+        {
+          "date": "2022-12-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.126764048221
+        },
+        {
+          "date": "2020-10-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.610683873134
+        },
+        {
+          "date": "2018-10-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.73163810916
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "合盛硅业"
+    },
+    {
+      "code": "603290",
+      "history": [
+        {
+          "date": "2023-02-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.47452989243
+        },
+        {
+          "date": "2022-05-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.118419720436
+        },
+        {
+          "date": "2021-02-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.493396627683
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "斯达半导"
+    },
+    {
+      "code": "600703",
+      "history": [
+        {
+          "date": "2023-07-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.080359766507
+        },
+        {
+          "date": "2023-06-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.11108675885
+        },
+        {
+          "date": "2017-02-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.008907917797
+        },
+        {
+          "date": "2016-12-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.061722729514
+        },
+        {
+          "date": "2015-01-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.086213151729
+        },
+        {
+          "date": "2014-08-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.065446343775
+        },
+        {
+          "date": "2013-07-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.053501476138
+        },
+        {
+          "date": "2013-03-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.056525683654
+        },
+        {
+          "date": "2011-10-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.184381971414
+        },
+        {
+          "date": "2011-07-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.514555000981
+        },
+        {
+          "date": "2010-09-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.290476367133
+        },
+        {
+          "date": "2010-07-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.025993417401
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "三安光电"
+    },
+    {
+      "code": "000708",
+      "history": [
+        {
+          "date": "2022-09-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.750521029229
+        },
+        {
+          "date": "2020-09-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.3932488702
+        },
+        {
+          "date": "2015-09-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00507333551
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "中信特钢"
+    },
+    {
+      "code": "600563",
+      "history": [],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "法拉电子"
+    },
+    {
+      "code": "002906",
+      "history": [
+        {
+          "date": "2024-02-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.088287365053
+        },
+        {
+          "date": "2023-07-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002044745249
+        },
+        {
+          "date": "2022-07-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001638243897
+        },
+        {
+          "date": "2021-07-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001822786364
+        },
+        {
+          "date": "2020-10-14",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.576132898002
+        },
+        {
+          "date": "2018-10-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.638563714898
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "华阳集团"
+    },
+    {
+      "code": "603013",
+      "history": [
+        {
+          "date": "2024-02-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002471255987
+        },
+        {
+          "date": "2022-02-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00260593645
+        },
+        {
+          "date": "2021-05-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.882352941176
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "亚普股份"
+    },
+    {
+      "code": "002405",
+      "history": [
+        {
+          "date": "2024-11-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.008152585394
+        },
+        {
+          "date": "2024-09-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001858521805
+        },
+        {
+          "date": "2023-11-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.010138490089
+        },
+        {
+          "date": "2023-08-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00225115537
+        },
+        {
+          "date": "2022-11-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.015580497964
+        },
+        {
+          "date": "2021-08-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.141750690315
+        },
+        {
+          "date": "2020-07-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00466229023
+        },
+        {
+          "date": "2020-05-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000536875666
+        },
+        {
+          "date": "2020-03-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.169985952965
+        },
+        {
+          "date": "2019-07-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.008420590428
+        },
+        {
+          "date": "2018-09-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.007658244435
+        },
+        {
+          "date": "2018-06-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001204094544
+        },
+        {
+          "date": "2017-09-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.008228455319
+        },
+        {
+          "date": "2017-06-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001358335016
+        },
+        {
+          "date": "2016-09-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.008633976907
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "四维图新"
+    },
+    {
+      "code": "002920",
+      "history": [
+        {
+          "date": "2026-04-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.070217570698
+        },
+        {
+          "date": "2025-12-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002901000692
+        },
+        {
+          "date": "2024-12-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002964504482
+        },
+        {
+          "date": "2023-12-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.003014717767
+        },
+        {
+          "date": "2020-12-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.777484768573
+        },
+        {
+          "date": "2018-12-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.183973834832
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "长线观察",
+      "name": "德赛西威"
+    },
+    {
+      "code": "000001",
+      "history": [
+        {
+          "date": "2018-05-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.014690993457
+        },
+        {
+          "date": "2017-01-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.13517027207
+        },
+        {
+          "date": "2016-05-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.031871310396
+        },
+        {
+          "date": "2014-09-01",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.319782293823
+        },
+        {
+          "date": "2013-11-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.108920137695
+        },
+        {
+          "date": "2010-06-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.05836847186
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "TestLoss"
+    },
+    {
+      "code": "000600",
+      "history": [
+        {
+          "date": "2028-03-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.005404334907
+        },
+        {
+          "date": "2027-03-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.005404334907
+        },
+        {
+          "date": "2015-08-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.161892065669
+        },
+        {
+          "date": "2010-03-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.400949981968
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "建投能源"
+    },
+    {
+      "code": "000725",
+      "history": [
+        {
+          "date": "2030-05-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009097536542
+        },
+        {
+          "date": "2029-05-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009097536542
+        },
+        {
+          "date": "2028-05-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009373219467
+        },
+        {
+          "date": "2025-04-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002411941226
+        },
+        {
+          "date": "2024-04-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002600880635
+        },
+        {
+          "date": "2023-04-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002742256463
+        },
+        {
+          "date": "2023-02-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.019310625713
+        },
+        {
+          "date": "2022-02-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.080402251618
+        },
+        {
+          "date": "2017-04-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.29221542178
+        },
+        {
+          "date": "2016-01-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.028092883366
+        },
+        {
+          "date": "2015-04-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.5073207558
+        },
+        {
+          "date": "2013-12-18",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.048762615991
+        },
+        {
+          "date": "2012-06-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.129436866463
+        },
+        {
+          "date": "2011-12-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.296171641501
+        },
+        {
+          "date": "2010-06-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.633736369661
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "京东方A"
+    },
+    {
+      "code": "000899",
+      "history": [
+        {
+          "date": "2019-02-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.337202793122
+        },
+        {
+          "date": "2017-02-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.14147279922
+        },
+        {
+          "date": "2013-07-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.406997085554
+        },
+        {
+          "date": "2012-06-18",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.073659368824
+        },
+        {
+          "date": "2011-04-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.079515893714
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "赣能股份"
+    },
+    {
+      "code": "001896",
+      "history": [
+        {
+          "date": "2024-12-31",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.134357391829
+        },
+        {
+          "date": "2023-01-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.128858183512
+        },
+        {
+          "date": "2020-11-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.19213524163
+        },
+        {
+          "date": "2018-05-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.079873532718
+        },
+        {
+          "date": "2017-10-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.226065773994
+        },
+        {
+          "date": "2015-12-31",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.350387515562
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "豫能控股"
+    },
+    {
+      "code": "002067",
+      "history": [
+        {
+          "date": "2018-07-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.01497623446
+        },
+        {
+          "date": "2014-07-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0
+        },
+        {
+          "date": "2012-07-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.279690739082
+        },
+        {
+          "date": "2010-11-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "景兴纸业"
+    },
+    {
+      "code": "002149",
+      "history": [
+        {
+          "date": "2021-08-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.128632044052
+        },
+        {
+          "date": "2017-08-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.179024657597
+        },
+        {
+          "date": "2012-05-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.214739735441
+        },
+        {
+          "date": "2010-08-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.469481513892
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "西部材料"
+    },
+    {
+      "code": "002156",
+      "history": [
+        {
+          "date": "2023-05-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.121739020029
+        },
+        {
+          "date": "2021-05-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.131944249344
+        },
+        {
+          "date": "2019-01-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.156977704289
+        },
+        {
+          "date": "2016-05-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.131427494848
+        },
+        {
+          "date": "2010-08-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.720224719101
+        },
+        {
+          "date": "2010-01-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.027908557306
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "通富微电"
+    },
+    {
+      "code": "002290",
+      "history": [
+        {
+          "date": "2024-08-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000606673825
+        },
+        {
+          "date": "2023-10-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.010296277193
+        },
+        {
+          "date": "2023-07-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000611964319
+        },
+        {
+          "date": "2023-02-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.107111505675
+        },
+        {
+          "date": "2022-09-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.011642557274
+        },
+        {
+          "date": "2019-10-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.026860883108
+        },
+        {
+          "date": "2012-11-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.256461105531
+        },
+        {
+          "date": "2011-06-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.058944672057
+        },
+        {
+          "date": "2010-09-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.350434290241
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "禾盛新材"
+    },
+    {
+      "code": "002475",
+      "history": [
+        {
+          "date": "2017-10-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.111054473706
+        },
+        {
+          "date": "2016-12-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00219677366
+        },
+        {
+          "date": "2015-10-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.078790048847
+        },
+        {
+          "date": "2013-09-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.747986191024
+        },
+        {
+          "date": "2010-12-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.2
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "立讯精密"
+    },
+    {
+      "code": "002654",
+      "history": [
+        {
+          "date": "2024-05-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.013799100841
+        },
+        {
+          "date": "2023-04-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009249869847
+        },
+        {
+          "date": "2021-06-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.030776864055
+        },
+        {
+          "date": "2020-06-05",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.016075480148
+        },
+        {
+          "date": "2019-09-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.024576965946
+        },
+        {
+          "date": "2019-07-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001892139347
+        },
+        {
+          "date": "2019-04-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.016810911987
+        },
+        {
+          "date": "2018-06-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.287842699115
+        },
+        {
+          "date": "2017-05-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.072463413608
+        },
+        {
+          "date": "2017-04-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.007897809653
+        },
+        {
+          "date": "2015-02-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.410172129722
+        },
+        {
+          "date": "2014-05-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.129140932061
+        },
+        {
+          "date": "2013-11-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.290780141844
+        },
+        {
+          "date": "2012-05-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.2
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "万润科技"
+    },
+    {
+      "code": "002709",
+      "history": [
+        {
+          "date": "2023-09-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001114975627
+        },
+        {
+          "date": "2023-04-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00189024676
+        },
+        {
+          "date": "2022-04-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002413567262
+        },
+        {
+          "date": "2021-12-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.035675343671
+        },
+        {
+          "date": "2021-05-14",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002406816673
+        },
+        {
+          "date": "2020-08-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002197648399
+        },
+        {
+          "date": "2019-01-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.3970946274
+        },
+        {
+          "date": "2018-10-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00672590957
+        },
+        {
+          "date": "2018-08-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.072983228431
+        },
+        {
+          "date": "2018-05-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000626254683
+        },
+        {
+          "date": "2017-10-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.007616060775
+        },
+        {
+          "date": "2017-04-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000962636984
+        },
+        {
+          "date": "2017-01-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.232260415978
+        },
+        {
+          "date": "2016-11-14",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.114266526788
+        },
+        {
+          "date": "2016-09-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009459930522
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "天赐材料"
+    },
+    {
+      "code": "300308",
+      "history": [
+        {
+          "date": "2022-05-05",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.116566161149
+        },
+        {
+          "date": "2021-09-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.006710100171
+        },
+        {
+          "date": "2021-09-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000865335487
+        },
+        {
+          "date": "2020-09-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.006987722192
+        },
+        {
+          "date": "2020-09-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000879467578
+        },
+        {
+          "date": "2020-08-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.04221786915
+        },
+        {
+          "date": "2020-07-14",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.384033294065
+        },
+        {
+          "date": "2020-04-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.120710386725
+        },
+        {
+          "date": "2019-09-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.013761442841
+        },
+        {
+          "date": "2019-09-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001859415823
+        },
+        {
+          "date": "2019-07-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.116469244167
+        },
+        {
+          "date": "2018-09-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.016951667514
+        },
+        {
+          "date": "2014-09-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.331014023732
+        },
+        {
+          "date": "2013-04-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.283184175871
+        },
+        {
+          "date": "2012-07-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.19676064787
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "中际旭创"
+    },
+    {
+      "code": "300394",
+      "history": [
+        {
+          "date": "2022-11-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001171606418
+        },
+        {
+          "date": "2021-11-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001099907961
+        },
+        {
+          "date": "2021-08-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.093925217735
+        },
+        {
+          "date": "2019-08-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.068859031166
+        },
+        {
+          "date": "2018-02-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.565813397911
+        },
+        {
+          "date": "2016-02-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.426380295937
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "天孚通信"
+    },
+    {
+      "code": "300502",
+      "history": [
+        {
+          "date": "2025-06-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001735906791
+        },
+        {
+          "date": "2021-06-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.11769137003
+        },
+        {
+          "date": "2020-12-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009688355224
+        },
+        {
+          "date": "2019-03-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.200734624025
+        },
+        {
+          "date": "2018-11-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.014463415996
+        },
+        {
+          "date": "2017-03-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.531833850247
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "新易盛"
+    },
+    {
+      "code": "300750",
+      "history": [
+        {
+          "date": "2024-09-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000822324064
+        },
+        {
+          "date": "2023-09-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000853576117
+        },
+        {
+          "date": "2023-09-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001507242762
+        },
+        {
+          "date": "2023-01-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.052452982395
+        },
+        {
+          "date": "2022-09-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000948690676
+        },
+        {
+          "date": "2022-09-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001696139573
+        },
+        {
+          "date": "2021-09-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001809370717
+        },
+        {
+          "date": "2021-09-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001665679877
+        },
+        {
+          "date": "2021-06-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.412397054128
+        },
+        {
+          "date": "2021-02-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.090169798672
+        },
+        {
+          "date": "2020-09-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.003083751164
+        },
+        {
+          "date": "2020-09-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.004258488661
+        },
+        {
+          "date": "2020-06-29",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.018766138882
+        },
+        {
+          "date": "2019-09-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.004601187645
+        },
+        {
+          "date": "2019-06-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.818518346705
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "宁德时代"
+    },
+    {
+      "code": "301120",
+      "history": [
+        {
+          "date": "2025-04-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.279620160779
+        },
+        {
+          "date": "2024-04-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.027747871507
+        },
+        {
+          "date": "2023-11-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.014991953633
+        },
+        {
+          "date": "2023-04-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.4160629533
+        },
+        {
+          "date": "2022-11-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.050356393171
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "新特电气"
+    },
+    {
+      "code": "301179",
+      "history": [
+        {
+          "date": "2025-06-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.564186392031
+        },
+        {
+          "date": "2022-12-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.079563515152
+        },
+        {
+          "date": "2022-06-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.052478000885
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "泽宇智能"
+    },
+    {
+      "code": "600021",
+      "history": [
+        {
+          "date": "2025-07-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.070854672329
+        },
+        {
+          "date": "2021-06-07",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.103133724781
+        },
+        {
+          "date": "2019-08-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.088404462522
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "上海电力"
+    },
+    {
+      "code": "600186",
+      "history": [
+        {
+          "date": "2027-11-18",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00022150328
+        },
+        {
+          "date": "2026-11-18",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00022150328
+        },
+        {
+          "date": "2026-10-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000989303068
+        },
+        {
+          "date": "2026-10-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000430570406
+        },
+        {
+          "date": "2025-11-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001010262879
+        },
+        {
+          "date": "2025-11-14",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000347081807
+        },
+        {
+          "date": "2024-12-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00139921945
+        },
+        {
+          "date": "2023-02-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.0234126614
+        },
+        {
+          "date": "2022-02-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.212327726317
+        },
+        {
+          "date": "2013-12-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.073690281088
+        },
+        {
+          "date": "2013-06-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.046413001436
+        },
+        {
+          "date": "2011-05-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.021567330933
+        },
+        {
+          "date": "2010-08-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.105856412034
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "莲花控股"
+    },
+    {
+      "code": "600309",
+      "history": [
+        {
+          "date": "2022-03-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.546537797601
+        },
+        {
+          "date": "2018-01-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.050918245884
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "万华化学"
+    },
+    {
+      "code": "600310",
+      "history": [
+        {
+          "date": "2023-12-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.170825469338
+        },
+        {
+          "date": "2022-03-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.182666436277
+        },
+        {
+          "date": "2011-05-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.147866268008
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "广西能源"
+    },
+    {
+      "code": "600863",
+      "history": [
+        {
+          "date": "2031-01-07",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.116151245732
+        },
+        {
+          "date": "2026-08-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.082188825905
+        },
+        {
+          "date": "2015-01-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.545588794274
+        },
+        {
+          "date": "2013-03-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.511537169681
+        }
+      ],
+      "upcoming": [
+        {
+          "date": "2026-08-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.082188825905
+        }
+      ],
+      "has_upcoming": true,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "华能蒙电"
+    },
+    {
+      "code": "601138",
+      "history": [
+        {
+          "date": "2025-01-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000134089727
+        },
+        {
+          "date": "2024-10-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 7.7667041e-05
+        },
+        {
+          "date": "2024-06-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001185814761
+        },
+        {
+          "date": "2024-01-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000143117719
+        },
+        {
+          "date": "2023-09-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 7.9624907e-05
+        },
+        {
+          "date": "2023-08-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001251144402
+        },
+        {
+          "date": "2023-06-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000147656812
+        },
+        {
+          "date": "2022-09-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 8.1087384e-05
+        },
+        {
+          "date": "2022-06-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001100642615
+        },
+        {
+          "date": "2022-05-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001329522169
+        },
+        {
+          "date": "2022-01-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000163526148
+        },
+        {
+          "date": "2021-12-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.845981475394
+        },
+        {
+          "date": "2021-09-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000576846688
+        },
+        {
+          "date": "2021-06-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.03585001805
+        },
+        {
+          "date": "2021-05-27",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.009573218161
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "工业富联"
+    },
+    {
+      "code": "601222",
+      "history": [
+        {
+          "date": "2018-04-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.003621547965
+        },
+        {
+          "date": "2017-05-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.183311614466
+        },
+        {
+          "date": "2016-05-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.126483945631
+        },
+        {
+          "date": "2015-08-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.006740983828
+        },
+        {
+          "date": "2014-08-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.005095223787
+        },
+        {
+          "date": "2014-08-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.657996195959
+        },
+        {
+          "date": "2013-08-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.018040767612
+        },
+        {
+          "date": "2013-06-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.030612244898
+        },
+        {
+          "date": "2012-08-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.090909090909
+        },
+        {
+          "date": "2011-11-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.2
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "林洋能源"
+    },
+    {
+      "code": "601728",
+      "history": [
+        {
+          "date": "2025-02-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.739111861893
+        },
+        {
+          "date": "2024-08-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.032699383539
+        },
+        {
+          "date": "2022-08-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.724786150741
+        },
+        {
+          "date": "2022-02-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.182920852135
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "中国电信"
+    },
+    {
+      "code": "601991",
+      "history": [
+        {
+          "date": "2021-03-24",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.193748938513
+        },
+        {
+          "date": "2014-05-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.010005643183
+        },
+        {
+          "date": "2012-05-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.090960911064
+        },
+        {
+          "date": "2011-03-23",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.058925815733
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "大唐发电"
+    },
+    {
+      "code": "603005",
+      "history": [
+        {
+          "date": "2023-01-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000117760399
+        },
+        {
+          "date": "2022-06-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000847974727
+        },
+        {
+          "date": "2021-07-15",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.052434952854
+        },
+        {
+          "date": "2019-11-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.239674358336
+        },
+        {
+          "date": "2018-07-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.017078851652
+        },
+        {
+          "date": "2017-02-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.41951718137
+        },
+        {
+          "date": "2015-02-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.431204879602
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "晶方科技"
+    },
+    {
+      "code": "603256",
+      "history": [
+        {
+          "date": "2026-09-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.028257551344
+        },
+        {
+          "date": "2023-07-21",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.002191019378
+        },
+        {
+          "date": "2022-07-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.84509794828
+        },
+        {
+          "date": "2020-07-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.354283670729
+        }
+      ],
+      "upcoming": [
+        {
+          "date": "2026-09-04",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.028257551344
+        }
+      ],
+      "has_upcoming": true,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "宏和科技"
+    },
+    {
+      "code": "603693",
+      "history": [
+        {
+          "date": "2024-11-25",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.098797827261
+        },
+        {
+          "date": "2021-07-05",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.687702265372
+        },
+        {
+          "date": "2019-07-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.388601036269
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "江苏新能"
+    },
+    {
+      "code": "603757",
+      "history": [
+        {
+          "date": "2023-11-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000179962295
+        },
+        {
+          "date": "2023-11-10",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.004798658363
+        },
+        {
+          "date": "2023-09-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.0019683878
+        },
+        {
+          "date": "2021-11-30",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.007828734355
+        },
+        {
+          "date": "2020-07-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.701670644391
+        },
+        {
+          "date": "2018-07-11",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.16
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "大元泵业"
+    },
+    {
+      "code": "603986",
+      "history": [
+        {
+          "date": "2025-12-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 5.1883313e-05
+        },
+        {
+          "date": "2025-09-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000412353962
+        },
+        {
+          "date": "2025-05-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001097919862
+        },
+        {
+          "date": "2024-05-06",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001126135179
+        },
+        {
+          "date": "2024-02-05",
+          "type": "",
+          "shares": 0,
+          "ratio": 9.7180338e-05
+        },
+        {
+          "date": "2023-11-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000459276095
+        },
+        {
+          "date": "2023-05-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00125981654
+        },
+        {
+          "date": "2022-12-26",
+          "type": "",
+          "shares": 0,
+          "ratio": 9.7357092e-05
+        },
+        {
+          "date": "2022-09-08",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000484453541
+        },
+        {
+          "date": "2022-06-28",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.067082377976
+        },
+        {
+          "date": "2022-05-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001560294662
+        },
+        {
+          "date": "2021-09-17",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.001095549279
+        },
+        {
+          "date": "2021-04-22",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.00039832454
+        },
+        {
+          "date": "2020-12-03",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.048316840502
+        },
+        {
+          "date": "2020-09-07",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.000882855119
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "兆易创新"
+    },
+    {
+      "code": "605006",
+      "history": [
+        {
+          "date": "2023-09-19",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.527397317602
+        },
+        {
+          "date": "2021-09-09",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.576806703487
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "山东玻纤"
+    },
+    {
+      "code": "688041",
+      "history": [
+        {
+          "date": "2025-08-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.618576495204
+        },
+        {
+          "date": "2024-08-12",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.006767752976
+        },
+        {
+          "date": "2023-08-14",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.759482045494
+        },
+        {
+          "date": "2023-02-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.057528824852
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "海光信息"
+    },
+    {
+      "code": "688256",
+      "history": [
+        {
+          "date": "2026-04-16",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.007908615805
+        },
+        {
+          "date": "2024-01-02",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.360407167305
+        },
+        {
+          "date": "2023-10-13",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.051814596558
+        },
+        {
+          "date": "2023-08-07",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.033586203124
+        },
+        {
+          "date": "2022-07-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.004967263852
+        },
+        {
+          "date": "2021-07-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.862672246464
+        },
+        {
+          "date": "2021-01-20",
+          "type": "",
+          "shares": 0,
+          "ratio": 0.057301179338
+        }
+      ],
+      "upcoming": [],
+      "has_upcoming": false,
+      "total_upcoming_shares": 0,
+      "source": "每日观察",
+      "name": "寒武纪"
+    }
+  ]
+}

@@ -66,3 +66,5 @@
 | 2026-06-09 18:13 | reopened | 实际未修改 engine.py 代码逻辑 |
 | 2026-06-11 18:42 | deployed | 部署到 production |
 | 2026-06-15 18:37 | deployed | 部署到 production |
+- 2026-06-17 18:30: 部署到生产环境，状态 `deployed`
+

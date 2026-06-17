@@ -147,3 +147,5 @@ python data/fetch_data.py 000001 20260610 20260616
 ---
 
 **END OF BUG REPORT**
+
+- 2026-06-17 18:30: 部署到生产环境，状态 `deployed`

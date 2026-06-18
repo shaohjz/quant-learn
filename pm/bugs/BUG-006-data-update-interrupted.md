@@ -39,6 +39,7 @@
 ## 状态历史
 - 2026-06-15 19:40: 由 data-agent 创建（原 bugs/BUG-2026-06-15-data-update-interrupted.md）
 - 2026-06-17 01:05: 修复完成，新增 `scripts/check_data_freshness.py`，状态 `fixed`
+- 2026-06-18 13:03: 部署到生产环境，自测通过，状态 `deployed`
 
 ## 附件
 - `pm/data/2026-06-17-freshness.json` — 首次检查结果

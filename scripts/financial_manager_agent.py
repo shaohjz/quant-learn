@@ -193,29 +193,44 @@ def generate_improvement_suggestions(trades, positions, account_info):
     return suggestions
 
 def create_task_in_pm(task_data):
-    """在 pm.db 中创建新任务"""
+    """在 pm.db 中创建新任务（直接 SQL，避免 pm_cli.py 的 ID 生成问题）"""
     try:
-        # 使用 pm_cli.py 创建任务
-        cmd = [
-            str(ROOT / '.venv' / 'Scripts' / 'python.exe'),
-            str(ROOT / 'scripts' / 'pm_cli.py'),
-            'create',
-            'story',
-            task_data['title'],
-            '--desc', task_data['desc'],
-            '--priority', task_data['priority'],
-            '--status', 'pending'
-        ]
+        import sqlite3
+        from datetime import datetime
         
-        result = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        conn = sqlite3.connect(str(PM_DB))
+        cursor = conn.cursor()
         
-        if result.returncode == 0:
-            logger.info(f"Created task: {task_data['title']}")
-            return True
+        # 生成新的任务 ID
+        cursor.execute("SELECT id FROM tasks WHERE type='story' ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            last_num = int(row[0].split('-')[1])
+            new_id = f"REQ-{last_num + 1:03d}"
         else:
-            logger.error(f"Failed to create task: {result.stderr}")
-            return False
-            
+            new_id = "REQ-001"
+        
+        # 检查是否已存在相同标题的任务
+        cursor.execute('SELECT id FROM tasks WHERE title=?', (task_data['title'],))
+        existing = cursor.fetchone()
+        
+        if existing:
+            logger.info(f"Task already exists: {task_data['title']} (ID: {existing[0]})")
+            conn.close()
+            return True
+        
+        # 创建新任务
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute(
+            "INSERT INTO tasks (id, type, title, description, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (new_id, 'story', task_data['title'], task_data['desc'], 'pending', task_data['priority'], now, now)
+        )
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Created task: {new_id} - {task_data['title']}")
+        return True
+        
     except Exception as e:
         logger.error(f"Error creating task: {e}")
         return False

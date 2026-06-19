@@ -34,7 +34,7 @@ legacy_watch:
 notifier:
   enabled: true
 notify:
-  wecom_webhook: ''
+  wecom_webhook: ''  # 请在企微群里添加自定义机器人，获取 Webhook URL 并替换此处
 precision:
   amount_decimals: 2
   cost_decimals: 3

@@ -169,9 +169,9 @@ def detect_account_basis_changes(account: dict, positions: list, target_date: da
         if reasons:
             warnings.append({
                 'kind': 'snapshot_discontinuity',
-                'severity': 'error' if total_jump >= 0.20 else 'warn',
-                'pause_return': True,
-                'message': f"相对上一净值日 {prev.get('trade_date')} 出现口径跳变：" + '；'.join(reasons),
+                'severity': 'warn',
+                'pause_return': False,  # 正常交易导致的现金变化不应暂停收益率计算
+                'message': f"相对上一净值日 {prev.get('trade_date')} 出现资金变化：" + '；'.join(reasons),
             })
 
     if config_initial is not None and db_initial and abs(float(config_initial) - db_initial) / db_initial >= 0.20:
@@ -1131,7 +1131,7 @@ def compute_realized_pnl(account_id: int, target_date: date):
 # =====================================
 # 3. nav 写入 + 计算
 # =====================================
-def write_daily_nav(account_id: int, target_date: date, account: dict, positions: list, initial_cash: float | None = None, pause_daily_return: bool = False):
+def write_daily_nav(account_id: int, target_date: date, account: dict, positions: list, initial_cash: float | None = None, pause_daily_return: bool = False, basis_warnings: list | None = None):
     market_value = sum(p['market_value'] for p in positions)
     total_value = market_value + account['cash']
     # 优先用传入的 initial_cash，否则从 account dict 取
@@ -1148,7 +1148,14 @@ def write_daily_nav(account_id: int, target_date: date, account: dict, positions
         (account_id, target_date.isoformat())
     ).fetchone()
     prev_value = last['total_value'] if last else initial
-    daily_return = None if pause_daily_return else ((total_value / prev_value - 1) * 100 if prev_value > 0 else 0)
+    daily_return = (total_value / prev_value - 1) * 100 if prev_value > 0 else 0
+
+    # 记录暂停理由（如有），写入 cash_jump_reason
+    return_paused_reason = None
+    if pause_daily_return:
+        # 仍然计算并存储 daily_return，但在 reason 中标注不可比
+        reasons = [w.get('message', '') for w in (basis_warnings or []) if w.get('pause_return')]
+        return_paused_reason = '; '.join(reasons)[:500] if reasons else 'return paused (basis change)'
 
     # 最大回撤
     all_navs = c.execute(
@@ -1163,10 +1170,11 @@ def write_daily_nav(account_id: int, target_date: date, account: dict, positions
 
     c.execute(
         '''INSERT OR REPLACE INTO sim_daily_nav 
-           (account_id, trade_date, total_value, cash, market_value, daily_return, cumulative_return, max_drawdown)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+           (account_id, trade_date, total_value, cash, market_value, daily_return, cumulative_return, max_drawdown, cash_jump_reason)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (account_id, target_date.isoformat(), total_value, account['cash'], market_value,
-         daily_return, cumulative_return, max_drawdown)
+         daily_return, cumulative_return, max_drawdown,
+         return_paused_reason or '')
     )
     c.commit()
     c.close()
@@ -1586,6 +1594,7 @@ def render_account_section(acct: dict, target_date: date, market_snapshot=None) 
         acct['id'], target_date, account, positions,
         initial_cash=config_initial,
         pause_daily_return=pause_daily_return,
+        basis_warnings=basis_warnings,
     )
 
     realized_pnl = sum(r['pnl'] for r in realized)

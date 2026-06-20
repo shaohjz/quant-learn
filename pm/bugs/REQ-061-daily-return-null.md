@@ -3,7 +3,7 @@
 ## 基本信息
 - **需求/Bug ID**: REQ-061
 - **标题**: sim_daily_nav 中 daily_return 持续为 NULL
-- **状态**: fixed
+- **状态**: verified
 - **优先级**: P1
 - **创建时间**: 2026-06-10
 - **修复时间**: 2026-06-20 20:10
@@ -63,6 +63,7 @@ SELECT daily_return FROM sim_daily_nav WHERE account_id=1 AND trade_date='2026-0
 ## 状态历史
 - 2026-06-10: 创建 Bug，状态 `open`
 - 2026-06-20 20:10: 修复完成，状态 `fixed`
+- 2026-06-20 23:05: dev-manager 自测通过，状态 `verified`
 
 ## 修改文件
 - `config.yaml`：修复 `account_name` 配置

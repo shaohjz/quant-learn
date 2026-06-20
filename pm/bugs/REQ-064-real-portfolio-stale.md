@@ -3,7 +3,7 @@
 ## 基本信息
 - **Bug ID**: REQ-064
 - **标题**: real_portfolio(account_id=2) 持仓价格 stale
-- **状态**: fixed
+- **状态**: verified
 - **优先级**: P1
 - **创建时间**: 2026-06-10
 - **修复时间**: 2026-06-20 20:30
@@ -35,7 +35,26 @@ except Exception as ex2:
 ```
 
 ### 2. 确保 `sync_real_position.py` 初始化 `sim_account` 记录
-在 `sync_real_position.py` 的 `buy`/`sell` 操作中，先检查 `sim_account` 中是否存在 `id=2` 的记录，若不存在则创建。
+在 `sync_real_position.py` 中新增 `ensure_account(c)` 函数，在 `cmd_buy`/`cmd_sell`/`cmd_list` 操作前自动检查并创建 `sim_account` 中 `id=2` 的记录（若不存在则创建默认记录：account_name='real_portfolio', initial_cash=10000.0）。
+```python
+# 新增 ensure_account() 函数
+def ensure_account(c) -> dict:
+    """确保 sim_account 中存在 id=ACCOUNT_ID 的记录；不存在则创建。"""
+    r = c.execute("SELECT * FROM sim_account WHERE id=?", (ACCOUNT_ID,)).fetchone()
+    if r:
+        return dict(r)
+    c.execute(
+        "INSERT INTO sim_account (id, account_name, initial_cash, cash, total_value, created_at, updated_at)"
+        " VALUES (?, 'real_portfolio', 10000.0, 10000.0, 10000.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        (ACCOUNT_ID,)
+    )
+    c.commit()
+    r = c.execute("SELECT * FROM sim_account WHERE id=?", (ACCOUNT_ID,)).fetchone()
+    return dict(r)
+```
+
+### 3. `cmd_buy`/`cmd_sell`/`cmd_list` 改为调用 `ensure_account(c)` 而非 `get_account(c)`
+确保任何操作前 `sim_account` 中都有 `id=2` 的记录。
 
 ## 验证结果
 ```bash
@@ -59,8 +78,9 @@ print(cur.fetchall())  # 结果：[]
 
 ## 状态历史
 - 2026-06-10: 创建 Bug，状态 `open`
-- 2026-06-20 20:30: 修复完成，状态 `fixed`
+- 2026-06-20 20:30: 修复完成（portfolio_alert.py 双账户更新），状态 `fixed`
+- 2026-06-20 23:06: sync_real_position.py ensure_account() 修复完成，自测通过，状态 `verified`
 
 ## 修改文件
-- `scripts/portfolio_alert.py`：双账户市值更新
-- `scripts/sync_real_position.py`：（待完善）初始化 `sim_account` 记录
+- `scripts/portfolio_alert.py`：双账户市值更新（account_id=1 和 2）
+- `scripts/sync_real_position.py`：`ensure_account()` 自动初始化 `sim_account` 记录

@@ -30,6 +30,7 @@ docs/logs/
 # Python venv
 .venv/
 venv/
+venv_qmt/
 env/
 
 # IDE

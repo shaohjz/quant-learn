@@ -152,7 +152,7 @@ def fetch_from_akshare(symbol: str, start_date: str, end_date: str,
 
 
 def fetch_stock_data(symbol: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
-    """获取单只股票数据，BaoStock 主力，AKShare 备选"""
+    """获取单只股票数据：BaoStock 主力，AKShare 备选，本地缓存兜底"""
     df = fetch_from_baostock(symbol, start_date, end_date)
     if df is not None and not df.empty:
         log.info(f"  ✓ {symbol} [BaoStock] {len(df)} 条")
@@ -162,8 +162,37 @@ def fetch_stock_data(symbol: str, start_date: str, end_date: str) -> Optional[pd
     if df is not None and not df.empty:
         log.info(f"  ✓ {symbol} [AKShare] {len(df)} 条")
         return df
-    log.warning(f"  ✗ {symbol} 所有数据源均无数据（{start_date}~{end_date}）")
+    # 在线数据源全部失败，尝试本地 CSV 缓存兜底
+    log.warning(f"  ⚠️ {symbol} 所有在线数据源失败，尝试本地缓存兜底...")
+    try:
+        cached = _fetch_from_local_cache(symbol, start_date, end_date)
+        if cached is not None and not cached.empty:
+            log.info(f"  ✓ {symbol} [本地缓存] {len(cached)} 条（最后日期: {cached['date'].max()}）")
+            return cached
+    except Exception as e:
+        log.warning(f"  ✗ {symbol} 本地缓存也失败: {e}")
+    log.warning(f"  ✗✗ {symbol} 所有来源均无数据（{start_date}~{end_date}）")
     return None
+
+
+def _fetch_from_local_cache(symbol: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
+    """从本地 data/*.csv 读取缓存数据兜底"""
+    csv_path = Path(__file__).resolve().parent.parent / 'data' / f"{symbol}.csv"
+    if not csv_path.exists():
+        return None
+    df = pd.read_csv(csv_path)
+    if 'date' not in df.columns or df.empty:
+        return None
+    df['date'] = pd.to_datetime(df['date'])
+    sd = pd.to_datetime(start_date)
+    ed = pd.to_datetime(end_date)
+    mask = (df['date'] >= sd) & (df['date'] <= ed)
+    result = df[mask].copy()
+    if result.empty:
+        # 返回全部本地数据（调用方自行处理）
+        log.warning(f"  [缓存] {symbol} 无 {start_date}~{end_date} 数据，返回全部 {len(df)} 行")
+        return df.sort_values('date').reset_index(drop=True)
+    return result.sort_values('date').reset_index(drop=True)
 
 
 def get_last_date(csv_file: Path) -> Optional[str]:

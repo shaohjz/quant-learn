@@ -1,22 +1,157 @@
 #!/usr/bin/env python3
 """
 数据源管理模块 - 支持多数据源冗余和健康检查
+
+针对 Python OpenSSL 3.0 SSL 握手失败问题，优先使用 curl(Schannel) 方案。
 """
 
 import time
 import logging
 import os
+import subprocess
+import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
+class CurlHttpFetcher:
+    """使用 curl (Schannel/Windows 原生 SSL) 绕过 Python OpenSSL 握手问题"""
+
+    @staticmethod
+    def _curl_get(url: str, timeout: int = 10, encoding: str = "utf-8") -> str:
+        """使用 curl 获取 URL 内容，返回解码后的文本"""
+        result = subprocess.run(
+            ["curl", "-s", "-S", "--max-time", str(timeout), "--compressed", url],
+            capture_output=True, timeout=timeout + 5
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"curl 失败 (exit={result.returncode}): {result.stderr.decode('utf-8', errors='replace')[:200]}")
+        raw = result.stdout
+        # 尝试多种编码
+        for enc in [encoding, "utf-8", "gbk", "gb2312", "latin-1"]:
+            try:
+                return raw.decode(enc)
+            except (UnicodeDecodeError, LookupError):
+                continue
+        return raw.decode("utf-8", errors="replace")
+
+    @staticmethod
+    def fetch_sina_realtime(symbols: List[str]) -> Dict[str, dict]:
+        """
+        新浪免费行情接口（HTTP，无 SSL 问题）
+        URL: http://hq.sinajs.cn/list=s_sh000001,s_sz399001
+        返回格式: var hq_str_s_sh000001="上证指数,3245.22,1.02,0.03%";
+        """
+        if not symbols:
+            return {}
+        url = "http://hq.sinajs.cn/list=" + ",".join(symbols)
+        try:
+            text = CurlHttpFetcher._curl_get(url, timeout=8, encoding="gbk")
+            result = {}
+            for line in text.strip().split("\n"):
+                if "hq_str_" in line:
+                    key = line.split("hq_str_")[1].split("=")[0].strip()
+                    val = line.split("\"")[1].split("\"")[0] if '\"' in line else ""
+                    fields = val.split(",")
+                    if len(fields) >= 2:
+                        result[key] = {"name": fields[0], "price": fields[1] if len(fields) > 1 else ""}
+            return result
+        except Exception as e:
+            logger.warning(f"新浪行情 HTTP 失败: {e}")
+            return {}
+
+    @staticmethod
+    def fetch_eastmoney_kline(symbol: str, start_date: str, end_date: str,
+                               adjust: str = "qfq") -> Optional[pd.DataFrame]:
+        """
+        东方财富 Choice API（通过 curl 绕过 SSL）
+        secid: 0.深圳 / 1.上海  eg: 0.000001, 1.600000
+        """
+        # 判断市场
+        market = "1" if symbol.startswith("6") else "0"
+        secid = f"{market}.{symbol}"
+        # 复权类型: qfq=前复权, hfq=后复权, ""=不复权
+        fqt = {"qfq": "1", "hfq": "2", "": "0"}.get(adjust, "1")
+        url = (
+            f"https://push2his.eastmoney.com/api/qt/stock/kline/get"
+            f"?fields1=f1,f2,f3,f4,f5,f6"
+            f"&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61"
+            f"&klt=101&fqt={fqt}&secid={secid}"
+            f"&beg={start_date}&end={end_date}&ut=fa5fd1943c7b386f172d6893dbfba10b"
+        )
+        try:
+            text = CurlHttpFetcher._curl_get(url, timeout=15)
+            data = json.loads(text)
+            klines = data.get("data", {}).get("klines", [])
+            if not klines:
+                logger.warning(f"东方财富无数据: {symbol}")
+                return None
+            rows = []
+            for kl in klines:
+                parts = kl.split(",")
+                rows.append({
+                    "date": parts[0],
+                    "open": float(parts[1]),
+                    "high": float(parts[2]),
+                    "low": float(parts[3]),
+                    "close": float(parts[4]),
+                    "volume": float(parts[5]),
+                })
+            df = pd.DataFrame(rows)
+            df["date"] = pd.to_datetime(df["date"])
+            return df
+        except Exception as e:
+            logger.warning(f"东方财富 curl 失败 {symbol}: {e}")
+            return None
+
+    @staticmethod
+    def fetch_sina_kline(symbol: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
+        """
+        新浪财经 K 线接口（HTTP，无 SSL）
+        http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData
+        """
+        market = "sh" if symbol.startswith("6") else "sz"
+        url = (
+            f"http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+            f"?symbol={market}{symbol}&type=day"
+            f"&datalen=1023&begin={start_date}&end={end_date}"
+        )
+        try:
+            text = CurlHttpFetcher._curl_get(url, timeout=15, encoding="gbk")
+            data = json.loads(text)
+            if not data:
+                return None
+            rows = []
+            for item in data:
+                rows.append({
+                    "date": item["day"],
+                    "open": float(item["open"]),
+                    "high": float(item["high"]),
+                    "low": float(item["low"]),
+                    "close": float(item["close"]),
+                    "volume": float(item["volume"]),
+                })
+            df = pd.DataFrame(rows)
+            df["date"] = pd.to_datetime(df["date"])
+            return df
+        except Exception as e:
+            logger.warning(f"新浪 K 线失败 {symbol}: {e}")
+            return None
+
+
 class DataSourceManager:
-    """数据源管理器 - 支持多数据源冗余"""
+    """数据源管理器 - 支持多数据源冗余
     
-    # 数据源优先级（按速度和稳定性排序）
-    SOURCE_PRIORITY = ['baostock', 'tushare', 'akshare']
+    优先级策略：
+    - 优先使用 curl(Schannel) 方案（绕过 Python OpenSSL 3.0 握手问题）
+    - 备选 Python 原生方案（baostock/akshare/tushare）
+    """
+
+    # 数据源优先级：curl 方案在前，Python OpenSSL 方案在后
+    SOURCE_PRIORITY = ['eastmoney_curl', 'sina_curl', 'baostock', 'tushare', 'akshare']
     
     def __init__(self, config: Optional[Dict] = None):
         """
@@ -78,10 +213,58 @@ class DataSourceManager:
                 self.source_status[source] = False
                 self.last_check_time[source] = time.time()
         
-        # 所有数据源均失败
-        error_msg = f"所有数据源均失败:\n" + "\n".join(errors)
+        # 所有在线数据源均失败，尝试本地 CSV 缓存兜底
+        logger.warning("⚠️ 所有在线数据源均失败，尝试本地 CSV 缓存兜底...")
+        cached_df = self._fetch_from_local_cache(symbol, start_date, end_date)
+        if cached_df is not None and len(cached_df) > 0:
+            logger.info(f"✓ 从本地缓存成功获取 {len(cached_df)} 行数据（最后日期: {cached_df['date'].max()}")
+            return self._normalize_columns(cached_df)
+        
+        # 本地缓存也无数据，报告所有失败原因
+        error_msg = f"所有数据源均失败（含本地缓存）:\n" + "\n".join(errors)
         logger.error(error_msg)
         raise RuntimeError(error_msg)
+    
+    def _fetch_from_local_cache(self, symbol: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
+        """
+        从本地 data/*.csv 读取最新可用数据作为兜底
+        返回 [start_date, today] 范围内本地已有数据（若有）
+        注意：CSV 文件名为 6位代码（如 000301.csv）
+        """
+        import os
+        # 支持6位代码文件名
+        data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+        for fname in [f"{symbol}.csv", f"{symbol.lstrip('0')}.csv"]:
+            csv_path = os.path.join(data_dir, fname)
+            if os.path.exists(csv_path):
+                break
+        else:
+            # 尝试6位零填充名称
+            csv_path = os.path.join(data_dir, f"{symbol}.csv")
+            if not os.path.exists(csv_path):
+                logger.warning(f"本地缓存文件不存在: {symbol}")
+                return None
+        try:
+            df = pd.read_csv(csv_path)
+            if 'date' not in df.columns or df.empty:
+                return None
+            df['date'] = pd.to_datetime(df['date'])
+            # 过滤日期范围
+            sd = pd.to_datetime(start_date)
+            ed = pd.to_datetime(end_date)
+            mask = (df['date'] >= sd) & (df['date'] <= ed)
+            result = df[mask].copy()
+            if result.empty:
+                # 返回全部本地数据（调用方自行处理）
+                logger.warning(f"本地缓存无 {start_date}~{end_date} 数据，返回全部 {len(df)} 行")
+                return df.sort_values('date').reset_index(drop=True)
+            return result.sort_values('date').reset_index(drop=True)
+        except Exception as e:
+            logger.warning(f"读取本地缓存失败 {csv_path}: {e}")
+            return None
+
+
+if __name__ == "__main__":
     
     def _fetch_from_source(self, source: str, symbol: str, start_date: str, 
                           end_date: str, adjust: str) -> Optional[pd.DataFrame]:
@@ -92,6 +275,10 @@ class DataSourceManager:
             return self._fetch_from_baostock(symbol, start_date, end_date, adjust)
         elif source == 'tushare':
             return self._fetch_from_tushare(symbol, start_date, end_date, adjust)
+        elif source == 'eastmoney_curl':
+            return CurlHttpFetcher.fetch_eastmoney_kline(symbol, start_date, end_date, adjust)
+        elif source == 'sina_curl':
+            return CurlHttpFetcher.fetch_sina_kline(symbol, start_date, end_date)
         else:
             raise ValueError(f"未知数据源: {source}")
     
@@ -246,25 +433,53 @@ class DataSourceManager:
                 
                 df = self._fetch_from_source(source, test_symbol, test_start, test_end, "qfq")
                 results[source] = df is not None and len(df) > 0
+                logger.info(f"健康检查 {source}: {'OK' if results[source] else 'FAIL(empty)'}")
                 
             except Exception as e:
                 logger.warning(f"数据源 {source} 健康检查失败: {e}")
                 results[source] = False
         
+        # 更新内存状态
+        for src, ok in results.items():
+            self.source_status[src] = ok
+            if not ok:
+                self.last_check_time[src] = time.time()
+        
         return results
     
     def get_status_report(self) -> str:
-        """生成数据源状态报告"""
+        """生成数据源状态报告（含数据源健康总结）"""
         report = "## 数据源状态报告\n\n"
         
         for source in self.SOURCE_PRIORITY:
-            status = "✓ 可用" if self.source_status[source] else "✗ 不可用"
-            last_check = time.time() - self.last_check_time[source]
-            last_check_str = f"{int(last_check / 60)} 分钟前" if last_check < 3600 else f"{int(last_check / 3600)} 小时前"
-            
+            status = "✓ 可用" if self.source_status.get(source, True) else "✗ 不可用"
+            lc = self.last_check_time.get(source, 0)
+            elapsed = time.time() - lc if lc > 0 else None
+            if elapsed is not None and elapsed < 60:
+                last_check_str = f"{int(elapsed)} 秒前"
+            elif elapsed is not None and elapsed < 3600:
+                last_check_str = f"{int(elapsed / 60)} 分钟前"
+            elif elapsed is not None:
+                last_check_str = f"{int(elapsed / 3600)} 小时前"
+            else:
+                last_check_str = "从未检查"
             report += f"- **{source}**: {status} (上次检查: {last_check_str})\n"
         
+        # 健康总结
+        available = [s for s in self.SOURCE_PRIORITY if self.source_status.get(s, True)]
+        if available:
+            report += f"\n**可用数据源**: {', '.join(available)}\n"
+        else:
+            report += "\n⚠️ **所有数据源不可用！**\n"
+        
         return report
+    
+    def get_available_source(self) -> Optional[str]:
+        """返回第一个可用的数据源名称，若无则返回 None"""
+        for src in self.SOURCE_PRIORITY:
+            if self.source_status.get(src, True):
+                return src
+        return None
 
 
 if __name__ == "__main__":

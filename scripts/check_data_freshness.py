@@ -142,6 +142,37 @@ def main():
     if len(stale_files) > 5:
         print(f"    ... 还有 {len(stale_files) - 5} 个")
     
+    # 1.5 数据源健康检查（所有数据源探测）
+    print("\n  🔍 执行数据源健康检查...")
+    try:
+        sys.path.insert(0, str(WORKSPACE / "scripts"))
+        from data_source_manager import DataSourceManager
+        manager = DataSourceManager()
+        health = manager.health_check()
+        available = [s for s, ok in health.items() if ok]
+        unavailable = [s for s, ok in health.items() if not ok]
+        print(f"  可用数据源: {', '.join(available) if available else '无'}")
+        if unavailable:
+            print(f"  不可用数据源: {', '.join(unavailable)}")
+        
+        # 所有数据源均失败时发送紧急告警
+        if not available:
+            alert_msg = [
+                "## ❌❌ 紧急：所有行情数据源完全失效",
+                f"**检查时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                f"**不可用源**: {', '.join(unavailable)}",
+                "**影响**: CSV 数据更新停滞，影响次日策略决策",
+                "**建议**: 检查网络/代理/防火墙，或手动切换备用数据源",
+                "_由 check_data_freshness.py 数据源健康检查触发_",
+            ]
+            send_wecom_alert("\n".join(alert_msg))
+            print("  🚨 所有数据源失效，已发送紧急告警")
+        elif unavailable:
+            # 部分源不可用，记录但不告警
+            print(f"  ⚠️ 部分数据源不可用: {', '.join(unavailable)}")
+    except Exception as e:
+        print(f"  ⚠️ 数据源健康检查异常: {e}")
+    
     # 2. 判断是否需要修复
     need_fix = False
     if args.force_backfill:

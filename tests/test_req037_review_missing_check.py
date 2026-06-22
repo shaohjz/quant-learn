@@ -28,6 +28,7 @@ def test_workday_after_cutoff_missing_review_records_alert(tmp_path):
         "--trade-dates", str(trade_dates),
         "--pm-db", str(pm_db),
         "--log", str(log_path),
+        "--no-push",
     ])
 
     assert rc == 2

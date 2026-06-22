@@ -30,10 +30,10 @@ def build_opening_brief() -> str:
         # 今日开盘阶段成交记录（9:30-9:35 之间的 trades）
         trades = conn.execute("""
             SELECT direction, stock_code, stock_name, price, quantity,
-                   amount, signal_reason, executed_at
+                   amount, signal_reason, created_at
             FROM sim_trades
             WHERE account_id = 1 AND trade_date = ?
-            ORDER BY executed_at ASC
+            ORDER BY created_at ASC
         """, (today,)).fetchall()
 
         lines = []

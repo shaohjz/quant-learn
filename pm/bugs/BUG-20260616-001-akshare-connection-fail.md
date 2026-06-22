@@ -3,13 +3,10 @@
 **Bug ID**: BUG-20260616-001  
 **创建时间**: 2026-06-16 19:37  
 **优先级**: 🟡 中等  
-**状态**: ✅ 已部署 (deployed)  
+**状态**: ✅ Verified  
 **报告人**: 数据 Agent (data-agent)  
 **修复人**: dev-agent  
 **修复时间**: 2026-06-17 15:31  
-**验证人**: QA Agent (qa-agent)  
-**验证时间**: 2026-06-17 17:00  
-**测试报告**: [TEST-2026-06-17-001](pm/test_reports/TEST-2026-06-17-001.md)  
 
 ---
 
@@ -145,10 +142,30 @@ python data/fetch_data.py 000001 20260610 20260616
 
 **报告人**: 数据 Agent (data-agent)  
 **修复人**: dev-agent  
-**验收人**: 待分配  
+**验收人**: QA Agent (qa-agent)  
+**验收时间**: 2026-06-18 17:05  
+**验收结果**: ✅ 通过  
+**测试报告**: `pm/test_reports/TEST-2026-06-18-001.md`  
+
+---
+
+## 验收记录（2026-06-18）
+
+### QA 验收结果
+✅ **通过（Verified）**
+
+**验收测试**:
+1. ✅ 数据源健康检查：BaoStock 可用，Tushare 未安装，AKShare 连接失败（符合预期）
+2. ✅ 实际数据获取：成功从 BaoStock 获取 5 行数据
+3. ✅ 单元测试：所有测试通过（`test_data_source_manager.py`）
+4. ✅ 集成测试：`data/fetch_data.py` 正常工作
+5. ✅ 数据文件验证：列名标准化正确
+
+**发现问题**:
+- 🟡 `scripts/backfill_data.py` 未集成 `DataSourceManager`（低优先级，不影响功能）
+
+**结论**: 多数据源冗余机制已实现并工作正常，BUG-20260616-001 验收通过。
 
 ---
 
 **END OF BUG REPORT**
-
-- 2026-06-17 18:30: 部署到生产环境，状态 `deployed`

@@ -1,13 +1,18 @@
+#!/usr/bin/env python3
+"""Check open tasks in pm.db"""
 import sqlite3
-import re
-from datetime import datetime, date
+conn = sqlite3.connect('data/pm.db')
+cur = conn.cursor()
 
-conn_pm = sqlite3.connect('data/pm.db')
-cursor_pm = conn_pm.cursor()
+cur.execute('SELECT status, COUNT(*) FROM tasks GROUP BY status')
+print('Task status:')
+for r in cur.fetchall():
+    print(' ', r[0], ':', r[1])
 
-# 检查现有task，找到最新id
-cursor_pm.execute("SELECT id FROM tasks ORDER BY id DESC LIMIT 5")
-rows = cursor_pm.fetchall()
-print("最近task ids:", [r[0] for r in rows])
+cur.execute("SELECT id, type, title, status, priority FROM tasks WHERE status='open' ORDER BY priority, id")
+print()
+print('Open tasks:')
+for r in cur.fetchall():
+    print(' ', r[0], r[1], r[2][:60], '|', r[3], '|', r[4])
 
-conn_pm.close()
+conn.close()

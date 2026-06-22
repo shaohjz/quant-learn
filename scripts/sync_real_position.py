@@ -47,6 +47,22 @@ def conn_ro_rw():
     return c
 
 
+def ensure_account(c) -> dict:
+    """确保 sim_account 中存在 id=ACCOUNT_ID 的记录；不存在则创建。"""
+    r = c.execute("SELECT * FROM sim_account WHERE id=?", (ACCOUNT_ID,)).fetchone()
+    if r:
+        return dict(r)
+    # 不存在则创建默认记录（真实账户初始现金 ¥10,000）
+    c.execute(
+        "INSERT INTO sim_account (id, account_name, initial_cash, cash, total_value, created_at, updated_at)"
+        " VALUES (?, 'real_portfolio', 10000.0, 10000.0, 10000.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        (ACCOUNT_ID,)
+    )
+    c.commit()  # 立即持久化
+    r = c.execute("SELECT * FROM sim_account WHERE id=?", (ACCOUNT_ID,)).fetchone()
+    return dict(r)
+
+
 def get_account(c) -> dict | None:
     r = c.execute("SELECT * FROM sim_account WHERE id=?", (ACCOUNT_ID,)).fetchone()
     return dict(r) if r else None
@@ -127,10 +143,7 @@ def cmd_buy(args):
     total_cost = amount + commission
 
     c = conn_ro_rw()
-    acc = get_account(c)
-    if not acc:
-        print('❌ 真实账户不存在')
-        sys.exit(1)
+    acc = ensure_account(c)
     cash = acc['cash']
     if total_cost > cash + 0.01:
         ans = input(f'⚠️ 现金 {cash:.2f} < 需 {total_cost:.2f}，是否继续(此处仅记录)? [y/N] ')
@@ -164,6 +177,7 @@ def cmd_sell(args):
     code = args[0]; qty_arg = int(args[1]); price = float(args[2])
     reason_arg = args[3] if len(args) >= 4 else ''
     c = conn_ro_rw()
+    acc = ensure_account(c)   # 确保账户存在
     pos = get_position(c, code)
     if not pos:
         print(f'❌ {code} 无持仓'); sys.exit(1)
@@ -217,7 +231,7 @@ def cmd_set_cash(args):
 
 def cmd_list(_args):
     c = conn_ro_rw()
-    acc = get_account(c)
+    acc = ensure_account(c)
     print(f"=== 真实账户 (id={ACCOUNT_ID} / {acc['account_name']}) ===")
     print(f"  现金 ¥{acc['cash']:,.2f}  总值 ¥{acc['total_value']:,.2f}")
     print(f"  更新时间: {acc['updated_at']}")

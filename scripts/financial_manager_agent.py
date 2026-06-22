@@ -172,7 +172,7 @@ def generate_improvement_suggestions(trades, positions, account_info):
         
         if max_ratio > 0.15:
             suggestions.append({
-                'title': f'单票仓位过高：{max_position.get("symbol")} 占比 {max_ratio:.1%}',
+                'title': f'单票仓位过高：{max_position.get("stock_code")} 占比 {max_ratio:.1%}',
                 'desc': '建议单票仓位不超过15%，降低集中度风险',
                 'priority': 'P1'
             })
@@ -201,8 +201,8 @@ def create_task_in_pm(task_data):
         conn = sqlite3.connect(str(PM_DB))
         cursor = conn.cursor()
         
-        # 生成新的任务 ID
-        cursor.execute("SELECT id FROM tasks WHERE type='story' ORDER BY id DESC LIMIT 1")
+        # 生成新的任务 ID（查找所有 REQ-XXX 格式的任务，取最大编号）
+        cursor.execute("SELECT id FROM tasks WHERE id LIKE 'REQ-%' ORDER BY id DESC LIMIT 1")
         row = cursor.fetchone()
         if row:
             last_num = int(row[0].split('-')[1])

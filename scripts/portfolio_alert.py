@@ -600,7 +600,12 @@ def main():
     # 运行后更新所有持仓的市值（使 sim_account total_value 反映现价）
     try:
         from sim_executor import update_all_positions_market_value
-        update_all_positions_market_value(clean_prices)
+        update_all_positions_market_value(clean_prices, account_id=1)
+        # 同时更新真实账户持仓市值（account_id=2）
+        try:
+            update_all_positions_market_value(clean_prices, account_id=2)
+        except Exception as ex2:
+            logger.warning(f"更新真实账户市值异常: {ex2}")
     except Exception as ex:
         logger.warning(f"更新模拟账户市值异常: {ex}")
     

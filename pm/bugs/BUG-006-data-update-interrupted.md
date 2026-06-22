@@ -3,7 +3,7 @@
 ## 基本信息
 - **Bug ID**: BUG-006
 - **标题**: 数据更新中断 - 缺失数据告警监控
-- **状态**: fixed
+- **状态**: testing
 - **优先级**: P0
 - **创建时间**: 2026-06-15 19:40
 - **修复时间**: 2026-06-17 01:05
@@ -38,7 +38,8 @@
 
 ## 状态历史
 - 2026-06-15 19:40: 由 data-agent 创建（原 bugs/BUG-2026-06-15-data-update-interrupted.md）
-- 2026-06-17 01:05: 修复完成，新增 `scripts/check_data_freshness.py`，状态 `fixed`
+- 2026-06-23 03:05: dev-manager 开始部署前自测，状态 `in_progress`
+- 2026-06-23 03:06: 自测通过（check_data_freshness.py 正常检测数据过期），状态 `testing`
 - 2026-06-18 13:03: 部署到生产环境，自测通过，状态 `deployed`
 
 ## 附件

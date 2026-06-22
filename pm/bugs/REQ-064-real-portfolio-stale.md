@@ -3,7 +3,7 @@
 ## 基本信息
 - **Bug ID**: REQ-064
 - **标题**: real_portfolio(account_id=2) 持仓价格 stale
-- **状态**: verified
+- **状态**: deployed
 - **优先级**: P1
 - **创建时间**: 2026-06-10
 - **修复时间**: 2026-06-20 20:30

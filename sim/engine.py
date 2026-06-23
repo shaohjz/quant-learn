@@ -629,12 +629,9 @@ class SimEngine:
                     except Exception:
                         pass
 
-            # 计算日收益率（跳变时设为 None，避免曲线失真）
-            if cash_jump_detected:
-                daily_return = None
-            else:
-                # [REQ-001] 使用 initial_cash（config 基准）计算日收益
-                daily_return = (total_value - prev_value) / prev_value if prev_value else 0
+            # 计算日收益率（REQ-061 修复：始终计算并存储，不再设为 None）
+            daily_return = (total_value - prev_value) / prev_value if prev_value else 0
+            # 跳变时在 cash_jump_reason 中记录原因（已在上面赋值），daily_return 仍然存储
 
             # 历史峰值（包含当前）
             cur.execute(

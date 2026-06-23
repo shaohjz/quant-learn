@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-06-23 15:05:14",
+  "date": "2026-06-23",
+  "hot_stocks": {
+    "date": "2026-06-23",
+    "total": 0,
+    "stocks": [],
+    "top_tags": [],
+    "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+  },
+  "northbound": {
+    "error": "HTTPSConnectionPool(host='data.hexin.cn', port=443): Max retries exceeded with url: /market/hsgtApi/method/dayChart/ (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))",
+    "date": "2026-06-23"
+  },
+  "dragon_tiger": {
+    "error": "HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_DAILYBILLBOARD_DETAILSNEW&columns=ALL&filter=%28TRADE_DATE%3E%3D%272026-06-23%27%29%28TRADE_DATE%3C%3D%272026-06-23%27%29&pageNumber=1&pageSize=500&sortColumns=BILLBOARD_NET_AMT&sortTypes=-1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))"
+  },
+  "industry": {
+    "hot_sectors": [],
+    "indices": [],
+    "total": 0
+  }
+}

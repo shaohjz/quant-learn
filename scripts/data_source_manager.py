@@ -54,7 +54,7 @@ class CurlHttpFetcher:
             for line in text.strip().split("\n"):
                 if "hq_str_" in line:
                     key = line.split("hq_str_")[1].split("=")[0].strip()
-                    val = line.split("\"")[1].split("\"")[0] if '\"' in line else ""
+                    val = line.split("\"")[1].split("\"")[0] if '"' in line else ""
                     fields = val.split(",")
                     if len(fields) >= 2:
                         result[key] = {"name": fields[0], "price": fields[1] if len(fields) > 1 else ""}
@@ -225,47 +225,6 @@ class DataSourceManager:
         logger.error(error_msg)
         raise RuntimeError(error_msg)
     
-    def _fetch_from_local_cache(self, symbol: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
-        """
-        从本地 data/*.csv 读取最新可用数据作为兜底
-        返回 [start_date, today] 范围内本地已有数据（若有）
-        注意：CSV 文件名为 6位代码（如 000301.csv）
-        """
-        import os
-        # 支持6位代码文件名
-        data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
-        for fname in [f"{symbol}.csv", f"{symbol.lstrip('0')}.csv"]:
-            csv_path = os.path.join(data_dir, fname)
-            if os.path.exists(csv_path):
-                break
-        else:
-            # 尝试6位零填充名称
-            csv_path = os.path.join(data_dir, f"{symbol}.csv")
-            if not os.path.exists(csv_path):
-                logger.warning(f"本地缓存文件不存在: {symbol}")
-                return None
-        try:
-            df = pd.read_csv(csv_path)
-            if 'date' not in df.columns or df.empty:
-                return None
-            df['date'] = pd.to_datetime(df['date'])
-            # 过滤日期范围
-            sd = pd.to_datetime(start_date)
-            ed = pd.to_datetime(end_date)
-            mask = (df['date'] >= sd) & (df['date'] <= ed)
-            result = df[mask].copy()
-            if result.empty:
-                # 返回全部本地数据（调用方自行处理）
-                logger.warning(f"本地缓存无 {start_date}~{end_date} 数据，返回全部 {len(df)} 行")
-                return df.sort_values('date').reset_index(drop=True)
-            return result.sort_values('date').reset_index(drop=True)
-        except Exception as e:
-            logger.warning(f"读取本地缓存失败 {csv_path}: {e}")
-            return None
-
-
-if __name__ == "__main__":
-    
     def _fetch_from_source(self, source: str, symbol: str, start_date: str, 
                           end_date: str, adjust: str) -> Optional[pd.DataFrame]:
         """从指定数据源获取数据"""
@@ -415,6 +374,44 @@ if __name__ == "__main__":
         
         return df[target_cols]
     
+    def _fetch_from_local_cache(self, symbol: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
+        """
+        从本地 data/*.csv 读取最新可用数据作为兜底
+        返回 [start_date, today] 范围内本地已有数据（若有）
+        注意：CSV 文件名为 6位代码（如 000301.csv）
+        """
+        import os
+        # 支持6位代码文件名
+        data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+        for fname in [f"{symbol}.csv", f"{symbol.lstrip('0')}.csv"]:
+            csv_path = os.path.join(data_dir, fname)
+            if os.path.exists(csv_path):
+                break
+        else:
+            # 尝试6位零填充名称
+            csv_path = os.path.join(data_dir, f"{symbol}.csv")
+            if not os.path.exists(csv_path):
+                logger.warning(f"本地缓存文件不存在: {symbol}")
+                return None
+        try:
+            df = pd.read_csv(csv_path)
+            if 'date' not in df.columns or df.empty:
+                return None
+            df['date'] = pd.to_datetime(df['date'])
+            # 过滤日期范围
+            sd = pd.to_datetime(start_date)
+            ed = pd.to_datetime(end_date)
+            mask = (df['date'] >= sd) & (df['date'] <= ed)
+            result = df[mask].copy()
+            if result.empty:
+                # 返回全部本地数据（调用方自行处理）
+                logger.warning(f"本地缓存无 {start_date}~{end_date} 数据，返回全部 {len(df)} 行")
+                return df.sort_values('date').reset_index(drop=True)
+            return result.sort_values('date').reset_index(drop=True)
+        except Exception as e:
+            logger.warning(f"读取本地缓存失败 {csv_path}: {e}")
+            return None
+    
     def health_check(self) -> Dict[str, bool]:
         """
         检查所有数据源的健康状态
@@ -493,7 +490,8 @@ if __name__ == "__main__":
     print("=== 数据源健康检查 ===")
     health = manager.health_check()
     for source, is_healthy in health.items():
-        print(f"{source}: {'✓' if is_healthy else '✗'}")
+        status = "✓" if is_healthy else "✗"
+        print(f"{source}: {status}")
     
     # 测试数据获取
     print("\n=== 测试数据获取 ===")

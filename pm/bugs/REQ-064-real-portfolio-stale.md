@@ -80,6 +80,7 @@ print(cur.fetchall())  # 结果：[]
 - 2026-06-10: 创建 Bug，状态 `open`
 - 2026-06-20 20:30: 修复完成（portfolio_alert.py 双账户更新），状态 `fixed`
 - 2026-06-20 23:06: sync_real_position.py ensure_account() 修复完成，自测通过，状态 `verified`
+- 2026-06-23 18:30: 部署到生产环境（release-agent），状态 `deployed`
 
 ## 修改文件
 - `scripts/portfolio_alert.py`：双账户市值更新（account_id=1 和 2）

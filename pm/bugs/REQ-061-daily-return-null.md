@@ -64,6 +64,7 @@ SELECT daily_return FROM sim_daily_nav WHERE account_id=1 AND trade_date='2026-0
 - 2026-06-10: 创建 Bug，状态 `open`
 - 2026-06-20 20:10: 修复完成，状态 `fixed`
 - 2026-06-20 23:05: dev-manager 自测通过，状态 `verified`
+- 2026-06-23 18:30: 部署到生产环境（release-agent），状态 `deployed`
 
 ## 修改文件
 - `config.yaml`：修复 `account_name` 配置

@@ -264,7 +264,7 @@ def add_pm_task(title, description, priority="P2", task_type="bug"):
 
     conn.commit()
     conn.close()
-    print(f"✅ 已添加 PM Task: {new_id} - {title}")
+    print(f"[成功] 已添加 PM Task: {new_id} - {title}")
     return new_id
 
 def detect_issues_and_log(data):
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     print("\n推送到企微群...")
     ok = push_markdown(report)
     if ok:
-        print("✅ 日报推送成功")
+        print("[成功] 日报推送成功")
     else:
-        print("⚠️ 推送失败，打印日报内容：")
+        print("[警告] 推送失败，打印日报内容：")
         print(report)

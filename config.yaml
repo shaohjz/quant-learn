@@ -13,6 +13,12 @@ accounts:
     auto_trade: false
     description: 用户实际持仓镜像，由 scripts/sync_real_position.py 维护
     initial_cash: 25000.0
+data:
+  use_cache_only: false  # 离线模式：仅使用缓存数据，不获取外部数据
+  max_retries: 3
+  retry_delay: 2
+  timeout: 30
+
 broker:
   live:
     session_id: 123456

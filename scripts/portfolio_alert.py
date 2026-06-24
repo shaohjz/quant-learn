@@ -444,13 +444,17 @@ def main():
                 result = execute_trade(rule, cur_price)
                 message = str(result.get('message', ''))
 
-                if result.get('success') and '卖出' in message:
+                if result.get('success') and ('卖出' in message or '清仓' in message):
                     logger.info(f"✅ 已记录模拟止损卖单: {message}")
                     triggered_msgs.append(
                         f"🚨 模拟止损卖单: {pos['stock_code']} 现价¥{cur_price:.2f} 触发{stop_source}¥{effective_stop:.2f} → {message}"
                     )
                 elif result.get('success'):
+                    # soft stop / DEFER：也推送到用户（提醒关注）
                     logger.info(f"ℹ️ 止损提醒已评估: {message}")
+                    triggered_msgs.append(
+                        f"⚠️ 止损预警: {pos['stock_code']} 现价¥{cur_price:.2f} 跌破{stop_source}¥{effective_stop:.2f}，尚未执行卖出（{message}）"
+                    )
                 else:
                     logger.warning(f"⚠️ 止损提醒未下单: {message}")
     except Exception as e:

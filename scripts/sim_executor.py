@@ -668,11 +668,15 @@ def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position:
     if vol_ratio is not None and vol_ratio >= _STOP_VOL_THRESH:
         return 'confirmed', 'SELL_HALF', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，减半{trailing_reason}'
     
-    # 量能不足 — 软止损
+    # 量能不足 — 软止损；但价格已跌破止损位超过 1% 时升级为 confirmed
     vol_desc = f'量比{vol_ratio:.2f}×' if vol_ratio is not None else '量能未知'
     if is_late:
         return 'confirmed', 'SELL_HALF', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天减半{trailing_reason}'
-    # 盘中软止损
+    # 盘中：价格跌破 stop 但未放量 → 若跌破幅度>1% 则升级为 confirmed（不无限 defer）
+    break_pct = (cur_price - stop) / stop * 100
+    if break_pct < -1.0:
+        return 'confirmed', 'SELL_HALF', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 达 {abs(break_pct):.1f}% 且 {vol_desc} 未放量，升级为减半（不无限等待）{trailing_reason}'
+    # 刚跌破不久（<1%）且量能不足 → 仍可等待尾盘
     return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
 
 

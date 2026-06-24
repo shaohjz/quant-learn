@@ -4,9 +4,9 @@ accounts:
     account_id: 1
     account_name: learn
     auto_trade: true
-    description: vqlearn 量化策略自学习账户（2026-06-09 调升至10万：存量仓位按市值占比等比加仓，差额以现金形式保留作为后续建仓资金）
+    description: vqlearn 量化策略自学习账户（2026-06-24 清仓重置到10万，全自动选股交易）
     initial_cash: 100000.0
-    max_total_value: 25000.0
+    max_total_value: 100000.0
   real:
     account_id: 2
     account_name: real_portfolio

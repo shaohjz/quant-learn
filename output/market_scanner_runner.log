@@ -372,3 +372,30 @@ logout success!
 â±  ç”¨æ—¶ 172.7s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
 [scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 294.3s
 ===== [2026/06/17 ÖÜÈı  7:54:57.19] market scanner END   ===== 
+===== [2026/06/24 ÖÜÈı  7:50:02.34] market scanner START ===== 
+[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
+2026-06-24 07:50:03,026 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-24 ===
+2026-06-24 07:50:08,102 [WARNING] À­»¦Éî300 Ê§°Ü: HTTPSConnectionPool(host='vip.stock.finance.sina.com.cn', port=443): Max retries exceeded with url: /corp/go.php/vII_NewestComponent/indexid/000300.phtml (Caused by NameResolutionError("HTTPSConnection(host='vip.stock.finance.sina.com.cn', port=443): Failed to resolve 'vip.stock.finance.sina.com.cn' ([Errno 11001] getaddrinfo failed)"))
+2026-06-24 07:50:13,354 [WARNING] À­ÖĞÖ¤500 Ê§°Ü: HTTPSConnectionPool(host='vip.stock.finance.sina.com.cn', port=443): Max retries exceeded with url: /corp/go.php/vII_NewestComponent/indexid/000905.phtml (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
+2026-06-24 07:50:13,354 [INFO] ¹ÉÆ±³Ø: 0 Ö»
+2026-06-24 07:50:13,354 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
+2026-06-24 07:51:19,691 [WARNING] ¶«²Æ spot_em Ê§°Ü: HTTPSConnectionPool(host='82.push2.eastmoney.com', port=443): Max retries exceeded with url: /api/qt/clist/get?pn=1&pz=100&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6%2Cf7%2Cf8%2Cf9%2Cf10%2Cf12%2Cf13%2Cf14%2Cf15%2Cf16%2Cf17%2Cf18%2Cf20%2Cf21%2Cf23%2Cf24%2Cf25%2Cf22%2Cf11%2Cf62%2Cf128%2Cf136%2Cf115%2Cf152 (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))£¬ÇĞĞÂÀË
+2026-06-24 07:51:24,716 [ERROR] ĞÂÀË spot Ò²Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 466, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 368, in main
+    spot_df = fetch_all_realtime()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 142, in fetch_all_realtime
+    raise RuntimeError("¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü")
+RuntimeError: ¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü
+[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
+2026-06-24 07:51:26,099 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
+2026-06-24 07:51:26,099 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
+2026-06-24 07:51:31,354 [ERROR] ĞÂÀËÊµÊ±ĞĞÇéÈ«Ê§°Ü£¡
+âŒ æ‰«ææ— ç»“æœ
+
+â±  ç”¨æ—¶ 5.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
+[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 88.9s
+===== [2026/06/24 ÖÜÈı  7:51:31.45] market scanner END   ===== 

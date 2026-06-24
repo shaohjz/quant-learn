@@ -156,12 +156,13 @@ def get_market_panic_decision(fetcher: Callable[[], RiskDecision] | None = None)
     """带 60 秒缓存的大盘熔断检查，避免每只股票每个 tick 都打实时接口。"""
     global _MARKET_CACHE
     now = datetime.now()
-    if _MARKET_CACHE is not None:
+    # 当 fetcher 是外部传入的（非默认 fetch_market_panic_snapshot），跳过缓存
+    fetcher = fetcher or fetch_market_panic_snapshot
+    is_default_fetcher = (fetcher is fetch_market_panic_snapshot)
+    if _MARKET_CACHE is not None and is_default_fetcher:
         ts, cached = _MARKET_CACHE
         if (now - ts).total_seconds() < _MARKET_CACHE_SECONDS:
             return cached
-
-    fetcher = fetcher or fetch_market_panic_snapshot
     decision = fetcher()
     _MARKET_CACHE = (now, decision)
     return decision
@@ -309,7 +310,7 @@ def evaluate_buy_risk_guard(
             import sqlite3 as _sq
             _c = _sq.connect(db_path)
             _r = _c.execute(
-                "SELECT volume FROM sim_positions WHERE account_id = ? AND code = ? AND volume > 0",
+                "SELECT quantity FROM sim_positions WHERE account_id = ? AND stock_code = ? AND quantity > 0",
                 (account_id, code)
             ).fetchone()
             is_add = _r is not None and int(_r[0]) > 0
@@ -375,7 +376,7 @@ def check_position_limit(
 
         # 获取账户总资产
         cursor.execute(
-            "SELECT total_assets FROM accounts WHERE account_id = ? ORDER BY id DESC LIMIT 1",
+            "SELECT total_value FROM sim_account WHERE id = ? ORDER BY id DESC LIMIT 1",
             (account_id,)
         )
         row = cursor.fetchone()
@@ -386,7 +387,7 @@ def check_position_limit(
 
         # 获取当前持仓（含成本和数量）
         cursor.execute(
-            "SELECT volume, cost FROM sim_positions WHERE account_id = ? AND code = ? AND volume > 0",
+            "SELECT quantity, avg_cost FROM sim_positions WHERE account_id = ? AND stock_code = ? AND quantity > 0",
             (account_id, code)
         )
         pos_row = cursor.fetchone()
@@ -447,7 +448,7 @@ def check_daily_trade_limit(
 
         cursor.execute(
             """SELECT COUNT(*) FROM sim_trades 
-            WHERE account_id = ? AND action = 'buy' AND date LIKE ?""",
+            WHERE account_id = ? AND direction = 'BUY' AND trade_date LIKE ?""",
             (account_id, f"{trade_date}%")
         )
         row = cursor.fetchone()
@@ -501,7 +502,7 @@ def check_position_count_limit(
 
         # 统计当前持仓股票数量（quantity > 0）
         cursor.execute(
-            "SELECT COUNT(*) FROM sim_positions WHERE account_id = ? AND volume > 0",
+            "SELECT COUNT(*) FROM sim_positions WHERE account_id = ? AND quantity > 0",
             (account_id,)
         )
         row = cursor.fetchone()
@@ -571,7 +572,7 @@ def check_daily_new_position_limit(
         # 获取当日所有买入交易
         cursor.execute(
             """SELECT stock_code FROM sim_trades
-            WHERE account_id = ? AND action = 'buy' AND date LIKE ?""",
+            WHERE account_id = ? AND direction = 'BUY' AND trade_date LIKE ?""",
             (account_id, f"{trade_date}%")
         )
         bought_codes = [row[0] for row in cursor.fetchall()]
@@ -585,7 +586,7 @@ def check_daily_new_position_limit(
         # 用「当日之前该股票无任何买入记录」作为「新建仓位」的判断依据
         cursor.execute(
             """SELECT DISTINCT stock_code FROM sim_trades
-            WHERE account_id = ? AND action = 'buy' AND date < ?""",
+            WHERE account_id = ? AND direction = 'BUY' AND trade_date < ?""",
             (account_id, trade_date)
         )
         ever_bought_codes = set(row[0] for row in cursor.fetchall())
@@ -688,7 +689,7 @@ def evaluate_buy_risk_with_limits(
         import sqlite3 as _sqlite3
         _conn = _sqlite3.connect(db_path)
         _row = _conn.execute(
-            "SELECT volume FROM sim_positions WHERE account_id = ? AND code = ? AND volume > 0",
+            "SELECT quantity FROM sim_positions WHERE account_id = ? AND stock_code = ? AND quantity > 0",
             (account_id, code)
         ).fetchone()
         is_add_position = _row is not None and int(_row[0]) > 0

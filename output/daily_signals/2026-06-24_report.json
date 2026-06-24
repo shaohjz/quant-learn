@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-24 09:22:26",
+  "date": "2026-06-24",
+  "type": "morning_check",
+  "northbound": {
+    "error": "HTTPSConnectionPool(host='data.hexin.cn', port=443): Max retries exceeded with url: /market/hsgtApi/method/dayChart/ (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))",
+    "date": "2026-06-24"
+  },
+  "industry": {
+    "hot_sectors": [],
+    "indices": [],
+    "total": 0
+  }
+}

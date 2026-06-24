@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-06-24T08:00:13.704807",
+  "all_ok": false,
+  "results": {
+    "pm_service": {
+      "ok": true,
+      "msg": "PM 服务正常 (端口 8080)"
+    },
+    "datasource": {
+      "ok": false,
+      "msg": "baostock 登录失败: 网络接收错误。"
+    },
+    "account": {
+      "ok": true,
+      "msg": "账户正常: 现金¥100,000, 总资产¥100,000"
+    },
+    "scheduled_tasks": {
+      "ok": true,
+      "msg": "所有 8 个关键计划任务正常"
+    },
+    "disk_space": {
+      "ok": true,
+      "msg": "磁盘空间正常 (C盘剩余 71.0GB/100GB)"
+    }
+  }
+}

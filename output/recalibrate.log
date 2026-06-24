@@ -64,3 +64,9 @@ Traceback (most recent call last):
     print("\U0001f4ca ÿ����ǰ��ֵ�Զ�У׼ (BaoStock)")
     ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 0: illegal multibyte sequence
+============================================================
+📊 每日盘前阈值自动校准 (BaoStock)
+============================================================
+[WinError 10054] 远程主机强迫关闭了一个现有的连接。
+接收数据异常，请稍后再试。
+❌ BaoStock 登录失败: 网络接收错误。

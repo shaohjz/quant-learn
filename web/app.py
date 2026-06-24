@@ -891,5 +891,7 @@ def pm_board():
     return send_from_directory(str(ROOT / 'web' / 'templates'), 'pm.html')
 
 if __name__ == '__main__':
-    print("🚀 启动持仓仪表盘 http://0.0.0.0:8080")
+    import os
+    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    print("启动持仓仪表盘 http://0.0.0.0:8080")
     app.run(host='0.0.0.0', port=8080, debug=False)

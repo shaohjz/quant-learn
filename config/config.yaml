@@ -1,0 +1,55 @@
+# 量化交易系统配置文件
+
+# 企业微信推送配置
+notify:
+  # 企业微信群机器人 Webhook URL
+  wecom_webhook: ""  # 例如: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxx
+  
+  # 企业微信自建应用配置（可选）
+  # corp_id: ""
+  # agent_id: ""
+  # corp_secret: ""
+  # token: ""
+  # encoding_aes_key: ""
+
+# 监控列表
+watchlist:
+  - symbol: "600519.SH"  # 贵州茅台
+    name: "贵州茅台"
+  - symbol: "000858.SZ"  # 五粮液
+    name: "五粮液"
+  - symbol: "600036.SH"  # 招商银行
+    name: "招商银行"
+
+# 通知配置
+notification:
+  # 开盘快报推送时间（工作日）
+  open_report_time: "09:31"
+  # 午盘快报推送时间（工作日）
+  mid_report_time: "11:31"
+  # 收盘快报推送时间（工作日）
+  close_report_time: "15:01"
+
+# 阈### 方法一：群机器人 Webhook（最简单）
+
+现在让我修改 `notify_open.py`，支持通过环境变量或命令行参数传递 Webhook URL。但考虑到你是通过 cron 定时任务运行，最好的方式是配置 Webhook URL。
+
+你有企业微信群机器人 Webhook URL 吗？如果有的话，告诉我，我可以帮你配置到系统中。
+
+如果还没有，我可以指导你如何创建：
+
+1. 在企业微信群里，点击右上角 `...` 
+2. 选择 `群机器人` -> `添加机器人`
+3. 选择`自定义机器人`，设置名称和头像
+4. 复制生成的 Webhook URL（格式：`https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxx`）
+
+配置好 Webhook URL 后，脚本就能正常推送消息到企业微信群了。
+
+---
+
+**现在的核心问题**：你需要提供企业微信 Webhook URL，我才能帮你完成推送配置。你有这个 URL 吗？值配置（示例）
+threshold:
+  price_alert: true
+  price_change_percent: 3.0  # 涨跌幅超过 3% 时提醒
+  volume_alert: true
+  volume_change_percent: 50.0  # 成交量变化超过 50% 时提醒

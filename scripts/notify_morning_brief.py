@@ -11,6 +11,7 @@ notify_morning_brief.py — 多策略简报（9:25 开盘前）
 """
 
 import sys
+import requests
 from pathlib import Path
 from datetime import datetime
 
@@ -22,6 +23,19 @@ from sim.notifier import send_markdown
 from sim.stock_pool import StockPool
 from sim.realtime_price import get_latest_prices
 from sim.config import get as cfg_get
+
+
+def _check_network(timeout: int = 3) -> bool:
+    """检测是否能访问外网（用 baostock 官网做探针）"""
+    try:
+        # 用 baostock 的登录接口做网络检测
+        import baostock as bs
+        lg = bs.login()
+        ok = lg.error_code == "0"
+        bs.logout()
+        return ok
+    except Exception:
+        return False
 
 
 def build_morning_brief() -> str:
@@ -37,6 +51,22 @@ def build_morning_brief() -> str:
     
     if not all_stocks:
         lines.append("（股票池为空，请检查 config.yaml 中的 stock_pool 配置）")
+        return "\n".join(lines)
+
+    # 检测网络
+    network_ok = _check_network()
+    if not network_ok:
+        lines.append(f"股票池共 **{len(all_stocks)}** 只股票")
+        lines.append("")
+        lines.append("⚠️ 行情数据源不可达，暂无法生成实时信号")
+        lines.append("")
+        lines.append("可能原因：")
+        lines.append("- 服务器在内网环境，无法访问外部股票数据API")
+        lines.append("- baostock / 新浪行情 连接异常")
+        lines.append("")
+        lines.append("请稍后在可联网环境中重新运行，或配置内网行情数据代理。")
+        lines.append("")
+        lines.append("*数据来源：实时行情接口（需外网）*")
         return "\n".join(lines)
 
     # 为股票池中的每只股票生成信号

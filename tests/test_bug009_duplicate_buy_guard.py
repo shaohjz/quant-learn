@@ -56,7 +56,7 @@ def test_execute_trade_skips_duplicate_buy_same_day(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ex, "_DB_PATH", str(db))
     monkeypatch.setattr(ex, "_ACCOUNT_ID", 1)
-    monkeypatch.setattr(ex, "decide_action", lambda rule, cur_price: "BUY")
+    monkeypatch.setattr(ex, "decide_action", lambda rule, cur_price, **kw: "BUY")
 
     result = ex.execute_trade({"code": "002709", "name": "天赐材料", "level": "buy_strong"}, 10.0)
 

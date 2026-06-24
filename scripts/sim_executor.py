@@ -943,7 +943,8 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
 
     elif level in ('take_profit', 'take_profit_half', 'half_out'):
         # REQ-048 修复：新增 take_profit_half 匹配（之前只匹配 take_profit/half_out）
-        return 'SELL_HALF'
+        # REQ-066: 止盈改为全仓卖出（SELL_ALL），避免浮盈坐过山车
+        return 'SELL_ALL'
 
     return 'NO_ACTION'
 

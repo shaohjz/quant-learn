@@ -113,7 +113,7 @@ def check_stop_triggers(positions):
                 "code": code,
                 "name": name,
                 "pnl_pct": pnl_pct,
-                "msg": f"⚠️ 止损预警：{name}({code}) 亏损 {pnl_pct*100:.1f}%，已超过-10%止损线"
+                "msg": f"[警告] 止损预警：{name}({code}) 亏损 {pnl_pct*100:.1f}%，已超过-10%止损线"
             })
 
         # 止盈检查：盈利超过20%
@@ -123,7 +123,7 @@ def check_stop_triggers(positions):
                 "code": code,
                 "name": name,
                 "pnl_pct": pnl_pct,
-                "msg": f"🎉 止盈提示：{name}({code}) 盈利 {pnl_pct*100:.1f}%，可考虑分批止盈"
+                "msg": f"[止盈] 止盈提示：{name}({code}) 盈利 {pnl_pct*100:.1f}%，可考虑分批止盈"
             })
 
         # trailing stop 检查
@@ -135,7 +135,7 @@ def check_stop_triggers(positions):
                     "name": name,
                     "cur_price": cur_price,
                     "stop_price": trailing_stop,
-                    "msg": f"🔔 移动止损触发：{name}({code}) 现价 {cur_price} 跌破移动止损价 {trailing_stop}"
+                    "msg": f"[提醒] 移动止损触发：{name}({code}) 现价 {cur_price} 跌破移动止损价 {trailing_stop}"
                 })
 
     return alerts
@@ -143,13 +143,13 @@ def check_stop_triggers(positions):
 def generate_report(data):
     """生成日报 Markdown"""
     lines = []
-    lines.append(f"# 📊 理财师每日复盘 | {TODAY}")
+    lines.append(f"# 理财师每日复盘 | {TODAY}")
     lines.append("")
 
     # 账户概况
     acct = data["account"]
     nav = data["nav"]
-    lines.append("## 💰 账户概况")
+    lines.append("## 账户概况")
     if nav:
         trade_date, total_val, cash, mkt_val, daily_ret, cum_ret = nav
         lines.append(f"- 日期：{trade_date}")
@@ -165,7 +165,7 @@ def generate_report(data):
 
     # 持仓明细
     positions = data["positions"]
-    lines.append("## 📌 当前持仓")
+    lines.append("## 当前持仓")
     if positions:
         lines.append(f"共 **{len(positions)}** 只持仓：\n")
         for pos in positions:
@@ -187,22 +187,22 @@ def generate_report(data):
 
     # 止损/止盈预警
     alerts = check_stop_triggers(positions)
-    lines.append("## 🚨 风险预警")
+    lines.append("## 风险预警")
     if alerts:
         for alert in alerts:
             lines.append(f"- {alert['msg']}")
     else:
-        lines.append("> ✅ 无止损/止盈触发预警")
+        lines.append("> 无止损/止盈触发预警")
     lines.append("")
 
     # 最近成交
     fills = data["recent_fills"]
-    lines.append("## 📋 近7日成交记录")
+    lines.append("## 近7日成交记录")
     if fills:
         for f in fills[:10]:
             code, name, direction, price, vol, trade_time, strategy, reason = f[:8]
-            direction_emoji = "🟢" if direction == "BUY" else "🔴"
-            lines.append(f"- {direction_emoji} {trade_time[:16]} | {name}({code}) | {direction} {vol}股 @ {price:.3f} | 策略：{strategy or 'manual'}")
+            direction_text = "[买入]" if direction == "BUY" else "[卖出]"
+            lines.append(f"- {direction_text} {trade_time[:16]} | {name}({code}) | {direction} {vol}股 @ {price:.3f} | 策略：{strategy or 'manual'}")
             if reason:
                 lines.append(f"  > 原因：{reason}")
     else:
@@ -211,12 +211,12 @@ def generate_report(data):
 
     # 策略信号
     signals = data["recent_signals"]
-    lines.append("## 📡 今日策略信号")
+    lines.append("## 今日策略信号")
     if signals:
         for sig in signals[:10]:
             code, name, action, rule, reason, price, sig_time = sig
-            action_emoji = "🟢" if "BUY" in action else "🔴" if "SELL" in action else "⚪"
-            lines.append(f"- {action_emoji} {sig_time} | {name}({code}) | {action} @ {price:.3f}")
+            action_text = "[买入]" if "BUY" in action else "[卖出]" if "SELL" in action else "[持仓]"
+            lines.append(f"- {action_text} {sig_time} | {name}({code}) | {action} @ {price:.3f}")
             if reason:
                 lines.append(f"  > {reason}")
     else:
@@ -226,7 +226,7 @@ def generate_report(data):
     # 阈值异常
     threshold_issues = data["threshold_issues"]
     if threshold_issues:
-        lines.append("## ⚠️ 阈值状态异常")
+        lines.append("## 阈值状态异常")
         for issue in threshold_issues:
             code, name, rule, status, notes, updated = issue
             lines.append(f"- {name}({code}) | 规则：{rule} | 状态：{status}")

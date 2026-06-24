@@ -153,6 +153,9 @@ class DataSourceManager:
     # 数据源优先级：curl 方案在前，Python OpenSSL 方案在后
     SOURCE_PRIORITY = ['eastmoney_curl', 'sina_curl', 'baostock', 'tushare', 'akshare']
     
+    # Zscaler SSL 拦截检测：curl HTTPS 返回 35 或 52 时说明被拦截
+    ZSCALER_DETECTED = None  # None=未检测, True=被拦截, False=正常
+    
     def __init__(self, config: Optional[Dict] = None):
         """
         初始化数据源管理器
@@ -164,6 +167,60 @@ class DataSourceManager:
         self.source_status = {source: True for source in self.SOURCE_PRIORITY}
         self.last_check_time = {source: 0 for source in self.SOURCE_PRIORITY}
         self.check_interval = 3600  # 1小时检查一次数据源可用性
+        self.use_cache_only = self._detect_offline_mode()
+    
+    def _detect_offline_mode(self) -> bool:
+        """
+        自动检测是否处于离线模式（所有外部数据源不可达）
+        
+        检测逻辑：
+        1. 环境变量 USE_CACHE_ONLY=true → 强制离线模式
+        2. 尝试 curl 访问一个 HTTPS 站点，若失败且 curl 返回 35 (SSL错误) 
+           或 52 (空响应)，则判定为 Zscaler 环境，自动进入离线模式
+        3. 所有检测仅执行一次，结果缓存到类变量 ZSCALER_DETECTED
+        
+        Returns:
+            bool: True=离线模式，False=在线模式
+        """
+        # 环境变量强制离线
+        if os.environ.get('USE_CACHE_ONLY', '').lower() == 'true':
+            logger.info("🌐 环境变量 USE_CACHE_ONLY=true，启用离线模式（仅使用本地缓存）")
+            return True
+        
+        # 已检测过，直接返回
+        if DataSourceManager.ZSCALER_DETECTED is not None:
+            return DataSourceManager.ZSCALER_DETECTED
+        
+        # 快速探测：用 curl 访问一个 HTTPS 站点
+        # Zscaler 拦截的典型 curl exit code：
+        #   28 = connection timeout（握手被拦截后超时）
+        #   35 = SSL/TLS handshake failed（证书不匹配）
+        #   52 = Empty reply from server（HTTP 被拦截）
+        #   60 = SSL certificate problem（证书验证失败）
+        ZSCALER_EXIT_CODES = (28, 35, 52, 60)
+        try:
+            result = subprocess.run(
+                ['curl', '-s', '-S', '--max-time', '5',
+                 'https://push2his.eastmoney.com'],
+                capture_output=True, timeout=10
+            )
+            if result.returncode in ZSCALER_EXIT_CODES:
+                # curl 失败，判定为 Zscaler 环境
+                logger.warning(
+                    f"⚠️ 检测到可能的 Zscaler SSL 拦截 "
+                    f"(curl exit={result.returncode})，"
+                    f"自动切换到离线模式（仅使用本地缓存）"
+                )
+                DataSourceManager.ZSCALER_DETECTED = True
+                self.source_status = {src: False for src in self.SOURCE_PRIORITY}
+                return True
+            else:
+                DataSourceManager.ZSCALER_DETECTED = False
+                return False
+        except Exception as e:
+            logger.warning(f"离线模式检测失败: {e}，默认使用在线模式")
+            DataSourceManager.ZSCALER_DETECTED = False
+            return False
         
     def fetch_data(self, symbol: str, start_date: str, end_date: str, 
                    adjust: str = "qfq") -> pd.DataFrame:
@@ -183,6 +240,26 @@ class DataSourceManager:
             RuntimeError: 所有数据源均失败
         """
         errors = []
+        
+        # 离线模式：跳过所有在线数据源，直接使用本地缓存
+        if self.use_cache_only:
+            logger.warning("🌐 离线模式已启用，跳过所有在线数据源，直接使用本地缓存...")
+            cached_df = self._fetch_from_local_cache(symbol, start_date, end_date)
+            if cached_df is not None and len(cached_df) > 0:
+                logger.info(
+                    f"✓ [离线模式] 从本地缓存获取 {len(cached_df)} 行数据 "
+                    f"(最新: {cached_df['date'].max().strftime('%Y-%m-%d')})"
+                )
+                return self._normalize_columns(cached_df)
+            else:
+                error_msg = (
+                    f"🌐 离线模式：本地缓存中无 {symbol} 的数据 "
+                    f"({start_date}~{end_date})\n"
+                    f"提示：请设置 USE_CACHE_ONLY=false 并修复网络后重试，"
+                    f"或手动放入 CSV 文件到 data/ 目录"
+                )
+                logger.error(error_msg)
+                raise RuntimeError(error_msg)
         
         for source in self.SOURCE_PRIORITY:
             # 跳过已知不可用的数据源（除非超过检查间隔）
@@ -217,7 +294,10 @@ class DataSourceManager:
         logger.warning("⚠️ 所有在线数据源均失败，尝试本地 CSV 缓存兜底...")
         cached_df = self._fetch_from_local_cache(symbol, start_date, end_date)
         if cached_df is not None and len(cached_df) > 0:
-            logger.info(f"✓ 从本地缓存成功获取 {len(cached_df)} 行数据（最后日期: {cached_df['date'].max()}")
+            logger.info(
+                f"✓ 从本地缓存成功获取 {len(cached_df)} 行数据 "
+                f"(最新: {cached_df['date'].max().strftime('%Y-%m-%d')})"
+            )
             return self._normalize_columns(cached_df)
         
         # 本地缓存也无数据，报告所有失败原因
@@ -416,10 +496,20 @@ class DataSourceManager:
         """
         检查所有数据源的健康状态
         
+        在离线模式（Zscaler 拦截）下，直接返回所有数据源不可用，
+        避免每次健康检查都等待超时。
+        
         Returns:
             Dict: {source_name: is_healthy}
         """
         results = {}
+        
+        # 离线模式：跳过实际检查，直接标记所有在线源为不可用
+        if self.use_cache_only:
+            logger.warning("🌐 离线模式：跳过在线数据源健康检查")
+            for source in self.SOURCE_PRIORITY:
+                results[source] = False
+            return results
         
         for source in self.SOURCE_PRIORITY:
             try:
@@ -436,7 +526,18 @@ class DataSourceManager:
                 logger.warning(f"数据源 {source} 健康检查失败: {e}")
                 results[source] = False
         
-        # 更新内存状态
+        # 在线数据源全部失败（且不是离线模式），
+        # 标记所有源为不可用，避免下次再重试
+        all_failed = not any(self.source_status.values())
+        if all_failed and not self.use_cache_only:
+            logger.warning(
+                "⚠️ 所有在线数据源均失败，"
+                "建议设置 USE_CACHE_ONLY=true 启用离线模式"
+            )
+            # 若连续失败，自动启用离线模式
+            DataSourceManager.ZSCALER_DETECTED = True
+            self.use_cache_only = True
+
         for src, ok in results.items():
             self.source_status[src] = ok
             if not ok:

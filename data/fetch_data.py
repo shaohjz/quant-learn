@@ -91,6 +91,8 @@ def save_to_csv(df: pd.DataFrame, symbol: str, name: str = ""):
 def main():
     """主函数"""
     # 解析命令行参数
+    offline_mode = '--offline' in sys.argv or '--offline' in ' '.join(sys.argv).lower()
+    
     if len(sys.argv) >= 4:
         stocks = {sys.argv[1]: ""}
         start_date = sys.argv[2]
@@ -101,11 +103,21 @@ def main():
         end_date = datetime.now().strftime("%Y%m%d")
         start_date = (datetime.now() - timedelta(days=730)).strftime("%Y%m%d")
 
+    # 若命令行指定了离线模式，设置环境变量
+    if offline_mode:
+        os.environ['USE_CACHE_ONLY'] = 'true'
+        print("🌐 离线模式已启用（仅使用本地缓存）")
+
+    # 重新检测离线模式（环境变量可能已变更）
+    data_source_manager.use_cache_only = data_source_manager._detect_offline_mode()
+
     print(f"=" * 60)
     print(f"A股日线数据获取（多数据源冗余）")
     print(f"时间范围: {start_date} ~ {end_date}")
     print(f"股票列表: {', '.join(f'{v}({k})' if v else k for k, v in stocks.items())}")
     print(f"数据源优先级: {' > '.join(DataSourceManager.SOURCE_PRIORITY)}")
+    if data_source_manager.use_cache_only:
+        print("🌐 当前模式: 离线（仅本地缓存）")
     print(f"=" * 60)
 
     # 显示数据源状态
@@ -121,11 +133,16 @@ def main():
             df = fetch_stock_data(symbol, start_date, end_date)
             save_to_csv(df, symbol, name)
             # 接口调用间隔，避免被限流
-            time.sleep(1)
+            if not data_source_manager.use_cache_only:
+                time.sleep(1)
         except Exception as e:
             print(f"  ✗ {name}({symbol}) 获取失败: {e}")
+            print(f"  提示: 可尝试 --offline 参数使用本地缓存")
 
     print(f"\n数据获取完成！")
+    if data_source_manager.use_cache_only:
+        print("🌐 离线模式运行完成（数据来自本地缓存）")
+        print("   如需在线更新，请修复网络/代理配置后重新运行")
 
 
 if __name__ == "__main__":

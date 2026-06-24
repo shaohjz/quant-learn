@@ -3,7 +3,7 @@
 ## 基本信息
 - **Bug ID**: BUG-009
 - **标题**: 数据严重滞后（最新仅到 2026-06-16）+ BaoStock 连接失败
-- **状态**: fixed
+- **状态**: deployed
 - **优先级**: P0 (S0)
 - **创建时间**: 2026-06-23 19:40
 - **创建人**: data-agent (每日数据检查)
@@ -60,6 +60,8 @@ python scripts/fetch_all_stocks.py
 - 2026-06-23 20:03: dev-manager 开始处理，状态 `in_progress`
 - 2026-06-23 20:08: 诊断完成 - 所有数据源均不可用（网络连接问题）
 - 2026-06-23 20:10: 修复完成 - 代码已修复（`data_source_manager.py`），新增 `fetch_all_stocks_v2.py`，待网络配置后可用
+- 2026-06-24 17:05: QA 验收通过，状态 `verified`（测试报告 TEST-2026-06-24-001.md）
+- 2026-06-24 18:38: 部署到 production，状态 `deployed`
 
 ## 附件
 - `pm/bugs/BUG-2026-06-23-data-stale.md` — 原始 Bug 报告

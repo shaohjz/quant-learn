@@ -3,7 +3,7 @@
 ## 基本信息
 - **Bug ID**: BUG-20260624-002
 - **标题**: daily_review.py 在 Windows 控制台中运行时出现 UnicodeEncodeError
-- **状态**: reopended
+- **状态**: deployed
 - **优先级**: P2
 - **创建时间**: 2026-06-24
 - **创建人**: dev-agent
@@ -55,6 +55,8 @@ Windows 控制台（cmd/PowerShell）默认使用 GBK 编码（代码页 936）�
 - 2026-06-24 17:10: QA 验收不通过（`generate_report()` 中仍有大量 emoji 未替换），状态 `reopened`（测试报告 TEST-2026-06-24-002.md）
 - 2026-06-24 18:01: PM Agent 指派 dev-agent 重新修复，状态 `in_progress`
 - 2026-06-24 18:05: 彻底修复完成（替换所有 emoji 为纯文本标记），自测通过，状态 `fixed`
+- 2026-06-24 18:06: QA 验收通过，状态 `verified`（测试报告 TEST-2026-06-24-003.md）
+- 2026-06-24 18:38: 部署到 production，状态 `deployed`
 
 ## 相关信息
 - 修复提交：dba3227（master 分支）

@@ -3,7 +3,7 @@
 ## 基本信息
 - **Bug ID**: BUG-20260624-003
 - **标题**: `generate_report()` 中仍有大量 Unicode 表情未替换，GBK 终端可能触发 UnicodeEncodeError
-- **状态**: open
+- **状态**: deployed
 - **优先级**: P2
 - **创建时间**: 2026-06-24
 - **创建人**: QA Agent (qa-agent)
@@ -68,6 +68,8 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
 - 2026-06-24 17:10: 由 QA Agent 创建（BUG-20260624-002 验收不通过衍生）
 - 2026-06-24 17:10: 状态 `open`，指派给 dev-agent
 - 2026-06-24 18:05: 随 BUG-20260624-002 一起修复完成（替换所有 emoji 为纯文本标记），状态 `fixed`
+- 2026-06-24 18:06: QA 验收通过，状态 `verified`（测试报告 TEST-2026-06-24-003.md）
+- 2026-06-24 18:38: 部署到 production，状态 `deployed`
 
 ---
 *END OF BUG REPORT*

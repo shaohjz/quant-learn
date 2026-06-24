@@ -1126,11 +1126,13 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                      cur_price, cur_price, _ACCOUNT_ID, code)
                 )
             else:
+                # REQ-059 修复：新建仓位时初始化 trailing_stop_price = cur_price * 0.92（默认-8%止损）
+                _init_trailing_stop = round(cur_price * 0.92, 2)
                 conn.execute(
                     "INSERT INTO sim_positions (account_id, stock_code, stock_name, quantity, avg_cost, current_price, market_value, pnl, pnl_pct, highest_price, trailing_stop_price) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, quantize_amount(qty * cur_price),
-                     0.0, 0.0, cur_price, None)
+                     0.0, 0.0, cur_price, _init_trailing_stop)
                 )
             # 写入成交记录
             trade_date = datetime.now().strftime('%Y-%m-%d')

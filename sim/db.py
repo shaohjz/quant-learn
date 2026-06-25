@@ -979,6 +979,50 @@ def detect_cash_jump(
         conn.close()
 
 
+def get_account_assets(account_id: int = 1, db_path: str | None = None) -> dict:
+    """
+    统一的总资产查询入口。
+    
+    所有读取总资产的地方都应该调这个函数，而不是自己写 SQL。
+    返回: {cash, total_value, initial_cash, account_name, updated_at}
+    
+    参数:
+        account_id: 账户 ID，默认 1
+        db_path: 数据库路径，默认使用 get_conn() 的路径
+    """
+    if db_path:
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+    else:
+        conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT account_name, initial_cash, cash, total_value, updated_at "
+            "FROM sim_account WHERE id = ?",
+            (account_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return {
+                "account_name": None,
+                "initial_cash": 0,
+                "cash": 0,
+                "total_value": 0,
+                "updated_at": None,
+            }
+        return {
+            "account_name": row["account_name"],
+            "initial_cash": row["initial_cash"],
+            "cash": row["cash"],
+            "total_value": row["total_value"],
+            "updated_at": row["updated_at"],
+        }
+    finally:
+        conn.close()
+
+
 def format_cash_jump_warning(jump: dict) -> str:
     """将跳变检测结果格式化为人类可读的警告文本。"""
     icon = "🚨" if jump["severity"] == "error" else "⚠️"
@@ -992,5 +1036,5 @@ def format_cash_jump_warning(jump: dict) -> str:
         f"- 阈值: {jump['threshold_pct']*100:.0f}%\n"
         f"\n"
         f"> 跨日收益率对比已暂停。请确认资金变化原因后，\n"
-        f"> 运行 `python -c \"from sim.db import record_account_event; ...\"` 记录事件。"
+        f"运行 `python -c \"from sim.db import record_account_event; ...\"` 记录事件。"
     )

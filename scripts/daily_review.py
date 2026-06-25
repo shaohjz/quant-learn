@@ -2,6 +2,7 @@
 """理财师每日复盘脚本 - 由 cron 自动触发"""
 import sqlite3
 import os
+import sys
 from datetime import datetime, date
 import json
 
@@ -9,6 +10,10 @@ ROOT = "C:/Users/Administrator/.openclaw/workspace/quant-learn"
 SIM_DB = f"{ROOT}/data/sim_live_mirror.db"
 PM_DB = f"{ROOT}/data/pm.db"
 TODAY = date.today().strftime("%Y-%m-%d")
+
+# 统一从 sim/db.py 读取总资产，不自己写 SQL
+sys.path.insert(0, ROOT)
+from sim.db import get_account_assets
 
 def get_connection(db_path):
     return sqlite3.connect(db_path)
@@ -18,14 +23,12 @@ def analyze_portfolio():
     conn = get_connection(SIM_DB)
     cursor = conn.cursor()
 
-    # 1. 账户概况
-    cursor.execute("""
-        SELECT account_name, cash, total_value, updated_at
-        FROM sim_account
-        WHERE id = 1
-    """)
-    account = cursor.fetchone()
-    account_name, cash, total_value, acct_updated = account if account else (None, 0, 0, None)
+    # 1. 账户概况 — 统一入口
+    acct_data = get_account_assets(account_id=1, db_path=SIM_DB)
+    account_name = acct_data["account_name"]
+    cash = acct_data["cash"]
+    total_value = acct_data["total_value"]
+    acct_updated = acct_data["updated_at"]
 
     # 2. 当前持仓（quantity > 0）
     cursor.execute("""
@@ -39,6 +42,7 @@ def analyze_portfolio():
     positions = cursor.fetchall()
 
     # 3. 今日 NAV（最新一日）
+    # 优先从 sim_account 取当前总资产（实时准确），再从 sim_daily_nav 取历史收益率
     cursor.execute("""
         SELECT trade_date, total_value, cash, market_value, daily_return, cumulative_return
         FROM sim_daily_nav
@@ -47,6 +51,10 @@ def analyze_portfolio():
         LIMIT 1
     """)
     nav = cursor.fetchone()
+    # 如果 sim_account 的总资产与 nav 不一致，以 sim_account 为准
+    if nav and abs(nav[1] - total_value) > 0.01:
+        # 重建 nav 元组，用 sim_account 的实时值
+        nav = (nav[0], total_value, cash, nav[3], nav[4], nav[5])
 
     # 4. 最近止损/止盈成交（最近7天）
     cursor.execute("""
@@ -146,21 +154,19 @@ def generate_report(data):
     lines.append(f"# 理财师每日复盘 | {TODAY}")
     lines.append("")
 
-    # 账户概况
+    # 账户概况 — 总资产以 sim_account 实时值为准
     acct = data["account"]
     nav = data["nav"]
     lines.append("## 账户概况")
+    lines.append(f"- 日期：{TODAY}")
+    lines.append(f"- 总资产：**{acct['total_value']:.2f}** 元")
+    lines.append(f"- 可用现金：{acct['cash']:.2f} 元")
     if nav:
-        trade_date, total_val, cash, mkt_val, daily_ret, cum_ret = nav
-        lines.append(f"- 日期：{trade_date}")
-        lines.append(f"- 总资产：**{total_val:.2f}** 元")
-        lines.append(f"- 持仓市值：{mkt_val:.2f} 元")
-        lines.append(f"- 可用现金：{cash:.2f} 元")
-        lines.append(f"- 今日收益：{daily_ret*100:+.2f}%")
-        lines.append(f"- 累计收益：{cum_ret*100:+.2f}%")
-    else:
-        lines.append(f"- 总资产：{acct['total_value']:.2f} 元")
-        lines.append(f"- 可用现金：{acct['cash']:.2f} 元")
+        _, _, _, _, daily_ret, cum_ret = nav
+        if daily_ret is not None:
+            lines.append(f"- 今日收益：{daily_ret*100:+.2f}%")
+        if cum_ret is not None:
+            lines.append(f"- 累计收益：{cum_ret*100:+.2f}%")
     lines.append("")
 
     # 持仓明细

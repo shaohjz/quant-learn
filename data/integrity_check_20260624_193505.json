@@ -1,0 +1,603 @@
+{
+  "check_time": "2026-06-24T19:35:05.738248",
+  "database": {},
+  "csv_files": [
+    {
+      "code": "000301",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "000333",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "000708",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "000858",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "000967",
+      "rows": 485,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-06-17",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "001896",
+      "rows": 594,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-01-02",
+      "last_date": "2026-06-18",
+      "has_today": false
+    },
+    {
+      "code": "002067",
+      "rows": 594,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-01-02",
+      "last_date": "2026-06-18",
+      "has_today": false
+    },
+    {
+      "code": "002256",
+      "rows": 485,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-06-17",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002405",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002415",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002453",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002475",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002594",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002906",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "002920",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "300059",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "300124",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "300750",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "300760",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "301179",
+      "rows": 594,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-01-02",
+      "last_date": "2026-06-18",
+      "has_today": false
+    },
+    {
+      "code": "600036",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600130",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600276",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600310",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600330",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600519",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600563",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600703",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "600887",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "601012",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "601318",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "601728",
+      "rows": 594,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-01-02",
+      "last_date": "2026-06-18",
+      "has_today": false
+    },
+    {
+      "code": "603013",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "603260",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    },
+    {
+      "code": "603290",
+      "rows": 500,
+      "columns": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "null_count": 0,
+      "first_date": "2024-05-24",
+      "last_date": "2026-06-16",
+      "has_today": false
+    }
+  ],
+  "issues": [
+    "000301: 缺少今天(2026-06-24)的数据",
+    "000333: 缺少今天(2026-06-24)的数据",
+    "000708: 缺少今天(2026-06-24)的数据",
+    "000858: 缺少今天(2026-06-24)的数据",
+    "000967: 缺少今天(2026-06-24)的数据",
+    "001896: 缺少今天(2026-06-24)的数据",
+    "002067: 缺少今天(2026-06-24)的数据",
+    "002256: 缺少今天(2026-06-24)的数据",
+    "002405: 缺少今天(2026-06-24)的数据",
+    "002415: 缺少今天(2026-06-24)的数据",
+    "002453: 缺少今天(2026-06-24)的数据",
+    "002475: 缺少今天(2026-06-24)的数据",
+    "002594: 缺少今天(2026-06-24)的数据",
+    "002906: 缺少今天(2026-06-24)的数据",
+    "002920: 缺少今天(2026-06-24)的数据",
+    "300059: 缺少今天(2026-06-24)的数据",
+    "300124: 缺少今天(2026-06-24)的数据",
+    "300750: 缺少今天(2026-06-24)的数据",
+    "300760: 缺少今天(2026-06-24)的数据",
+    "301179: 缺少今天(2026-06-24)的数据",
+    "600036: 缺少今天(2026-06-24)的数据",
+    "600130: 缺少今天(2026-06-24)的数据",
+    "600276: 缺少今天(2026-06-24)的数据",
+    "600310: 缺少今天(2026-06-24)的数据",
+    "600330: 缺少今天(2026-06-24)的数据",
+    "600519: 缺少今天(2026-06-24)的数据",
+    "600563: 缺少今天(2026-06-24)的数据",
+    "600703: 缺少今天(2026-06-24)的数据",
+    "600887: 缺少今天(2026-06-24)的数据",
+    "601012: 缺少今天(2026-06-24)的数据",
+    "601318: 缺少今天(2026-06-24)的数据",
+    "601728: 缺少今天(2026-06-24)的数据",
+    "603013: 缺少今天(2026-06-24)的数据",
+    "603260: 缺少今天(2026-06-24)的数据",
+    "603290: 缺少今天(2026-06-24)的数据"
+  ]
+}

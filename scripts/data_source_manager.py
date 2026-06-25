@@ -21,12 +21,22 @@ class CurlHttpFetcher:
     """使用 curl (Schannel/Windows 原生 SSL) 绕过 Python OpenSSL 握手问题"""
 
     @staticmethod
-    def _curl_get(url: str, timeout: int = 10, encoding: str = "utf-8") -> str:
-        """使用 curl 获取 URL 内容，返回解码后的文本"""
-        result = subprocess.run(
-            ["curl", "-s", "-S", "--max-time", str(timeout), "--compressed", url],
-            capture_output=True, timeout=timeout + 5
-        )
+    def _curl_get(url: str, timeout: int = 10, encoding: str = "utf-8",
+                 headers: Optional[Dict[str, str]] = None) -> str:
+        """使用 curl 获取 URL 内容，返回解码后的文本
+        
+        Args:
+            url: 目标 URL
+            timeout: 超时时间（秒）
+            encoding: 预期编码
+            headers: 可选 HTTP headers（如 User-Agent）
+        """
+        cmd = ["curl", "-s", "-S", "--max-time", str(timeout), "--compressed"]
+        if headers:
+            for k, v in headers.items():
+                cmd.extend(["-H", f"{k}: {v}"])
+        cmd.append(url)
+        result = subprocess.run(cmd, capture_output=True, timeout=timeout + 5)
         if result.returncode != 0:
             raise RuntimeError(f"curl 失败 (exit={result.returncode}): {result.stderr.decode('utf-8', errors='replace')[:200]}")
         raw = result.stdout
@@ -48,8 +58,12 @@ class CurlHttpFetcher:
         if not symbols:
             return {}
         url = "http://hq.sinajs.cn/list=" + ",".join(symbols)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "http://finance.sina.com.cn",
+        }
         try:
-            text = CurlHttpFetcher._curl_get(url, timeout=8, encoding="gbk")
+            text = CurlHttpFetcher._curl_get(url, timeout=8, encoding="gbk", headers=headers)
             result = {}
             for line in text.strip().split("\n"):
                 if "hq_str_" in line:
@@ -119,8 +133,12 @@ class CurlHttpFetcher:
             f"?symbol={market}{symbol}&type=day"
             f"&datalen=1023&begin={start_date}&end={end_date}"
         )
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "http://finance.sina.com.cn",
+        }
         try:
-            text = CurlHttpFetcher._curl_get(url, timeout=15, encoding="gbk")
+            text = CurlHttpFetcher._curl_get(url, timeout=15, encoding="gbk", headers=headers)
             data = json.loads(text)
             if not data:
                 return None
@@ -142,6 +160,64 @@ class CurlHttpFetcher:
             return None
 
 
+
+    @staticmethod
+
+    @staticmethod
+    def fetch_baidu_realtime(symbols: List[str]) -> Dict[str, dict]:
+        """
+        百度股市通实时行情（HTTP，无 SSL 问题）
+        
+        接口：http://qt.gtimg.cn/q=sh600330,sz000001
+        已验证：该接口在腾讯内网环境可正常访问。
+        
+        返回格式（字段以 ~ 分隔）：
+        字段3=当前价, 字段4=今开, 字段2=昨日收盘, 字段5=最高, 字段6=最低
+        
+        Args:
+            symbols: 股票代码列表（如 ["600330", "000001"]）
+            
+        Returns:
+            Dict: {symbol: {"price": float, "open": float, ...}}
+        """
+        if not symbols:
+            return {}
+        # 构造查询字符串：sh600330,sz000001
+        q_symbols = []
+        for s in symbols:
+            market = "sh" if s.startswith("6") else "sz"
+            q_symbols.append(f"{market}{s}")
+        url = f"http://qt.gtimg.cn/q=" + ",".join(q_symbols)
+        try:
+            text = CurlHttpFetcher._curl_get(url, timeout=8, encoding="gbk")
+            result = {}
+            for line in text.strip().split("\n"):
+                if not line or "v_" not in line:
+                    continue
+                # 格式: v_sh600330="1~天通股份~600330~35.60~32.36~..."
+                # 提取 = 后面的引号内容
+                if '="' not in line:
+                    continue
+                key = line.split("=")[0].replace("v_", "").strip()
+                val = line.split('="')[1].rstrip('";')
+                fields = val.split("~")
+                if len(fields) >= 6:
+                    try:
+                        result[key] = {
+                            "name": fields[1],
+                            "close_yesterday": float(fields[2]) if fields[2] else 0,
+                            "price": float(fields[3]) if fields[3] else 0,
+                            "open": float(fields[4]) if fields[4] else 0,
+                            "high": float(fields[5]) if fields[5] else 0,
+                            "low": float(fields[6]) if fields[6] else 0,
+                        }
+                    except (ValueError, IndexError) as e:
+                        logger.warning(f"解析百度实时行情字段失败: {fields[:10]} - {e}")
+            return result
+        except Exception as e:
+            logger.warning(f"百度实时行情失败: {e}")
+            return {}
+
 class DataSourceManager:
     """数据源管理器 - 支持多数据源冗余
     
@@ -151,7 +227,7 @@ class DataSourceManager:
     """
 
     # 数据源优先级：curl 方案在前，Python OpenSSL 方案在后
-    SOURCE_PRIORITY = ['eastmoney_curl', 'sina_curl', 'baostock', 'tushare', 'akshare']
+    SOURCE_PRIORITY = ['baostock', 'sina_curl', 'eastmoney_curl']
     
     # Zscaler SSL 拦截检测：curl HTTPS 返回 35 或 52 时说明被拦截
     ZSCALER_DETECTED = None  # None=未检测, True=被拦截, False=正常
@@ -308,32 +384,14 @@ class DataSourceManager:
     def _fetch_from_source(self, source: str, symbol: str, start_date: str, 
                           end_date: str, adjust: str) -> Optional[pd.DataFrame]:
         """从指定数据源获取数据"""
-        if source == 'akshare':
-            return self._fetch_from_akshare(symbol, start_date, end_date, adjust)
-        elif source == 'baostock':
+        if source == 'baostock':
             return self._fetch_from_baostock(symbol, start_date, end_date, adjust)
-        elif source == 'tushare':
-            return self._fetch_from_tushare(symbol, start_date, end_date, adjust)
         elif source == 'eastmoney_curl':
             return CurlHttpFetcher.fetch_eastmoney_kline(symbol, start_date, end_date, adjust)
         elif source == 'sina_curl':
             return CurlHttpFetcher.fetch_sina_kline(symbol, start_date, end_date)
         else:
             raise ValueError(f"未知数据源: {source}")
-    
-    def _fetch_from_akshare(self, symbol: str, start_date: str, 
-                           end_date: str, adjust: str) -> pd.DataFrame:
-        """从 AKShare 获取数据"""
-        import akshare as ak
-        
-        df = ak.stock_zh_a_hist(
-            symbol=symbol,
-            period="daily",
-            start_date=start_date,
-            end_date=end_date,
-            adjust=adjust,
-        )
-        return df
     
     def _fetch_from_baostock(self, symbol: str, start_date: str,
                              end_date: str, adjust: str) -> pd.DataFrame:
@@ -375,37 +433,6 @@ class DataSourceManager:
             return None
             
         df = pd.DataFrame(rows, columns=["date", "open", "high", "low", "close", "volume"])
-        return df
-    
-    def _fetch_from_tushare(self, symbol: str, start_date: str,
-                            end_date: str, adjust: str) -> pd.DataFrame:
-        """从 Tushare 获取数据"""
-        try:
-            import tushare as ts
-        except ImportError:
-            raise RuntimeError("Tushare 未安装，请执行: pip install tushare")
-        
-        # 检查 token
-        token = self.config.get('tushare_token') or os.environ.get('TUSHARE_TOKEN')
-        if not token:
-            raise RuntimeError("Tushare token 未配置，请在 config.yaml 中配置 tushare_token")
-        
-        # 初始化
-        ts.set_token(token)
-        pro = ts.pro_api()
-        
-        # 转换日期格式
-        sd = f"{start_date[:4]}{start_date[4:6]}{start_date[6:]}"
-        ed = f"{end_date[:4]}{end_date[4:6]}{end_date[6:]}"
-        
-        # 获取日线数据
-        df = pro.daily(ts_code=f"{symbol}.SZ" if symbol.startswith(('0', '3')) else f"{symbol}.SH",
-                       start_date=sd, end_date=ed)
-        
-        if df is not None and len(df) > 0:
-            # Tushare 返回的是倒序，需要反转
-            df = df.sort_values('trade_date').reset_index(drop=True)
-            
         return df
     
     def _normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:

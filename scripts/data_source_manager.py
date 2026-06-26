@@ -126,12 +126,16 @@ class CurlHttpFetcher:
         """
         新浪财经 K 线接口（HTTP，无 SSL）
         http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData
+        
+        注意：该接口不支持 begin/end 参数，使用 scale+datalen 获取最近 N 条数据，
+        然后在本地按日期过滤。
+        scale=240 表示日线（240分钟），datalen=1023 获取足够多的历史数据。
         """
         market = "sh" if symbol.startswith("6") else "sz"
+        # 新浪接口正确参数：scale=240（日线），不支持 begin/end
         url = (
             f"http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
-            f"?symbol={market}{symbol}&type=day"
-            f"&datalen=1023&begin={start_date}&end={end_date}"
+            f"?symbol={market}{symbol}&scale=240&datalen=1023"
         )
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -140,7 +144,8 @@ class CurlHttpFetcher:
         try:
             text = CurlHttpFetcher._curl_get(url, timeout=15, encoding="gbk", headers=headers)
             data = json.loads(text)
-            if not data:
+            if not data or ("__ERROR" in data and data["__ERROR"] == 1):
+                logger.warning(f"新浪 K 线接口返回错误: {data.get('__ERRORMSG', '未知错误') if isinstance(data, dict) else '空数据'}")
                 return None
             rows = []
             for item in data:
@@ -154,6 +159,13 @@ class CurlHttpFetcher:
                 })
             df = pd.DataFrame(rows)
             df["date"] = pd.to_datetime(df["date"])
+            # 本地按日期过滤
+            start_dt = pd.to_datetime(start_date)
+            end_dt = pd.to_datetime(end_date)
+            df = df[(df["date"] >= start_dt) & (df["date"] <= end_dt)]
+            if df.empty:
+                logger.warning(f"新浪 K 线本地过滤后无数据: {symbol} ({start_date}~{end_date})")
+                return None
             return df
         except Exception as e:
             logger.warning(f"新浪 K 线失败 {symbol}: {e}")
@@ -226,7 +238,8 @@ class DataSourceManager:
     - 备选 Python 原生方案（baostock/akshare/tushare）
     """
 
-    # 数据源优先级：curl 方案在前，Python OpenSSL 方案在后
+    # 数据源优先级：baostock 最稳定（已验证可用），sina_curl 为 HTTP 无 SSL 问题
+    # eastmoney_curl 在内网环境有 SSL 问题，保留但会失败降级到 baostock/sina_curl
     SOURCE_PRIORITY = ['baostock', 'sina_curl', 'eastmoney_curl']
     
     # Zscaler SSL 拦截检测：curl HTTPS 返回 35 或 52 时说明被拦截

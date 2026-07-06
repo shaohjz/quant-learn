@@ -126,9 +126,33 @@ def _has_today_buy(conn: sqlite3.Connection, code: str) -> bool:
     return row is not None
 
 
+def _has_today_sell(conn: sqlite3.Connection, code: str) -> bool:
+    """BUG-011: 同一账户/股票/交易日是否已有 SELL 成交。
+
+    同日反向交易防御：若今日已卖出，则当日不允许再买入同一股票，
+    防止 buy_strong + trend_break 同日矛盾信号导致自成交/瞬时反向。
+    """
+    row = conn.execute(
+        """
+        SELECT 1 FROM sim_trades
+         WHERE account_id=? AND stock_code=? AND direction='SELL' AND trade_date=?
+         LIMIT 1
+        """,
+        (_ACCOUNT_ID, code, _today_str()),
+    ).fetchone()
+    return row is not None
+
+
 def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
                            allowed: int, reason: str):
-    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。"""
+    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。
+
+    TASK-20260702-2004-005 修复：添加去重/限流机制，避免冷静期产生大量无效日志。
+    - 对于 daily_buy_budget_guard / daily_new_position_limit 等风控拒绝类型，
+      同一个 (account_id, stock_code, trade_date, decision_type) 只保留一条记录。
+    - 对于 buy / trend_break_buy 等允许类型，每次写入前检查 5 分钟内是否有同天同股同类型的记录，
+      如有则跳过（避免同一信号批次内重复写）。
+    """
     try:
         conn = sqlite3.connect(_DB_PATH)
         conn.execute(
@@ -144,6 +168,42 @@ def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
             ")"
         )
         cols = {r[1] for r in conn.execute("PRAGMA table_info(review_decisions)").fetchall()}
+
+        # ── TASK-20260702-2004-005: 去重/限流逻辑 ──
+        today = _today_str()
+
+        if allowed == 0:
+            # 风控拒绝类型：同一 (account_id, stock_code, trade_date, decision_type) 只保留一条
+            existing = conn.execute(
+                "SELECT 1 FROM review_decisions "
+                "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
+                "LIMIT 1",
+                (account_id, stock_code, today, decision_type),
+            ).fetchone()
+            if existing:
+                logger.debug(
+                    "_write_review_decision 去重跳过: %s/%s/%s/%s (同天已有记录)",
+                    stock_code, today, decision_type, "拒绝"
+                )
+                conn.close()
+                return
+        else:
+            # 允许类型（buy/trend_break_buy）：5 分钟内同天同股同类型不去重复写入
+            existing = conn.execute(
+                "SELECT 1 FROM review_decisions "
+                "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
+                "  AND created_at >= datetime('now', 'localtime', '-5 minutes') "
+                "LIMIT 1",
+                (account_id, stock_code, today, decision_type),
+            ).fetchone()
+            if existing:
+                logger.debug(
+                    "_write_review_decision 去重跳过: %s/%s/%s/%s (5分钟内已有记录)",
+                    stock_code, today, decision_type, "通过"
+                )
+                conn.close()
+                return
+
         if "allowed" in cols:
             conn.execute(
                 "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
@@ -185,6 +245,322 @@ def _load_daily_buy_controls() -> tuple[float, float, int]:
 
 
 MAX_DAILY_BUY_AMOUNT, MAX_DAILY_BUY_PCT, BUY_COOLDOWN_MINUTES = _load_daily_buy_controls()
+
+
+# ============================================================
+# TASK-20260702-2004-004: 买入后止损保护期
+#   问题：buy_strong 买入后同日 trend_break 止损卖出
+#   解决：买入后 N 分钟内不触发 trend_break/stop_loss 等止损信号
+#   不改策略参数，只在执行层面加保护
+# ============================================================
+def _load_post_buy_protection() -> tuple[int, float]:
+    """从 config.yaml 读取买入后保护参数。
+
+    返回 (protect_minutes, protect_loss_pct)：
+    - protect_minutes: 买入后多长时间内不触发止损（默认 120 分钟）
+    - protect_loss_pct: 保护期内允许的最大亏损百分比，超过此值仍触发止损
+      设为 0 或负数表示禁止止损；默认 -15%（即亏损超过15%才触发）
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        pb = risk.get('post_buy_protection') or {}
+        protect_minutes = int(pb.get('protect_minutes', 120))
+        protect_loss_pct = float(pb.get('protect_loss_pct', -15.0))
+        return protect_minutes, protect_loss_pct
+    except Exception:
+        return 120, -15.0
+
+
+POST_BUY_PROTECT_MINUTES, POST_BUY_PROTECT_LOSS_PCT = _load_post_buy_protection()
+
+# 受保护期内抑制的信号类型
+_POST_BUY_SUPPRESS_LEVELS = frozenset({
+    'stop_loss', 'stop_loss_tight', 'soft_stop', 'hard_stop', 'deep_drop',
+    'trend_break', 'trend_break_warn',
+})
+
+
+# ============================================================
+# REQ-092: 买入前估值过滤
+#   在买入信号执行前，结合PE(TTM)/PB/估值分位等指标过滤信号
+#   避免在估值过高时买入
+#   配置来源: config.local.yaml → valuation_filter
+# ============================================================
+def _load_valuation_filter_config() -> dict:
+    """REQ-092: 从 config.yaml (merged with config.local.yaml) 读取估值过滤配置。
+
+    返回 dict，包含：
+    - enabled: 是否启用
+    - max_pe_ttm: PE(TTM)绝对上限
+    - max_pe_industry_ratio: PE/行业均值倍数上限
+    - max_pe_percentile: PE历史分位上限(%)
+    - max_pb: PB绝对上限
+    - min_pb: PB下限
+    - skip_negative_pe: 亏损股是否跳过过滤
+    - cache_ttl_seconds: 缓存时间(秒)
+    - timeout_seconds: API超时(秒)
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        local_file = ROOT / 'config.local.yaml'
+        if local_file.exists():
+            local_cfg = yaml.safe_load(local_file.read_text(encoding='utf-8')) or {}
+            _deep_merge(cfg, local_cfg)
+        vf = (cfg.get('valuation_filter') or {})
+        return {
+            'enabled': bool(vf.get('enabled', True)),
+            'max_pe_ttm': float(vf.get('max_pe_ttm', 100.0)),
+            'max_pe_industry_ratio': float(vf.get('max_pe_industry_ratio', 2.0)),
+            'max_pe_percentile': float(vf.get('max_pe_percentile', 80.0)),
+            'max_pb': float(vf.get('max_pb', 10.0)),
+            'min_pb': float(vf.get('min_pb', 0.0)),
+            'skip_negative_pe': bool(vf.get('skip_negative_pe', True)),
+            'cache_ttl_seconds': int(vf.get('cache_ttl_seconds', 600)),
+            'timeout_seconds': int(vf.get('timeout_seconds', 10)),
+        }
+    except Exception as e:
+        logger.warning(f'_load_valuation_filter_config 失败，使用默认配置: {e}')
+        return {
+            'enabled': True,
+            'max_pe_ttm': 100.0,
+            'max_pe_industry_ratio': 2.0,
+            'max_pe_percentile': 80.0,
+            'max_pb': 10.0,
+            'min_pb': 0.0,
+            'skip_negative_pe': True,
+            'cache_ttl_seconds': 600,
+            'timeout_seconds': 10,
+        }
+
+
+def _deep_merge(base: dict, override: dict) -> dict:
+    """递归合并两个 dict（override 覆盖 base）。"""
+    for k, v in override.items():
+        if k in base and isinstance(base[k], dict) and isinstance(v, dict):
+            _deep_merge(base[k], v)
+        else:
+            base[k] = v
+    return base
+
+
+# 估值缓存
+_VALUATION_CACHE: dict[str, tuple[float, dict]] = {}  # code → (timestamp, {pe_ttm, pb, ...})
+
+
+def _get_tencent_valuation(code: str, timeout: int = 10) -> dict | None:
+    """REQ-092: 通过腾讯财经 API 获取个股 PE(TTM)/PB/市值等估值数据。
+
+    数据来源：腾讯财经个股行情（§1.2 of a-stock-data SKILL）
+    返回: {'name', 'price', 'pe_ttm', 'pb', 'market_cap', 'amount'} 或 None
+    """
+    import time as _time
+    import requests as _requests
+
+    now_ts = _time.time()
+    cfg = _load_valuation_filter_config()
+    ttl = cfg.get('cache_ttl_seconds', 600)
+
+    # 检查缓存
+    cached = _VALUATION_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < ttl:
+        return cached[1]
+
+    try:
+        # 确定交易所前缀：6=上海，0/3=深圳，8/4=北交所
+        prefix = 'sh' if code.startswith('6') else ('sz' if code.startswith(('0', '3')) else ('bj' if code.startswith(('8', '4')) else 'sh'))
+        url = f'https://qt.gtimg.cn/q={prefix}{code}'
+        resp = _requests.get(url, timeout=timeout, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'Referer': 'https://finance.qq.com/',
+        })
+        resp.encoding = 'gbk'
+        text = resp.text
+
+        # 腾讯格式: v_sh600519="1~贵州茅台~...~pe_ttm~pb~..."
+        if '~' not in text or text.strip().startswith('pv_none'):
+            logger.warning(f'_get_tencent_valuation({code}): 无数据返回')
+            _VALUATION_CACHE[code] = (now_ts, None)
+            return None
+
+        parts = text.split('~')
+        if len(parts) < 47:
+            logger.warning(f'_get_tencent_valuation({code}): 返回数据字段不足')
+            _VALUATION_CACHE[code] = (now_ts, None)
+            return None
+
+        result = {
+            'name': parts[1] if len(parts) > 1 else '',
+            'price': float(parts[3]) if parts[3].replace('.', '').replace('-', '').isdigit() else None,
+            'pe_ttm': float(parts[39]) if len(parts) > 39 and parts[39].replace('.', '').replace('-', '').isdigit() else None,
+            'pb': float(parts[46]) if len(parts) > 46 and parts[46].replace('.', '').replace('-', '').isdigit() else None,
+            'market_cap': float(parts[45]) if len(parts) > 45 and parts[45].replace('.', '').replace('-', '').isdigit() else None,
+            'amount': float(parts[37]) if len(parts) > 37 and parts[37].replace('.', '').replace('-', '').isdigit() else None,
+        }
+        _VALUATION_CACHE[code] = (now_ts, result)
+        return result
+    except Exception as e:
+        logger.warning(f'_get_tencent_valuation({code}) 异常: {e}')
+        _VALUATION_CACHE[code] = (now_ts, None)
+        return None
+
+
+def _check_valuation_filter(code: str, rule: dict) -> tuple[bool, str, dict]:
+    """REQ-092: 买入前估值过滤检查。
+
+    通过腾讯财经 API 获取 PE(TTM)/PB，按配置规则判断估值是否合理。
+
+    返回 (allowed, reason, valuation_data)：
+    - allowed: True=估值合理可买入, False=估值过高拒绝
+    - reason: 过滤原因说明
+    - valuation_data: 估值数据 dict，供 review_decisions 记录
+
+    过滤规则（按优先级）：
+    1. 配置 disabled → 放行
+    2. PE为负(亏损) 且 skip_negative_pe=true → 放行
+    3. PE > max_pe_ttm → 拒绝
+    4. PB > max_pb → 拒绝
+    5. PB < min_pb → 可选拒绝（破净检查）
+    6. （PE分位/行业对比功能后续迭代实现）
+    7. 数据获取失败 → 放行（不让数据问题阻断交易）
+    """
+    cfg = _load_valuation_filter_config()
+    if not cfg.get('enabled', True):
+        return True, '估值过滤已关闭', {}
+
+    # 获取估值数据
+    val = _get_tencent_valuation(code, timeout=cfg.get('timeout_seconds', 10))
+    if val is None:
+        # 数据获取失败，放行（不因数据问题阻断）
+        return True, '估值数据获取失败，放行', {'status': 'data_unavailable'}
+
+    pe_ttm = val.get('pe_ttm')
+    pb = val.get('pb')
+    stock_name = val.get('name', code)
+    cur_price = val.get('price')
+    market_cap = val.get('market_cap')
+
+    valuation_data = {
+        'pe_ttm': pe_ttm,
+        'pb': pb,
+        'price': cur_price,
+        'market_cap': market_cap,
+        'name': stock_name,
+        'status': 'checking',
+    }
+
+    # Rule 1: PE为负（亏损），且配置允许跳过
+    if pe_ttm is not None and pe_ttm <= 0:
+        if cfg.get('skip_negative_pe', True):
+            reason = f'PE为负(亏损): PE={pe_ttm}，配置允许跳过估值过滤'
+            valuation_data['status'] = 'negative_pe_skipped'
+            return True, reason, valuation_data
+        else:
+            reason = f'PE为负(亏损): PE={pe_ttm}，估值过滤拒绝（配置不允许亏损股）'
+            valuation_data['status'] = 'negative_pe_rejected'
+            return False, reason, valuation_data
+
+    # Rule 2: PE过高
+    if pe_ttm is not None:
+        max_pe = cfg.get('max_pe_ttm', 100.0)
+        if pe_ttm > max_pe:
+            reason = f'PE过高: PE(TTM)={pe_ttm:.1f} > {max_pe}，估值过滤拒绝'
+            valuation_data['status'] = 'pe_too_high'
+            return False, reason, valuation_data
+
+    # Rule 3: PB过高
+    if pb is not None:
+        max_pb = cfg.get('max_pb', 10.0)
+        if pb > max_pb:
+            reason = f'PB过高: PB={pb:.2f} > {max_pb}，估值过滤拒绝'
+            valuation_data['status'] = 'pb_too_high'
+            return False, reason, valuation_data
+
+    # Rule 4: PB过低（破净检查，默认关闭 min_pb=0）
+    min_pb = cfg.get('min_pb', 0.0)
+    if min_pb > 0 and pb is not None and pb < min_pb:
+        reason = f'PB过低(破净): PB={pb:.2f} < {min_pb}，估值过滤拒绝'
+        valuation_data['status'] = 'pb_too_low'
+        return False, reason, valuation_data
+
+    # 通过所有检查
+    pe_str = f'{pe_ttm:.1f}' if pe_ttm is not None else 'N/A'
+    pb_str = f'{pb:.2f}' if pb is not None else 'N/A'
+    reason = f'估值合理: PE(TTM)={pe_str}, PB={pb_str}'
+    valuation_data['status'] = 'passed'
+    return True, reason, valuation_data
+
+
+def _get_last_buy_time(conn: sqlite3.Connection, code: str, account_id: int) -> datetime | None:
+    """获取某股票在该账户最后一次 BUY 成交的时间。"""
+    row = conn.execute(
+        """
+        SELECT trade_date, trade_time FROM sim_trades
+         WHERE account_id=? AND stock_code=? AND direction='BUY'
+         ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC
+         LIMIT 1
+        """,
+        (account_id, code),
+    ).fetchone()
+    if not row:
+        return None
+    return _parse_trade_datetime(row[0], row[1])
+
+
+def _get_position_avg_cost(conn: sqlite3.Connection, code: str, account_id: int) -> float:
+    """获取持仓平均成本。"""
+    row = conn.execute(
+        "SELECT avg_cost FROM sim_positions "
+        "WHERE account_id=? AND stock_code=? AND quantity > 0",
+        (account_id, code),
+    ).fetchone()
+    return float(row[0]) if row else 0.0
+
+
+def _is_protected_by_post_buy(
+    conn: sqlite3.Connection, code: str, level: str, cur_price: float,
+    account_id: int | None = None
+) -> tuple[bool, str]:
+    """REQ-2004-004: 检查是否处于买入后止损保护期内。
+
+    如果最近一次买入距现在不足 protect_minutes 分钟，且：
+    - level 属于止损类信号（stop_loss/trend_break 等）
+    - 当前浮亏未超过 protect_loss_pct（默认 -15%）
+    则抑制卖出，返回 (True, reason)。
+    """
+    if POST_BUY_PROTECT_MINUTES <= 0:
+        return False, ''  # 保护期设为 0 表示不启用
+
+    if level not in _POST_BUY_SUPPRESS_LEVELS:
+        return False, ''  # 非止损类信号，不抑制
+
+    account_id = int(account_id or _ACCOUNT_ID)
+    last_buy = _get_last_buy_time(conn, code, account_id)
+    if last_buy is None:
+        return False, ''
+
+    minutes_since_buy = (datetime.now() - last_buy).total_seconds() / 60.0
+    if minutes_since_buy >= POST_BUY_PROTECT_MINUTES:
+        return False, ''
+
+    # 已进入保护期 — 检查是否属于灾难性暴跌（超过 protect_loss_pct）
+    avg_cost = _get_position_avg_cost(conn, code, account_id)
+    if avg_cost > 0:
+        loss_pct = (cur_price - avg_cost) / avg_cost * 100
+        if loss_pct <= POST_BUY_PROTECT_LOSS_PCT:
+            # 亏损超过保护期紧急阈值，仍允许止损
+            return False, ''
+    else:
+        loss_pct = None
+
+    loss_str = f"（浮亏 {loss_pct:.1f}%）" if loss_pct is not None else ""
+    reason = (
+        f"🛡️ 买入后保护期: 距买入 {minutes_since_buy:.0f} 分钟 < {POST_BUY_PROTECT_MINUTES} 分钟，"
+        f"抑制 {level} 止损信号{loss_str}（保护阈值 {POST_BUY_PROTECT_LOSS_PCT:.0f}%）"
+    )
+    return True, reason
 
 
 def _parse_trade_datetime(trade_date: str | None, trade_time: str | None) -> datetime | None:
@@ -911,16 +1287,52 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
             return 'NO_ACTION'
         logger.info(f'✅ [{code}] {reason}')
 
+        # ── REQ-092 买入前估值过滤 ────────────────────────────────────
+        val_ok, val_reason, val_data = _check_valuation_filter(code, rule)
+        if not val_ok:
+            logger.info(f'🚫 [{code}] 估值过滤拒绝: {val_reason}')
+            import json as _json_val
+            _write_review_decision(
+                _ACCOUNT_ID, code, 'valuation_filter_blocked', 0,
+                f'{val_reason} | 估值数据: {_json_val.dumps(val_data, ensure_ascii=False)}'
+            )
+            return 'NO_ACTION'
+        logger.info(f'✅ [{code}] 估值过滤通过: {val_reason}')
+
         _write_review_decision(_ACCOUNT_ID, code, 'buy', 1, f'{level} 信号通过风控；{reason}')
         return 'BUY'
 
     elif level in ('stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'):
+        # TASK-20260702-2004-004: 买入后保护期检查
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            is_protected, protect_reason = _is_protected_by_post_buy(
+                conn, code, level, cur_price, _ACCOUNT_ID)
+        finally:
+            conn.close()
+        if is_protected:
+            logger.info(f'🛡️ [{code}] {protect_reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'post_buy_protection', 0, protect_reason)
+            return 'NO_ACTION'
+
         # REQ-048 修复：传递 position 参数给 _check_stop_loss_severity()
         severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
         logger.info(f'[{code}] 止损决策: severity={severity}, action={sev_action}')
         return sev_action  # NO_ACTION / SELL_HALF / SELL_ALL / DEFER
 
     elif level in ('trend_break', 'trend_break_warn'):
+        # TASK-20260702-2004-004: 买入后保护期检查
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            is_protected, protect_reason = _is_protected_by_post_buy(
+                conn, code, level, cur_price, _ACCOUNT_ID)
+        finally:
+            conn.close()
+        if is_protected:
+            logger.info(f'🛡️ [{code}] {protect_reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'post_buy_protection', 0, protect_reason)
+            return 'NO_ACTION'
+
         # REQ-048 修复：trend_break 之前在 decide_action 中无匹配分支，
         # 导致 threshold_strategy._try_sell('trend_break') 走到末尾 return 'NO_ACTION'，
         # 卖出信号被吞掉——threshold_state 标记 executed 但 sim_positions 仓位仍在。
@@ -949,6 +1361,77 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         # REQ-048 修复：新增 take_profit_half 匹配（之前只匹配 take_profit/half_out）
         # REQ-066: 止盈改为全仓卖出（SELL_ALL），避免浮盈坐过山车
         return 'SELL_ALL'
+
+    elif level == 'trend_break_buy':
+        # 趋势突破买入：价格突破阻力位 + 放量 → 买入
+        # 与 buy_zone/buy_strong 共享相同的风控检查
+        logger.info(f'📈 [{code}] trend_break_buy 触发，执行买入流程')
+        # 直接复用 buy_zone/buy_strong 的买入逻辑
+        # 持仓数量硬上限检查
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            total_pos = conn.execute(
+                "SELECT COUNT(*) FROM sim_positions WHERE account_id=? AND quantity > 0",
+                (_ACCOUNT_ID,)
+            ).fetchone()[0]
+        finally:
+            conn.close()
+        if total_pos >= MAX_TOTAL_POSITIONS:
+            reason = f'总持仓数({total_pos})≥上限({MAX_TOTAL_POSITIONS})，拒绝新建 {code}'
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'position_count_limit', 0, reason)
+            return 'NO_ACTION'
+
+        # 检查价格合理性
+        ok, reason = check_price_sanity(code, cur_price, 'BUY')
+        if not ok:
+            logger.info(f'⚠️ [{code}] trend_break_buy 价格检查失败: {reason}')
+            return 'NO_ACTION'
+
+        # 检查账户现金
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            acct = conn.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            if not acct:
+                return 'NO_ACTION'
+            cash = float(acct[0])
+            budget = min(DEFAULT_BUY_BUDGET, cash * 0.95)
+            if budget < cur_price * LOT_SIZE:
+                max_qty = int(cash * 0.95 / cur_price / LOT_SIZE) * LOT_SIZE
+                if max_qty <= 0:
+                    logger.info(f'⚠️ [{code}] trend_break_buy 现金不足: ¥{cash:.0f} 不够买100股@¥{cur_price:.2f}')
+                    return 'NO_ACTION'
+                budget = cash * 0.95
+        finally:
+            conn.close()
+
+        # 日内买入资金预算检查
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            ok, reason, budget_status = _check_daily_buy_controls(conn, _ACCOUNT_ID, code, budget)
+        finally:
+            conn.close()
+        if not ok:
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'daily_buy_budget_guard', 0, reason)
+            return 'NO_ACTION'
+
+        # ── REQ-092 买入前估值过滤 ────────────────────────────────────
+        val_ok, val_reason, val_data = _check_valuation_filter(code, rule)
+        if not val_ok:
+            logger.info(f'🚫 [{code}] 估值过滤拒绝: {val_reason}')
+            import json as _json_val
+            _write_review_decision(
+                _ACCOUNT_ID, code, 'valuation_filter_blocked', 0,
+                f'{val_reason} | 估值数据: {_json_val.dumps(val_data, ensure_ascii=False)}'
+            )
+            return 'NO_ACTION'
+        logger.info(f'✅ [{code}] 估值过滤通过: {val_reason}')
+
+        _write_review_decision(_ACCOUNT_ID, code, 'trend_break_buy', 1, f'趋势突破信号通过风控；{reason}')
+        return 'BUY'
 
     return 'NO_ACTION'
 
@@ -1028,6 +1511,24 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
         except Exception as e:
             logger.warning(f"拉仓位/更新跟踪失败 {code}: {e}")
         
+        # TASK-20260702-2004-004: severity check 前再做一次保护期检查
+        # （decide_action 已检查，但这里的 severity 可能覆盖 action 为 SELL）
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            is_protected, protect_reason = _is_protected_by_post_buy(
+                conn, code, rule.get('level', ''), cur_price, _ACCOUNT_ID)
+        finally:
+            conn.close()
+        if is_protected:
+            logger.info(f'🛡️ [{code}] {protect_reason}（severity check 前）')
+            try:
+                _write_review_decision(_ACCOUNT_ID, code, 'post_buy_protection', 0, protect_reason)
+            except Exception:
+                pass
+            return {'action': 'NO_ACTION', 'success': True,
+                    'message': f'买入后保护期内抑制止损: {protect_reason}',
+                    'trade': None, 'severity': severity, 'severity_label': severity_label}
+
         severity, sev_action, sev_reason = _check_stop_loss_severity(code, rule, cur_price, position)
         severity_msg = sev_reason
         # 修正 action：SELL_HALF/SELL_ALL 以 severity 为准
@@ -1087,6 +1588,18 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                     _write_review_decision(_ACCOUNT_ID, code, 'duplicate_buy_guard', 0, msg)
                 except Exception as e:
                     logger.warning(f"写入重复买入风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
+            # BUG-011: 同日反向交易防御 — 今日已卖出则禁止再买入
+            if _has_today_sell(conn, code):
+                msg = f'BUG-011: 今日已有 {code} 卖出成交，同日反向交易规则禁止再买入'
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'same_day_reverse_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入同日反向风控记录失败 {code}: {e}")
                 return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
                         'severity': severity, 'severity_label': severity_label}
 
@@ -1170,6 +1683,19 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             if not row or row[0] <= 0:
                 conn.execute("ROLLBACK")
                 return {'action': action, 'success': False, 'message': f'无持仓可卖 {code}'}
+
+            # TASK-20260702-2004-001: 同日反向交易防御 — 今日刚买入则禁止当日卖出
+            # 防止 buy_strong + trend_break 同K线矛盾信号导致瞬时反向交易
+            if _has_today_buy(conn, code):
+                msg = f'TASK-2004-001: 今日刚买入 {code}，拒绝同日卖出（buy_strong+trend_break 矛盾防御）'
+                conn.execute("ROLLBACK")
+                logger.info(f"🛡️ [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'same_day_reverse_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入同日反向风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
 
             if action == 'SELL_HALF':
                 sell_qty = int(row[0] / 2 / LOT_SIZE) * LOT_SIZE

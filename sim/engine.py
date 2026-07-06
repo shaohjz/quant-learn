@@ -35,12 +35,17 @@ class SimEngine:
         self._validate_account_consistency()
 
     def _validate_account_consistency(self):
-        """[REQ-001] 校验 config.yaml 与 sim_account DB 的一致性。
+        """[REQ-001][REQ-094] 校验 config.yaml 与 sim_account DB 的一致性。
 
         检查项：
         1. config initial_cash vs DB initial_cash（本金变更检测）
         2. 记录变更事件到 sim_account_events
-        3. 自动同步 DB 中的 initial_cash 使之与 config 一致
+        3. 同步方向：DB 为权威来源（含历史交易累计影响），
+           若不一致则警告用户更新 config，**不**覆盖 DB 数据
+
+        REQ-094 修复：原逻辑错误地以 config 为准覆盖 DB，
+        导致 sim_account_events 表中产生了6条错误同步记录。
+        现改为 DB 为权威来源，同步方向为 DB→config（仅警告，不自动修改 config）。
         """
         try:
             from sim.config import get_account_config
@@ -65,20 +70,26 @@ class SimEngine:
             db_total = float(row["total_value"])
 
             if abs(db_initial_cash - cfg_initial_cash) > 0.01:
-                # config 与 DB 不一致，记录事件并同步 DB
+                # [REQ-094] DB 与 config 不一致时，DB 为权威来源
+                # DB 中的 initial_cash 反映了历史交易的全部累计影响，
+                # 用 config 覆盖 DB 会破坏累计收益率计算和净值序列一致性。
+                # 正确做法：保留 DB 值，警告用户需要更新 config。
                 try:
                     from sim.db import record_account_event
                     reason = (
-                        f"本金不一致: DB.initial_cash={db_initial_cash:,.0f}, "
-                        f"config.initial_cash={cfg_initial_cash:,.0f}, "
-                        f"已自动同步 DB 至 config 值"
+                        f"[REQ-094] 本金不一致（DB权威）: "
+                        f"DB.initial_cash={db_initial_cash:,.0f}, "
+                        f"config.initial_cash={cfg_initial_cash:,.0f}. "
+                        f"DB 为权威来源（含历史交易累计影响），"
+                        f"请更新 config.yaml 中 accounts.learn.initial_cash 为 {db_initial_cash:,.0f} 以消除此警告。"
+                        f"本次不同步 DB，保持 DB 值不变。"
                     )
                     record_account_event(
                         account_id=self.account_id,
                         event_type="config_sync",
                         event_date=Date.today(),
-                        old_initial_cash=db_initial_cash,
-                        new_initial_cash=cfg_initial_cash,
+                        old_initial_cash=cfg_initial_cash,
+                        new_initial_cash=db_initial_cash,
                         old_total_value=db_total,
                         new_total_value=db_total,
                         reason=reason,
@@ -87,18 +98,14 @@ class SimEngine:
                 except Exception:
                     pass
 
-                # 同步 DB initial_cash 为 config 值
-                cur.execute(
-                    "UPDATE sim_account SET initial_cash = ?, updated_at = CURRENT_TIMESTAMP "
-                    "WHERE id = ?",
-                    (cfg_initial_cash, self.account_id),
-                )
-                # 同时修正 cash：如果 cash 相对 initial_cash 比例异常，也修正
-                # （避免 old data 里 cash 被旧 initial_cash 污染）
-                # 仅当 cash 明显不合理时（如 initial_cash 改动很大）给出警告
+                # [REQ-094] 不修改 DB，只输出警告
+                # 旧行为（已修复）：cur.execute UPDATE sim_account SET initial_cash = cfg 值
+                # 这会导致累计收益率计算基准被错误篡改
                 print(
-                    f"[REQ-001] 账户 {self.account_id} initial_cash "
-                    f"已从 ¥{db_initial_cash:,.0f} 同步为 ¥{cfg_initial_cash:,.0f}"
+                    f"[REQ-001/REQ-094] ⚠️ 账户 {self.account_id} 本金不一致: "
+                    f"DB={db_initial_cash:,.0f} (权威) vs config={cfg_initial_cash:,.0f}。"
+                    f"DB 为权威来源（含历史交易累计影响），不会覆盖 DB 数据。"
+                    f"请更新 config.yaml 以消除此警告。"
                 )
         finally:
             conn.close()
@@ -130,12 +137,13 @@ class SimEngine:
             conn.close()
 
     # ---------- 账户 ----------
-    def get_account(self, use_config_initial_cash: bool = True) -> dict:
+    def get_account(self, use_config_initial_cash: bool = False) -> dict:
         """获取账户信息。
 
         Args:
-            use_config_initial_cash: 是否用 config 的 initial_cash 覆盖 DB 值。
-                设为 True（默认）可确保收益率计算基准与 config 一致。
+            use_config_initial_cash: [REQ-094] 默认 False，以 DB 中的 initial_cash 为准。
+                DB 为权威来源（含历史交易累计影响），不再用 config 覆盖。
+                设为 True 仅在需要与旧 config 基准对齐时使用（过渡兼容）。
         """
         conn = get_conn()
         try:
@@ -216,6 +224,25 @@ class SimEngine:
         finally:
             conn.close()
 
+    def _has_sell_today(self, stock_code: str, trade_date: str) -> bool:
+        """BUG-011: 检查今日是否已卖出同一股票（同日反向交易防御）。
+
+        若今日已有 SELL 成交，则当日不允许再 BUY 同一股票，
+        防止 buy_strong + trend_break 同日矛盾信号导致自成交。
+        """
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM sim_trades "
+                "WHERE account_id = ? AND stock_code = ? AND trade_date = ? "
+                "AND direction = 'SELL' LIMIT 1",
+                (self.account_id, stock_code, trade_date),
+            )
+            return cur.fetchone() is not None
+        finally:
+            conn.close()
+
     # ---------- 买入 ----------
     def buy(self, stock_code: str, price: float, quantity: int,
             stock_name: str = "", signal_reason: str = "",
@@ -238,6 +265,15 @@ class SimEngine:
             return {
                 "success": False,
                 "msg": f"REQ-051: {stock_code} 今日已有买入成交，拒绝重复买入",
+            }
+
+        # ---- BUG-011: 同日反向交易防御 ----
+        # 若今日已有该股票的 SELL 成交，拒绝今日再买入
+        # 防止 buy_strong + trend_break 同日矛盾信号导致自成交
+        if self._has_sell_today(stock_code, str(trade_date)):
+            return {
+                "success": False,
+                "msg": f"BUG-011: {stock_code} 今日已有卖出成交，基于同日反向交易规则拒绝今日再买入",
             }
 
         # ---- REQ-038 硬上限检查 ----
@@ -540,18 +576,21 @@ class SimEngine:
             conn.close()
 
     # ---------- 每日结算 ----------
-    def daily_settle(self, trade_date: Date = None) -> dict:
+    def daily_settle(self, trade_date: Date = None, backfill_missing: bool = True) -> dict:
         """每日结算：刷新总资产、记录净值。SQLite UPSERT 写法。
 
         新增 REQ-001 资金口径跳变检测：
         - 检测总资产/现金相对上一净值日是否跳变超过 50%
         - 跳变时记录事件到 sim_account_events
         - 跳变时 daily_return 设为 None，cumulative_return 重新基于 initial_cash 计算
+
+        REQ-095: 新增 backfill_missing 参数。当上次 NAV 日与当前日期间隔 >1 天时，
+        自动补写缺失日期的 NAV（继承上一天的值，daily_return=0）。
         """
         trade_date = trade_date or Date.today()
-        # [REQ-001] 使用 config 的 initial_cash 作为基准（不受 DB 脏数据影响）
-        acct = self.get_account(use_config_initial_cash=True)
-        config_initial_cash = acct["initial_cash"]
+        # [REQ-094] 使用 DB 的 initial_cash 作为基准（DB 为权威来源，含历史交易累计影响）
+        acct = self.get_account(use_config_initial_cash=False)
+        db_initial_cash = acct["initial_cash"]
         positions = self.get_positions()
 
         market_value = sum(float(p["market_value"] or 0) for p in positions)
@@ -566,7 +605,7 @@ class SimEngine:
                 (round(total_value, 2), self.account_id),
             )
 
-            initial_cash = config_initial_cash  # [REQ-001] 始终以 config 为基准
+            initial_cash = db_initial_cash  # [REQ-094] 始终以 DB initial_cash 为基准
             cumulative_return = (total_value - initial_cash) / initial_cash if initial_cash else 0
 
             # 前一日净值
@@ -578,7 +617,47 @@ class SimEngine:
                 (self.account_id, str(trade_date)),
             )
             prev = cur.fetchone()
-            prev_value = float(prev["total_value"]) if prev else initial_cash
+            prev_value = float(prev["total_value"]) if prev else db_initial_cash
+
+            # ---- REQ-095: 自动补写缺失日期的 NAV ----
+            if backfill_missing and prev:
+                from datetime import date as _Date, timedelta as _Timedelta
+                prev_date = _Date.fromisoformat(str(prev["trade_date"]))
+                target_date = _Date.fromisoformat(str(trade_date)) if isinstance(trade_date, str) else trade_date
+                gap_days = (target_date - prev_date).days
+                if gap_days > 1:
+                    # 需要补写 prev_date+1 到 target_date-1 的 NAV
+                    for offset in range(1, gap_days):
+                        fill_date = prev_date + _Timedelta(days=offset)
+                        fill_date_str = fill_date.isoformat()
+                        # 检查是否已有（幂等）
+                        cur.execute(
+                            "SELECT 1 FROM sim_daily_nav WHERE account_id=? AND trade_date=?",
+                            (self.account_id, fill_date_str),
+                        )
+                        if cur.fetchone():
+                            continue
+                        # 用前一日值填充（非交易日 daily_return=0）
+                        cur.execute(
+                            "INSERT OR IGNORE INTO sim_daily_nav "
+                            "(account_id, trade_date, total_value, cash, market_value, "
+                            "daily_return, cumulative_return, max_drawdown, "
+                            "cash_jump_detected, cash_jump_reason) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (self.account_id, fill_date_str,
+                             prev["total_value"], prev["cash"],
+                             (prev["total_value"] or 0) - (prev["cash"] or 0),
+                             0.0,
+                             round((float(prev["total_value"]) - initial_cash) / initial_cash, 4) if initial_cash else 0,
+                             0.0,
+                             0,
+                             f"REQ-095 auto-backfill: 非交易日自动补写，继承 {prev['trade_date']} NAV"),
+                        )
+                        print(
+                            f"[REQ-095] 自动补写 NAV: {fill_date_str} "
+                            f"(继承 {prev['trade_date']}, daily_return=0)"
+                        )
+                    conn.commit()
 
             # [REQ-001] 资金口径跳变检测（阈值降低到 20%）
             cash_jump_detected = 0
@@ -639,7 +718,7 @@ class SimEngine:
                 (self.account_id,),
             )
             peak_row = cur.fetchone()
-            peak = float(peak_row["peak"]) if peak_row and peak_row["peak"] else initial_cash
+            peak = float(peak_row["peak"]) if peak_row and peak_row["peak"] else db_initial_cash
             peak = max(peak, total_value)
             max_drawdown = (peak - total_value) / peak if peak > 0 else 0
 

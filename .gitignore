@@ -66,6 +66,34 @@ output/pm_*.json
 output/pm_*.txt
 output/finance_manager/
 
+# 运行产物（日报、信号、日志等）
+docs/reviews/
+docs/daily_reports/
+data/daily_reports/
+data/daily_report_*.md
+data/reports/
+data/review_summary_*.md
+data/integrity_check_*.json
+data/pm_status_snapshot.json
+data/refetch_result_*.json
+data/sim_live_mirror.db.*
+output/daily_signals/
+output/intraday_scans/
+output/lockup_alerts/
+output/news_signals_*.json
+output/reports/
+output/reviews_weekly/
+output/.armed_flags/
+output/*.log
+output/freshness_report.json
+output/generate_next_watchlist_cron.log
+output/intraday_scanner_cron.log
+output/portfolio_alert_cron.log
+pm/daily/
+pm/daily_report_*.md
+pm/data/
+logs/
+
 # 数据库副本/备份
 *.db.bak
 *.db.corrupt*

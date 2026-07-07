@@ -60,27 +60,31 @@ def load_config():
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
-# 跨平台文件锁
+# 跨平台文件锁（简化版：用 temp file + rename 避免 Windows msvcrt 问题）
 import os
-if os.name == 'nt':
-    import msvcrt
-    def lock_file(f):
-        msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
-    def unlock_file(f):
-        msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-else:
-    import fcntl
-    def lock_file(f):
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-    def unlock_file(f):
-        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+def _atomic_write(path, content):
+    """原子写入：写临时文件再 rename，跨平台安全"""
+    import tempfile
+    path = str(path)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(content)
+    if os.name == 'nt':
+        # Windows 需要先删除目标文件
+        if os.path.exists(path):
+            os.remove(path)
+    os.replace(tmp, path)
 
 def save_config(cfg):
-    """保存配置（带文件锁，避免并发写冲突）"""
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        lock_file(f)  # 加锁
-        yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
-        unlock_file(f)  # 解锁
+    """保存配置（原子写入，避免并发写冲突）"""
+    content = yaml.dump(cfg, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    _atomic_write(CONFIG_FILE, content)
+
+def save_config_auto(cfg):
+    """保存 config_auto.yaml（原子写入）"""
+    content = yaml.dump(cfg, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    _atomic_write(CONFIG_AUTO_FILE, content)
 
 # ====================================================================
 #  Webhook
@@ -446,12 +450,7 @@ def load_config_auto():
     with open(CONFIG_AUTO_FILE, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {"auto_discovered": {}, "cooldown": {}}
 
-def save_config_auto(cfg):
-    """保存 config_auto.yaml（带文件锁）"""
-    with open(CONFIG_AUTO_FILE, "w", encoding="utf-8") as f:
-        lock_file(f)
-        yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
-        unlock_file(f)
+
 
 def get_existing_auto_discovered():
     """获取当前 config_auto.yaml 中已存在的 auto_discovered 股票代码"""

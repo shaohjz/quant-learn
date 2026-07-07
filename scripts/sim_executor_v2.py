@@ -97,9 +97,32 @@ def _has_today_buy(conn: sqlite3.Connection, code: str) -> bool:
     return row is not None
 
 
+def _has_today_sell(conn: sqlite3.Connection, code: str) -> bool:
+    """BUG-011: 同一账户/股票/交易日是否已有 SELL 成交。
+
+    同日反向交易防御：若今日已卖出，则当日不允许再买入同一股票。
+    """
+    row = conn.execute(
+        """
+        SELECT 1 FROM sim_trades
+         WHERE account_id=? AND stock_code=? AND direction='SELL' AND trade_date=?
+         LIMIT 1
+        """,
+        (_ACCOUNT_ID, code, _today_str()),
+    ).fetchone()
+    return row is not None
+
+
 def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
                            allowed: int, reason: str):
-    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。"""
+    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。
+
+    TASK-20260702-2004-005 修复：添加去重/限流机制，避免冷静期产生大量无效日志。
+    - 对于 daily_buy_budget_guard / daily_new_position_limit 等风控拒绝类型，
+      同一个 (account_id, stock_code, trade_date, decision_type) 只保留一条记录。
+    - 对于 buy / trend_break_buy 等允许类型，每次写入前检查 5 分钟内是否有同天同股同类型的记录，
+      如有则跳过（避免同一信号批次内重复写）。
+    """
     try:
         conn = sqlite3.connect(_DB_PATH)
         conn.execute(
@@ -115,6 +138,42 @@ def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
             ")"
         )
         cols = {r[1] for r in conn.execute("PRAGMA table_info(review_decisions)").fetchall()}
+
+        # ── TASK-20260702-2004-005: 去重/限流逻辑 ──
+        today = _today_str()
+
+        if allowed == 0:
+            # 风控拒绝类型：同一 (account_id, stock_code, trade_date, decision_type) 只保留一条
+            existing = conn.execute(
+                "SELECT 1 FROM review_decisions "
+                "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
+                "LIMIT 1",
+                (account_id, stock_code, today, decision_type),
+            ).fetchone()
+            if existing:
+                logger.debug(
+                    "_write_review_decision 去重跳过: %s/%s/%s/%s (同天已有记录)",
+                    stock_code, today, decision_type, "拒绝"
+                )
+                conn.close()
+                return
+        else:
+            # 允许类型（buy/trend_break_buy）：5 分钟内同天同股同类型不再重复写入
+            existing = conn.execute(
+                "SELECT 1 FROM review_decisions "
+                "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
+                "  AND created_at >= datetime('now', 'localtime', '-5 minutes') "
+                "LIMIT 1",
+                (account_id, stock_code, today, decision_type),
+            ).fetchone()
+            if existing:
+                logger.debug(
+                    "_write_review_decision 去重跳过: %s/%s/%s/%s (5分钟内已有记录)",
+                    stock_code, today, decision_type, "通过"
+                )
+                conn.close()
+                return
+
         if "allowed" in cols:
             conn.execute(
                 "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
@@ -722,12 +781,24 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
                         'severity': severity, 'severity_label': severity_label}
 
+            # BUG-011: 同日反向交易防御 — 今日已卖出则禁止再买入
+            if _has_today_sell(conn, code):
+                msg = f'BUG-011: 今日已有 {code} 卖出成交，同日反向交易规则禁止再买入'
+                conn.execute("ROLLBACK")
+                logger.info(f"🚫 [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'same_day_reverse_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入同日反向风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
             commission = quantize_amount(cur_price * qty * COMMISSION_RATE)
             amount = quantize_amount(cur_price * qty + commission)
 
             conn.execute(
-                "UPDATE sim_account SET cash=cash-?, total_value=total_value-? WHERE id=?",
-                (amount, amount, _ACCOUNT_ID)
+                "UPDATE sim_account SET cash=cash-? WHERE id=?",
+                (amount, _ACCOUNT_ID)
             )
             # 更新或插入仓位
             existing = conn.execute(
@@ -799,8 +870,8 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             amount = quantize_amount(cur_price * sell_qty - commission - stamp_tax)
 
             conn.execute(
-                "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
-                (amount, amount, _ACCOUNT_ID)
+                "UPDATE sim_account SET cash=cash+? WHERE id=?",
+                (amount, _ACCOUNT_ID)
             )
             new_qty = row[0] - sell_qty
             if new_qty > 0:

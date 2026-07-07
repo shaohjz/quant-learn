@@ -34,27 +34,60 @@ _WEBHOOK_TIMEOUT = 6  # 秒
 
 
 def _get_webhook_url() -> Optional[str]:
-    """获取企微 Webhook URL"""
-    # 优先级：环境变量 > config
+    """获取企微 Webhook URL
+
+    优先级：
+      1. config.local.yaml: notify.wecom_webhook
+      2. config.yaml: notify.wecom_webhook
+      3. config.local.yaml: notifier.wecom_webhook（旧路径）
+      4. 环境变量 WECOM_WEBHOOK
+    """
+    def _is_valid(url):
+        return url and url.strip() and 'YOUR_KEY' not in url
+
+    root = Path(__file__).parent.parent
+
+    # 1. config.local.yaml: notify.wecom_webhook
+    local_path = root / "config.local.yaml"
+    if local_path.exists():
+        try:
+            import yaml
+            cfg = yaml.safe_load(local_path.read_text(encoding='utf-8')) or {}
+            url = (cfg.get("notify") or {}).get("wecom_webhook", "")
+            if _is_valid(url):
+                return url.strip()
+        except Exception:
+            pass
+
+    # 2. config.yaml: notify.wecom_webhook
+    config_path = root / "config.yaml"
+    if config_path.exists():
+        try:
+            import yaml
+            cfg = yaml.safe_load(config_path.read_text(encoding='utf-8')) or {}
+            url = (cfg.get("notify") or {}).get("wecom_webhook", "")
+            if _is_valid(url):
+                return url.strip()
+        except Exception:
+            pass
+
+    # 3. config.local.yaml: notifier.wecom_webhook（旧路径）
+    if local_path.exists():
+        try:
+            import yaml
+            cfg = yaml.safe_load(local_path.read_text(encoding='utf-8')) or {}
+            url = (cfg.get("notifier") or {}).get("wecom_webhook", "")
+            if _is_valid(url):
+                return url.strip()
+        except Exception:
+            pass
+
+    # 4. 环境变量
     url = os.environ.get("WECOM_WEBHOOK")
-    
-    if not url and cfg_get:
-        url = cfg_get("notifier.wecom_webhook")
-    
-    if not url:
-        # 尝试直接从 config.yaml 读取
-        config_path = Path(__file__).parent.parent / "config.yaml"
-        if config_path.exists():
-            try:
-                import yaml
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    config = yaml.safe_load(f)
-                    url = config.get("notifier", {}).get("wecom_webhook")
-            except ImportError:
-                # 没有 yaml 模块，尝试简单解析
-                pass
-    
-    return url
+    if _is_valid(url):
+        return url.strip()
+
+    return None
 
 
 def send_text(content: str, mentions: list = None) -> bool:

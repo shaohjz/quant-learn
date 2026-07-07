@@ -37,38 +37,54 @@ def _load_webhook_url() -> Optional[str]:
     """从配置中读取企微 Webhook URL。
 
     优先级：
-      1. 环境变量 WECOM_WEBHOOK
+      1. config.local.yaml: notify.wecom_webhook（本地覆盖，不进 git）
       2. config.yaml: notify.wecom_webhook
-      3. config.local.yaml: notifier.wecom_webhook
+      3. config.local.yaml: notifier.wecom_webhook（旧路径兼容）
+      4. 环境变量 WECOM_WEBHOOK
     """
-    # 1. 环境变量
-    env_url = os.environ.get("WECOM_WEBHOOK")
-    if env_url:
-        return env_url.strip()
+    def _is_valid(url):
+        return url and url.strip() and 'YOUR_KEY' not in url
 
-    # 2. config.yaml
+    # 1. config.local.yaml: notify.wecom_webhook
+    try:
+        import yaml
+        local_cfg = ROOT / "config.local.yaml"
+        if local_cfg.exists():
+            cfg = yaml.safe_load(local_cfg.read_text(encoding="utf-8")) or {}
+            url = (cfg.get("notify") or {}).get("wecom_webhook", "")
+            if _is_valid(url):
+                return url.strip()
+    except Exception:
+        pass
+
+    # 2. config.yaml: notify.wecom_webhook
     try:
         import yaml
         cfg_path = ROOT / "config.yaml"
         if cfg_path.exists():
             cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
             url = (cfg.get("notify") or {}).get("wecom_webhook", "")
-            if url:
+            if _is_valid(url):
                 return url.strip()
-    except Exception as e:
-        print(f"[wecom_webhook_push] ⚠️ 读取 config.yaml 失败: {e}", file=sys.stderr)
+    except Exception:
+        pass
 
-    # 3. config.local.yaml
+    # 3. config.local.yaml: notifier.wecom_webhook（旧路径）
     try:
         import yaml
-        local_cfg_path = ROOT / "config.local.yaml"
-        if local_cfg_path.exists():
-            cfg = yaml.safe_load(local_cfg_path.read_text(encoding="utf-8")) or {}
+        local_cfg = ROOT / "config.local.yaml"
+        if local_cfg.exists():
+            cfg = yaml.safe_load(local_cfg.read_text(encoding="utf-8")) or {}
             url = (cfg.get("notifier") or {}).get("wecom_webhook", "")
-            if url:
+            if _is_valid(url):
                 return url.strip()
-    except Exception as e:
-        print(f"[wecom_webhook_push] ⚠️ 读取 config.local.yaml 失败: {e}", file=sys.stderr)
+    except Exception:
+        pass
+
+    # 4. 环境变量
+    env_url = os.environ.get("WECOM_WEBHOOK")
+    if _is_valid(env_url):
+        return env_url.strip()
 
     return None
 

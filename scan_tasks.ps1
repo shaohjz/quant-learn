@@ -1,128 +1,121 @@
-# 扫描待处理任务
-$reqDir = "C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\requirements"
-$bugDir = "C:\Users\Administrator\.openclaw\workspace\quant-learn\pm\bugs"
+# 扫描待处理的需求和Bug
+$requirementsPath = "pm/requirements"
+$bugsPath = "pm/bugs"
 
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "扫描待处理任务" -ForegroundColor Cyan
-Write-Host "============================================================" -ForegroundColor Cyan
+$results = @()
 
-# 扫描需求
-Write-Host "`n1. 扫描需求..." -ForegroundColor Yellow
-$reqTasks = @()
-Get-ChildItem "$reqDir\*.md" | ForEach-Object {
-    $file = $_.FullName
-    $content = Get-Content $file -Raw
-    if ($content -match '状态:\s*(pending|in_progress)') {
-        $status = $matches[1]
-        $priority = "P3"
-        if ($content -match '优先级:\s*(\S+)') {
-            $priority = $matches[1]
+# 扫描需求文件
+if (Test-Path $requirementsPath) {
+    Get-ChildItem -Path $requirementsPath -Filter "*.md" | ForEach-Object {
+        $file = $_.FullName
+        $content = Get-Content $file -Raw
+        
+        # 提取状态
+        if ($content -match '状态:\s*(.+?)(\n|$)') {
+            $status = $matches[1].Trim()
+            
+            # 只处理 pending 或 in_progress 状态
+            if ($status -eq "pending" -or $status -eq "in_progress") {
+                # 提取优先级
+                $priority = "P3"  # 默认优先级
+                if ($content -match '优先级:\s*(.+?)(\n|$)') {
+                    $priority = $matches[1].Trim()
+                }
+                
+                # 提取标题
+                $title = "未知需求"
+                if ($content -match '#\s*REQ-\d+:\s*(.+?)(\n|$)') {
+                    $title = $matches[1].Trim()
+                }
+                
+                $results += [PSCustomObject]@{
+                    Type = "需求"
+                    ID = $_.Name -replace '\.md$', ''
+                    Title = $title
+                    Status = $status
+                    Priority = $priority
+                    Path = $file
+                }
+            }
         }
-        $reqTasks += [PSCustomObject]@{
-            File = $_.Name
-            ID = $_.BaseName
-            Type = "requirement"
-            Status = $status
-            Priority = $priority
-            Path = $file
-        }
-        Write-Host "   找到: $($_.Name) - $status [$priority]" -ForegroundColor Green
     }
 }
 
-Write-Host "`n   找到 $($reqTasks.Count) 个待处理需求" -ForegroundColor Yellow
-
-# 扫描Bug
-Write-Host "`n2. 扫描Bug..." -ForegroundColor Yellow
-$bugTasks = @()
-Get-ChildItem "$bugDir\*.md" | ForEach-Object {
-    $file = $_.FullName
-    $content = Get-Content $file -Raw
-    if ($content -match '状态:\s*(open|reopened|in_progress)') {
-        $status = $matches[1]
-        $priority = "P3"
-        if ($content -match '优先级:\s*(\S+)') {
-            $priority = $matches[1]
+# 扫描Bug文件
+if (Test-Path $bugsPath) {
+    Get-ChildItem -Path $bugsPath -Filter "*.md" | ForEach-Object {
+        $file = $_.FullName
+        $content = Get-Content $file -Raw
+        
+        # 提取状态
+        if ($content -match '状态:\s*(.+?)(\n|$)') {
+            $status = $matches[1].Trim()
+            
+            # 只处理 open, reopened 或 in_progress 状态
+            if ($status -eq "open" -or $status -eq "reopened" -or $status -eq "in_progress") {
+                # 提取优先级
+                $priority = "S3"  # 默认优先级
+                if ($content -match '优先级:\s*(.+?)(\n|$)') {
+                    $priority = $matches[1].Trim()
+                }
+                
+                # 提取标题
+                $title = "未知Bug"
+                if ($content -match '#\s*BUG-\d+:\s*(.+?)(\n|$)') {
+                    $title = $matches[1].Trim()
+                }
+                
+                $results += [PSCustomObject]@{
+                    Type = "Bug"
+                    ID = $_.Name -replace '\.md$', ''
+                    Title = $title
+                    Status = $status
+                    Priority = $priority
+                    Path = $file
+                }
+            }
         }
-        $bugTasks += [PSCustomObject]@{
-            File = $_.Name
-            ID = $_.BaseName
-            Type = "bug"
-            Status = $status
-            Priority = $priority
-            Path = $file
-        }
-        Write-Host "   找到: $($_.Name) - $status [$priority]" -ForegroundColor Red
     }
-}
-
-Write-Host "`n   找到 $($bugTasks.Count) 个待处理Bug" -ForegroundColor Yellow
-
-# 合并所有任务
-$allTasks = $reqTasks + $bugTasks
-
-if ($allTasks.Count -eq 0) {
-    Write-Host "`n✅ 没有待处理的任务" -ForegroundColor Green
-    exit 0
 }
 
 # 按优先级排序
-$allTasks = $allTasks | Sort-Object @{
+$sortedResults = $results | Sort-Object @{
     Expression = {
-        $pri = $_.Priority
-        $sta = $_.Status
-        $typ = $_.Type
-        
-        # 优先级分数
-        $score = 0
-        if ($pri -match "S0|S1|P0") { $score += 1000 }
-        elseif ($pri -match "P1") { $score += 100 }
-        elseif ($pri -match "P2") { $score += 10 }
-        else { $score += 1 }
-        
-        # 状态分数
-        if ($sta -eq "reopened") { $score += 500 }
-        elseif ($sta -eq "open") { $score += 400 }
-        elseif ($sta -eq "in_progress") { $score += 300 }
-        elseif ($sta -eq "pending") { $score += 200 }
-        
-        # Bug 优先于需求
-        if ($typ -eq "bug") { $score += 50 }
-        
-        $score
+        # 优先级排序逻辑
+        $p = $_.Priority
+        if ($p -match 'S0') { 1 }
+        elseif ($p -match 'S1') { 2 }
+        elseif ($p -match 'P0') { 3 }
+        elseif ($p -match 'S2') { 4 }
+        elseif ($p -match 'P1') { 5 }
+        elseif ($p -match 'S3') { 6 }
+        elseif ($p -match 'P2') { 7 }
+        else { 8 }
     }
-    Descending = $true
+}, @{
+    Expression = { $_.Type }  # 同优先级下Bug优先
+}, @{
+    Expression = { $_.ID }   # 然后按ID排序
 }
 
-Write-Host "`n" + "=" * 60 -ForegroundColor Cyan
-Write-Host "待处理任务列表（按优先级排序）" -ForegroundColor Cyan
-Write-Host "=" * 60 -ForegroundColor Cyan
-
-$allTasks | ForEach-Object -Begin { $i = 1 } -Process {
-    Write-Host "`n$($i). [$($_.Type)] $($_.ID)" -ForegroundColor White
-    Write-Host "   文件: $($_.File)" -ForegroundColor Gray
-    Write-Host "   状态: $($_.Status)" -ForegroundColor Yellow
-    Write-Host "   优先级: $($_.Priority)" -ForegroundColor Magenta
-    Write-Host "   路径: $($_.Path)" -ForegroundColor DarkGray
-    $i++
-}
-
-Write-Host "`n" + "=" * 60 -ForegroundColor Cyan
-Write-Host "总计: $($allTasks.Count) 个待处理任务" -ForegroundColor Cyan
-Write-Host "=" * 60 -ForegroundColor Cyan
-
-# 输出最高优先级的任务
-if ($allTasks.Count -gt 0) {
-    $topTask = $allTasks[0]
-    Write-Host "`n🎯 最高优先级任务:" -ForegroundColor Red
-    Write-Host "   $($topTask.Type.ToUpper()): $($topTask.ID)" -ForegroundColor Red
-    Write-Host "   优先级: $($topTask.Priority)" -ForegroundColor Red
-    Write-Host "   状态: $($topTask.Status)" -ForegroundColor Red
+# 输出结果
+if ($sortedResults.Count -eq 0) {
+    Write-Output "NO_TASK"
+} else {
+    # 选择最高优先级的一项
+    $topTask = $sortedResults[0]
     
-    # 输出任务信息供后续处理
-    Write-Output "TOP_TASK_ID=$($topTask.ID)"
-    Write-Output "TOP_TASK_TYPE=$($topTask.Type)"
-    Write-Output "TOP_TASK_PRIORITY=$($topTask.Priority)"
-    Write-Output "TOP_TASK_STATUS=$($topTask.Status)"
-    Write-Output "TOP_TASK_PATH=$($topTask.Path)"
+    Write-Output "=== 待处理任务列表 ==="
+    $sortedResults | ForEach-Object {
+        Write-Output "$($_.Type): $($_.ID) - $($_.Title) [状态: $($_.Status), 优先级: $($_.Priority)]"
+    }
+    
+    Write-Output "`n=== 选择最高优先级任务 ==="
+    Write-Output "$($topTask.Type): $($topTask.ID) - $($topTask.Title)"
+    Write-Output "状态: $($topTask.Status)"
+    Write-Output "优先级: $($topTask.Priority)"
+    Write-Output "文件路径: $($topTask.Path)"
+    
+    # 返回选择的任务信息
+    $topTask | ConvertTo-Json
 }

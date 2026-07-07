@@ -143,6 +143,29 @@ def _has_today_sell(conn: sqlite3.Connection, code: str) -> bool:
     return row is not None
 
 
+# ── TASK-20260705-0215-004：近期止损冷却期 ─────────────────────────────────────
+def _has_recent_stop_loss(conn: sqlite3.Connection, code: str, lookback_days: int = 5) -> bool:
+    """检查该股票在最近 N 天内是否有 BUY+SELL 成对出现（即买入即止损的信号质量差模式）。
+
+    如果最近 lookback_days 天内该股票出现过同日或相邻日的 BUY→SELL，
+    说明该股信号质量差，应暂缓买入。默认 5 天冷却期（涵盖周末/节假日）。
+    """
+    today = _today_str()
+    row = conn.execute(
+        """
+        SELECT COUNT(DISTINCT trade_date) FROM sim_trades
+         WHERE account_id=? AND stock_code=?
+           AND trade_date >= date(?, '-' || ? || ' days')
+           AND trade_date < ?
+           AND direction IN ('BUY', 'SELL')
+         GROUP BY trade_date
+         HAVING COUNT(DISTINCT direction) >= 2
+        """,
+        (_ACCOUNT_ID, code, today, lookback_days, today),
+    ).fetchone()
+    return row is not None and row[0] > 0
+
+
 def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
                            allowed: int, reason: str):
     """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。
@@ -671,11 +694,28 @@ def _check_daily_buy_controls(conn: sqlite3.Connection, account_id: int, code: s
             f"将达¥{after:,.0f} > 上限¥{daily_cap:,.0f}；剩余¥{status['remaining']:,.0f}"
         ), status
 
-    mins = status.get('minutes_since_last_buy')
-    if BUY_COOLDOWN_MINUTES > 0 and mins is not None and mins < BUY_COOLDOWN_MINUTES:
+    # TASK-20260707-000600: 同一标的近20日内曾止损 → 加再入场冷却期
+    recent_stop = conn.execute(
+        "SELECT trade_date FROM sim_trades "
+        "WHERE account_id=? AND stock_code=? AND direction='SELL' "
+        "  AND (signal_reason LIKE '%stop_loss%' OR signal_reason LIKE '%trend_break%') "
+        "  AND trade_date >= date('now','-20 days') "
+        "ORDER BY trade_date DESC LIMIT 1",
+        (account_id, code),
+    ).fetchone()
+    if recent_stop:
         return False, (
-            f"连续买入冷静期未过：距上次买入 {mins:.0f} 分钟 < {BUY_COOLDOWN_MINUTES} 分钟，"
-            f"跳过 {code}；今日剩余买入预算¥{status['remaining']:,.0f}"
+            f"止损冷却期拦截：{code} 近20日({recent_stop[0]})曾触发止损(trend_break/stop_loss)，"
+            f"暂停买入以观察信号质量；今日剩余预算¥{status['remaining']:,.0f}"
+        ), status
+
+    mins = status.get('minutes_since_last_buy')
+    last_buy_code = status.get('last_buy_code')
+    # REQ-062: 冷静期改为同股冷却 — 只有同一只股票才需要等待冷却期
+    if BUY_COOLDOWN_MINUTES > 0 and mins is not None and mins < BUY_COOLDOWN_MINUTES and last_buy_code == code:
+        return False, (
+            f"同股买入冷静期未过：距上次买入 {code} {mins:.0f} 分钟 < {BUY_COOLDOWN_MINUTES} 分钟，"
+            f"跳过；今日剩余买入预算¥{status['remaining']:,.0f}"
         ), status
 
     return True, (
@@ -1600,6 +1640,18 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                     _write_review_decision(_ACCOUNT_ID, code, 'same_day_reverse_guard', 0, msg)
                 except Exception as e:
                     logger.warning(f"写入同日反向风控记录失败 {code}: {e}")
+                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                        'severity': severity, 'severity_label': severity_label}
+
+            # TASK-20260705-0215-004: 近期止损冷却期 — 若近5个日历日内有买+卖成对，禁止再买入
+            if _has_recent_stop_loss(conn, code, lookback_days=5):
+                msg = f'TASK-0215-004: {code} 近5个日历日内有买+卖成对（信号质量差），冷却期满前禁止买入'
+                conn.execute("ROLLBACK")
+                logger.info(f"🛡️ [{code}] {msg}")
+                try:
+                    _write_review_decision(_ACCOUNT_ID, code, 'stop_loss_cooldown_guard', 0, msg)
+                except Exception as e:
+                    logger.warning(f"写入止损冷却期风控记录失败 {code}: {e}")
                 return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
                         'severity': severity, 'severity_label': severity_label}
 

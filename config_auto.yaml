@@ -1,9 +1,236 @@
-# config_auto.yaml — 系统自动管理的观察池配置
-# 此文件由 intraday_scanner.py / cleanup_watchlist.py 自动维护
-# 不要手动编辑，程序会自由 yaml.dump()
-
-# ========== 自动发现观察池 ==========
-auto_discovered: {}
-
-# ========== 冷却期管理 ==========
+auto_discovered:
+  '002335':
+    name: 科华数据
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-06-28'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.9，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 42.31
+        dir: below
+        msg: 💰 科华数据回踩至 42.31！试探建仓
+      buy_strong:
+        trigger: 40.57
+        dir: below
+        msg: 💰💰 科华数据跌至 40.57！优质建仓区
+      trend_break:
+        trigger: 37.08
+        dir: below
+        msg: ⚠️ 科华数据破 37.08！趋势反转，移除观察
+  '603341':
+    name: 龙旗科技
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-06-28'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 41.27
+        dir: below
+        msg: 💰 龙旗科技回踩至 41.27！试探建仓
+      buy_strong:
+        trigger: 39.57
+        dir: below
+        msg: 💰💰 龙旗科技跌至 39.57！优质建仓区
+      trend_break:
+        trigger: 36.17
+        dir: below
+        msg: ⚠️ 龙旗科技破 36.17！趋势反转，移除观察
+  '600233':
+    name: 圆通速递
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-02'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.7，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 17.45
+        dir: below
+        msg: 💰 圆通速递回踩至 17.45！试探建仓
+      buy_strong:
+        trigger: 16.73
+        dir: below
+        msg: 💰💰 圆通速递跌至 16.73！优质建仓区
+      trend_break:
+        trigger: 15.29
+        dir: below
+        msg: ⚠️ 圆通速递破 15.29！趋势反转，移除观察
+  '002273':
+    name: 水晶光电
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-02'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比2.0，接近20日高）
+    discovery_score: 95
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 39.75
+        dir: below
+        msg: 💰 水晶光电回踩至 39.75！试探建仓
+      buy_strong:
+        trigger: 38.11
+        dir: below
+        msg: 💰💰 水晶光电跌至 38.11！优质建仓区
+      trend_break:
+        trigger: 34.83
+        dir: below
+        msg: ⚠️ 水晶光电破 34.83！趋势反转，移除观察
+  002738:
+    name: 中矿资源
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-02'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.8，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 64.36
+        dir: below
+        msg: 💰 中矿资源回踩至 64.36！试探建仓
+      buy_strong:
+        trigger: 61.71
+        dir: below
+        msg: 💰💰 中矿资源跌至 61.71！优质建仓区
+      trend_break:
+        trigger: 56.4
+        dir: below
+        msg: ⚠️ 中矿资源破 56.4！趋势反转，移除观察
+  '600988':
+    name: 赤峰黄金
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-06'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.9，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 30.88
+        dir: below
+        msg: 💰 赤峰黄金回踩至 30.88！试探建仓
+      buy_strong:
+        trigger: 29.6
+        dir: below
+        msg: 💰💰 赤峰黄金跌至 29.6！优质建仓区
+      trend_break:
+        trigger: 27.06
+        dir: below
+        msg: ⚠️ 赤峰黄金破 27.06！趋势反转，移除观察
+  '600580':
+    name: 卧龙电驱
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-06'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.7，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 36.78
+        dir: below
+        msg: 💰 卧龙电驱回踩至 36.78！试探建仓
+      buy_strong:
+        trigger: 35.27
+        dir: below
+        msg: 💰💰 卧龙电驱跌至 35.27！优质建仓区
+      trend_break:
+        trigger: 32.23
+        dir: below
+        msg: ⚠️ 卧龙电驱破 32.23！趋势反转，移除观察
+  '002126':
+    name: 银轮股份
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-06'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.5，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 53.72
+        dir: below
+        msg: 💰 银轮股份回踩至 53.72！试探建仓
+      buy_strong:
+        trigger: 51.5
+        dir: below
+        msg: 💰💰 银轮股份跌至 51.5！优质建仓区
+      trend_break:
+        trigger: 47.07
+        dir: below
+        msg: ⚠️ 银轮股份破 47.07！趋势反转，移除观察
+  '002607':
+    name: 中公教育
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-07'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 2.08
+        dir: below
+        msg: 💰 中公教育回踩至 2.08！试探建仓
+      buy_strong:
+        trigger: 1.99
+        dir: below
+        msg: 💰💰 中公教育跌至 1.99！优质建仓区
+      trend_break:
+        trigger: 1.82
+        dir: below
+        msg: ⚠️ 中公教育破 1.82！趋势反转，移除观察
 cooldown: {}

@@ -62,27 +62,21 @@ def format_auction_report(data: dict) -> str:
     return "\n".join(lines)
 
 
-def main():
-    """主函数"""
+if __name__ == "__main__":
     # 读取集合竞价数据
     data_file = Path(__file__).parent.parent / "data" / "auction_data.json"
     
     if not data_file.exists():
-        # 没有数据文件，发送简单通知
-        send_markdown(f"## 🔔 集合竞价快报\n\n（未获取到集合竞价数据，请检查数据抓取脚本）")
-        return
+        print(f"## 🔔 集合竞价快报\n\n（未获取到集合竞价数据，请检查数据抓取脚本）")
+        exit(0)
     
     try:
         with open(data_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except Exception as e:
         print(f"❌ 读取数据文件失败：{e}")
-        return
+        exit(1)
     
-    # 格式化并发送
+    # 格式化并打印
     report = format_auction_report(data)
-    send_markdown(report)
-
-
-if __name__ == "__main__":
-    main()
+    print(report)

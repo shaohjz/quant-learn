@@ -1,20 +1,30 @@
-import os, sys
-os.environ['QUANT_DB_PATH'] = r'C:\Users\Administrator\.openclaw\workspace\quant-learn\data\sim_live_mirror.db'
-sys.path.insert(0, r'C:\Users\Administrator\.openclaw\workspace\quant-learn')
-from sim.db import get_conn
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+检查持仓的 account_id
+"""
 
-conn = get_conn()
-print('=== 持仓 ===')
-for r in conn.execute('SELECT stock_code, stock_name, quantity, avg_cost, current_price, pnl_pct FROM sim_positions'):
-    print(f'  {r[0]} {r[1]:>6} {r[2]:>4}股 cost={r[3]:.3f} cur={r[4]:.2f} pnl={r[5]:+.2f}%')
+import sqlite3
+from pathlib import Path
 
-print()
-print('=== 全部 live_mirror 交易 ===')
-for r in conn.execute("SELECT trade_date, stock_code, stock_name, direction, quantity, price, signal_reason FROM sim_trades WHERE broker='live_mirror' ORDER BY id DESC LIMIT 10"):
-    print(f'  {r[0]} {r[3]} {r[1]} {r[2]} {r[4]}股@{r[5]:.2f} | {r[6][:40]}')
+db_path = 'data/sim_live_mirror.db'
+conn = sqlite3.connect(db_path)
+conn.row_factory = sqlite3.Row
 
-print()
-print('=== 账户 ===')
-for r in conn.execute('SELECT account_name, cash, total_value, initial_cash FROM sim_account'):
-    print(f'  {r[0]}: cash={r[1]:.2f}, total={r[2]:.2f}, initial={r[3]:.2f}')
+# 查询所有持仓及其account_id
+positions = conn.execute('SELECT * FROM sim_positions WHERE quantity > 0').fetchall()
+
+print('持仓及account_id:')
+for pos in positions:
+    account_id = pos['account_id']
+    code = pos['stock_code']
+    name = pos['stock_name']
+    print(f'account_id={account_id}, {code} {name}')
+
+# 也检查 sim_account 表
+print('\n账户列表:')
+accounts = conn.execute('SELECT * FROM sim_account').fetchall()
+for acct in accounts:
+    print(f'id={acct["id"]}, name={acct["account_name"]}, cash={acct["cash"]}, total_value={acct["total_value"]}')
+
 conn.close()

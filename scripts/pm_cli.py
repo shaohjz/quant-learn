@@ -117,12 +117,17 @@ def cmd_timeout_reset(args):
         reset_count = 0
         for r in rows:
             try:
-                updated = datetime.strptime(r['updated_at'], "%Y-%m-%d %H:%M:%S")
+                # 尝试两种时间格式
+                try:
+                    updated = datetime.strptime(r['updated_at'], '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    updated = datetime.strptime(r['updated_at'], '%Y-%m-%dT%H:%M:%S')
+                
                 diff_hours = (now - updated).total_seconds() / 3600
                 if diff_hours > hours:
                     cursor.execute(
                         "UPDATE tasks SET status='pending', updated_at=? WHERE id=?",
-                        (now.strftime("%Y-%m-%d %H:%M:%S"), r['id'])
+                        (now.strftime('%Y-%m-%d %H:%M:%S'), r['id'])
                     )
                     print(f"⏰ Timeout reset: {r['id']} ({r['title']}) — in_progress for {diff_hours:.1f}h")
                     reset_count += 1
@@ -239,7 +244,11 @@ def cmd_report(args):
     stuck = []
     for r in cur.fetchall():
         try:
-            upd = datetime.strptime(r['updated_at'], '%Y-%m-%d %H:%M:%S')
+            try:
+                upd = datetime.strptime(r['updated_at'], '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                upd = datetime.strptime(r['updated_at'], '%Y-%m-%dT%H:%M:%S')
+            
             if (now - upd).total_seconds() > 10800:
                 stuck.append({'id': r['id'], 'title': r['title']})
         except Exception:

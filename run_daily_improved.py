@@ -165,16 +165,22 @@ def run_pre_market(broker):
     return signals
 
 
-def run_settle(broker, trade_date: Date = None):
-    """收盘结算：行情→信号→交易→更新→结算→报告"""
+def run_settle(broker, trade_date: Date = None, skip_trade: bool = False):
+    """收盘结算：行情→信号→交易→更新→结算→报告
+    
+    Args:
+        skip_trade: 非交易日时跳过交易执行，仅生成信号与报告
+    """
     trade_date = trade_date or Date.today()
     print("=" * 50)
     print(f"🌆 收盘结算 ({trade_date})  [broker={broker.name}]")
+    if skip_trade:
+        print("   📌 非交易日模式：仅生成信号+报告，跳过交易执行")
     print("=" * 50)
 
     pool = StockPool()
 
-    # 1. 获取最新价格
+    # 1. 获取最新价格（非交易日可能拿不到实时价，尝试用最近交易日数据）
     codes = pool.get_codes()
     prices_data = get_latest_prices(codes)
     price_map = {c: d["price"] for c, d in prices_data.items() if d["price"] > 0}
@@ -183,17 +189,19 @@ def run_settle(broker, trade_date: Date = None):
         if d.get("name") and not name_map.get(c):
             name_map[c] = d["name"]
 
-    print(f"\n📡 行情: {', '.join(f'{name_map.get(c,c)} ¥{p:.2f}' for c, p in price_map.items())}")
+    if price_map:
+        print(f"\n📡 行情: {', '.join(f'{name_map.get(c,c)} ¥{p:.2f}' for c, p in price_map.items())}")
+    else:
+        print("\n📡 行情: 非交易时段，无实时行情（信号基于历史K线生成）")
 
-    # 2. 生成信号（去重：同一股票同日只保留第一个买入信号）
+    # 2. 生成信号（不依赖实时行情，使用历史K线数据）
     pos_map = _build_existing_position_map(broker)
-    # 2. 生成信号
     raw_signals = []
     for code, name in pool.get_all().items():
         sig = generate_signals(code, name, existing_position=pos_map.get(code))
         raw_signals.append(sig)
 
-    # REQ-051: 同一股票同日多信号去重（取最高优先级信号，忽略其余）
+    # REQ-051: 同一股票同日多信号去重
     signals = dedupe_signals(raw_signals, trade_date=str(trade_date))
 
     buy_signals_count = sum(1 for s in signals if s["signal"] == "BUY")
@@ -206,6 +214,17 @@ def run_settle(broker, trade_date: Date = None):
 
     print(f"\n📊 信号统计: {buy_signals_count}个买入, {sell_signals_count}个卖出")
 
+    # ===== 非交易日：跳过交易执行 =====
+    if skip_trade:
+        print("\n⏸ 非交易日模式：跳过交易执行、结算、净值曲线")
+        # 非交易日只推送信号报告
+        report = generate_daily_report(trade_date, signals)
+        print("\n" + report)
+        notifier.notify_signals(signals, trade_date)
+        notifier.notify_daily_report(report, None)
+        return report, signals
+
+    # ===== 交易日：完整交易执行 =====
     # 3. 执行交易
     trades_today = 0
     positions_by_code = {p.stock_code: p for p in broker.get_positions()}
@@ -232,8 +251,7 @@ def run_settle(broker, trade_date: Date = None):
     
     # 计算今日还可建仓金额上限
     acct_for_limit = broker.get_account()
-    total_assets = acct_for_limit.cash + acct_for_limit.total_value - acct_for_limit.cash  # 近似值
-    # 更精确的总资产 = cash + sum(market_value of all positions)
+    total_assets = acct_for_limit.cash + acct_for_limit.total_value - acct_for_limit.cash
     positions_for_assets = broker.get_positions()
     total_market_value = sum(p.market_value for p in positions_for_assets)
     total_assets = acct_for_limit.cash + total_market_value
@@ -258,8 +276,7 @@ def run_settle(broker, trade_date: Date = None):
         if sig["signal"] == "BUY":
             acct = broker.get_account()
             
-            # 改进1：先检查现金是否足够
-            min_investment = 100 * price  # 最小投资金额（1手）
+            min_investment = 100 * price
             
             if acct.cash < min_investment:
                 print(f"\n⚠️ 现金不足买入1手 {name}({code})，尝试释放流动性...")
@@ -270,16 +287,13 @@ def run_settle(broker, trade_date: Date = None):
                     print(f"  → 无法释放流动性，跳过 {name}({code})")
                     continue
                 
-                # 重新获取账户信息
                 acct = broker.get_account()
             
-            # 改进2：更智能的买入金额计算
-            # 使用以下公式：min(可用现金×仓位上限, 可用现金-预留现金)
-            reserve_cash = 1000  # 预留1000元作为安全边际
+            reserve_cash = 1000
             available_cash = max(0, acct.cash - reserve_cash)
             max_amount = min(available_cash * MAX_POSITION_PCT, available_cash)
             
-            if max_amount < price * 100:  # 不够买1手
+            if max_amount < price * 100:
                 print(f"  → 买入金额不足1手({max_amount:.2f} < {price*100:.2f})，跳过 {name}({code})")
                 continue
             
@@ -288,7 +302,6 @@ def run_settle(broker, trade_date: Date = None):
                 print(f"  → 计算买入数量为0，跳过 {name}({code})")
                 continue
             
-            # 再次检查现金是否足够
             total_cost = price * quantity + max(price * quantity * 0.0003, 5)
             if total_cost > acct.cash:
                 print(f"  → 现金不足(需{total_cost:.2f} > 可用{acct.cash:.2f})，跳过 {name}({code})")
@@ -307,7 +320,6 @@ def run_settle(broker, trade_date: Date = None):
             if result.success:
                 trades_today += 1
             else:
-                # 如果买入失败，可能是现金计算错误，尝试释放流动性
                 if "资金不足" in result.msg:
                     print(f"  → 买入失败(资金不足)，尝试释放流动性...")
                     needed_cash = total_cost - acct.cash
@@ -342,11 +354,11 @@ def run_settle(broker, trade_date: Date = None):
           f"日收益 {settle['daily_return']*100:+.2f}%, "
           f"累计 {settle['cumulative_return']*100:+.2f}%")
 
-    # 6. 生成报告（REQ-026：风控建议需要读 sim_live_mirror.db）
+    # 6. 生成报告
     import os
     _db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "sim_live_mirror.db")
     if not os.path.exists(_db_path):
-        _db_path = None  # 回退到默认 sim.db
+        _db_path = None
     report = generate_daily_report(trade_date, signals, db_path=_db_path)
     print("\n" + report)
 
@@ -391,8 +403,25 @@ def main():
 
     # 交易日检查
     today = trade_date or Date.today()
-    if not args.force and not is_trading_day(today):
-        print(f"⏸ {today} 非交易日，跳过（加 --force 可强制运行）")
+    is_trade_day = is_trading_day(today)
+    
+    if not is_trade_day and not args.force:
+        print(f"⏸ {today} 非交易日，非交易时段模式：仅生成选股信号，跳过交易执行")
+        print(f"   （加 --force 可强制进入完整交易模式）")
+        # 非交易日：创建 broker 但跳过交易执行
+        mode = args.mode or broker_mode()
+        broker = get_broker(mode=mode)
+        print(f"✅ broker 已连接：{broker.name}")
+        try:
+            if args.pre_market:
+                signals = run_pre_market(broker)
+                notifier.notify_signals(signals)
+            elif args.settle:
+                run_settle(broker, trade_date, skip_trade=True)
+            else:
+                run_settle(broker, trade_date, skip_trade=True)
+        finally:
+            broker.disconnect()
         return
 
     # 创建 broker

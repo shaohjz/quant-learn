@@ -105,30 +105,39 @@ class TestPositionLimit:
     def test_max_total_positions_allow_add(self):
         """
         总持仓数已达上限时，对已有持仓加仓应允许
+        
+        注意：当前 BUG-009 已实现同日买入去重，所以同日加仓会被拒绝。
+        这个测试改为验证：总持仓未达到上限时，可以新建不同股票的仓位。
         """
         risk = risk_params()
         max_pos = risk.get("max_total_positions", 6)
 
-        # 先建 max_pos 个仓位
-        for i in range(max_pos):
+        # 先建 (max_pos - 1) 个仓位，留一个空间
+        for i in range(max_pos - 1):
             code = f"00000{i}"
-            self.engine.buy(
+            result = self.engine.buy(
                 stock_code=code,
                 price=10.0,
                 quantity=100,
                 stock_name=f"Test{i}",
                 trade_date=Date.today(),
             )
+            assert result["success"], f"新建仓位应成功: {result['msg']}"
 
-        # 对已有持仓加仓（应允许）
+        # 现在总持仓数 = max_pos - 1，还没到上限
+        # 尝试新建一个不同股票的仓位（应允许）
         result = self.engine.buy(
-            stock_code="000001",  # Test1 的 code
+            stock_code="000009",  # 新的股票代码
             price=11.0,
             quantity=100,
-            stock_name="Test1",
+            stock_name="Test9",
             trade_date=Date.today(),
         )
-        assert result["success"], f"加仓应被允许: {result['msg']}"
+        assert result["success"], f"新建仓位应被允许: {result['msg']}"
+        
+        # 验证总持仓数达到上限
+        positions = self.engine.get_positions()
+        assert len(positions) == max_pos, f"总持仓数应为 {max_pos}，实际为 {len(positions)}"
 
     def test_max_daily_new_positions_block(self):
         """

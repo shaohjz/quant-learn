@@ -5,8 +5,8 @@ accounts:
     account_name: learn
     auto_trade: true
     description: vqlearn 量化策略自学习账户（2026-06-24 清仓重置到10万，全自动选股交易）
-    initial_cash: 100000.0
-    max_total_value: 100000.0
+    initial_cash: 200000.0
+    max_total_value: 200000.0
   real:
     account_id: 2
     account_name: real_portfolio
@@ -38,7 +38,7 @@ legacy_watch:
 notifier:
   enabled: true
 notify:
-  wecom_webhook: ''  # 请在企微群里添加自定义机器人，获取 Webhook URL 并替换此处
+  wecom_webhook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE'  # 请在企微群里添加自定义机器人，获取 Webhook URL 并替换此处
 precision:
   amount_decimals: 2
   cost_decimals: 3
@@ -128,6 +128,12 @@ risk:
   take_profit_pct: 0.15
   warn_industry_pct: 0.25
   warn_sector_pct: 0.3
+  # TASK-20260702-2004-004: 买入后止损保护期
+  # 防止买进后同日即被 trend_break 等信号止损卖出
+  # 不改策略参数，只在执行层面加保护
+  post_buy_protection:
+    protect_minutes: 120  # 买入后多长时间(分钟)内抑制止损信号
+    protect_loss_pct: -15.0  # 保护期内允许的最大亏损(%)，超过此值仍会触发止损; 设为0表示完全禁止止损
 stock_pool: []
 watchlist:
   auto_discovered: {}

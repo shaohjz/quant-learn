@@ -46,24 +46,49 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 #  Webhook 推送配置
 # ====================================================================
 def _load_webhook():
-    """从 config.yaml 读 notify.wecom_webhook,读不到返回 None"""
+    """从配置读取企微 Webhook URL。
+
+    优先级：
+      1. config.local.yaml notify.wecom_webhook（本地覆盖，不进 git）
+      2. config.yaml notify.wecom_webhook
+      3. config.local.yaml notifier.wecom_webhook（旧路径兼容）
+      4. 环境变量 WECOM_WEBHOOK
+    """
     try:
         import yaml
-        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
-        url = (cfg.get('notify') or {}).get('wecom_webhook', '') or ''
-        if url:
-            return url
-    except Exception:
-        pass
-    # 兼容旧路径:config.local.yaml
-    try:
-        import yaml
+        # 1. config.local.yaml notify.wecom_webhook（最高优先级）
         local_cfg = ROOT / 'config.local.yaml'
         if local_cfg.exists():
             data = yaml.safe_load(local_cfg.read_text(encoding='utf-8')) or {}
-            return (data.get('notifier') or {}).get('wecom_webhook', '') or ''
+            url = (data.get('notify') or {}).get('wecom_webhook', '') or ''
+            if url and 'YOUR_KEY' not in url:
+                return url
     except Exception:
         pass
+    try:
+        import yaml
+        # 2. config.yaml notify.wecom_webhook
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        url = (cfg.get('notify') or {}).get('wecom_webhook', '') or ''
+        if url and 'YOUR_KEY' not in url:
+            return url
+    except Exception:
+        pass
+    # 3. 旧路径兼容:config.local.yaml notifier.wecom_webhook
+    try:
+        import yaml
+        if local_cfg.exists():
+            data = yaml.safe_load(local_cfg.read_text(encoding='utf-8')) or {}
+            url = (data.get('notifier') or {}).get('wecom_webhook', '') or ''
+            if url and 'YOUR_KEY' not in url:
+                return url
+    except Exception:
+        pass
+    # 4. 环境变量
+    import os
+    url = os.environ.get('WECOM_WEBHOOK', '') or ''
+    if url and 'YOUR_KEY' not in url:
+        return url
     return None
 
 WEBHOOK_URL = None  # 延迟到交易时段内加载,避免非交易时段空跑读取配置
@@ -577,7 +602,7 @@ def main():
             if effective_stop > 0 and cur_price > 0 and cur_price <= effective_stop and pos['quantity'] > 0:
                 logger.warning(
                     f"🚨 自动止损触发: {pos['stock_code']} 现价 {cur_price:.2f} <= "
-                    f"{stop_source} {effective_stop:.2f} (浮盈亏 {pnl_pct:.2f}%)"
+                    f"{stop_source} {effective_stop:.2f} (浮盈亏 {pnl_pct:.2f}%) [account_id={pos['account_id']}]"
                 )
 
                 # 构造止损 rule
@@ -591,25 +616,54 @@ def main():
                     'source': 'auto'
                 }
 
-                # 执行虚拟卖出;只有真正记录了模拟卖单才推用户。
-                # 软止损/无持仓等结果只记日志,避免误导成"已下单"。
-                from sim_executor import execute_trade
-                result = execute_trade(rule, cur_price)
-                message = str(result.get('message', ''))
+                # REQ-046 修复：区分账户类型
+                # account_id=1（学习账户）：执行卖出
+                # account_id=2（真实账户）：只提醒，不执行
+                if pos['account_id'] == 1:
+                    # 执行虚拟卖出;只有真正记录了模拟卖单才推用户。
+                    # 软止损/无持仓等结果只记日志,避免误导成"已下单"。
+                    from sim_executor import execute_trade
+                    result = execute_trade(rule, cur_price)
+                    message = str(result.get('message', ''))
 
-                if result.get('success') and ('卖出' in message or '清仓' in message):
-                    logger.info(f"✅ 已记录模拟止损卖单: {message}")
-                    triggered_msgs.append(
-                        f"🚨 模拟止损卖单: {pos['stock_code']} 现价¥{cur_price:.2f} 触发{stop_source}¥{effective_stop:.2f} → {message}"
-                    )
-                elif result.get('success'):
-                    # soft stop / DEFER:也推送到用户(提醒关注)
-                    logger.info(f"i️ 止损提醒已评估: {message}")
-                    triggered_msgs.append(
-                        f"⚠️ 止损预警: {pos['stock_code']} 现价¥{cur_price:.2f} 跌破{stop_source}¥{effective_stop:.2f},尚未执行卖出({message})"
-                    )
+                    if result.get('success') and ('卖出' in message or '清仓' in message):
+                        logger.info(f"✅ 已记录模拟止损卖单: {message}")
+                        triggered_msgs.append(
+                            f"🚨 模拟止损卖单: {pos['stock_code']} 现价¥{cur_price:.2f} 触发{stop_source}¥{effective_stop:.2f} → {message}"
+                        )
+                    elif result.get('success'):
+                        # soft stop / DEFER:也推送到用户(提醒关注)
+                        logger.info(f"i️ 止损提醒已评估: {message}")
+                        triggered_msgs.append(
+                            f"⚠️ 止损预警: {pos['stock_code']} 现价¥{cur_price:.2f} 跌破{stop_source}¥{effective_stop:.2f},尚未执行卖出({message})"
+                        )
+                    else:
+                        logger.warning(f"⚠️ 止损提醒未下单: {message}")
                 else:
-                    logger.warning(f"⚠️ 止损提醒未下单: {message}")
+                    # account_id=2（真实账户）：根据配置决定是否自动卖出
+                    # 默认只提醒，不执行；如需自动执行，设置环境变量 SIM_AUTO_STOP_REAL=1
+                    auto_stop_real = os.environ.get('SIM_AUTO_STOP_REAL', '0') == '1'
+                    
+                    if auto_stop_real:
+                        logger.warning(f"🔥 真实账户自动止损已启用，执行卖出: {pos['stock_code']}")
+                        from sim_executor import execute_trade, set_active_account
+                        set_active_account(2)  # 切换到真实账户
+                        result = execute_trade(rule, cur_price)
+                        set_active_account(1)  # 切回学习账户
+                        
+                        message = str(result.get('message', ''))
+                        if result.get('success') and ('卖出' in message or '清仓' in message):
+                            logger.info(f"✅ 真实账户已执行止损卖出: {message}")
+                            triggered_msgs.append(
+                                f"🚨 真实账户止损卖单: {pos['stock_code']} 现价¥{cur_price:.2f} 触发{stop_source}¥{effective_stop:.2f} → {message}"
+                            )
+                        else:
+                            logger.warning(f"⚠️ 真实账户止损执行失败: {message}")
+                    else:
+                        logger.warning(f"⚠️ 真实账户持仓止损提醒（不自动卖出）: {pos['stock_code']} 现价¥{cur_price:.2f} 触发{stop_source}¥{effective_stop:.2f}")
+                        triggered_msgs.append(
+                            f"⚠️ 止损预警（真实账户）: {pos['stock_code']} {pos['stock_name']} 现价¥{cur_price:.2f} 跌破{stop_source}¥{effective_stop:.2f}, 浮盈亏{pnl_pct:.2f}% 【模拟盘，需手动处理】"
+                        )
     except Exception as e:
         logger.warning(f"自动止损检查异常: {e}")
 

@@ -1,18 +1,8 @@
-#!/usr/bin/env python3
-"""Check open tasks in pm.db"""
 import sqlite3
-conn = sqlite3.connect('data/pm.db')
+conn = sqlite3.connect(r"C:\Users\Administrator\.openclaw\workspace\quant-learn\data\pm.db")
 cur = conn.cursor()
-
-cur.execute('SELECT status, COUNT(*) FROM tasks GROUP BY status')
-print('Task status:')
-for r in cur.fetchall():
-    print(' ', r[0], ':', r[1])
-
-cur.execute("SELECT id, type, title, status, priority FROM tasks WHERE status='open' ORDER BY priority, id")
-print()
-print('Open tasks:')
-for r in cur.fetchall():
-    print(' ', r[0], r[1], r[2][:60], '|', r[3], '|', r[4])
-
+cur.execute("SELECT id, type, title, status, priority, updated_at FROM tasks WHERE status NOT IN ('done','verified') OR updated_at >= '2026-07-01' ORDER BY updated_at DESC")
+rows = cur.fetchall()
+for r in rows:
+    print(r)
 conn.close()

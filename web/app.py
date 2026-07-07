@@ -15,7 +15,7 @@ from sim.asset_allocation import summarize_allocation
 from sim.market_sentiment import fetch_market_sentiment
 
 app = Flask(__name__)
-DB_PATH = ROOT / "data" / "sim.db"
+DB_PATH = ROOT / "data" / "sim_live_mirror.db"
 
 # ====================================================================
 #  行情

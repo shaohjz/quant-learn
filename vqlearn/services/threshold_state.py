@@ -60,14 +60,37 @@ def _is_in_next_day_confirm_window() -> bool:
 # ============================================================
 #  买入规则：直接判定（无两段确认）
 # ============================================================
+def _has_sell_today(stock_code: str) -> bool:
+    """BUG-011: 检查今日是否已有该股票的 SELL 成交。
+
+    用于同日反向交易防御：若今日已卖出，则不应允许再买入。
+    """
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM sim_trades "
+            "WHERE account_id=1 AND stock_code=? AND trade_date=? "
+            "AND direction='SELL' LIMIT 1",
+            (stock_code, _today()),
+        ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
 def should_buy_now(stock_code: str, rule_name: str) -> tuple[bool, str]:
     """
     买入规则的去重判定。
     今日同一规则只能触发一次（buy 不需要次日确认，但需要当日去重）。
+    BUG-011: 额外检查今日是否有 SELL 成交，防止同日反向交易（自成交）。
     Returns: (允许买入, 原因)
     """
     if rule_name not in BUY_RULES:
         return False, f"非买入规则: {rule_name}"
+
+    # BUG-011: 同日反向交易防御 — 今日已卖出则禁止再买入
+    if _has_sell_today(stock_code):
+        return False, "BUG-011: 今日已有卖出成交，同日反向交易规则禁止再买入"
 
     conn = get_conn()
     row = conn.execute(

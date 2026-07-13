@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quant-learn"
+version = "0.1.0"
+description = "A-share quantitative trading platform with sim/paper/QMT execution"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = {text = "Private"}
+
+# ─── Core dependencies (always installed) ───
+dependencies = [
+    "pyyaml>=6.0",
+    "requests>=2.28",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "psutil>=5.9",
+]
+
+# ─── Optional dependency groups ───
+[project.optional-dependencies]
+# Data & research (mootdx, akshare, tushare etc.)
+research = [
+    "mootdx>=0.5",
+    "akshare>=1.10",
+    "tushare>=1.2",
+    "baostock>=0.8",
+    "matplotlib>=3.7",
+]
+
+# Web UI
+web = [
+    "flask>=3.0",
+]
+
+# VnPy trading framework (requires Python 3.11 on Windows)
+vnpy = [
+    "vnpy>=3.8",
+    "vnpy-ctastrategy>=1.0",
+]
+
+# Development & testing
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+]
+
+# QMT integration — NOT installable via PyPI; see SETUP_GUIDE.md
+# xtquant must be manually installed from QMT's bundled site-packages
+
+# All extras combined
+all = [
+    "quant-learn[research,web,dev]",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "sim*",
+    "broker*",
+    "gateways*",
+    "strategies*",
+    "notifier*",
+    "vqlearn*",
+    "scripts*",
+    "utils*",
+    "apps*",
+    "web*",
+    "pm*",
+    "decision*",
+    "ml*",
+]
+exclude = ["tests*", "data*", "output*", "logs*", "docs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short -m 'not integration and not qmt'"
+markers = [
+    "integration: marks tests requiring external services (deselect with '-m \"not integration\"')",
+    "qmt: marks tests requiring QMT/xtquant environment (deselect with '-m \"not qmt\"')",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120

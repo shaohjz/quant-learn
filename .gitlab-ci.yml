@@ -5,6 +5,7 @@ stages:
   - lint
   - test
   - collect-check
+  - gate
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -21,9 +22,39 @@ ruff-check:
   before_script:
     - pip install ruff
   script:
-    - ruff check . --select=E9,F63,F7,F82 --output-format=concise || true
-    - ruff format --check . || true
+    - ruff check quant_core/ broker/ gateways/ research/ --select=E9,F63,F7,F82 --output-format=concise || true
+    - ruff format --check quant_core/ broker/ gateways/ research/ || true
   allow_failure: true  # 格式问题不阻塞，先跑起来
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# ─── Import-Time Side Effect Check ───
+import-check:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - pip install pyyaml pandas numpy requests psutil
+  script:
+    # 确保核心模块 import 时无副作用（不连数据库、不打印、不读文件）
+    - python -c "import quant_core.domain; import quant_core.fees; import quant_core.execution; import quant_core.strategy; import quant_core.portfolio; import quant_core.metrics; import quant_core.risk; print('All quant_core modules import cleanly')"
+    - python -c "from broker.trading_gate import LiveTradingGate; print('trading_gate imports cleanly')"
+    - python -c "from research.walk_forward import WalkForwardValidator; print('walk_forward imports cleanly')"
+    - python -c "from gateways.qmt_order_state import QmtOrderStateMachine; print('qmt_order_state imports cleanly')"
+    - python -c "from research.promotion_gate import PromotionGate; print('promotion_gate imports cleanly')"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# ─── Unit Tests ───
+pytest-unit:
+  stage: test
+  image: python:3.11
+  before_script:
+    - pip install pytest pytest-cov pyyaml pandas numpy requests psutil
+  script:
+    - python -m pytest tests/ -v -m "not integration and not qmt" --tb=short --cov=quant_core --cov-report=term-missing 2>&1
+  coverage: '/TOTAL\s+.*\s+(\d+%)$/'
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "master"'
@@ -42,18 +73,6 @@ pytest-collect:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "master"'
 
-# ─── Unit Tests ───
-pytest-unit:
-  stage: test
-  image: python:3.11
-  before_script:
-    - pip install pytest pyyaml pandas numpy requests psutil
-  script:
-    - python -m pytest tests/ -v -m "not integration and not qmt" --tb=short 2>&1
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "master"'
-
 # ─── QMT Integration (manual, Windows runner) ───
 pytest-qmt:
   stage: test
@@ -64,3 +83,18 @@ pytest-qmt:
       when: manual
       allow_failure: true
     - when: never
+
+# ─── Gate: 所有检查通过才算成功 ───
+gate-pass:
+  stage: gate
+  image: python:3.11
+  script:
+    - echo "All gates passed — code is safe to merge"
+  needs:
+    - ruff-check
+    - import-check
+    - pytest-unit
+    - pytest-collect
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'

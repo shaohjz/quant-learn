@@ -1,0 +1,66 @@
+# QL-003: CI Gate — 禁止不可测试的修改进入主分支
+# 工蜂 (GitLab) CI 配置
+
+stages:
+  - lint
+  - test
+  - collect-check
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+    - .venv
+
+# ─── Lint ───
+ruff-check:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - pip install ruff
+  script:
+    - ruff check . --select=E9,F63,F7,F82 --output-format=concise || true
+    - ruff format --check . || true
+  allow_failure: true  # 格式问题不阻塞，先跑起来
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# ─── Collect Check ───
+pytest-collect:
+  stage: collect-check
+  image: python:3.11
+  before_script:
+    - pip install pytest pyyaml pandas numpy requests psutil
+  script:
+    - python -m pytest --collect-only tests -q 2>&1 | tee collect_output.txt
+    - if grep -qi "error\|ERROR" collect_output.txt; then echo "FAIL: collection errors found"; exit 1; fi
+    - echo "PASS: no collection errors"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# ─── Unit Tests ───
+pytest-unit:
+  stage: test
+  image: python:3.11
+  before_script:
+    - pip install pytest pyyaml pandas numpy requests psutil
+  script:
+    - python -m pytest tests/ -v -m "not integration and not qmt" --tb=short 2>&1
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# ─── QMT Integration (manual, Windows runner) ───
+pytest-qmt:
+  stage: test
+  script:
+    - echo "QMT integration tests require Windows runner with xtquant — skipped"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+      allow_failure: true
+    - when: never

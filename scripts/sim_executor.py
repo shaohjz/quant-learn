@@ -1,3 +1,4 @@
+import warnings; warnings.warn('This module is DEPRECATED. Use scripts/quant_engine.py + quant_core/ instead.', DeprecationWarning, stacklevel=2)
 """
 sim_executor_v2.py — 修复买入执行率低的问题
 ======================================================================
@@ -14,6 +15,7 @@ import sys
 import json
 import logging
 import sqlite3
+import warnings
 from datetime import datetime, time as _dt_time
 from pathlib import Path
 from typing import Optional
@@ -28,6 +30,74 @@ from sim.db import get_conn
 from sim.precision import quantize_amount, quantize_cost, quantize_price
 
 import logging
+
+# ═══════════════════════════════════════════════════════════════════
+# quant_core 适配桥接 — 逐步接入新核心，不破坏现有功能
+# ═══════════════════════════════════════════════════════════════════
+try:
+    from quant_core.fees import FeeModel as _QCFeeModel, FeeConfig as _QCFeeConfig
+    _HAS_QC_FEES = True
+except ImportError:
+    _HAS_QC_FEES = False
+
+try:
+    from quant_core.strategy import ThresholdStrategyCore as _QCThresholdStrategyCore
+    from quant_core.strategy import PortfolioState as _QCPortfolioState
+    _HAS_QC_STRATEGY = True
+except ImportError:
+    _HAS_QC_STRATEGY = False
+
+try:
+    from quant_core.execution import validate_execution_timing as _qc_validate_execution_timing
+    from quant_core.execution import ExecutionPolicy as _QCExecutionPolicy
+    from quant_core.execution import ExecutionConfig as _QCExecutionConfig
+    _HAS_QC_EXECUTION = True
+except ImportError:
+    _HAS_QC_EXECUTION = False
+
+try:
+    from quant_core.risk import RiskEngine as _QCRiskEngine, RiskCheckResult as _QCRiskCheckResult
+    from quant_core.risk import TradingHealthGate as _QCTradingHealthGate
+    _HAS_QC_RISK = True
+except ImportError:
+    _HAS_QC_RISK = False
+
+try:
+    from quant_core.metrics import (
+        calc_sharpe as _qc_calc_sharpe,
+        calc_sortino as _qc_calc_sortino,
+        calc_max_drawdown as _qc_calc_max_drawdown,
+        calc_net_expectancy as _qc_calc_net_expectancy,
+        calc_excess_return as _qc_calc_excess_return,
+        calc_information_ratio as _qc_calc_information_ratio,
+    )
+    _HAS_QC_METRICS = True
+except ImportError:
+    _HAS_QC_METRICS = False
+
+try:
+    from quant_core.portfolio import (
+        PortfolioConfig as _QCPortfolioConfig,
+        calculate_position_size as _qc_calculate_position_size,
+    )
+    _HAS_QC_PORTFOLIO = True
+except ImportError:
+    _HAS_QC_PORTFOLIO = False
+
+try:
+    from quant_core.domain import (
+        SignalIntent as _QCSignalIntent,
+        OrderIntent as _QCOrderIntent,
+        OrderSide as _QCOrderSide,
+        Direction as _QCDirection,
+        Fill as _QCFill,
+        Bar as _QCBar,
+    )
+    _HAS_QC_DOMAIN = True
+except ImportError:
+    _HAS_QC_DOMAIN = False
+
+logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
 
 # ============================================================
@@ -94,6 +164,38 @@ DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
 # 费率
 COMMISSION_RATE = 0.00025   # 万2.5
 STAMP_TAX_RATE = 0.0005   # 万5（仅卖出）
+
+# ── quant_core 适配: 佣金计算桥接 ──────────────────────────────────
+def calc_commission(amount: float, rate: float = COMMISSION_RATE) -> float:
+    """计算佣金 — 桥接到 quant_core.fees.FeeModel。
+
+    Deprecated: 请使用 quant_core.fees.FeeModel.calculate() 替代。
+    """
+    warnings.warn(
+        "calc_commission is deprecated, use quant_core.fees.FeeModel.calculate() instead",
+        DeprecationWarning, stacklevel=2,
+    )
+    if _HAS_QC_FEES:
+        model = _QCFeeModel()
+        fees = model.calculate(side="BUY", amount=amount)
+        return fees.commission
+    return max(amount * rate, 5.0)  # 旧逻辑保底
+
+
+def calc_stamp_tax(amount: float) -> float:
+    """计算印花税 — 桥接到 quant_core.fees.FeeModel。
+
+    Deprecated: 请使用 quant_core.fees.FeeModel.calculate(side='SELL') 替代。
+    """
+    warnings.warn(
+        "calc_stamp_tax is deprecated, use quant_core.fees.FeeModel.calculate(side='SELL') instead",
+        DeprecationWarning, stacklevel=2,
+    )
+    if _HAS_QC_FEES:
+        model = _QCFeeModel()
+        fees = model.calculate(side="SELL", amount=amount)
+        return fees.stamp_tax
+    return amount * STAMP_TAX_RATE
 
 # ── REQ-038 持仓数量硬上限（从 config.yaml 读取，缺省 6/2）─────────────────────
 def _load_risk_limits():
@@ -866,6 +968,10 @@ def _get_yesterday_close(code: str) -> float | None:
 
 
 def check_price_sanity(code: str, cur_price: float, action: str) -> tuple[bool, str]:
+    warnings.warn(
+        "check_price_sanity is deprecated, use quant_core.execution.ExecutionPolicy.validate() instead",
+        DeprecationWarning, stacklevel=2,
+    )
     """检查价格合理性。返回 (ok, reason)。⚠ 接近涨跌停的买卖。"""
     yc = _get_yesterday_close(code)
     if not yc or yc <= 0:
@@ -1491,6 +1597,10 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
 
 
 def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
+    warnings.warn(
+        "decide_action is deprecated, use quant_core.strategy.ThresholdStrategyCore.decide() instead",
+        DeprecationWarning, stacklevel=2,
+    )
     """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。
     
     REQ-048 修复：添加 position 参数，传递给 _check_stop_loss_severity()
@@ -1787,6 +1897,10 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
 
 
 def execute_trade(rule: dict, cur_price: float) -> dict:
+    warnings.warn(
+        "execute_trade is deprecated, use quant_core.execution.ExecutionPolicy.execute() instead",
+        DeprecationWarning, stacklevel=2,
+    )
     """持仓股止损止盈。
     
     返回: {'updated': bool, 'highest': float, 'trailing': float, 'reason': str}

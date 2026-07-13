@@ -1,3 +1,4 @@
+import warnings; warnings.warn('This module is DEPRECATED. Use scripts/quant_engine.py + quant_core/ instead.', DeprecationWarning, stacklevel=2)
 """
 sim_executor_v2.py — 修复买入执行率低的问题
 ======================================================================

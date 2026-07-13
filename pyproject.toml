@@ -80,6 +80,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short -m 'not integration and not qmt'"
+norecursedirs = ["legacy", "output", "data", "logs", "docs", "__pycache__", ".git"]
 markers = [
     "integration: marks tests requiring external services (deselect with '-m \"not integration\"')",
     "qmt: marks tests requiring QMT/xtquant environment (deselect with '-m \"not qmt\"')",

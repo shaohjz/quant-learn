@@ -1,3 +1,10 @@
+import warnings
+warnings.warn(
+    "scripts/wecom_webhook.py is DEPRECATED. Use notifier/wecom_notifier.py instead."
+    " See legacy/README.md for migration. This file will be removed after QL-014 stabilizes."
+    , DeprecationWarning, stacklevel=2
+)
+
 #!/usr/bin/env python
 """
 scripts/wecom_webhook.py — 企微 Webhook 推送公共模块

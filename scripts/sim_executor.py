@@ -16,6 +16,7 @@ import logging
 import sqlite3
 from datetime import datetime, time as _dt_time
 from pathlib import Path
+from typing import Optional
 
 # ── 强制使用 live_mirror DB ─────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +65,14 @@ _SUPPORT_CACHE = {}     # code → (timestamp, ok, reason)
 _MACD_CACHE = {}       # code → (timestamp, ok)
 _STOP_VOL_THRESH = 1.5   # 放量下跌阈值（放量 ≥1.5 倍确认止损）
 _MACD_CACHE_TTL_SEC = 600  # MACD/支撑检查缓存有效期（秒）
+_MA20_CACHE = {}          # code → (timestamp, ma20_value)
+_MA20_CACHE_TTL_SEC = 300  # MA20 缓存有效期 5 分钟
+_MA20_MAX_DEVIATION_PCT = 5.0  # REQ-060: MA20偏离最大允许百分比
+
+# TASK-20260709-2004-001: buy_zone 信号 MA10 偏移拦截阈值（≥该值拒绝执行）
+_BUY_ZONE_MA10_MAX_DEVIATION_PCT = 5.0  # 超过此阈值拦截买入
+_MA10_CACHE = {}          # code → (timestamp, ma10_value)
+_MA10_CACHE_TTL_SEC = 300  # MA10 缓存有效期 5 分钟
 
 def _ensure_trailing_columns(conn: sqlite3.Connection) -> None:
     """REQ-041: 旧 sim_positions 表幂等补齐跟踪止损字段。"""
@@ -101,6 +110,126 @@ def _load_risk_limits():
 
 MAX_TOTAL_POSITIONS, MAX_DAILY_NEW_POSITIONS = _load_risk_limits()
 
+
+# ── REQ-036 行业集中度风控 ──────────────────────────────────────────────
+_INDUSTRY_CACHE = {}       # code → (timestamp, industry)
+_INDUSTRY_CACHE_TTL = 3600  # 行业分类缓存 1 小时
+def _load_industry_concentration_limits():
+    """从 config.yaml 读取行业集中度风控上限。
+    支持两种配置格式：
+    1. risk.industry_concentration (新格式, 优先)
+    2. risk 下的旧字段 max_industry_pct, max_sector_pct (兼容)
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
+        risk = cfg.get('risk') or {}
+        ic = risk.get('industry_concentration') or {}
+        if ic:
+            return {
+                'enabled': bool(ic.get('enabled', True)),
+                'max_single_pct': float(ic.get('max_single_industry_pct', 30.0)),
+                'max_cross_count': int(ic.get('max_cross_industry_count', 3)),
+            }
+        # 兼容旧格式
+        return {
+            'enabled': True,
+            'max_single_pct': float(risk.get('max_industry_pct', 0.3)) * 100,
+            'max_cross_count': int(risk.get('max_cross_industry_count', 3)),
+        }
+    except Exception:
+        return {'enabled': True, 'max_single_pct': 30.0, 'max_cross_count': 3}
+_INDUSTRY_LIMITS = _load_industry_concentration_limits()
+
+
+def _get_stock_industry(code: str) -> Optional[str]:
+    """获取股票行业分类，使用 baostock 的 query_stock_industry。"""
+    import time
+    now = time.time()
+    cached = _INDUSTRY_CACHE.get(code)
+    if cached and (now - cached[0]) < _INDUSTRY_CACHE_TTL:
+        return cached[1]
+    try:
+        import baostock as bs
+        bs.login()
+        try:
+            rs = bs.query_stock_industry(code)
+            if rs.error_code == '0':
+                rows = []
+                while rs.next():
+                    rows.append(rs.get_row_data())
+                if rows:
+                    # 返回最新的一条行业分类
+                    ind = rows[0][-1] if len(rows[0]) > 0 else None
+                    _INDUSTRY_CACHE[code] = (now, ind)
+                    return ind
+        finally:
+            bs.logout()
+    except Exception as e:
+        logger.debug(f'获取行业 {code} 失败: {e}')
+    _INDUSTRY_CACHE[code] = (now, None)
+    return None
+
+
+def _check_industry_concentration(conn: sqlite3.Connection, account_id: int,
+                                   code: str, total_value: float) -> tuple[bool, str]:
+    """REQ-036: 检查行业集中度是否超限。
+    
+    1. 如果该股票属于已有持仓的行业，检查该行业总市值占比是否超 max_single_pct
+    2. 如果是全新行业，检查已覆盖行业数是否超 max_cross_count
+    """
+    if not _INDUSTRY_LIMITS['enabled']:
+        return True, '行业集中度检查已禁用'
+    
+    # 获取目标股票的行业
+    target_ind = _get_stock_industry(code)
+    if not target_ind:
+        return True, f'无法获取 {code} 行业分类，放行'
+    
+    max_single_pct = _INDUSTRY_LIMITS['max_single_pct']
+    max_cross = _INDUSTRY_LIMITS['max_cross_count']
+    
+    # 统计持仓中各行业的市值占比
+    rows = conn.execute("""
+        SELECT stock_code, stock_name, market_value
+        FROM sim_positions
+        WHERE account_id = ? AND quantity > 0
+    """, (account_id,)).fetchall()
+    
+    if not rows:
+        # 无持仓，允许买入
+        return True, f'无现有持仓，行业={target_ind or "未知"}，放行'
+    
+    # 计算每个行业的市值占比
+    # 注意：批量获取行业可能较慢，这里逐股获取并缓存
+    industry_mv = {}  # industry → total market_value
+    for row in rows:
+        stock_code = row[0]
+        mv = float(row[2] or 0)
+        ind = _get_stock_industry(stock_code)
+        if ind:
+            industry_mv[ind] = industry_mv.get(ind, 0) + mv
+    
+    # 检查目标行业是否已存在
+    existing_mv = industry_mv.get(target_ind, 0)
+    existing_pct = (existing_mv / total_value * 100) if total_value > 0 else 0
+    
+    if existing_pct >= max_single_pct:
+        reason = (f'行业"{target_ind}"集中度过高: 现有占比{existing_pct:.1f}% ≥ 上限{max_single_pct}%，'
+                  f'拒绝新建 {code}')
+        return False, reason
+    
+    # 检查跨行业数量
+    current_industry_count = len(industry_mv)
+    # 如果目标行业不在现有持仓中，算作新增行业
+    if target_ind not in industry_mv:
+        if current_industry_count >= max_cross:
+            reason = (f'已覆盖{current_industry_count}个行业 ≥ 上限{max_cross}，'
+                      f'行业"{target_ind}"为新行业，拒绝新建 {code}')
+            return False, reason
+    
+    return True, (f'行业"{target_ind}"集中度{existing_pct:.1f}% < {max_single_pct}%，'
+                  f'跨行业{current_industry_count}/{max_cross}，通过')
 
 
 
@@ -1216,6 +1345,151 @@ def update_all_positions_market_value(price_dict: dict, account_id: int | None =
         conn.close()
 
 
+def _check_ma20_deviation(code: str, rule: dict, cur_price: float) -> tuple[bool, str]:
+    """REQ-060: buy_strong 信号执行前验证当前 MA20 是否与信号生成时偏离过大。
+    
+    从 rule 的 message 中提取信号生成时的 MA20 参考值，重新获取当前 MA20，
+    若价格与当前 MA20 偏离超过 _MA20_MAX_DEVIATION_PCT% 则拒绝执行。
+    
+    Returns:
+        (ok, reason): ok=True 表示 MA20 新鲜可执行，False 表示偏离过大需跳过
+    """
+    import re, time
+    
+    msg = rule.get('message', '')
+    # 匹配 "回踩 MA20(X)" 或类似模式提取引用的 MA20 值
+    m = re.search(r'MA20\(([\d.]+)\)', msg)
+    if not m:
+        # 信号不包含 MA20 引用，无需检查
+        return True, '信号不含MA20引用，跳过MA20偏离检查'
+    
+    ref_ma20 = float(m.group(1))
+    
+    # 检查当前价格与引用 MA20 的偏离
+    deviation_pct = abs(cur_price - ref_ma20) / ref_ma20 * 100
+    if deviation_pct <= _MA20_MAX_DEVIATION_PCT:
+        return True, f'MA20偏离{deviation_pct:.1f}% ≤ {_MA20_MAX_DEVIATION_PCT}%，价格与信号MA20一致'
+    
+    # 偏离较大：重新获取当前 MA20 确认
+    now_ts = time.time()
+    cached = _MA20_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MA20_CACHE_TTL_SEC:
+        current_ma20 = cached[1]
+    else:
+        try:
+            import baostock as bs
+            import pandas as pd
+            from datetime import datetime, timedelta
+            prefix = 'sh' if code.startswith('6') else 'sz'
+            end = datetime.now().strftime('%Y-%m-%d')
+            start = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
+            bs.login()
+            try:
+                rs = bs.query_history_k_data_plus(
+                    f'{prefix}.{code}', 'date,close',
+                    start_date=start, end_date=end, frequency='d', adjustflag='2'
+                )
+                rows = []
+                while (rs.error_code == '0') and rs.next():
+                    rows.append(rs.get_row_data())
+            finally:
+                bs.logout()
+            if len(rows) < 20:
+                logger.warning(f'REQ-060 [{code}] K线数据不足20日，无法验证MA20，放行')
+                return True, 'K线数据不足无法验证MA20，放行'
+            closes = [float(r[1]) for r in rows]
+            current_ma20 = sum(closes[-20:]) / 20
+            _MA20_CACHE[code] = (now_ts, current_ma20)
+        except Exception as e:
+            logger.warning(f'REQ-060 [{code}] 获取MA20失败: {e}，放行')
+            return True, f'MA20获取失败({e})，放行'
+    
+    # 检查当前价格与实时 MA20 的偏离
+    real_deviation = abs(cur_price - current_ma20) / current_ma20 * 100
+    if real_deviation <= _MA20_MAX_DEVIATION_PCT:
+        return True, f'实时MA20偏离{real_deviation:.1f}% ≤ {_MA20_MAX_DEVIATION_PCT}%（信号MA20={ref_ma20}已过期但当前合理）'
+    
+    # 偏离过大，拒绝
+    reason = (f'REQ-060 MA20严重偏离: 信号MA20={ref_ma20}, 实时MA20={current_ma20:.2f}, '
+              f'现价={cur_price}, 偏离={real_deviation:.1f}% > {_MA20_MAX_DEVIATION_PCT}%')
+    logger.warning(f'🚫 [{code}] {reason}')
+    return False, reason
+
+
+def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tuple[bool, str]:
+    """TASK-20260709-2004-001: buy_zone 信号执行前检测 MA10 与当前价格偏离。
+    
+    从 rule['trigger'] 取信号生成时的 MA10 阈值，重新获取当前 MA10，
+    若偏离超过 _BUY_ZONE_MA10_MAX_DEVIATION_PCT% 则拒绝执行（与 buy_strong 的 _check_ma20_deviation 对齐）。
+    
+    修复说明（2026-07-10）：
+    - v1 仅告警不拦截 + 正则 message 提取参考价 → 无效（fix_buyzone_signal_text.py 把 message 改为成交价，偏差恒为0%）
+    - v2 改为拦截函数 + 从 rule['trigger'] 取 MA10 阈值（trigger 固定为 MA10 值，不受文案改写影响）
+    - v3 (TASK-20260710-2006-001): 确认拦截链路完整性；若 trigger 为过时MA10值(如57.33)而现价远低于它(如43.94)，偏差>5%会正确拦截；同时 signal_reason 写入时附实际成交价防串价
+    已验证: 07-10 实际案例002709 trigger=57.33, price=43.94, 偏差=23.4%>5%→应拦截
+    
+    Returns:
+        (ok, reason): ok=True 表示 MA10 新鲜可执行，False 表示偏离过大需跳过
+    """
+    import time
+    
+    # 从 rule['trigger'] 取信号生成时的 MA10 阈值
+    # daily_recalibrate.py: buy_zone trigger = round(ma10, 2)
+    ref_ma10 = float(rule.get('trigger', 0) or 0)
+    if ref_ma10 <= 0:
+        # trigger 无效，跳过检查
+        return True, 'buy_zone trigger无效，跳过MA10偏离检查'
+    
+    # 检查当前价格与信号 MA10 的偏离
+    deviation_pct = abs(cur_price - ref_ma10) / ref_ma10 * 100
+    if deviation_pct <= _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
+        return True, f'MA10偏离{deviation_pct:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%，价格与信号MA10一致'
+    
+    # 偏离较大：重新获取当前 MA10 确认
+    now_ts = time.time()
+    cached = _MA10_CACHE.get(code)
+    if cached and (now_ts - cached[0]) < _MA10_CACHE_TTL_SEC:
+        current_ma10 = cached[1]
+    else:
+        try:
+            import baostock as bs
+            from datetime import datetime, timedelta
+            prefix = 'sh' if code.startswith('6') else 'sz'
+            end = datetime.now().strftime('%Y-%m-%d')
+            start = (datetime.now() - timedelta(days=40)).strftime('%Y-%m-%d')
+            bs.login()
+            try:
+                rs = bs.query_history_k_data_plus(
+                    f'{prefix}.{code}', 'date,close',
+                    start_date=start, end_date=end, frequency='d', adjustflag='2'
+                )
+                rows = []
+                while (rs.error_code == '0') and rs.next():
+                    rows.append(rs.get_row_data())
+            finally:
+                bs.logout()
+            if len(rows) < 10:
+                logger.warning(f'REQ-060(buy_zone) [{code}] K线数据不足10日，无法验证MA10，放行')
+                return True, 'K线数据不足无法验证MA10，放行'
+            closes = [float(r[1]) for r in rows]
+            current_ma10 = sum(closes[-10:]) / 10
+            _MA10_CACHE[code] = (now_ts, current_ma10)
+        except Exception as e:
+            logger.warning(f'REQ-060(buy_zone) [{code}] 获取MA10失败: {e}，放行')
+            return True, f'MA10获取失败({e})，放行'
+    
+    # 检查当前价格与实时 MA10 的偏离
+    real_deviation = abs(cur_price - current_ma10) / current_ma10 * 100
+    if real_deviation <= _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
+        return True, f'实时MA10偏离{real_deviation:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%（信号MA10={ref_ma10}已过期但当前合理）'
+    
+    # 偏离过大，拒绝
+    reason = (f'REQ-060(buy_zone) MA10严重偏离: 信号MA10={ref_ma10:.2f}, 实时MA10={current_ma10:.2f}, '
+              f'现价={cur_price}, 偏离={real_deviation:.1f}% > {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%')
+    logger.warning(f'🚫 [{code}] {reason}')
+    return False, reason
+
+
 def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
     """决策函数：根据 rule.level 决定 BUY / SELL_HALF / SELL_ALL / NO_ACTION。
     
@@ -1290,6 +1564,24 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
             logger.info(f'⚠️ [{code}] {level} 触发但价格检查失败: {reason}')
             return 'NO_ACTION'
 
+        # ── REQ-060 buy_strong MA20新鲜度检查 ────────────────────
+        if level == 'buy_strong':
+            ma_ok, ma_reason = _check_ma20_deviation(code, rule, cur_price)
+            if not ma_ok:
+                logger.info(f'⚠️ [{code}] {level} MA20偏离过大: {ma_reason}')
+                _write_review_decision(_ACCOUNT_ID, code, 'ma20_deviation_blocked', 0, ma_reason)
+                return 'NO_ACTION'
+            logger.info(f'✅ [{code}] {level} MA20检查通过: {ma_reason}')
+
+        # ── TASK-20260709-2004-001 buy_zone MA10偏差拦截 ────────
+        if level == 'buy_zone':
+            ma_ok, ma_reason = _check_buy_zone_ma_deviation(code, rule, cur_price)
+            if not ma_ok:
+                logger.info(f'⚠️ [{code}] {level} MA10偏离过大: {ma_reason}')
+                _write_review_decision(_ACCOUNT_ID, code, 'buy_zone_ma10_deviation_blocked', 0, ma_reason)
+                return 'NO_ACTION'
+            logger.info(f'✅ [{code}] {level} MA10检查通过: {ma_reason}')
+
         # 检查账户现金是否足够
         # REQ-049 修复：现金不足默认预算时，允许用全部现金买入（只要够买100股）
         conn = sqlite3.connect(_DB_PATH)
@@ -1338,6 +1630,24 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
             )
             return 'NO_ACTION'
         logger.info(f'✅ [{code}] 估值过滤通过: {val_reason}')
+
+        # ── REQ-036 行业集中度风控 ──────────────────────────────────
+        # 获取总资产用于计算行业占比
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            acct = conn.execute(
+                "SELECT total_value FROM sim_account WHERE id=?", (_ACCOUNT_ID,)
+            ).fetchone()
+            total_value = float(acct[0]) if acct else _load_max_total()
+        finally:
+            conn.close()
+        ind_ok, ind_reason = _check_industry_concentration(
+            sqlite3.connect(_DB_PATH), _ACCOUNT_ID, code, total_value)
+        if not ind_ok:
+            logger.info(f'🚫 [{code}] 行业集中度拒绝: {ind_reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'industry_concentration_blocked', 0, ind_reason)
+            return 'NO_ACTION'
+        logger.info(f'✅ [{code}] 行业集中度通过: {ind_reason}')
 
         _write_review_decision(_ACCOUNT_ID, code, 'buy', 1, f'{level} 信号通过风控；{reason}')
         return 'BUY'
@@ -1703,7 +2013,13 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             trade_date = datetime.now().strftime('%Y-%m-%d')
             trade_time = datetime.now().strftime('%H:%M:%S')
             # REQ-057: 回写 signal_reason，避免成交记录 signal_reason 为空无法追源
-            _signal_reason = f"{rule.get('level', '')}|{rule.get('message', '')}".strip('|')
+            # TASK-20260710-2006-001: buy_zone/buy_strong 消息中附实际成交价与触发阈值，防串价误导
+            _raw_msg = rule.get('message', '')
+            _sig_level = rule.get('level', '')
+            if _sig_level in ('buy_zone', 'buy_strong') and _raw_msg:
+                _trigger_val = rule.get('trigger', '')
+                _raw_msg += f' [实际建仓价={cur_price:.2f}，阈值={_trigger_val}]'
+            _signal_reason = f"{_sig_level}|{_raw_msg}".strip('|')
             conn.execute(
                 "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

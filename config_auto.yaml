@@ -233,4 +233,56 @@ auto_discovered:
         trigger: 1.82
         dir: below
         msg: ⚠️ 中公教育破 1.82！趋势反转，移除观察
+  '300017':
+    name: 网宿科技
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-09'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.5，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 14.5
+        dir: below
+        msg: 💰 网宿科技回踩至 14.5！试探建仓
+      buy_strong:
+        trigger: 13.9
+        dir: below
+        msg: 💰💰 网宿科技跌至 13.9！优质建仓区
+      trend_break:
+        trigger: 12.71
+        dir: below
+        msg: ⚠️ 网宿科技破 12.71！趋势反转，移除观察
+  '603296':
+    name: 华勤技术
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-09'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 79.25
+        dir: below
+        msg: 💰 华勤技术回踩至 79.25！试探建仓
+      buy_strong:
+        trigger: 75.98
+        dir: below
+        msg: 💰💰 华勤技术跌至 75.98！优质建仓区
+      trend_break:
+        trigger: 69.45
+        dir: below
+        msg: ⚠️ 华勤技术破 69.45！趋势反转，移除观察
 cooldown: {}

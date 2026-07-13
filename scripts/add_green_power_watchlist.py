@@ -80,12 +80,12 @@ def build_entry(code: str, name: str, levels: dict):
             'buy_zone': {
                 'trigger': levels['ma10'],
                 'dir': 'below',
-                'msg': f"💰 {name}跌至 {levels['ma10']:.2f}！接近 MA10({levels['ma10']:.2f})，试探建仓",
+                'msg': f"💰 {name} BuyZone 阈值 {levels['ma10']:.2f}（前收 MA10），试探建仓",
             },
             'buy_strong': {
                 'trigger': levels['ma20'],
                 'dir': 'below',
-                'msg': f"💰💰 {name}跌至 {levels['ma20']:.2f}！回踩 MA20({levels['ma20']:.2f})，优质建仓区",
+                'msg': f"💰💰 {name} BuyStrong 阈值 {levels['ma20']:.2f}（前收 MA20），优质建仓区",
             },
             'trend_break': {
                 'trigger': levels['trend_break'],

@@ -123,12 +123,15 @@ def calc_indicators(df: pd.DataFrame) -> dict | None:
             tr_list.append(tr)
         atr14 = float(np.mean(tr_list)) if tr_list else 0.0
 
+    # 取最后一条数据日期（BaoStock 格式）
+    last_date = str(df["date"].iloc[-1]) if "date" in df.columns else "N/A"
     return {
         "ma5": round(ma5, 2),
         "ma10": round(ma10, 2),
         "ma20": round(ma20, 2),
         "atr14": round(atr14, 2),
         "last_close": round(float(close[-1]), 2),
+        "trade_date": last_date,
     }
 
 
@@ -355,7 +358,7 @@ def main():
                     old_val = float(rules["buy_zone"].get("trigger", 0))
                     new_val = new_thresh["buy_zone"]
                     if old_val != new_val:
-                        new_msg = f"💰 {name}跌至 {new_val}！接近 MA10({ind['ma10']})，试探建仓"
+                        new_msg = f"💰 {name} BuyZone 阈值 {new_val}（{ind['trade_date']} MA10={ind['ma10']}），试探建仓"
                         config_text = replace_trigger_in_text(
                             config_text, code, "buy_zone", old_val, new_val, new_msg
                         )
@@ -366,7 +369,7 @@ def main():
                     old_val = float(rules["buy_strong"].get("trigger", 0))
                     new_val = new_thresh["buy_strong"]
                     if old_val != new_val:
-                        new_msg = f"💰💰 {name}跌至 {new_val}！回踩 MA20({ind['ma20']})，优质建仓区"
+                        new_msg = f"💰💰 {name} BuyStrong 阈值 {new_val}（{ind['trade_date']} MA20={ind['ma20']}），优质建仓区"
                         config_text = replace_trigger_in_text(
                             config_text, code, "buy_strong", old_val, new_val, new_msg
                         )

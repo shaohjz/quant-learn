@@ -1,42 +1,37 @@
-#!/usr/bin/env python
-"""检查模拟盘DB和PMDB的表结构"""
 import sqlite3
-import os
+db = sqlite3.connect('data/sim_live_mirror.db')
+c = db.cursor()
 
-ROOT = "C:/Users/Administrator/.openclaw/workspace/quant-learn"
+# 看看watchlist_history表
+c.execute("SELECT * FROM watchlist_history LIMIT 20")
+cols = [d[0] for d in c.description]
+print('watchlist_history 列:', cols)
+for r in c.fetchall():
+    print(r)
 
-# 检查模拟盘DB
-sim_db = f"{ROOT}/data/sim_live_mirror.db"
-print(f"=== sim_live_mirror.db ===")
-print(f"exists: {os.path.exists(sim_db)}")
-if os.path.exists(sim_db):
-    conn = sqlite3.connect(sim_db)
-    tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()
-    print(f"tables: {tables}")
-    for (t,) in tables:
-        cols = conn.execute(f"PRAGMA table_info({t})").fetchall()
-        count = conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-        print(f"  {t}: {count} rows, columns: {[c[1] for c in cols]}")
-        if count > 0:
-            sample = conn.execute(f"SELECT * FROM {t} LIMIT 2").fetchall()
-            print(f"    sample: {sample}")
-    conn.close()
+print('\n---')
 
-# 检查PMDB
-pm_db = f"{ROOT}/data/pm.db"
-print(f"\n=== pm.db ===")
-print(f"exists: {os.path.exists(pm_db)}")
-if os.path.exists(pm_db):
-    conn = sqlite3.connect(pm_db)
-    tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()
-    print(f"tables: {tables}")
-    for (t,) in tables:
-        cols = conn.execute(f"PRAGMA table_info({t})").fetchall()
-        count = conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-        print(f"  {t}: {count} rows, columns: {[c[1] for c in cols]}")
-        if count > 0:
-            sample = conn.execute(f"SELECT * FROM {t} LIMIT 2").fetchall()
-            print(f"    sample: {sample}")
-    conn.close()
+# 看看review_decisions表
+c.execute("SELECT * FROM review_decisions LIMIT 10")
+cols = [d[0] for d in c.description]
+print('review_decisions 列:', cols)
+for r in c.fetchall():
+    print(r)
 
-print("\nDone.")
+print('\n---')
+
+# 看看strategy_shadow_signals表结构
+c.execute("PRAGMA table_info(strategy_shadow_signals)")
+cols = c.fetchall()
+print('strategy_shadow_signals 结构:')
+for col in cols:
+    print(f'  {col}')
+
+# 看看有哪些不同的股票出现在信号中
+c.execute("SELECT DISTINCT stock_code, stock_name FROM strategy_shadow_signals ORDER BY stock_code")
+stocks = c.fetchall()
+print(f'\n信号中出现过的股票 ({len(stocks)}只):')
+for s in stocks:
+    print(f'  {s[0]} {s[1]}')
+
+db.close()

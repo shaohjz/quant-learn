@@ -120,6 +120,7 @@ risk:
   max_daily_build_amount_pct: 0.3
   max_daily_new_positions: 3
   max_daily_trades: 10
+  max_cross_industry_count: 3  # REQ-036: 最大跨行业数
   max_industry_pct: 0.3
   max_position_pct: 0.2
   max_sector_pct: 0.35

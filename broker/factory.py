@@ -5,8 +5,12 @@ broker/factory.py — broker 工厂
 """
 
 import os
+import logging
 from .base import IBroker
 from .sim_broker import SimBroker
+from .trading_gate import check_live_order, GateDecision
+
+logger = logging.getLogger(__name__)
 
 
 def get_broker(mode: str = "sim", **kwargs) -> IBroker:
@@ -22,7 +26,30 @@ def get_broker(mode: str = "sim", **kwargs) -> IBroker:
             account_id=int(kwargs.get("account_id", 1)),
             slippage=float(kwargs.get("slippage", 0.0)),
         )
-    elif mode in ("live", "qmt"):
+    if mode in ("live", "qmt"):
+        # QL-000: 自动交易总闸检查
+        account_id_str = str(kwargs.get("qmt_account") or os.environ.get("QMT_ACCOUNT_ID") or kwargs.get("account_id", ""))
+        # 估算单笔金额（用传入的价格×数量，如果没有则用风险配置限额作兜底）
+        _price = float(kwargs.get("price", 0))
+        _qty = int(kwargs.get("quantity", 0))
+        _amount = _price * _qty if _price > 0 and _qty > 0 else 0.0
+        gate_decision = check_live_order(mode, account_id_str, _amount)
+        gate_decision_audit = gate_decision  # 保留引用
+        if not gate_decision.allowed:
+            logger.error(
+                f"⛔ TradingGate BLOCKED: mode={mode} account={account_id_str} "
+                f"reason={gate_decision.reason}"
+            )
+            # 返回一个 dry_run 的 SimBroker 而不是抛异常 — fail closed 但不崩溃
+            logger.warning("Falling back to SimBroker due to TradingGate block")
+            broker = SimBroker(
+                account_id=int(kwargs.get("account_id", 1)),
+                slippage=float(kwargs.get("slippage", 0.0)),
+            )
+            broker.connect()
+            return broker
+        logger.info(f"✅ TradingGate PASSED: mode={mode} account={account_id_str}")
+
         from .qmt_broker import QMTBroker
         qmt_path = kwargs.get("qmt_path") or os.environ.get("QMT_USERDATA_MINI")
         account_id = kwargs.get("qmt_account") or os.environ.get("QMT_ACCOUNT_ID")

@@ -1,48 +1,66 @@
-检查 39 只股票的解禁情况...
-  [1/39] 000301 东方盛虹... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22000301%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [2/39] 603260 合盛硅业... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603260%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [3/39] 603290 斯达半导... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603290%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [4/39] 600703 三安光电... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600703%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [5/39] 000708 中信特钢... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22000708%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [6/39] 600563 法拉电子... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600563%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [7/39] 002906 华阳集团... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002906%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [8/39] 603013 亚普股份... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603013%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [9/39] 002405 四维图新... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002405%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [10/39] 002920 德赛西威... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002920%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [11/39] 002067 景兴纸业... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002067%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [12/39] 301179 泽宇智能... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22301179%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [13/39] 601728 中国电信... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22601728%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [14/39] 000899 赣能股份... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22000899%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [15/39] 600130 波导股份... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600130%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [16/39] 600310 广西能源... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600310%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [17/39] 603178 圣龙股份... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603178%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [18/39] 603601 再升科技... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603601%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [19/39] 001896 豫能控股... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22001896%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [20/39] 000600 建投能源... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22000600%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [21/39] 000725 京东方A... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22000725%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [22/39] 002149 西部材料... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002149%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [23/39] 002156 通富微电... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002156%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [24/39] 002290 禾盛新材... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002290%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [25/39] 002654 万润科技... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002654%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [26/39] 002709 天赐材料... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22002709%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [27/39] 301120 新特电气... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22301120%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [28/39] 600021 上海电力... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600021%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [29/39] 600186 莲花控股... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600186%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [30/39] 600309 万华化学... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600309%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [31/39] 600863 华能蒙电... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22600863%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [32/39] 601222 林洋能源... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22601222%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [33/39] 601991 大唐发电... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22601991%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [34/39] 603005 晶方科技... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603005%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [35/39] 603256 宏和科技... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603256%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [36/39] 603693 江苏新能... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603693%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [37/39] 603757 大元泵业... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22603757%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [38/39] 605006 山东玻纤... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22605006%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-  [39/39] 000001 TestLoss... ❌ HTTPSConnectionPool(host='datacenter-web.eastmoney.com', port=443): Max retries exceeded with url: /api/data/v1/get?reportName=RPT_LIFT_STAGE&columns=ALL&filter=%28SECURITY_CODE%3D%22000001%22%29%28FREE_DATE%3E%3D%272026-06-23%27%29%28FREE_DATE%3C%3D%272026-09-21%27%29&pageNumber=1&pageSize=20&sortColumns=FREE_DATE&sortTypes=1&source=WEB&client=WEB (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
+检查 56 只股票的解禁情况...
+  [1/56] 000301 东方盛虹... ✅
+  [2/56] 603260 合盛硅业... ✅
+  [3/56] 603290 斯达半导... ✅
+  [4/56] 600703 三安光电... ✅
+  [5/56] 000708 中信特钢... ✅
+  [6/56] 600563 法拉电子... ✅
+  [7/56] 002906 华阳集团... ✅
+  [8/56] 603013 亚普股份... ✅
+  [9/56] 002405 四维图新... ✅
+  [10/56] 002920 德赛西威... ✅
+  [11/56] 002709 天赐材料... ✅
+  [12/56] 600021 上海电力... ✅
+  [13/56] 600310 广西能源... ✅
+  [14/56] 000600 建投能源... ✅
+  [15/56] 001896 豫能控股... ✅
+  [16/56] 002149 西部材料... ✅
+  [17/56] 002273 水晶光电... ⚠️ 解禁! 2026-07-23 
+  [18/56] 002290 禾盛新材... ✅
+  [19/56] 002335 科华数据... ✅
+  [20/56] 002607 中公教育... ✅
+  [21/56] 002738 中矿资源... ✅
+  [22/56] 300308 中际旭创... ✅
+  [23/56] 300750 宁德时代... ✅
+  [24/56] 600233 圆通速递... ✅
+  [25/56] 600580 卧龙电驱... ✅
+  [26/56] 600863 华能蒙电... ⚠️ 解禁! 2026-08-10 
+  [27/56] 601138 工业富联... ✅
+  [28/56] 601728 中国电信... ✅
+  [29/56] 601991 大唐发电... ✅
+  [30/56] 603693 江苏新能... ✅
+  [31/56] 603341 龙旗科技... ⚠️ 解禁! 2026-07-15 
+  [32/56] 002475 立讯精密... ✅
+  [33/56] 000725 京东方A... ✅
+  [34/56] 000899 赣能股份... ✅
+  [35/56] 002067 景兴纸业... ✅
+  [36/56] 002126 银轮股份... ✅
+  [37/56] 002156 通富微电... ✅
+  [38/56] 002654 万润科技... ✅
+  [39/56] 300017 网宿科技... ✅
+  [40/56] 300394 天孚通信... ✅
+  [41/56] 300502 新易盛... ✅
+  [42/56] 301120 新特电气... ✅
+  [43/56] 301179 泽宇智能... ✅
+  [44/56] 600186 莲花控股... ✅
+  [45/56] 600309 万华化学... ✅
+  [46/56] 600988 赤峰黄金... ✅
+  [47/56] 601222 林洋能源... ✅
+  [48/56] 603005 晶方科技... ✅
+  [49/56] 603256 宏和科技... 🔓 51天后解禁 
+  [50/56] 603296 华勤技术... 🔓 36天后解禁 
+ 🔓 75天后解禁 
+  [51/56] 603757 大元泵业... ✅
+  [52/56] 603986 兆易创新... ✅
+  [53/56] 605006 山东玻纤... ✅
+  [54/56] 688041 海光信息... ✅
+  [55/56] 688256 寒武纪... ✅
+  [56/56] 000001 TestLoss... ✅
 
-[OK] 解禁预警报告已保存: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\lockup_alerts\2026-06-23_alert.json
+[OK] 解禁预警报告已保存: C:\Users\Administrator\.openclaw\workspace\quant-learn\output\lockup_alerts\2026-07-14_alert.json
 
-🔓 解禁预警 — 2026-06-23
-检查 39 只股票
+🔓 解禁预警 — 2026-07-14
+检查 56 只股票
 ============================================================
 
 ✅ 30 天内无异动解禁

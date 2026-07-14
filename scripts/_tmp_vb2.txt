@@ -1,0 +1,24 @@
+===== REQ-092: valuation_filter in strategy_shadow_signals =====
+  strategies: ['composite', 'macd', 'sma_cross', 'threshold_alert', 'bollinger', 'news_sentiment']
+  [INFO] valuation_filter not in shadow_signals; check strategy code
+
+===== REQ-013: monitoring module presence =====
+  monitoring files: ['scripts\\data_freshness_monitor.py', 'scripts\\monitoring_check.py', 'scripts\\monitor_002453_monday.py', 'scripts\\monitor_002453_monday_runner.bat', 'scripts\\monitor_600330_sell.py', 'scripts\\monitor_new3_watchlist.py', 'scripts\\stop_profit_monitor.py', 'scripts\\monitoring_check.py', 'sim\\monitoring.py']
+  files referencing HealthMonitor/monitoring_events: ['scripts\\verify_batch2.py']
+
+===== REQ-026: risk suggestion in review output =====
+  found in data/reports\daily_dev_report_20260614.md
+  risk suggestion in reports: True
+
+===== REQ-036: sector concentration limit in code =====
+  files with sector/concentration limit logic: ['scripts\\sim_executor.py', 'scripts\\verify_batch2.py', 'sim\\risk_sector.py', 'tests\\test_req020_review_alerts.py', 'tests\\test_req036.py']
+
+===== REQ-045: cash low warning / position mgmt =====
+  files with cash warning/budget logic: ['run_daily_improved.py', 'scripts\\cleanup_review_decisions.py', 'scripts\\pm_finance_manager.py', 'scripts\\sim_executor.py', 'scripts\\sim_executor_v2.py', 'scripts\\test_cooldown_dedup.py', 'scripts\\verify_batch2.py', 'scripts\\_audit14.py']
+
+===== REQ-062: cooldown / budget guard review =====
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\verify_batch2.py", line 78, in <module>
+    c.execute("SELECT id, title, status, result_notes FROM tasks WHERE id='REQ-062'")
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such table: tasks

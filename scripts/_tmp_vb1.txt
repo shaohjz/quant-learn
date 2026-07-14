@@ -1,0 +1,19 @@
+===== REQ-096: 600580 trailing stop gap =====
+  [OK] 600580 not in open positions (already stopped out)
+
+===== REQ-097: 002738 position should be closed after stop_loss sell =====
+  trades: [(51, 'BUY', 64.11, 100, 'buy_zone|💰 中矿资源回踩至 64.36！试探建仓', '2026-07-06', '13:00:11'), (53, 'BUY', 62.57, 100, 'buy_zone|💰 中矿资源回踩至 64.36！试探建仓', '2026-07-07', '10:00:11'), (57, 'SELL', 58.36, 100, 'stop_loss|自动止损 (跟踪止损 ¥58.98, 浮盈亏 -7.86%)', '2026-07-08', '11:00:09')]
+  open positions: []
+  [OK] stop_loss sell executed and position cleared
+
+===== REQ-098: sim_daily_nav for 2026-07-08 =====
+  nav rows: [('2026-07-08', 219516.49, 188286.49, 31230.0, 0.029049)]
+  [OK] 2026-07-08 NAV present
+
+===== REQ-059: trailing_stop_price coverage =====
+  total positions: 4
+  [OK] all open positions have trailing_stop_price set
+
+===== REQ-058: SELL signal_reason coverage =====
+  total SELL trades: 12
+  [OK] all SELL trades have signal_reason

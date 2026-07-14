@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-25T08:00:13.912506",
+  "timestamp": "2026-07-14T08:00:10.966933",
   "all_ok": false,
   "results": {
     "pm_service": {
@@ -8,11 +8,11 @@
     },
     "datasource": {
       "ok": false,
-      "msg": "baostock 登录失败: 网络接收错误。"
+      "msg": "baostock 登录失败: 黑名单用户，请与管理员联系"
     },
     "account": {
       "ok": true,
-      "msg": "账户正常: 现金¥100,000, 总资产¥100,000"
+      "msg": "账户正常: 现金¥170,373, 总资产¥217,679"
     },
     "scheduled_tasks": {
       "ok": true,
@@ -20,7 +20,7 @@
     },
     "disk_space": {
       "ok": true,
-      "msg": "磁盘空间正常 (C盘剩余 71.0GB/100GB)"
+      "msg": "磁盘空间正常 (C盘剩余 1024.0GB/1024GB)"
     }
   }
 }

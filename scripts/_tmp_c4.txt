@@ -1,0 +1,30 @@
+===== TASK-20260702-2004-005: cooldown dedup check =====
+  duplicate keys (>1 record): 0
+  [OK] No duplicate review_decisions per (account,stock,date,type) — dedup working
+
+===== TASK-20260701-200653-003: risk block counts by date =====
+   ('2026-07-08', 'buy', 1)
+   ('2026-07-08', 'position_count_limit', 28)
+   ('2026-07-08', 'post_buy_protection', 1)
+   ('2026-07-08', 'valuation_filter_blocked', 1)
+   ('2026-07-07', 'buy', 4)
+   ('2026-07-07', 'daily_buy_budget_guard', 20)
+   ('2026-07-07', 'position_count_limit', 2)
+   ('2026-07-07', 'post_buy_protection', 1)
+   ('2026-07-07', 'valuation_filter_blocked', 3)
+   ('2026-07-06', 'buy', 2)
+   ('2026-07-06', 'daily_buy_budget_guard', 1)
+   ('2026-07-06', 'position_count_limit', 19)
+   ('2026-07-06', 'valuation_filter_blocked', 3)
+   ('2026-07-03', 'buy', 3)
+   ('2026-07-03', 'daily_buy_budget_guard', 18)
+   ('2026-07-03', 'daily_new_position_limit', 1)
+   ('2026-07-03', 'post_buy_protection', 1)
+   ('2026-07-02', 'buy', 3)
+   ('2026-07-02', 'daily_buy_budget_guard', 14)
+   ('2026-07-02', 'daily_new_position_limit', 3)
+
+===== position_count_limit config =====
+  risk.position_count_limit: None
+  risk.max_cross_industry_count: 3
+  risk.daily_new_position_limit: None

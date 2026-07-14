@@ -42,15 +42,36 @@ WATCH_CODES = [
 
 
 def get_stock_name(code: str) -> str:
-    """从 DB 获取股票名称"""
+    """从 DB 获取股票名称，失败时用腾讯接口回退"""
     try:
         conn = sqlite3.connect(str(DB_PATH))
         c = conn.cursor()
+        # 优先从 watchlist_history 获取
         c.execute("SELECT stock_name FROM watchlist_history WHERE stock_code=? LIMIT 1", (code,))
         r = c.fetchone()
-        conn.close()
-        if r:
+        if r and r[0] and r[0] != code:
+            conn.close()
             return r[0]
+        # 其次从 config.yaml 的 user_manual watchlist
+        c.execute("SELECT DISTINCT name FROM watchlist_config WHERE code=? LIMIT 1", (code,))
+        r = c.fetchone()
+        conn.close()
+        if r and r[0] and r[0] != code:
+            return r[0]
+    except Exception:
+        pass
+    
+    # 腾讯接口回退
+    try:
+        import urllib.request, re
+        market = "sh" if code.startswith(("6","5","9","11")) else "sz"
+        url = f"http://sqt.gtimg.cn/utf8/q={market}{code}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        resp = urllib.request.urlopen(req, timeout=10)
+        text = resp.read().decode("gbk")
+        m = re.search(r"~([\u4e00-\u9fa5A-Za-z0-9&]+?)~", text)
+        if m:
+            return m.group(1)
     except Exception:
         pass
     return code
@@ -59,6 +80,9 @@ def get_stock_name(code: str) -> str:
 def write_signal(stock_code: str, stock_name: str, news_title: str, news_content: str,
                  news_time: str, news_source: str, news_url: str) -> bool:
     """写入 strategy_shadow_signals 表，返回是否新增"""
+    # REQ-060: 校验名称有效性
+    if not stock_name or stock_name == stock_code:
+        stock_name = get_stock_name(stock_code)
     now = datetime.now()
     shadow_date = now.strftime("%Y-%m-%d")
     shadow_time = now.strftime("%H:%M:%S")
@@ -79,13 +103,28 @@ def write_signal(stock_code: str, stock_name: str, news_title: str, news_content
         # 构建 signal_reason: 标题|来源|时间|内容摘要
         reason = f"{news_title[:200]}|{news_source}|{news_time}|{news_content[:200]}"
 
+        # REQ-060: 获取真实价格（前一交易日收盘价）
+        ref_price = 0.0
+        try:
+            market = "sh" if stock_code.startswith(("6","5","9","11")) else "sz"
+            import urllib.request, json as _json
+            url = f"http://ifzq.gtimg.cn/appstock/app/fqkline/get?param={market}{stock_code},day,,,2,qfq"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            resp = urllib.request.urlopen(req, timeout=5)
+            data = _json.loads(resp.read().decode("utf-8"))
+            klines = data.get("data", {}).get(f"{market}{stock_code}", {}).get("day", []) or []
+            if klines:
+                ref_price = float(klines[-1][2])
+        except Exception:
+            ref_price = 0.0
+
         c.execute("""
             INSERT INTO strategy_shadow_signals 
             (shadow_date, shadow_time, strategy_id, stock_code, stock_name,
              price, position, signal_action, signal_rule, signal_reason, confidence, created_at)
             VALUES (?, ?, 'news_sentiment', ?, ?,
-                    0, 0, 'PENDING', 'news_pending', ?, 0.0, ?)
-        """, (shadow_date, shadow_time, stock_code, stock_name, reason, created_at))
+                    ?, 0, 'PENDING', 'news_pending', ?, 0.0, ?)
+        """, (shadow_date, shadow_time, stock_code, stock_name, ref_price, reason, created_at))
         conn.commit()
         return True
     except Exception as e:

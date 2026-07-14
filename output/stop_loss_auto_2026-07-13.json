@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-07-13T21:07:55.449467",
+  "mode": "live",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "scanned": 6,
+  "triggered": 1,
+  "safe": 5,
+  "errors": 0,
+  "dry_run": false,
+  "details": {
+    "triggered": [
+      {
+        "stock_code": "603341",
+        "stock_name": "龙旗科技",
+        "account_id": 1,
+        "quantity": 200,
+        "avg_cost": 39.55,
+        "sell_price": 40.31,
+        "stop_price": 40.34,
+        "loss_pct": 0.019216182048040587,
+        "result": {
+          "success": true,
+          "msg": "卖出 603341 200股 @ 40.3100",
+          "amount": 8062.0,
+          "commission": 5.0,
+          "tax": 8.06,
+          "order_id": "SLA-603341-1783948075441"
+        }
+      }
+    ],
+    "safe": [
+      {
+        "stock_code": "600233",
+        "stock_name": "圆通速递",
+        "current_price": 16.72,
+        "stop_price": 15.97,
+        "loss_pct": -0.03686635944700464
+      },
+      {
+        "stock_code": "600310",
+        "stock_name": "广西能源",
+        "current_price": 3.87,
+        "stop_price": 3.84,
+        "loss_pct": 0.007812500000000066
+      },
+      {
+        "stock_code": "600863",
+        "stock_name": "华能蒙电",
+        "current_price": 4.75,
+        "stop_price": 4.41,
+        "loss_pct": -0.00835073068893529
+      },
+      {
+        "stock_code": "601728",
+        "stock_name": "中国电信",
+        "current_price": 5.71,
+        "stop_price": 5.19,
+        "loss_pct": 0.012411347517730547
+      },
+      {
+        "stock_code": "600809",
+        "stock_name": "山西汾酒",
+        "current_price": 109.56,
+        "stop_price": 100.7952,
+        "loss_pct": 0.0
+      }
+    ],
+    "errors": []
+  }
+}

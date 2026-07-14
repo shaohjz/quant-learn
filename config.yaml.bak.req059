@@ -1,3 +1,4 @@
+# account:  # 已废弃，请使用 accounts 配置
 accounts:
   learn:
     account_id: 1
@@ -13,10 +14,11 @@ accounts:
     description: 用户实际持仓镜像，由 scripts/sync_real_position.py 维护
     initial_cash: 25000.0
 data:
-  use_cache_only: false
+  use_cache_only: false  # 离线模式：仅使用缓存数据，不获取外部数据
   max_retries: 3
   retry_delay: 2
   timeout: 30
+
 broker:
   live:
     session_id: 123456
@@ -36,7 +38,7 @@ legacy_watch:
 notifier:
   enabled: true
 notify:
-  wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE
+  wecom_webhook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE'  # 请在企微群里添加自定义机器人，获取 Webhook URL 并替换此处
 precision:
   amount_decimals: 2
   cost_decimals: 3
@@ -52,16 +54,16 @@ real_portfolio_rules:
         trigger: 6.8
       stop_loss:
         dir: below
-        msg: 🚨 华软科技跌破 MA20x0.97 (4.51)！止损线
-        trigger: 4.51
+        msg: 🚨 跌破 5.80！硬止损卖出 300 股
+        trigger: 5.8
       stop_loss_tight:
         dir: below
         msg: ⚠️ 华软科技跌破 MA20×0.98 (5.69)！接近止损线
         trigger: 5.69
       take_profit:
         dir: above
-        msg: 🎉 华软科技涨至 5.27！(MA20+2ATR)，建议止盈
-        trigger: 5.27
+        msg: 🎉 华软科技涨至 7.44！(成本×1.15 或 MA20+2ATR)，建议止盈
+        trigger: 7.44
   '600330':
     name: 天通股份
     rules:
@@ -71,12 +73,12 @@ real_portfolio_rules:
         trigger: 32.0
       stop_loss:
         dir: below
-        msg: 🚨 天通股份跌破 MA20x0.97 (28.48)！止损线
-        trigger: 28.48
+        msg: 🚨 天通股份跌破 MA20×0.97 (27.94)！止损线
+        trigger: 27.94
       take_profit:
         dir: above
-        msg: 🎉 天通股份涨至 34.38！(MA20+2ATR)，建议止盈
-        trigger: 34.38
+        msg: 🎉 天通股份涨至 33.92！(MA20+2ATR)，建议止盈
+        trigger: 33.92
   '603601':
     name: 再升科技
     rules:
@@ -86,12 +88,12 @@ real_portfolio_rules:
         trigger: 15.0
       stop_loss:
         dir: below
-        msg: 🚨 再升科技跌破 MA20x0.97 (11.9)！止损线
-        trigger: 11.9
+        msg: 🚨 再升科技跌破 MA20×0.97 (16.31)！止损线
+        trigger: 16.31
       take_profit:
         dir: above
-        msg: 🎉 再升科技涨至 13.85！(MA20+2ATR)，建议止盈
-        trigger: 13.85
+        msg: 🎉🎉 涨到 21.00！题材股高位，清仓 100 股
+        trigger: 21.0
       take_profit_half:
         dir: above
         msg: 🎉 再升科技涨至 19.89！(MA20+2ATR)，建议止盈
@@ -101,16 +103,16 @@ real_portfolio_rules:
     rules:
       stop_loss:
         dir: below
-        msg: 🚨 大元泵业跌破 MA20x0.97 (66.99)！止损线
-        trigger: 66.99
+        msg: 🚨 大元泵业跌破 50.00！浮亏超 -10%，硬止损必须卖出
+        trigger: 50.0
       stop_loss_soft:
         dir: below
         msg: ⚠️ 大元泵业跌破 55.00！浮亏约 -8%，接近止损线，密切关注
         trigger: 55.0
       take_profit:
         dir: above
-        msg: 🎉 大元泵业涨至 84.5！(MA20+2ATR)，建议止盈
-        trigger: 84.5
+        msg: 🎉 大元泵业涨至 65.00，回本线附近，可考虑减仓
+        trigger: 65.0
 risk:
   cash_ratio_crit: 0.02
   cash_ratio_warn: 0.05
@@ -118,7 +120,7 @@ risk:
   max_daily_build_amount_pct: 0.3
   max_daily_new_positions: 3
   max_daily_trades: 10
-  max_cross_industry_count: 3
+  max_cross_industry_count: 3  # REQ-036: 最大跨行业数
   max_industry_pct: 0.3
   max_position_pct: 0.2
   max_sector_pct: 0.35
@@ -127,9 +129,12 @@ risk:
   take_profit_pct: 0.15
   warn_industry_pct: 0.25
   warn_sector_pct: 0.3
+  # TASK-20260702-2004-004: 买入后止损保护期
+  # 防止买进后同日即被 trend_break 等信号止损卖出
+  # 不改策略参数，只在执行层面加保护
   post_buy_protection:
-    protect_minutes: 120
-    protect_loss_pct: -15.0
+    protect_minutes: 120  # 买入后多长时间(分钟)内抑制止损信号
+    protect_loss_pct: -15.0  # 保护期内允许的最大亏损(%)，超过此值仍会触发止损; 设为0表示完全禁止止损
 stock_pool: []
 watchlist:
   auto_discovered: {}
@@ -144,16 +149,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 建投能源跌至 9.1！回踩 MA20(9.1)，优质建仓区
-          trigger: 9.1
+          msg: 💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区
+          trigger: 9.9
         buy_zone:
           dir: below
-          msg: 💰 建投能源跌至 8.48！接近 MA10(8.48)，试探建仓
-          trigger: 8.48
+          msg: 💰 建投能源跌至 10.17！接近 MA10(10.17)，试探建仓
+          trigger: 10.17
         trend_break:
           dir: below
-          msg: ⚠️ 建投能源破 8.54！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 8.54
+          msg: ⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 9.26
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -182,12 +187,12 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 京东方A跌至 7.48！回踩 MA20(7.48)，优质建仓区
-          trigger: 7.48
+          msg: 💰💰 京东方A跌至 4.27！回踩 MA20(4.27)，优质建仓区
+          trigger: 4.27
         buy_zone:
           dir: below
-          msg: 💰 京东方A跌至 8.05！接近 MA10(8.05)，试探建仓
-          trigger: 8.05
+          msg: 💰 京东方A跌至 4.36！接近 MA10(4.36)，试探建仓
+          trigger: 4.36
       source: 涛哥推荐
       tags:
       - 面板
@@ -220,8 +225,8 @@ watchlist:
           trigger: 13.79
         trend_break:
           dir: below
-          msg: ⚠️ 赣能股份破 9.9！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 9.9
+          msg: ⚠️ 赣能股份破 12.52！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 12.52
         trend_break_warn:
           dir: below
           msg: ⚠️ 赣能股份跳破 12.84 (MA60×0.95)！趋势实质走坏
@@ -262,16 +267,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 豫能控股跌至 17.57！回踩 MA20(17.57)，优质建仓区
-          trigger: 17.57
+          msg: 💰💰 豫能控股跌至 16.28！回踩 MA20(16.28)，优质建仓区
+          trigger: 16.28
         buy_zone:
           dir: below
-          msg: 💰 豫能控股跌至 15.28！接近 MA10(15.28)，试探建仓
-          trigger: 15.28
+          msg: 💰 豫能控股跌至 16.12！接近 MA10(16.12)，试探建仓
+          trigger: 16.12
         trend_break:
           dir: below
-          msg: ⚠️ 豫能控股破 15.29！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 15.29
+          msg: ⚠️ 豫能控股破 15.09！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 15.09
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -303,8 +308,8 @@ watchlist:
           trigger: 5.11
         trend_break:
           dir: below
-          msg: ⚠️ 景兴纸业破 3.61！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 3.61
+          msg: ⚠️ 景兴纸业破 4.65！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 4.65
         trend_break_warn:
           dir: below
           msg: ⚠️ 景兴纸业跳破 4.76 (MA60×0.95)！趋势实质走坏
@@ -344,12 +349,12 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 西部材料跌至 49.93！回踩 MA20(49.93)，优质建仓区
-          trigger: 49.93
+          msg: 💰💰 西部材料跌至 67.7！回踩 MA20(67.7)，优质建仓区
+          trigger: 67.7
         buy_zone:
           dir: below
-          msg: 💰 西部材料跌至 45.94！接近 MA10(45.94)，试探建仓
-          trigger: 45.94
+          msg: 💰 西部材料跌至 71.63！接近 MA10(71.63)，试探建仓
+          trigger: 71.63
       source: 玄鉴录
       tags:
       - 有色金属
@@ -376,12 +381,12 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 通富微电跌至 69.74！回踩 MA20(69.74)，优质建仓区
-          trigger: 69.74
+          msg: 💰💰 通富微电跌至 56.04！回踩 MA20(56.04)，优质建仓区
+          trigger: 56.04
         buy_zone:
           dir: below
-          msg: 💰 通富微电跌至 69.86！接近 MA10(69.86)，试探建仓
-          trigger: 69.86
+          msg: 💰 通富微电跌至 60.04！接近 MA10(60.04)，试探建仓
+          trigger: 60.04
       source: 玄鉴录
       tags:
       - 半导体
@@ -408,16 +413,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 禾盛新材跌至 85.46！回踩 MA20(85.46)，优质建仓区
-          trigger: 85.46
+          msg: 💰💰 禾盛新材跌至 89.06！回踩 MA20(89.06)，优质建仓区
+          trigger: 89.06
         buy_zone:
           dir: below
-          msg: 💰 禾盛新材跌至 85.07！接近 MA10(85.07)，试探建仓
-          trigger: 85.07
+          msg: 💰 禾盛新材跌至 95.58！接近 MA10(95.58)，试探建仓
+          trigger: 95.58
         trend_break:
           dir: below
-          msg: ⚠️ 禾盛新材破 74.39！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 74.39
+          msg: ⚠️ 禾盛新材破 77.38！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 77.38
       source: 用户指定
       tags:
       - 新材料
@@ -443,12 +448,12 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 万润科技跌至 18.59！回踩 MA20(18.59)，优质建仓区
-          trigger: 18.59
+          msg: 💰💰 万润科技跌至 16.01！回踩 MA20(16.01)，优质建仓区
+          trigger: 16.01
         buy_zone:
           dir: below
-          msg: 💰 万润科技跌至 18.76！接近 MA10(18.76)，试探建仓
-          trigger: 18.76
+          msg: 💰 万润科技跌至 17.40！接近 MA10(17.40)，试探建仓
+          trigger: 17.4
       source: 玄鉴录
       trend_filter:
         atr_pct: 8.29
@@ -472,12 +477,12 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 天赐材料跌至 50.24！回踩 MA20(50.24)，优质建仓区
-          trigger: 50.24
+          msg: 💰💰 天赐材料跌至 57.05！回踩 MA20(57.05)，优质建仓区
+          trigger: 57.05
         buy_zone:
           dir: below
-          msg: 💰 天赐材料跌至 47.66！接近 MA10(47.66)，试探建仓
-          trigger: 47.66
+          msg: 💰 天赐材料跌至 57.33！接近 MA10(57.33)，试探建仓
+          trigger: 57.33
       source: 玄鉴录
       tags:
       - 锂电池
@@ -509,8 +514,8 @@ watchlist:
           trigger: 23.44
         trend_break:
           dir: below
-          msg: ⚠️ 新特电气破 15.88！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 15.88
+          msg: ⚠️ 新特电气破 18.93！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 18.93
         trend_break_warn:
           dir: below
           msg: ⚠️ 新特电气跳破 21.83 (MA60×0.95)！趋势实质走坏
@@ -555,8 +560,8 @@ watchlist:
           trigger: 25.49
         trend_break:
           dir: below
-          msg: ⚠️ 泽宇智能破 18.96！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 18.96
+          msg: ⚠️ 泽宇智能破 23.46！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 23.46
         trend_break_warn:
           dir: below
           msg: ⚠️ 泽宇智能跳破 23.74 (MA60×0.95)！趋势实质走坏
@@ -597,16 +602,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 上海电力跌至 15.24！回踩 MA20(15.24)，优质建仓区
-          trigger: 15.24
+          msg: 💰💰 上海电力跌至 17.84！回踩 MA20(17.84)，优质建仓区
+          trigger: 17.84
         buy_zone:
           dir: below
-          msg: 💰 上海电力跌至 14.37！接近 MA10(14.37)，试探建仓
-          trigger: 14.37
+          msg: 💰 上海电力跌至 18.11！接近 MA10(18.11)，试探建仓
+          trigger: 18.11
         trend_break:
           dir: below
-          msg: ⚠️ 上海电力破 14.37！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 14.37
+          msg: ⚠️ 上海电力破 16.62！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 16.62
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -633,16 +638,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 莲花控股跌至 12.9！回踩 MA20(12.9)，优质建仓区
-          trigger: 12.9
+          msg: 💰💰 莲花控股跌至 10.42！回踩 MA20(10.42)，优质建仓区
+          trigger: 10.42
         buy_zone:
           dir: below
-          msg: 💰 莲花控股跌至 11.75！接近 MA10(11.75)，试探建仓
-          trigger: 11.75
+          msg: 💰 莲花控股跌至 10.74！接近 MA10(10.74)，试探建仓
+          trigger: 10.74
         trend_break:
           dir: below
-          msg: ⚠️ 莲花控股破 11.34！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 11.34
+          msg: ⚠️ 莲花控股破 9.1！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 9.1
       source: 用户指定
       tags:
       - 食品
@@ -715,16 +720,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 广西能源跌至 4.18！回踩 MA20(4.18)，优质建仓区
-          trigger: 4.18
+          msg: 💰💰 广西能源跌至 5.26！回踩 MA20(5.26)，优质建仓区
+          trigger: 5.26
         buy_zone:
           dir: below
-          msg: 💰 广西能源跌至 3.99！接近 MA10(3.99)，试探建仓
-          trigger: 3.99
+          msg: 💰 广西能源跌至 5.31！接近 MA10(5.31)，试探建仓
+          trigger: 5.31
         trend_break:
           dir: below
-          msg: ⚠️ 广西能源破 3.88！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 3.88
+          msg: ⚠️ 广西能源破 4.96！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 4.96
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -752,16 +757,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 华能蒙电跌至 4.92！回踩 MA20(4.92)，优质建仓区
-          trigger: 4.92
+          msg: 💰💰 华能蒙电跌至 5.04！回踩 MA20(5.04)，优质建仓区
+          trigger: 5.04
         buy_zone:
           dir: below
-          msg: 💰 华能蒙电跌至 4.6！接近 MA10(4.6)，试探建仓
-          trigger: 4.6
+          msg: 💰 华能蒙电跌至 5.34！接近 MA10(5.34)，试探建仓
+          trigger: 5.34
         trend_break:
           dir: below
-          msg: ⚠️ 华能蒙电破 4.6！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 4.6
+          msg: ⚠️ 华能蒙电破 4.37！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 4.37
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -793,8 +798,8 @@ watchlist:
           trigger: 6.44
         trend_break:
           dir: below
-          msg: ⚠️ 林洋能源破 5.37！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 5.37
+          msg: ⚠️ 林洋能源破 5.98！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 5.98
         trend_break_warn:
           dir: below
           msg: ⚠️ 林洋能源跳破 5.99 (MA60×0.95)！趋势实质走坏
@@ -836,12 +841,14 @@ watchlist:
       rules:
         buy_strong: &id001
           dir: below
-          msg: 💰💰 中国电信跌至 5.55！回踩 MA20(5.55)，优质建仓区
-          trigger: 5.55
+          msg: 'CT droped to 6.2, require_support: need price in support zone + ignition
+            signal (red bar with vol_ratio>=1)'
+          trigger: 6.2
         buy_zone: &id002
           dir: below
-          msg: 💰 中国电信跌至 5.49！接近 MA10(5.49)，试探建仓
-          trigger: 5.49
+          msg: 'CT droped to 6.42, require_support: need price near support (MA60=5.98
+            or 60d-low=5.59) + today not shrinking-volume'
+          trigger: 6.42
         right_side_confirm:
           dir: above
           msg: ✅ 中国电信站上 6.30 (MA20上方有效)！可考虑解除自动买入冻结
@@ -869,7 +876,8 @@ watchlist:
         ma20_vs_ma60_pct: 3.8
         ma60: 6.0
         macd_golden: false
-        note: 'left-side low-buy locked: need price near MA60 or 60d-low + volume floor + ignition'
+        note: 'left-side low-buy locked: need price near MA60 or 60d-low + volume
+          floor + ignition'
         status: CAUTION
         updated_at: '2026-06-04'
         vol_ratio: 0.52
@@ -883,16 +891,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 大唐发电跌至 7.58！回踩 MA20(7.58)，优质建仓区
-          trigger: 7.58
+          msg: 💰💰 大唐发电跌至 6.17！回踩 MA20(6.17)，优质建仓区
+          trigger: 6.17
         buy_zone:
           dir: below
-          msg: 💰 大唐发电跌至 7.04！接近 MA10(7.04)，试探建仓
-          trigger: 7.04
+          msg: 💰 大唐发电跌至 7.48！接近 MA10(7.48)，试探建仓
+          trigger: 7.48
         trend_break:
           dir: below
-          msg: ⚠️ 大唐发电破 6.63！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 6.63
+          msg: ⚠️ 大唐发电破 3.87！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 3.87
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -918,12 +926,12 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 晶方科技跌至 46.45！回踩 MA20(46.45)，优质建仓区
-          trigger: 46.45
+          msg: 💰💰 晶方科技跌至 33.43！回踩 MA20(33.43)，优质建仓区
+          trigger: 33.43
         buy_zone:
           dir: below
-          msg: 💰 晶方科技跌至 45.43！接近 MA10(45.43)，试探建仓
-          trigger: 45.43
+          msg: 💰 晶方科技跌至 35.28！接近 MA10(35.28)，试探建仓
+          trigger: 35.28
       source: 玄鉴录
       trend_filter:
         atr_pct: 8.69
@@ -947,16 +955,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 宏和科技跌至 243.04！回踩 MA20(243.04)，优质建仓区
-          trigger: 243.04
+          msg: 💰💰 宏和科技跌至 131.92！回踩 MA20(131.92)，优质建仓区
+          trigger: 131.92
         buy_zone:
           dir: below
-          msg: 💰 宏和科技跌至 224.39！接近 MA10(224.39)，试探建仓
-          trigger: 224.39
+          msg: 💰 宏和科技跌至 143.84！接近 MA10(143.84)，试探建仓
+          trigger: 143.84
         trend_break:
           dir: below
-          msg: ⚠️ 宏和科技破 209.29！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 209.29
+          msg: ⚠️ 宏和科技破 115.31！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 115.31
       source: 用户指定
       tags:
       - 电子材料
@@ -984,16 +992,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 江苏新能跌至 12.83！回踩 MA20(12.83)，优质建仓区
-          trigger: 12.83
+          msg: 💰💰 江苏新能跌至 16.11！回踩 MA20(16.11)，优质建仓区
+          trigger: 16.11
         buy_zone:
           dir: below
-          msg: 💰 江苏新能跌至 12.14！接近 MA10(12.14)，试探建仓
-          trigger: 12.14
+          msg: 💰 江苏新能跌至 16.78！接近 MA10(16.78)，试探建仓
+          trigger: 16.78
         trend_break:
           dir: below
-          msg: ⚠️ 江苏新能破 12.1！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 12.1
+          msg: ⚠️ 江苏新能破 14.51！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 14.51
       source: 泛舟财海(@Blazing_Sun1)
       tags:
       - 绿电
@@ -1020,16 +1028,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 大元泵业跌至 69.06！回踩 MA20(69.06)，优质建仓区
-          trigger: 69.06
+          msg: 💰💰 大元泵业跌至 56.85！回踩 MA20(56.85)，优质建仓区
+          trigger: 56.85
         buy_zone:
           dir: below
-          msg: 💰 大元泵业跌至 74.72！接近 MA10(74.72)，试探建仓
-          trigger: 74.72
+          msg: 💰 大元泵业跌至 61.81！接近 MA10(61.81)，试探建仓
+          trigger: 61.81
         trend_break:
           dir: below
-          msg: ⚠️ 大元泵业破 57.48！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 57.48
+          msg: ⚠️ 大元泵业破 50.13！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 50.13
       source: 玄鉴录
       tags:
       - 机械设备
@@ -1056,16 +1064,16 @@ watchlist:
       rules:
         buy_strong:
           dir: below
-          msg: 💰💰 山东玻纤跌至 20.66！回踩 MA20(20.66)，优质建仓区
-          trigger: 20.66
+          msg: 💰💰 山东玻纤跌至 13.61！回踩 MA20(13.61)，优质建仓区
+          trigger: 13.61
         buy_zone:
           dir: below
-          msg: 💰 山东玻纤跌至 18.07！接近 MA10(18.07)，试探建仓
-          trigger: 18.07
+          msg: 💰 山东玻纤跌至 15.33！接近 MA10(15.33)，试探建仓
+          trigger: 15.33
         trend_break:
           dir: below
-          msg: ⚠️ 山东玻纤破 17.55！跌破 MA20-1.5ATR，趋势可能反转
-          trigger: 17.55
+          msg: ⚠️ 山东玻纤破 11.49！跌破 MA20-1.5ATR，趋势可能反转
+          trigger: 11.49
       source: 玄鉴录
       tags:
       - 玻纤
@@ -1098,17 +1106,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 1149.82
+          trigger: 1126.02
           dir: below
-          msg: 💰 中际旭创跌至 1149.82！接近 MA10(1149.82)，试探建仓
+          msg: 💰 中际旭创小幅回调至 1126.02，接近入场观察区
         buy_strong:
-          trigger: 1221.86
+          trigger: 1091.55
           dir: below
-          msg: 💰💰 中际旭创跌至 1221.86！回踩 MA20(1221.86)，优质建仓区
+          msg: 💰💰 中际旭创回调至 1091.55，优质入场区
         trend_break:
-          trigger: 1099.95
+          trigger: 1057.08
           dir: below
-          msg: ⚠️ 中际旭创破 1099.95！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 中际旭创跌破 1057.08，趋势可能走弱
     '300502':
       name: 新易盛
       enabled: true
@@ -1124,17 +1132,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 532.64
+          trigger: 496.33
           dir: below
-          msg: 💰 新易盛跌至 532.64！接近 MA10(532.64)，试探建仓
+          msg: 💰 新易盛小幅回调至 496.33，接近入场观察区
         buy_strong:
-          trigger: 548.8
+          trigger: 481.14
           dir: below
-          msg: 💰💰 新易盛跌至 548.8！回踩 MA20(548.8)，优质建仓区
+          msg: 💰💰 新易盛回调至 481.14，优质入场区
         trend_break:
-          trigger: 479.33
+          trigger: 465.94
           dir: below
-          msg: ⚠️ 新易盛破 479.33！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 新易盛跌破 465.94，趋势可能走弱
     '300394':
       name: 天孚通信
       enabled: true
@@ -1150,17 +1158,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 261.73
+          trigger: 275.33
           dir: below
-          msg: 💰 天孚通信跌至 261.73！接近 MA10(261.73)，试探建仓
+          msg: 💰 天孚通信小幅回调至 275.33，接近入场观察区
         buy_strong:
-          trigger: 291.53
+          trigger: 266.9
           dir: below
-          msg: 💰💰 天孚通信跌至 291.53！回踩 MA20(291.53)，优质建仓区
+          msg: 💰💰 天孚通信回调至 266.90，优质入场区
         trend_break:
-          trigger: 257.31
+          trigger: 258.47
           dir: below
-          msg: ⚠️ 天孚通信破 257.31！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 天孚通信跌破 258.47，趋势可能走弱
     '601138':
       name: 工业富联
       enabled: true
@@ -1176,17 +1184,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 66.31
+          trigger: 68.73
           dir: below
-          msg: 💰 工业富联跌至 66.31！接近 MA10(66.31)，试探建仓
+          msg: 💰 工业富联小幅回调至 68.73，接近入场观察区
         buy_strong:
-          trigger: 70.34
+          trigger: 66.62
           dir: below
-          msg: 💰💰 工业富联跌至 70.34！回踩 MA20(70.34)，优质建仓区
+          msg: 💰💰 工业富联回调至 66.62，优质入场区
         trend_break:
-          trigger: 63.95
+          trigger: 64.52
           dir: below
-          msg: ⚠️ 工业富联破 63.95！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 工业富联跌破 64.52，趋势可能走弱
     '002475':
       name: 立讯精密
       enabled: true
@@ -1202,17 +1210,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 63.62
+          trigger: 62.48
           dir: below
-          msg: 💰 立讯精密跌至 63.62！接近 MA10(63.62)，试探建仓
+          msg: 💰 立讯精密小幅回调至 62.48，接近入场观察区
         buy_strong:
-          trigger: 66.47
+          trigger: 60.57
           dir: below
-          msg: 💰💰 立讯精密跌至 66.47！回踩 MA20(66.47)，优质建仓区
+          msg: 💰💰 立讯精密回调至 60.57，优质入场区
         trend_break:
-          trigger: 58.91
+          trigger: 58.66
           dir: below
-          msg: ⚠️ 立讯精密破 58.91！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 立讯精密跌破 58.66，趋势可能走弱
     '300750':
       name: 宁德时代
       enabled: true
@@ -1228,17 +1236,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 373.05
+          trigger: 386.95
           dir: below
-          msg: 💰 宁德时代跌至 373.05！接近 MA10(373.05)，试探建仓
+          msg: 💰 宁德时代小幅回调至 386.95，接近入场观察区
         buy_strong:
-          trigger: 384.74
+          trigger: 375.11
           dir: below
-          msg: 💰💰 宁德时代跌至 384.74！回踩 MA20(384.74)，优质建仓区
+          msg: 💰💰 宁德时代回调至 375.11，优质入场区
         trend_break:
-          trigger: 361.62
+          trigger: 363.26
           dir: below
-          msg: ⚠️ 宁德时代破 361.62！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 宁德时代跌破 363.26，趋势可能走弱
     '603986':
       name: 兆易创新
       enabled: true
@@ -1254,17 +1262,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 666.33
+          trigger: 471.84
           dir: below
-          msg: 💰 兆易创新跌至 666.33！接近 MA10(666.33)，试探建仓
+          msg: 💰 兆易创新小幅回调至 471.84，接近入场观察区
         buy_strong:
-          trigger: 667.51
+          trigger: 457.4
           dir: below
-          msg: 💰💰 兆易创新跌至 667.51！回踩 MA20(667.51)，优质建仓区
+          msg: 💰💰 兆易创新回调至 457.40，优质入场区
         trend_break:
-          trigger: 562.94
+          trigger: 442.95
           dir: below
-          msg: ⚠️ 兆易创新破 562.94！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 兆易创新跌破 442.95，趋势可能走弱
     '688041':
       name: 海光信息
       enabled: true
@@ -1280,17 +1288,17 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 345.39
+          trigger: 274.4
           dir: below
-          msg: 💰 海光信息跌至 345.39！接近 MA10(345.39)，试探建仓
+          msg: 💰 海光信息小幅回调至 274.40，接近入场观察区
         buy_strong:
-          trigger: 336.22
+          trigger: 266.0
           dir: below
-          msg: 💰💰 海光信息跌至 336.22！回踩 MA20(336.22)，优质建仓区
+          msg: 💰💰 海光信息回调至 266.00，优质入场区
         trend_break:
-          trigger: 294.66
+          trigger: 257.6
           dir: below
-          msg: ⚠️ 海光信息破 294.66！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 海光信息跌破 257.60，趋势可能走弱
     '688256':
       name: 寒武纪
       enabled: true
@@ -1306,14 +1314,14 @@ watchlist:
       - 半导体
       rules:
         buy_zone:
-          trigger: 1430.22
+          trigger: 1215.2
           dir: below
-          msg: 💰 寒武纪跌至 1430.22！接近 MA10(1430.22)，试探建仓
+          msg: 💰 寒武纪小幅回调至 1215.20，接近入场观察区
         buy_strong:
-          trigger: 1426.98
+          trigger: 1178.0
           dir: below
-          msg: 💰💰 寒武纪跌至 1426.98！回踩 MA20(1426.98)，优质建仓区
+          msg: 💰💰 寒武纪回调至 1178.00，优质入场区
         trend_break:
-          trigger: 1251.16
+          trigger: 1140.8
           dir: below
-          msg: ⚠️ 寒武纪破 1251.16！跌破 MA20-1.5ATR，趋势可能反转
+          msg: ⚠️ 寒武纪跌破 1140.80，趋势可能走弱

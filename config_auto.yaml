@@ -285,4 +285,82 @@ auto_discovered:
         trigger: 69.45
         dir: below
         msg: ⚠️ 华勤技术破 69.45！趋势反转，移除观察
+  '600436':
+    name: 片仔癀
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-13'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 118.9
+        dir: below
+        msg: 💰 片仔癀回踩至 118.9！试探建仓
+      buy_strong:
+        trigger: 114.0
+        dir: below
+        msg: 💰💰 片仔癀跌至 114.0！优质建仓区
+      trend_break:
+        trigger: 104.19
+        dir: below
+        msg: ⚠️ 片仔癀破 104.19！趋势反转，移除观察
+  '600118':
+    name: 中国卫星
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-13'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比2.1，接近20日高）
+    discovery_score: 95
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 90.13
+        dir: below
+        msg: 💰 中国卫星回踩至 90.13！试探建仓
+      buy_strong:
+        trigger: 86.42
+        dir: below
+        msg: 💰💰 中国卫星跌至 86.42！优质建仓区
+      trend_break:
+        trigger: 78.98
+        dir: below
+        msg: ⚠️ 中国卫星破 78.98！趋势反转，移除观察
+  '002142':
+    name: 宁波银行
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-13'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 31.23
+        dir: below
+        msg: 💰 宁波银行回踩至 31.23！试探建仓
+      buy_strong:
+        trigger: 29.95
+        dir: below
+        msg: 💰💰 宁波银行跌至 29.95！优质建仓区
+      trend_break:
+        trigger: 27.37
+        dir: below
+        msg: ⚠️ 宁波银行破 27.37！趋势反转，移除观察
 cooldown: {}

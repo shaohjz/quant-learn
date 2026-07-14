@@ -457,3 +457,369 @@ Traceback (most recent call last):
 UnicodeEncodeError: 'gbk' codec can't encode character '\u26a0' in position 0: illegal multibyte sequence
 ===== [2026/06/25 周四 15:30:12.80] next watchlist END   ===== 
 ===== [2026/06/25 周四 15:30:12.80] daily review END   ===== 
+===== [2026/06/29 周一 15:30:01.58] daily review START ===== 
+系统找不到指定的路径。
+===== [2026/06/29 周一 15:30:01.59] next watchlist START ===== 
+系统找不到指定的路径。
+===== [2026/06/29 周一 15:30:01.59] next watchlist END   ===== 
+===== [2026/06/29 周一 15:30:01.59] daily review END   ===== 
+===== [2026/06/30 周二 15:30:01.62] daily review START ===== 
+系统找不到指定的路径。
+===== [2026/06/30 周二 15:30:01.62] next watchlist START ===== 
+系统找不到指定的路径。
+===== [2026/06/30 周二 15:30:01.63] next watchlist END   ===== 
+===== [2026/06/30 周二 15:30:01.63] daily review END   ===== 
+===== [2026/07/01 周三 15:30:02.12] daily review START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 316, in <module>
+    print(report_content)
+    ~~~~~^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4ca' in position 2: illegal multibyte sequence
+===== [2026/07/01 周三 15:30:02.40] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/01 周三 15:30:05.35] next watchlist END   ===== 
+===== [2026/07/01 周三 15:30:05.35] daily review END   ===== 
+===== [2026/07/02 周四 15:30:02.32] daily review START ===== 
+=== 2026-07-02 理财师每日复盘 ===
+
+【1. 账户概况】
+  账户: learn
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 334, in <module>
+    report = get_today_review()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 32, in get_today_review
+    print(f"    现金: \xa5{cash:,.2f}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\xa5' in position 8: illegal multibyte sequence
+===== [2026/07/02 周四 15:30:02.54] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/02 周四 15:30:07.57] next watchlist END   ===== 
+===== [2026/07/02 周四 15:30:07.58] daily review END   ===== 
+===== [2026/07/03 周五 15:30:02.87] daily review START ===== 
+=== 2026-07-03 理财师每日复盘 ===
+
+【1. 账户概况】
+  账户: learn
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 334, in <module>
+    report = get_today_review()
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 32, in get_today_review
+    print(f"    现金: \xa5{cash:,.2f}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\xa5' in position 8: illegal multibyte sequence
+===== [2026/07/03 周五 15:30:03.09] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/03 周五 15:30:06.34] next watchlist END   ===== 
+===== [2026/07/03 周五 15:30:06.34] daily review END   ===== 
+===== [2026/07/06 周一 15:30:03.97] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 192602.4, 'total_value': 221809.4, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-06 06:30:11'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-06 06:30:12'}
+
+=== 最新持仓 (learn) ===
+{'stock_code': '002475', 'stock_name': '立讯精密', 'quantity': 100, 'avg_cost': 62.31, 'current_price': 62.72, 'market_value': 6272.0, 'pnl': 41.0, 'pnl_pct': 0.6580003209757608, 'trailing_stop_price': 62.31, 'highest_price': 65.79, 'updated_at': '2026-07-06 06:30:11'}
+{'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 200, 'avg_cost': 39.55, 'current_price': 39.36, 'market_value': 7872.0, 'pnl': -38.0, 'pnl_pct': -0.48040455120100567, 'trailing_stop_price': 36.39, 'highest_price': 40.05, 'updated_at': '2026-07-06 06:30:11'}
+{'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 17.46, 'market_value': 8730.0, 'pnl': 50.0, 'pnl_pct': 0.5760368663594552, 'trailing_stop_price': 15.97, 'highest_price': 17.64, 'updated_at': '2026-07-06 06:30:11'}
+{'stock_code': '002738', 'stock_name': '中矿资源', 'quantity': 100, 'avg_cost': 64.11, 'current_price': 63.33, 'market_value': 6333.0, 'pnl': -78.0, 'pnl_pct': -1.2166588675713634, 'trailing_stop_price': 58.98, 'highest_price': 64.12, 'updated_at': '2026-07-06 06:30:11'}
+
+=== 最近NAV (learn) ===
+{'trade_date': '2026-07-03', 'total_value': 228917.0, 'cash': 199015.0, 'market_value': 29902.0, 'daily_return': 0.354283, 'cumulative_return': 0.144585, 'max_drawdown': 0.0}
+{'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0}
+{'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318}
+{'trade_date': '2026-06-30', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237}
+{'trade_date': '2026-06-29', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237}
+
+=== 最近交易 (learn) ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 62, in <module>
+    print(dict(zip(cols_t, t)))
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4b0' in position 173: illegal multibyte sequence
+===== [2026/07/06 周一 15:30:04.20] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/06 周一 15:30:12.37] next watchlist END   ===== 
+===== [2026/07/06 周一 15:30:12.38] daily review END   ===== 
+===== [2026/07/07 周二 15:30:03.97] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 169687.68, 'total_value': 220754.68, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-07 06:30:06'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-07 06:30:06'}
+
+=== 当前持仓 ===
+{'id': 23, 'account_id': 1, 'stock_code': '002475', 'stock_name': '立讯精密', 'quantity': 100, 'avg_cost': 62.31, 'current_price': 63.1, 'market_value': 6310.0, 'pnl': 79.0, 'pnl_pct': 1.267854277002085, 'updated_at': '2026-07-07 06:30:06', 'trailing_stop_price': 62.31, 'highest_price': 65.79}
+{'id': 25, 'account_id': 1, 'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 200, 'avg_cost': 39.55, 'current_price': 38.22, 'market_value': 7644.0, 'pnl': -266.0, 'pnl_pct': -3.3628318584070755, 'updated_at': '2026-07-07 06:30:06', 'trailing_stop_price': 36.39, 'highest_price': 40.05}
+{'id': 26, 'account_id': 1, 'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 17.17, 'market_value': 8585.0, 'pnl': -95.0, 'pnl_pct': -1.0944700460829362, 'updated_at': '2026-07-07 06:30:06', 'trailing_stop_price': 15.97, 'highest_price': 17.64}
+{'id': 31, 'account_id': 1, 'stock_code': '002738', 'stock_name': '中矿资源', 'quantity': 200, 'avg_cost': 63.34, 'current_price': 61.08, 'market_value': 12216.0, 'pnl': -452.0, 'pnl_pct': -3.5680454688980188, 'updated_at': '2026-07-07 06:30:06', 'trailing_stop_price': 58.98, 'highest_price': 64.87}
+{'id': 32, 'account_id': 1, 'stock_code': '000600', 'stock_name': '建投能源', 'quantity': 1100, 'avg_cost': 8.54, 'current_price': 8.28, 'market_value': 9108.0, 'pnl': -286.0, 'pnl_pct': -3.044496487119436, 'updated_at': '2026-07-07 06:30:06', 'trailing_stop_price': 7.86, 'highest_price': 8.54}
+{'id': 33, 'account_id': 1, 'stock_code': '600580', 'stock_name': '卧龙电驱', 'quantity': 200, 'avg_cost': 36.29, 'current_price': 36.02, 'market_value': 7204.0, 'pnl': -54.0, 'pnl_pct': -0.7440066133921082, 'updated_at': '2026-07-07 06:30:06', 'trailing_stop_price': 33.39, 'highest_price': 36.29}
+
+=== 最近NAV（最近10条）===
+{'id': 172, 'account_id': 1, 'trade_date': '2026-07-06', 'total_value': 221809.4, 'cash': 192602.4, 'market_value': 29207.0, 'daily_return': -0.031048808083279117, 'cumulative_return': 0.109, 'max_drawdown': 0.031, 'created_at': '2026-07-06 12:15:41', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 176, 'account_id': 2, 'trade_date': '2026-07-06', 'total_value': 23963.64, 'cash': 23963.64, 'market_value': 0.0, 'daily_return': 0.0, 'cumulative_return': -0.041454, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:10:19', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 175, 'account_id': 1, 'trade_date': '2026-07-03', 'total_value': 164768.03, 'cash': 141973.63, 'market_value': 22794.4, 'daily_return': -0.025225, 'cumulative_return': -0.17616, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:08:47', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 168, 'account_id': 1, 'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 167, 'account_id': 1, 'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 166, 'account_id': 1, 'trade_date': '2026-06-30', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 165, 'account_id': 1, 'trade_date': '2026-06-29', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 164, 'account_id': 1, 'trade_date': '2026-06-28', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 163, 'account_id': 1, 'trade_date': '2026-06-27', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 162, 'account_id': 1, 'trade_date': '2026-06-26', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+
+=== 今日交易 2026-07-06 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 54, in <module>
+    print(dict(t))
+    ~~~~~^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4b0' in position 232: illegal multibyte sequence
+===== [2026/07/07 周二 15:30:04.16] next watchlist START ===== 
+login success!
+logout success!
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/07 周二 15:30:17.78] next watchlist END   ===== 
+===== [2026/07/07 周二 15:30:17.78] daily review END   ===== 
+===== [2026/07/08 周三 15:30:04.31] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 175793.21, 'total_value': 219425.21, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-08 06:30:08'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-08 06:30:08'}
+
+=== 当前持仓 ===
+{'id': 23, 'account_id': 1, 'stock_code': '002475', 'stock_name': '立讯精密', 'quantity': 100, 'avg_cost': 62.31, 'current_price': 63.15, 'market_value': 6315.0, 'pnl': 84.0, 'pnl_pct': 1.348098218584491, 'updated_at': '2026-07-08 06:30:08', 'trailing_stop_price': 62.31, 'highest_price': 65.79}
+{'id': 25, 'account_id': 1, 'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 200, 'avg_cost': 39.55, 'current_price': 39.99, 'market_value': 7998.0, 'pnl': 88.0, 'pnl_pct': 1.1125158027813018, 'updated_at': '2026-07-08 06:30:08', 'trailing_stop_price': 36.39, 'highest_price': 40.88}
+{'id': 26, 'account_id': 1, 'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 16.77, 'market_value': 8385.0, 'pnl': -295.0, 'pnl_pct': -3.3986175115207367, 'updated_at': '2026-07-08 06:30:08', 'trailing_stop_price': 15.97, 'highest_price': 17.64}
+{'id': 31, 'account_id': 1, 'stock_code': '002738', 'stock_name': '中矿资源', 'quantity': 100, 'avg_cost': 63.34, 'current_price': 57.32, 'market_value': 5732.0, 'pnl': -602.0, 'pnl_pct': -9.504262709188511, 'updated_at': '2026-07-08 06:30:08', 'trailing_stop_price': 58.98, 'highest_price': 64.87}
+{'id': 33, 'account_id': 1, 'stock_code': '600580', 'stock_name': '卧龙电驱', 'quantity': 200, 'avg_cost': 36.29, 'current_price': 33.35, 'market_value': 6670.0, 'pnl': -588.0, 'pnl_pct': -8.10140534582529, 'updated_at': '2026-07-08 06:30:08', 'trailing_stop_price': 33.39, 'highest_price': 36.29}
+{'id': 34, 'account_id': 1, 'stock_code': '001896', 'stock_name': '豫能控股', 'quantity': 600, 'avg_cost': 14.8, 'current_price': 14.22, 'market_value': 8532.0, 'pnl': -348.0, 'pnl_pct': -3.9189189189189193, 'updated_at': '2026-07-08 06:30:08', 'trailing_stop_price': 13.62, 'highest_price': 14.89}
+
+=== 最近NAV（最近10条）===
+{'id': 172, 'account_id': 1, 'trade_date': '2026-07-06', 'total_value': 221809.4, 'cash': 192602.4, 'market_value': 29207.0, 'daily_return': -0.031048808083279117, 'cumulative_return': 0.109, 'max_drawdown': 0.031, 'created_at': '2026-07-06 12:15:41', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 176, 'account_id': 2, 'trade_date': '2026-07-06', 'total_value': 23963.64, 'cash': 23963.64, 'market_value': 0.0, 'daily_return': 0.0, 'cumulative_return': -0.041454, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:10:19', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 175, 'account_id': 1, 'trade_date': '2026-07-03', 'total_value': 164768.03, 'cash': 141973.63, 'market_value': 22794.4, 'daily_return': -0.025225, 'cumulative_return': -0.17616, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:08:47', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 168, 'account_id': 1, 'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 167, 'account_id': 1, 'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 166, 'account_id': 1, 'trade_date': '2026-06-30', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 165, 'account_id': 1, 'trade_date': '2026-06-29', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 164, 'account_id': 1, 'trade_date': '2026-06-28', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 163, 'account_id': 1, 'trade_date': '2026-06-27', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 162, 'account_id': 1, 'trade_date': '2026-06-26', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+
+=== 今日交易 2026-07-06 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 54, in <module>
+    print(dict(t))
+    ~~~~~^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4b0' in position 232: illegal multibyte sequence
+===== [2026/07/08 周三 15:30:04.50] next watchlist START ===== 
+login success!
+logout success!
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/08 周三 15:30:10.75] next watchlist END   ===== 
+===== [2026/07/08 周三 15:30:10.75] daily review END   ===== 
+===== [2026/07/09 周四 15:30:04.72] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 160006.41999999998, 'total_value': 219435.42, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-09 06:30:07'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-09 06:30:07'}
+
+=== 当前持仓 ===
+{'id': 23, 'account_id': 1, 'stock_code': '002475', 'stock_name': '立讯精密', 'quantity': 100, 'avg_cost': 62.31, 'current_price': 64.09, 'market_value': 6409.0, 'pnl': 178.0, 'pnl_pct': 2.8566843203338164, 'updated_at': '2026-07-09 06:30:07', 'trailing_stop_price': 62.31, 'highest_price': 65.79}
+{'id': 25, 'account_id': 1, 'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 200, 'avg_cost': 39.55, 'current_price': 41.94, 'market_value': 8388.0, 'pnl': 478.0, 'pnl_pct': 6.042983565107461, 'updated_at': '2026-07-09 06:30:07', 'trailing_stop_price': 39.55, 'highest_price': 42.1}
+{'id': 26, 'account_id': 1, 'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 16.66, 'market_value': 8330.0, 'pnl': -350.0, 'pnl_pct': -4.032258064516125, 'updated_at': '2026-07-09 06:30:07', 'trailing_stop_price': 15.97, 'highest_price': 17.64}
+{'id': 34, 'account_id': 1, 'stock_code': '001896', 'stock_name': '豫能控股', 'quantity': 1300, 'avg_cost': 14.364, 'current_price': 14.09, 'market_value': 18317.0, 'pnl': -356.2, 'pnl_pct': -1.9075466443887559, 'updated_at': '2026-07-09 06:30:07', 'trailing_stop_price': 13.62, 'highest_price': 14.89}
+{'id': 35, 'account_id': 1, 'stock_code': '002709', 'stock_name': '天赐材料', 'quantity': 200, 'avg_cost': 44.17, 'current_price': 41.87, 'market_value': 8374.0, 'pnl': -460.0, 'pnl_pct': -5.207154177043251, 'updated_at': '2026-07-09 06:30:07', 'trailing_stop_price': 40.64, 'highest_price': 44.17}
+{'id': 36, 'account_id': 1, 'stock_code': '600021', 'stock_name': '上海电力', 'quantity': 700, 'avg_cost': 13.78, 'current_price': 13.73, 'market_value': 9611.0, 'pnl': -35.0, 'pnl_pct': -0.36284470246733624, 'updated_at': '2026-07-09 06:30:07', 'trailing_stop_price': 12.68, 'highest_price': 13.78}
+
+=== 最近NAV（最近10条）===
+{'id': 181, 'account_id': 1, 'trade_date': '2026-07-08', 'total_value': 219516.49, 'cash': 182454.87, 'market_value': 31230.0, 'daily_return': 0.092569, 'cumulative_return': 0.0976, 'max_drawdown': 0.0103, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-08 NAV(当前账户快照)'}
+{'id': 180, 'account_id': 1, 'trade_date': '2026-07-07', 'total_value': 200917.68, 'cash': 169687.68, 'market_value': 31230.0, 'daily_return': -0.094188, 'cumulative_return': 0.0046, 'max_drawdown': 0.0942, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-07 NAV(近似), 基于交易现金流+当前市值'}
+{'id': 172, 'account_id': 1, 'trade_date': '2026-07-06', 'total_value': 221809.4, 'cash': 192602.4, 'market_value': 29207.0, 'daily_return': -0.031048808083279117, 'cumulative_return': 0.109, 'max_drawdown': 0.031, 'created_at': '2026-07-06 12:15:41', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 176, 'account_id': 2, 'trade_date': '2026-07-06', 'total_value': 23963.64, 'cash': 23963.64, 'market_value': 0.0, 'daily_return': 0.0, 'cumulative_return': -0.041454, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:10:19', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 175, 'account_id': 1, 'trade_date': '2026-07-03', 'total_value': 164768.03, 'cash': 141973.63, 'market_value': 22794.4, 'daily_return': -0.025225, 'cumulative_return': -0.17616, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:08:47', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 168, 'account_id': 1, 'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 167, 'account_id': 1, 'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 166, 'account_id': 1, 'trade_date': '2026-06-30', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 165, 'account_id': 1, 'trade_date': '2026-06-29', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 164, 'account_id': 1, 'trade_date': '2026-06-28', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+
+=== 今日交易 2026-07-06 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 54, in <module>
+    print(dict(t))
+    ~~~~~^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4b0' in position 232: illegal multibyte sequence
+===== [2026/07/09 周四 15:30:04.90] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/09 周四 15:30:08.03] next watchlist END   ===== 
+===== [2026/07/09 周四 15:30:08.03] daily review END   ===== 
+===== [2026/07/10 周五 15:30:02.04] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 149817.64999999997, 'total_value': 219181.65, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-10 06:30:07'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-10 06:30:07'}
+
+=== 当前持仓 ===
+{'id': 23, 'account_id': 1, 'stock_code': '002475', 'stock_name': '立讯精密', 'quantity': 100, 'avg_cost': 62.31, 'current_price': 62.88, 'market_value': 6288.0, 'pnl': 57.0, 'pnl_pct': 0.9147809340394805, 'updated_at': '2026-07-10 06:30:07', 'trailing_stop_price': 62.31, 'highest_price': 65.79}
+{'id': 25, 'account_id': 1, 'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 200, 'avg_cost': 39.55, 'current_price': 42.86, 'market_value': 8572.0, 'pnl': 662.0, 'pnl_pct': 8.369152970922888, 'updated_at': '2026-07-10 06:30:07', 'trailing_stop_price': 40.34, 'highest_price': 43.69}
+{'id': 26, 'account_id': 1, 'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 16.72, 'market_value': 8360.0, 'pnl': -320.0, 'pnl_pct': -3.6866359447004644, 'updated_at': '2026-07-10 06:30:07', 'trailing_stop_price': 15.97, 'highest_price': 17.64}
+{'id': 35, 'account_id': 1, 'stock_code': '002709', 'stock_name': '天赐材料', 'quantity': 400, 'avg_cost': 44.055, 'current_price': 40.52, 'market_value': 16208.0, 'pnl': -1414.0, 'pnl_pct': -8.02406083304959, 'updated_at': '2026-07-10 06:30:07', 'trailing_stop_price': 40.64, 'highest_price': 44.17}
+{'id': 36, 'account_id': 1, 'stock_code': '600021', 'stock_name': '上海电力', 'quantity': 1400, 'avg_cost': 13.8, 'current_price': 14.01, 'market_value': 19614.0, 'pnl': 294.0, 'pnl_pct': 1.5217391304347758, 'updated_at': '2026-07-10 06:30:07', 'trailing_stop_price': 12.68, 'highest_price': 14.18}
+{'id': 37, 'account_id': 1, 'stock_code': '600310', 'stock_name': '广西能源', 'quantity': 2600, 'avg_cost': 3.82, 'current_price': 3.97, 'market_value': 10322.0, 'pnl': 390.0, 'pnl_pct': 3.926701570680638, 'updated_at': '2026-07-10 06:30:07', 'trailing_stop_price': 3.82, 'highest_price': 4.04}
+
+=== 最近NAV（最近10条）===
+{'id': 182, 'account_id': 1, 'trade_date': '2026-07-09', 'total_value': 219435.42, 'cash': 160006.42, 'market_value': 59429.0, 'daily_return': -0.000369311663101059, 'cumulative_return': 0.0972, 'max_drawdown': 0.0107, 'created_at': '2026-07-09 12:09:37', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 181, 'account_id': 1, 'trade_date': '2026-07-08', 'total_value': 219516.49, 'cash': 182454.87, 'market_value': 31230.0, 'daily_return': 0.092569, 'cumulative_return': 0.0976, 'max_drawdown': 0.0103, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-08 NAV(当前账户快照)'}
+{'id': 180, 'account_id': 1, 'trade_date': '2026-07-07', 'total_value': 200917.68, 'cash': 169687.68, 'market_value': 31230.0, 'daily_return': -0.094188, 'cumulative_return': 0.0046, 'max_drawdown': 0.0942, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-07 NAV(近似), 基于交易现金流+当前市值'}
+{'id': 172, 'account_id': 1, 'trade_date': '2026-07-06', 'total_value': 221809.4, 'cash': 192602.4, 'market_value': 29207.0, 'daily_return': -0.031048808083279117, 'cumulative_return': 0.109, 'max_drawdown': 0.031, 'created_at': '2026-07-06 12:15:41', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 176, 'account_id': 2, 'trade_date': '2026-07-06', 'total_value': 23963.64, 'cash': 23963.64, 'market_value': 0.0, 'daily_return': 0.0, 'cumulative_return': -0.041454, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:10:19', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 175, 'account_id': 1, 'trade_date': '2026-07-03', 'total_value': 164768.03, 'cash': 141973.63, 'market_value': 22794.4, 'daily_return': -0.025225, 'cumulative_return': -0.17616, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:08:47', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 168, 'account_id': 1, 'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 167, 'account_id': 1, 'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 166, 'account_id': 1, 'trade_date': '2026-06-30', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 165, 'account_id': 1, 'trade_date': '2026-06-29', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+
+=== 今日交易 2026-07-06 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 54, in <module>
+    print(dict(t))
+    ~~~~~^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4b0' in position 232: illegal multibyte sequence
+===== [2026/07/10 周五 15:30:02.37] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/10 周五 15:30:06.65] next watchlist END   ===== 
+===== [2026/07/10 周五 15:30:06.65] daily review END   ===== 
+===== [2026/07/13 周一 15:30:04.69] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 162323.57999999996, 'total_value': 217683.58, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-13 06:53:25'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-13 06:53:25'}
+
+=== 当前持仓 ===
+{'id': 25, 'account_id': 1, 'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 200, 'avg_cost': 39.55, 'current_price': 40.27, 'market_value': 8054.0, 'pnl': 144.0, 'pnl_pct': 1.8204804045512162, 'updated_at': '2026-07-13 06:53:25', 'trailing_stop_price': 40.34, 'highest_price': 43.69}
+{'id': 26, 'account_id': 1, 'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 16.73, 'market_value': 8365.0, 'pnl': -315.0, 'pnl_pct': -3.6290322580645107, 'updated_at': '2026-07-13 06:53:25', 'trailing_stop_price': 15.97, 'highest_price': 17.64}
+{'id': 37, 'account_id': 1, 'stock_code': '600310', 'stock_name': '广西能源', 'quantity': 5100, 'avg_cost': 3.84, 'current_price': 3.88, 'market_value': 19788.0, 'pnl': 204.0, 'pnl_pct': 1.0416666666666676, 'updated_at': '2026-07-13 06:53:25', 'trailing_stop_price': 3.84, 'highest_price': 4.04}
+{'id': 38, 'account_id': 1, 'stock_code': '600863', 'stock_name': '华能蒙电', 'quantity': 2000, 'avg_cost': 4.79, 'current_price': 4.74, 'market_value': 9480.0, 'pnl': -100.0, 'pnl_pct': -1.0438413361169065, 'updated_at': '2026-07-13 06:53:25', 'trailing_stop_price': 4.41, 'highest_price': 4.79}
+{'id': 39, 'account_id': 1, 'stock_code': '601728', 'stock_name': '中国电信', 'quantity': 1700, 'avg_cost': 5.64, 'current_price': 5.69, 'market_value': 9673.0, 'pnl': 85.0, 'pnl_pct': 0.8865248226950482, 'updated_at': '2026-07-13 06:53:25', 'trailing_stop_price': 5.19, 'highest_price': 5.69}
+
+=== 最近NAV（最近10条）===
+{'id': 183, 'account_id': 1, 'trade_date': '2026-07-10', 'total_value': 219176.64999999997, 'cash': 166020.64999999997, 'market_value': 53156.0, 'daily_return': -0.0011792536, 'cumulative_return': 0.095883, 'max_drawdown': 0.011869, 'created_at': '2026-07-10 13:09:25', 'cash_jump_detected': 0, 'cash_jump_reason': 'TASK-002 fix: 手动回填 07-10 NAV + TASK-003 天赐止损后'}
+{'id': 182, 'account_id': 1, 'trade_date': '2026-07-09', 'total_value': 219435.42, 'cash': 160006.42, 'market_value': 59429.0, 'daily_return': -0.000369311663101059, 'cumulative_return': 0.0972, 'max_drawdown': 0.0107, 'created_at': '2026-07-09 12:09:37', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 181, 'account_id': 1, 'trade_date': '2026-07-08', 'total_value': 219516.49, 'cash': 182454.87, 'market_value': 31230.0, 'daily_return': 0.092569, 'cumulative_return': 0.0976, 'max_drawdown': 0.0103, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-08 NAV(当前账户快照)'}
+{'id': 180, 'account_id': 1, 'trade_date': '2026-07-07', 'total_value': 200917.68, 'cash': 169687.68, 'market_value': 31230.0, 'daily_return': -0.094188, 'cumulative_return': 0.0046, 'max_drawdown': 0.0942, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-07 NAV(近似), 基于交易现金流+当前市值'}
+{'id': 172, 'account_id': 1, 'trade_date': '2026-07-06', 'total_value': 221809.4, 'cash': 192602.4, 'market_value': 29207.0, 'daily_return': -0.031048808083279117, 'cumulative_return': 0.109, 'max_drawdown': 0.031, 'created_at': '2026-07-06 12:15:41', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 176, 'account_id': 2, 'trade_date': '2026-07-06', 'total_value': 23963.64, 'cash': 23963.64, 'market_value': 0.0, 'daily_return': 0.0, 'cumulative_return': -0.041454, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:10:19', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 175, 'account_id': 1, 'trade_date': '2026-07-03', 'total_value': 164768.03, 'cash': 141973.63, 'market_value': 22794.4, 'daily_return': -0.025225, 'cumulative_return': -0.17616, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:08:47', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 168, 'account_id': 1, 'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 167, 'account_id': 1, 'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 166, 'account_id': 1, 'trade_date': '2026-06-30', 'total_value': 168942.45, 'cash': 164982.45, 'market_value': 3960.0, 'daily_return': 0.0, 'cumulative_return': -0.155288, 'max_drawdown': 0.000237, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+
+=== 今日交易 2026-07-13 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 112, in <module>
+    main(trade_date=td_arg)
+    ~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 72, in main
+    print(dict(t))
+    ~~~~~^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u26a0' in position 240: illegal multibyte sequence
+===== [2026/07/13 周一 15:30:04.91] next watchlist START ===== 
+OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
+===== [2026/07/13 周一 15:30:27.89] next watchlist END   ===== 
+===== [2026/07/13 周一 15:30:27.89] daily review END   ===== 
+===== [2026/07/14 周二 15:30:01.77] daily review START ===== 
+=== 账户信息 ===
+{'id': 1, 'account_name': 'learn', 'initial_cash': 200000.0, 'cash': 141175.21999999997, 'total_value': 218862.22, 'created_at': '2026-05-19 04:58:01', 'updated_at': '2026-07-14 06:30:05'}
+{'id': 2, 'account_name': 'real_portfolio', 'initial_cash': 25000.0, 'cash': 23963.642249999997, 'total_value': 23963.64, 'created_at': '2026-06-02 01:48:30', 'updated_at': '2026-07-14 06:30:05'}
+{'id': 3, 'account_name': 'swing_trade', 'initial_cash': 50000.0, 'cash': 39039.0, 'total_value': 39039.0, 'created_at': '2026-07-13 20:27:24', 'updated_at': '2026-07-13 20:27:24'}
+
+=== 当前持仓 ===
+{'id': 25, 'account_id': 1, 'stock_code': '603341', 'stock_name': '龙旗科技', 'quantity': 0, 'avg_cost': 39.55, 'current_price': 40.27, 'market_value': 0.0, 'pnl': 0.0, 'pnl_pct': 0.0, 'updated_at': '2026-07-13 13:07:55', 'trailing_stop_price': 40.34, 'highest_price': 43.69}
+{'id': 26, 'account_id': 1, 'stock_code': '600233', 'stock_name': '圆通速递', 'quantity': 500, 'avg_cost': 17.36, 'current_price': 17.21, 'market_value': 8605.0, 'pnl': -75.0, 'pnl_pct': -0.8640552995391624, 'updated_at': '2026-07-14 06:30:05', 'trailing_stop_price': 15.97, 'highest_price': 17.64}
+{'id': 37, 'account_id': 1, 'stock_code': '600310', 'stock_name': '广西能源', 'quantity': 7600, 'avg_cost': 3.843, 'current_price': 3.94, 'market_value': 29944.0, 'pnl': 737.2, 'pnl_pct': 2.5240697371844907, 'updated_at': '2026-07-14 06:30:05', 'trailing_stop_price': 3.84, 'highest_price': 4.04}
+{'id': 38, 'account_id': 1, 'stock_code': '600863', 'stock_name': '华能蒙电', 'quantity': 4100, 'avg_cost': 4.749, 'current_price': 4.79, 'market_value': 19639.0, 'pnl': 168.1, 'pnl_pct': 0.8633396504527346, 'updated_at': '2026-07-14 06:30:05', 'trailing_stop_price': 4.41, 'highest_price': 4.79}
+{'id': 39, 'account_id': 1, 'stock_code': '601728', 'stock_name': '中国电信', 'quantity': 1700, 'avg_cost': 5.64, 'current_price': 5.73, 'market_value': 9741.0, 'pnl': 153.0, 'pnl_pct': 1.5957446808510771, 'updated_at': '2026-07-14 06:30:05', 'trailing_stop_price': 5.19, 'highest_price': 5.76}
+{'id': 40, 'account_id': 3, 'stock_code': '600809', 'stock_name': '山西汾酒', 'quantity': 100, 'avg_cost': 109.56, 'current_price': 109.56, 'market_value': 10956.0, 'pnl': None, 'pnl_pct': None, 'updated_at': '2026-07-13 20:34:39', 'trailing_stop_price': None, 'highest_price': None}
+{'id': 41, 'account_id': 1, 'stock_code': '000725', 'stock_name': '京东方A', 'quantity': 1400, 'avg_cost': 6.91, 'current_price': 6.97, 'market_value': 9758.0, 'pnl': 84.0, 'pnl_pct': 0.8683068017366079, 'updated_at': '2026-07-14 06:30:05', 'trailing_stop_price': 6.36, 'highest_price': 7.09}
+
+=== 最近NAV（最近10条）===
+{'id': 184, 'account_id': 1, 'trade_date': '2026-07-13', 'total_value': 217678.52, 'cash': 170372.52, 'market_value': 47306.0, 'daily_return': -0.00683526, 'cumulative_return': 0.095883, 'max_drawdown': 0.011869, 'created_at': '2026-07-13 13:11:50', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 183, 'account_id': 1, 'trade_date': '2026-07-10', 'total_value': 219176.64999999997, 'cash': 166020.64999999997, 'market_value': 53156.0, 'daily_return': -0.0011792536, 'cumulative_return': 0.095883, 'max_drawdown': 0.011869, 'created_at': '2026-07-10 13:09:25', 'cash_jump_detected': 0, 'cash_jump_reason': 'TASK-002 fix: 手动回填 07-10 NAV + TASK-003 天赐止损后'}
+{'id': 182, 'account_id': 1, 'trade_date': '2026-07-09', 'total_value': 219435.42, 'cash': 160006.42, 'market_value': 59429.0, 'daily_return': -0.000369311663101059, 'cumulative_return': 0.0972, 'max_drawdown': 0.0107, 'created_at': '2026-07-09 12:09:37', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 181, 'account_id': 1, 'trade_date': '2026-07-08', 'total_value': 219516.49, 'cash': 182454.87, 'market_value': 31230.0, 'daily_return': 0.092569, 'cumulative_return': 0.0976, 'max_drawdown': 0.0103, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-08 NAV(当前账户快照)'}
+{'id': 180, 'account_id': 1, 'trade_date': '2026-07-07', 'total_value': 200917.68, 'cash': 169687.68, 'market_value': 31230.0, 'daily_return': -0.094188, 'cumulative_return': 0.0046, 'max_drawdown': 0.0942, 'created_at': '2026-07-09 01:20:33', 'cash_jump_detected': 0, 'cash_jump_reason': 'REQ-098 backfill: 07-07 NAV(近似), 基于交易现金流+当前市值'}
+{'id': 172, 'account_id': 1, 'trade_date': '2026-07-06', 'total_value': 221809.4, 'cash': 192602.4, 'market_value': 29207.0, 'daily_return': -0.031048808083279117, 'cumulative_return': 0.109, 'max_drawdown': 0.031, 'created_at': '2026-07-06 12:15:41', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 176, 'account_id': 2, 'trade_date': '2026-07-06', 'total_value': 23963.64, 'cash': 23963.64, 'market_value': 0.0, 'daily_return': 0.0, 'cumulative_return': -0.041454, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:10:19', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 175, 'account_id': 1, 'trade_date': '2026-07-03', 'total_value': 164768.03, 'cash': 141973.63, 'market_value': 22794.4, 'daily_return': -0.025225, 'cumulative_return': -0.17616, 'max_drawdown': 0.0, 'created_at': '2026-07-06 13:08:47', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 168, 'account_id': 1, 'trade_date': '2026-07-02', 'total_value': 169031.93, 'cash': 158576.93, 'market_value': 10455.0, 'daily_return': 0.000611, 'cumulative_return': -0.15484, 'max_drawdown': 0.0, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+{'id': 167, 'account_id': 1, 'trade_date': '2026-07-01', 'total_value': 168928.65, 'cash': 164968.65, 'market_value': 3960.0, 'daily_return': -8.2e-05, 'cumulative_return': -0.155357, 'max_drawdown': 0.000318, 'created_at': '2026-07-03 12:19:32', 'cash_jump_detected': 0, 'cash_jump_reason': None}
+
+=== 今日交易 2026-07-14 ===
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 112, in <module>
+    main(trade_date=td_arg)
+    ~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\daily_review.py", line 72, in main
+    print(dict(t))
+    ~~~~~^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f4b0' in position 236: illegal multibyte sequence
+===== [2026/07/14 周二 15:30:02.22] next watchlist START ===== 
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 370, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\generate_next_watchlist.py", line 361, in main
+    print(f"\u2705 已生成 {target_date} 关注池：{len(candidates)} 只")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+===== [2026/07/14 周二 15:30:06.58] next watchlist END   ===== 
+===== [2026/07/14 周二 15:30:06.58] daily review END   ===== 

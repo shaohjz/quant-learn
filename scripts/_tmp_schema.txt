@@ -1,0 +1,190 @@
+======================================================================
+TABLE: review_decisions
+  id INTEGER
+  account_id INTEGER
+  stock_code TEXT
+  trade_date DATE
+  decision_type TEXT
+  allowed INTEGER
+  reason TEXT
+  created_at TIMESTAMP
+  ROWS: 142
+======================================================================
+TABLE: review_reflections
+  id INTEGER
+  date TEXT
+  topic TEXT
+  content TEXT
+  created_at TIMESTAMP
+  ROWS: 2
+======================================================================
+TABLE: sim_account
+  id INTEGER
+  account_name TEXT
+  initial_cash REAL
+  cash REAL
+  total_value REAL
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+  ROWS: 2
+======================================================================
+TABLE: sim_account_events
+  id INTEGER
+  account_id INTEGER
+  event_type TEXT
+  event_date DATE
+  old_initial_cash REAL
+  new_initial_cash REAL
+  old_total_value REAL
+  new_total_value REAL
+  reason TEXT
+  source TEXT
+  created_at TIMESTAMP
+  ROWS: 6
+======================================================================
+TABLE: sim_daily_nav
+  id INTEGER
+  account_id INTEGER
+  trade_date DATE
+  total_value REAL
+  cash REAL
+  market_value REAL
+  daily_return REAL
+  cumulative_return REAL
+  max_drawdown REAL
+  created_at TIMESTAMP
+  cash_jump_detected INTEGER
+  cash_jump_reason TEXT
+  ROWS: 38
+======================================================================
+TABLE: sim_fills
+  id INTEGER
+  account_id INTEGER
+  order_id TEXT
+  stock_code TEXT
+  stock_name TEXT
+  direction TEXT
+  trade_price REAL
+  trade_volume INTEGER
+  trade_amount REAL
+  commission REAL
+  tax REAL
+  trade_time TIMESTAMP
+  broker TEXT
+  broker_trade_id TEXT
+  strategy_name TEXT
+  created_at TIMESTAMP
+  ROWS: 0
+======================================================================
+TABLE: sim_orders
+  id INTEGER
+  account_id INTEGER
+  order_id TEXT
+  stock_code TEXT
+  stock_name TEXT
+  direction TEXT
+  offset TEXT
+  price REAL
+  quantity INTEGER
+  traded INTEGER
+  status TEXT
+  order_time TIMESTAMP
+  cancel_time TIMESTAMP
+  broker TEXT
+  broker_order_id TEXT
+  strategy_name TEXT
+  signal_reason TEXT
+  created_at TIMESTAMP
+  ROWS: 0
+======================================================================
+TABLE: sim_positions
+  id INTEGER
+  account_id INTEGER
+  stock_code TEXT
+  stock_name TEXT
+  quantity INTEGER
+  avg_cost REAL
+  current_price REAL
+  market_value REAL
+  pnl REAL
+  pnl_pct REAL
+  updated_at TIMESTAMP
+  trailing_stop_price REAL
+  highest_price REAL
+  ROWS: 4
+======================================================================
+TABLE: sim_trades
+  id INTEGER
+  account_id INTEGER
+  trade_date DATE
+  stock_code TEXT
+  stock_name TEXT
+  direction TEXT
+  price REAL
+  quantity INTEGER
+  amount REAL
+  commission REAL
+  tax REAL
+  signal_reason TEXT
+  broker TEXT
+  broker_order_id TEXT
+  created_at TIMESTAMP
+  signal_detail TEXT
+  trade_time TEXT
+  trade_context TEXT
+  ROWS: 24
+======================================================================
+TABLE: sqlite_sequence
+  name 
+  seq 
+  ROWS: 9
+======================================================================
+TABLE: strategy_shadow_signals
+  id INTEGER
+  shadow_date TEXT
+  shadow_time TEXT
+  strategy_id TEXT
+  stock_code TEXT
+  stock_name TEXT
+  price REAL
+  position INTEGER
+  signal_action TEXT
+  signal_rule TEXT
+  signal_reason TEXT
+  confidence REAL
+  created_at DATETIME
+  ROWS: 4772
+======================================================================
+TABLE: threshold_state
+  id INTEGER
+  stock_code TEXT
+  stock_name TEXT
+  rule_name TEXT
+  rule_threshold REAL
+  first_hit_date DATE
+  first_hit_price REAL
+  first_hit_time TIMESTAMP
+  close_confirmed_at DATE
+  close_price REAL
+  next_day_confirmed_at DATE
+  next_day_price REAL
+  status TEXT
+  fired_today INTEGER
+  last_check_date DATE
+  notes TEXT
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+  ROWS: 0
+======================================================================
+TABLE: watchlist_history
+  code TEXT
+  name TEXT
+  category TEXT
+  added_at TEXT
+  added_by TEXT
+  added_reason TEXT
+  discovery_score REAL
+  metadata TEXT
+  last_alert_at TEXT
+  alert_count INTEGER
+  ROWS: 9

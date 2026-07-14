@@ -1,0 +1,188 @@
+def buy(self, stock_code: str, price: float, quantity: int,
+            stock_name: str = "", signal_reason: str = "",
+            trade_date: Date = None,
+            broker: str = "sim", broker_order_id: str = None,
+            signal_detail: dict = None) -> dict:
+        """
+        买入（佣金万3，最低5元）
+        返回 {success, msg, amount, commission}
+
+        broker / broker_order_id：当上层是实盘 broker 时填充，便于对账。
+        """
+        if quantity <= 0 or price <= 0:
+            return {"success": False, "msg": "价格/数量无效"}
+
+        # ---- REQ-051: 同一股票同日多信号去重 ----
+        # 若今日已有该股票的 BUY 成交，拒绝重复买入（避免同日多信号重复执行）
+        trade_date = trade_date or Date.today()
+        if self._has_buy_today(stock_code, str(trade_date)):
+            return {
+                "success": False,
+                "msg": f"REQ-051: {stock_code} 今日已有买入成交，拒绝重复买入",
+            }
+
+        # ---- BUG-011: 同日反向交易防御 ----
+        # 若今日已有该股票的 SELL 成交，拒绝今日再买入
+        # 防止 buy_strong + trend_break 同日矛盾信号导致自成交
+        if self._has_sell_today(stock_code, str(trade_date)):
+            return {
+                "success": False,
+                "msg": f"BUG-011: {stock_code} 今日已有卖出成交，基于同日反向交易规则拒绝今日再买入",
+            }
+
+        # ---- REQ-038 硬上限检查 ----
+        risk = risk_params()
+
+        # 1) 总持仓数上限（含本次新建）
+        positions = self.get_positions()
+        existing_codes = {p["stock_code"] for p in positions}
+        if stock_code not in existing_codes:
+            # 本次是新建仓（非加仓），总持仓数会 +1
+            if len(existing_codes) >= risk.get("max_total_positions", 6):
+                return {
+                    "success": False,
+                    "msg": f"持仓数量达到硬上限 {risk.get('max_total_positions', 6)}，无法新建 {stock_code}",
+                }
+
+        # 2) 单日新建仓位数上限
+        trade_date = trade_date or Date.today()
+        new_positions_today = self._count_new_positions_today(str(trade_date))
+        if stock_code not in existing_codes:
+            # 只有新建仓（非加仓）才计入单日新建上限
+            if new_positions_today >= risk.get("max_daily_new_positions", 3):
+                return {
+                    "success": False,
+                    "msg": f"今日新建仓位已达上限 {risk.get('max_daily_new_positions', 3)}，无法新建 {stock_code}",
+                }
+
+        # 重置 trade_date（上面可能已赋值）
+        trade_date = trade_date or Date.today()
+
+        # ---- REQ-045: 现金过低预警 + 仓位管理 ----
+        acct = self.get_account()
+        try:
+            from sim.cash_warning import check_cash_ratio, suggest_position_size
+            _cw = check_cash_ratio(acct["cash"], acct["total_value"])
+            if _cw.level == "critical" and stock_code not in existing_codes:
+                return {
+                    "success": False,
+                    "msg": f"REQ-045: {_cw.message}",
+                }
+            if _cw.level == "low":
+                original_qty = quantity
+                quantity = suggest_position_size(quantity, _cw)
+                if quantity < original_qty:
+                    import logging as _logging
+                    _logging.getLogger(__name__).warning(
+                        "REQ-045: 现金占比 %.1f%% 偏低，买入量 %d→%d",
+                        _cw.cash_pct * 100, original_qty, quantity,
+                    )
+                if quantity == 0:
+                    return {
+                        "success": False,
+                        "msg": f"REQ-045: 现金占比 {_cw.cash_pct:.1%} 过低，建议买入量缩减为0",
+                    }
+        except Exception as _e:
+            import logging as _logging
+            _logging.getLogger(__name__).debug("REQ-045 check failed: %s", _e)
+
+        # 数量向下取整到 100 股
+        quantity = (quantity // 100) * 100
+        if quantity == 0:
+            return {"success": False, "msg": "数量不足100股"}
+
+        amount = price * quantity
+        commission = max(amount * COMMISSION_RATE, MIN_COMMISSION)
+        total_cost = amount + commission
+
+        acct = self.get_account()
+        if total_cost > acct["cash"]:
+            return {"success": False, "msg": f"资金不足（需 {total_cost:.2f}, 可用 {acct['cash']:.2f}）"}
+
+        trade_date = trade_date or Date.today()
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            ensure_sim_positions_trailing_columns(cur)
+            # 1. 扣减现金
+            new_cash = acct["cash"] - total_cost
+            cur.execute("UPDATE sim_account SET cash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (round(new_cash, 2), self.account_id))
+
+            # 2. 更新/新建持仓
+            pos = self._get_position(stock_code)
+            if pos:
+                old_qty = pos["quantity"]
+                old_cost = pos["avg_cost"]
+                new_qty = old_qty + quantity
+                new_avg = (old_cost * old_qty + price * quantity) / new_qty
+                cur.execute(
+                    "UPDATE sim_positions SET quantity = ?, avg_cost = ?, "
+                    "current_price = ?, market_value = ?, pnl = ?, pnl_pct = ?, "
+                    "highest_price = MAX(COALESCE(highest_price, ?), ?), "
+                    "updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ?",
+                    (new_qty, round(new_avg, 4), price,
+                     round(price * new_qty, 2),
+                     round((price - new_avg) * new_qty, 2),
+                     round((price - new_avg) / new_avg, 4) if new_avg else 0,
+                     price, price,
+                     pos["id"]),
+                )
+            else:
+                cur.execute(
+                    "INSERT INTO sim_positions "
+                    "(account_id, stock_code, stock_name, quantity, avg_cost, "
+                    "current_price, market_value, pnl, pnl_pct, "
+                    "highest_price, trailing_stop_price) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (self.account_id, stock_code, stock_name, quantity,
+                     round(price, 4), round(price, 4),
+                     round(price * quantity, 2), 0, 0,
+                     round(price, 4), None),
+                )
+
+            # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失
+            import json as _json
+            ensure_sim_trades_detail_columns(cur)
+            _detail_str = _json.dumps(signal_detail, ensure_ascii=False) if signal_detail else None
+            # 动态检测 signal_detail 列是否存在（兼容旧表/异常迁移场景）
+            _cols = [r[1] for r in cur.execute('PRAGMA table_info(sim_trades)').fetchall()]
+            _has_detail = 'signal_detail' in _cols
+            if _has_detail:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id, signal_detail) "
+                    "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                          round(price, 4), quantity, round(amount, 2),
+                          round(commission, 2), signal_reason,
+                          broker, broker_order_id, _detail_str)
+            else:
+                _sql = (
+                    "INSERT INTO sim_trades "
+                    "(account_id, trade_date, stock_code, stock_name, direction, "
+                    "price, quantity, amount, commission, tax, signal_reason, "
+                    "broker, broker_order_id) "
+                    "VALUES (?, ?, ?, ?, 'BUY', ?, ?, ?, ?, 0, ?, ?, ?)"
+                )
+                _params = (self.account_id, str(trade_date), stock_code, stock_name,
+                          round(price, 4), quantity, round(amount, 2),
+                          round(commission, 2), signal_reason,
+                          broker, broker_order_id)
+            cur.execute(_sql, _params)
+        finally:
+            conn.close()
+
+        return {
+            "success": True,
+            "msg": f"买入 {stock_name or stock_code} {quantity}股 @ {price:.4f}",
+            "amount": round(amount, 2),
+            "commission": round(commission, 2),
+        }
+
+    # ---------- 卖出 ----------
+    

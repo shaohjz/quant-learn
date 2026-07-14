@@ -1,0 +1,35 @@
+===== REQ-060: 002149 西部材料 MA20 deviation fix =====
+  files with MA20/price-threshold validation: ['scripts\\add_green_power_watchlist.py', 'scripts\\apply_trend_filter.py', 'scripts\\daily_advisor.py', 'scripts\\daily_recalibrate.py', 'scripts\\daily_review_20260626.py', 'scripts\\freeze_dx_and_topup.py']
+  002149 trades: []
+
+===== TASK-20260707-2009-000600: 000600 建投能源 re-entry cooling =====
+  000600 trades: [('2026-07-01', 'BUY', 9.19, 'buy_strong|💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区'), ('2026-07-01', 'SELL', 9.19, 'trend_break|⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转'), ('2026-07-02', 'BUY', 9.22, 'buy_strong|💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区'), ('2026-07-02', 'SELL', 9.22, 'trend_break|⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转'), ('2026-07-03', 'BUY', 9.14, 'buy_strong|💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区'), ('2026-07-03', 'SELL', 9.14, 'trend_break|⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转'), ('2026-07-07', 'BUY', 8.54, 'buy_strong|💰💰 建投能源跌至 9.90！回踩 MA20(9.90)，优质建仓区'), ('2026-07-08', 'SELL', 8.33, 'trend_break|⚠️ 建投能源破 9.26！跌破 MA20-1.5ATR，趋势可能反转')]
+  re-entry cooldown files: ['scripts\\sim_executor.py', 'scripts\\verify_batch3.py', 'scripts\\_audit10.py', 'scripts\\_audit12.py', 'scripts\\_audit6.py', 'scripts\\_audit7.py']
+
+===== TASK-20260705-2007-0591: 002475 立讯精密 stop monitoring =====
+  002475 position: [('002475', 100, 63.15, 62.31, 1.348098218584491)]
+  scripts/intraday_watch.py: has stop-watch logic
+
+===== TASK-20260703-2006-002 / 004: 工业富联(601138) slippage check =====
+  slippage/price-revalidate files: ['scripts\\push_fix_report.py', 'scripts\\verify_batch3.py', 'scripts\\_audit12.py', 'scripts\\__temp_push_report.py']
+  601138 trades: [('2026-07-02', 'BUY', 65.85, 'buy_strong|💰💰 工业富联回调至 66.62，优质入场区'), ('2026-07-02', 'SELL', 64.51, 'trend_break|⚠️ 工业富联跌破 64.52，趋势可能走弱')]
+
+===== TASK-20260705-0215-004: 000600 repeated buy-stop, signal quality =====
+  See 000600 trades above; signal quality filter / watchlist removal check:
+  signal quality files: ['scripts\\sim_executor.py', 'scripts\\verify_batch3.py']
+
+===== TASK-20260702-2004-003: sim_account vs sim_daily_nav consistency =====
+  sim_account: [(1, 188286.49, 219516.49), (2, 23963.642249999997, 23963.64)]
+  latest NAV: [('2026-07-08', 219516.49, 182454.87, 0.092569), ('2026-07-07', 200917.68, 169687.68, -0.094188), ('2026-07-06', 221809.4, 192602.4, -0.031048808083279117), ('2026-07-06', 23963.64, 23963.64, 0.0), ('2026-07-03', 164768.03, 141973.63, -0.025225)]
+
+===== TASK-20260701-200653-001: learn account -50% loss =====
+   ('learn', 200000.0, 188286.49, 219516.49)
+     cumulative return: 9.76%
+   ('real_portfolio', 25000.0, 23963.642249999997, 23963.64)
+     cumulative return: -4.15%
+
+===== TASK-20260701-200653-003: 风控拦截过多 (43 blocked) =====
+  review_decisions by type: [('buy', 14), ('daily_buy_budget_guard', 65), ('daily_new_position_limit', 4), ('position_count_limit', 49), ('post_buy_protection', 3), ('valuation_filter_blocked', 7)]
+
+===== TASK-20260702-2004-005: 30min cooldown duplicate logs =====
+  total budget_guard blocks: 65 (dedup logic should keep 1 per stock/cooldown)

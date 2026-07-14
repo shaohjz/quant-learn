@@ -1,0 +1,54 @@
+{
+  "account": {
+    "cash": 82625.7,
+    "total_assets": 97549.7,
+    "total_profit_ratio": 0.0,
+    "update_time": "2026-06-29 11:00:16"
+  },
+  "positions": {
+    "600130": {
+      "name": "波导股份",
+      "cost": 5.24,
+      "quantity": 100,
+      "buy_date": "2026-06-28",
+      "stop_loss": 4.8208,
+      "take_profit": 6.288,
+      "current_price": 5.19
+    },
+    "600330": {
+      "name": "天通股份",
+      "cost": 32.818,
+      "quantity": 400,
+      "buy_date": "2026-06-28",
+      "stop_loss": 30.19256,
+      "take_profit": 39.3816,
+      "current_price": 29.71
+    },
+    "002453": {
+      "name": "华软科技",
+      "cost": 6.467,
+      "quantity": 300,
+      "buy_date": "2026-06-28",
+      "stop_loss": 5.94964,
+      "take_profit": 7.760399999999999,
+      "current_price": 4.42
+    },
+    "603601": {
+      "name": "再升科技",
+      "cost": 17.83,
+      "quantity": 100,
+      "buy_date": "2026-06-28",
+      "stop_loss": 16.4036,
+      "take_profit": 21.395999999999997,
+      "current_price": 11.95
+    }
+  },
+  "orders": [],
+  "trades": [],
+  "risk_settings": {
+    "max_position_ratio": 0.3,
+    "stop_loss_rate": -0.08,
+    "take_profit_rate": 0.2,
+    "max_drawdown": -0.15
+  }
+}

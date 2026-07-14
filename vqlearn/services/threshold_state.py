@@ -306,11 +306,11 @@ def evaluate_sell_signal(stock_code: str, stock_name: str, rule_name: str,
     return 'wait', f"未知 status: {status}"
 
 
-def record_sell_executed(stock_code: str, rule_name: str, fill_price: float, notes: str = ""):
-    """记录卖出已执行"""
+def record_sell_executed(stock_code: str, rule_name: str, fill_price: float, notes: str = "") -> int:
+    """记录卖出已执行。返回实际更新行数（REQ-048：0 行 = 状态未匹配，勿当成功闭环）。"""
     conn = get_conn()
     today = _today()
-    conn.execute(
+    cur = conn.execute(
         """UPDATE threshold_state SET
             status='executed',
             notes=?,
@@ -319,7 +319,87 @@ def record_sell_executed(stock_code: str, rule_name: str, fill_price: float, not
              AND first_hit_date <= ?""",
         (notes or f'卖单成交 {fill_price:.2f}', stock_code, rule_name, today)
     )
+    updated = int(cur.rowcount or 0)
     conn.close()
+    return updated
+
+
+def reset_stuck_confirmed(stock_code: str, rule_name: str, notes: str = "") -> int:
+    """REQ-048: 卖出失败或状态悬挂时，将 confirmed/armed 置为 expired，避免永远卡住。"""
+    conn = get_conn()
+    cur = conn.execute(
+        """UPDATE threshold_state SET
+            status='expired',
+            notes=?,
+            updated_at=CURRENT_TIMESTAMP
+           WHERE stock_code=? AND rule_name=?
+             AND status IN ('confirmed', 'armed')""",
+        (notes or '重置卡住的 confirmed/armed', stock_code, rule_name),
+    )
+    updated = int(cur.rowcount or 0)
+    conn.close()
+    if updated:
+        logger.warning(
+            "reset_stuck_confirmed %s/%s -> expired (%d rows): %s",
+            stock_code, rule_name, updated, notes,
+        )
+    return updated
+
+
+def audit_executed_without_trade(account_id: int = 1) -> list[dict]:
+    """REQ-048: 找出 threshold_state.executed 但 sim_positions 仍有仓位的脏记录。"""
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT t.stock_code, t.rule_name, t.status, t.notes, t.updated_at,
+                   p.quantity, p.avg_cost
+              FROM threshold_state t
+              JOIN sim_positions p
+                ON p.stock_code = t.stock_code
+               AND p.account_id = ?
+               AND p.quantity > 0
+             WHERE t.status = 'executed'
+               AND t.rule_name IN ('trend_break', 'take_profit', 'take_profit_half',
+                                   'stop_loss', 'soft_stop', 'hard_stop', 'deep_drop')
+             ORDER BY t.updated_at DESC
+            """,
+            (account_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning("audit_executed_without_trade failed: %s", e)
+        return []
+    finally:
+        conn.close()
+
+
+def cleanup_orphaned_executed(account_id: int = 1, dry_run: bool = True) -> list[dict]:
+    """REQ-048: 清理「executed 但仍有仓」的卖出状态 —— 重置为 expired 以便重试真卖。
+
+    买入规则不碰（executed + 有仓是正常）。
+    """
+    orphans = audit_executed_without_trade(account_id=account_id)
+    if dry_run or not orphans:
+        return orphans
+    conn = get_conn()
+    try:
+        for row in orphans:
+            conn.execute(
+                """UPDATE threshold_state SET
+                    status='expired',
+                    notes=?,
+                    updated_at=CURRENT_TIMESTAMP
+                   WHERE stock_code=? AND rule_name=? AND status='executed'""",
+                (
+                    f"REQ-048 cleanup: executed但仓位仍在 qty={row.get('quantity')}",
+                    row["stock_code"],
+                    row["rule_name"],
+                ),
+            )
+    finally:
+        conn.close()
+    return orphans
 
 
 def mark_close_confirm_for_all_pending(get_close_price_fn):

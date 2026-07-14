@@ -138,10 +138,10 @@ def test_execute_trade_trend_break_returns_sell():
         'dir': 'above',
     }
     action_tp = decide_action(rule_tp, 35.5, position=position)
-    assert action_tp == 'SELL_HALF', f"REQ-048: take_profit 应返回 SELL_HALF，实际返回 {action_tp}"
-    print(f"✅ REQ-048: decide_action(take_profit) → SELL_HALF")
-    
-    # take_profit_half 也应返回 SELL_HALF
+    assert action_tp == 'SELL_ALL', f"REQ-066: take_profit 应返回 SELL_ALL，实际返回 {action_tp}"
+    print(f"✅ REQ-066: decide_action(take_profit) → SELL_ALL")
+
+    # take_profit_half 仍返回 SELL_HALF
     rule_tph = {
         'code': '603757',
         'name': '大元泵业',

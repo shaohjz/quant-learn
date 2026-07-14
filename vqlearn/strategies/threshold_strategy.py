@@ -443,7 +443,14 @@ class ThresholdAlertStrategy(CtaTemplate):
         if _sim_execute_trade is None:
             self.write_log("⚠️ sim_executor 未加载，跳过下单")
             return False, 'sim_executor 未加载'
-        rule = {'code': self.code, 'name': self.stock_name_safe, 'level': level, 'message': msg}
+        rule = {
+            'code': self.code,
+            'name': self.stock_name_safe,
+            'level': level,
+            'message': msg,
+            # REQ-062: 把策略触发阈值一并传入，成交文案用 threshold 而非脏 message 数字
+            'trigger': float(getattr(self, level, 0) or 0),
+        }
         try:
             r = _sim_execute_trade(rule, price)
             # REQ-057: 真实成交的唯一可信标志是 trade 字段非空（含 BUY/SELL 明细）。

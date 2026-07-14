@@ -399,13 +399,9 @@ def _has_recent_stop_loss(conn: sqlite3.Connection, code: str, lookback_days: in
 
 def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
                            allowed: int, reason: str):
-    """写入 review_decisions 表留痕；兼容 allowed/action 两种旧表结构。
+    """写入 review_decisions 表留痕；兼容 allowed/action、有无 trade_date 等旧表结构。
 
     TASK-20260702-2004-005 修复：添加去重/限流机制，避免冷静期产生大量无效日志。
-    - 对于 daily_buy_budget_guard / daily_new_position_limit 等风控拒绝类型，
-      同一个 (account_id, stock_code, trade_date, decision_type) 只保留一条记录。
-    - 对于 buy / trend_break_buy 等允许类型，每次写入前检查 5 分钟内是否有同天同股同类型的记录，
-      如有则跳过（避免同一信号批次内重复写）。
     """
     try:
         conn = sqlite3.connect(_DB_PATH)
@@ -422,54 +418,82 @@ def _write_review_decision(account_id: int, stock_code: str, decision_type: str,
             ")"
         )
         cols = {r[1] for r in conn.execute("PRAGMA table_info(review_decisions)").fetchall()}
-
-        # ── TASK-20260702-2004-005: 去重/限流逻辑 ──
         today = _today_str()
+        has_trade_date = "trade_date" in cols
+        has_created_at = "created_at" in cols
 
+        # ── TASK-20260702-2004-005: 去重/限流（缺列则降级，仍要能写入）──
         if allowed == 0:
-            # 风控拒绝类型：同一 (account_id, stock_code, trade_date, decision_type) 只保留一条
-            existing = conn.execute(
-                "SELECT 1 FROM review_decisions "
-                "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
-                "LIMIT 1",
-                (account_id, stock_code, today, decision_type),
-            ).fetchone()
+            if has_trade_date:
+                existing = conn.execute(
+                    "SELECT 1 FROM review_decisions "
+                    "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
+                    "LIMIT 1",
+                    (account_id, stock_code, today, decision_type),
+                ).fetchone()
+            else:
+                existing = conn.execute(
+                    "SELECT 1 FROM review_decisions "
+                    "WHERE account_id=? AND stock_code=? AND decision_type=? "
+                    "LIMIT 1",
+                    (account_id, stock_code, decision_type),
+                ).fetchone()
             if existing:
-                logger.debug(
-                    "_write_review_decision 去重跳过: %s/%s/%s/%s (同天已有记录)",
-                    stock_code, today, decision_type, "拒绝"
-                )
                 conn.close()
                 return
-        else:
-            # 允许类型（buy/trend_break_buy）：5 分钟内同天同股同类型不去重复写入
-            existing = conn.execute(
-                "SELECT 1 FROM review_decisions "
-                "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
-                "  AND created_at >= datetime('now', 'localtime', '-5 minutes') "
-                "LIMIT 1",
-                (account_id, stock_code, today, decision_type),
-            ).fetchone()
+        elif has_created_at:
+            if has_trade_date:
+                existing = conn.execute(
+                    "SELECT 1 FROM review_decisions "
+                    "WHERE account_id=? AND stock_code=? AND trade_date=? AND decision_type=? "
+                    "  AND created_at >= datetime('now', 'localtime', '-5 minutes') "
+                    "LIMIT 1",
+                    (account_id, stock_code, today, decision_type),
+                ).fetchone()
+            else:
+                existing = conn.execute(
+                    "SELECT 1 FROM review_decisions "
+                    "WHERE account_id=? AND stock_code=? AND decision_type=? "
+                    "  AND created_at >= datetime('now', 'localtime', '-5 minutes') "
+                    "LIMIT 1",
+                    (account_id, stock_code, decision_type),
+                ).fetchone()
             if existing:
-                logger.debug(
-                    "_write_review_decision 去重跳过: %s/%s/%s/%s (5分钟内已有记录)",
-                    stock_code, today, decision_type, "通过"
-                )
                 conn.close()
                 return
 
         if "allowed" in cols:
-            conn.execute(
-                "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (account_id, stock_code, decision_type, allowed, reason),
-            )
+            if has_trade_date:
+                conn.execute(
+                    "INSERT INTO review_decisions "
+                    "(account_id, stock_code, trade_date, decision_type, allowed, reason) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (account_id, stock_code, today, decision_type, allowed, reason),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO review_decisions (account_id, stock_code, decision_type, allowed, reason) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (account_id, stock_code, decision_type, allowed, reason),
+                )
         elif "action" in cols:
-            conn.execute(
-                "INSERT INTO review_decisions (account_id, stock_code, decision_type, action, reason) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (account_id, stock_code, decision_type, allowed, reason),
-            )
+            if has_trade_date:
+                conn.execute(
+                    "INSERT INTO review_decisions "
+                    "(account_id, stock_code, trade_date, decision_type, action, reason) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (account_id, stock_code, today, decision_type, allowed, reason),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO review_decisions (account_id, stock_code, decision_type, action, reason) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (account_id, stock_code, decision_type, allowed, reason),
+                )
+        else:
+            logger.warning("_write_review_decision: review_decisions 无 allowed/action 列，跳过写入")
+            conn.close()
+            return
         conn.commit()
         conn.close()
     except Exception as e:
@@ -748,16 +772,20 @@ def _check_valuation_filter(code: str, rule: dict) -> tuple[bool, str, dict]:
 
 
 def _get_last_buy_time(conn: sqlite3.Connection, code: str, account_id: int) -> datetime | None:
-    """获取某股票在该账户最后一次 BUY 成交的时间。"""
-    row = conn.execute(
-        """
-        SELECT trade_date, trade_time FROM sim_trades
-         WHERE account_id=? AND stock_code=? AND direction='BUY'
-         ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC
-         LIMIT 1
-        """,
-        (account_id, code),
-    ).fetchone()
+    """获取某股票在该账户最后一次 BUY 成交的时间。表缺失时返回 None（不挡卖）。"""
+    try:
+        row = conn.execute(
+            """
+            SELECT trade_date, trade_time FROM sim_trades
+             WHERE account_id=? AND stock_code=? AND direction='BUY'
+             ORDER BY trade_date DESC, COALESCE(trade_time, '00:00:00') DESC, id DESC
+             LIMIT 1
+            """,
+            (account_id, code),
+        ).fetchone()
+    except sqlite3.OperationalError as e:
+        logger.warning("_get_last_buy_time 跳过（DB不完整）: %s", e)
+        return None
     if not row:
         return None
     return _parse_trade_datetime(row[0], row[1])
@@ -836,11 +864,19 @@ def get_daily_buy_budget_status(account_id: int | None = None, planned_amount: f
     today = _today_str()
     conn = sqlite3.connect(_DB_PATH)
     try:
-        acct = conn.execute(
-            "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
-            (account_id,),
-        ).fetchone()
-        total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and acct[2] else 0) or _load_max_total())
+        try:
+            acct = conn.execute(
+                "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
+                (account_id,),
+            ).fetchone()
+        except sqlite3.OperationalError:
+            acct = conn.execute(
+                "SELECT cash, total_value FROM sim_account WHERE id=?",
+                (account_id,),
+            ).fetchone()
+            if acct:
+                acct = (acct[0], acct[1], acct[1])
+        total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and len(acct) > 2 and acct[2] else 0) or _load_max_total())
         pct_cap_amount = total_value * MAX_DAILY_BUY_PCT if MAX_DAILY_BUY_PCT > 0 else MAX_DAILY_BUY_AMOUNT
         daily_cap = min(MAX_DAILY_BUY_AMOUNT, pct_cap_amount) if MAX_DAILY_BUY_AMOUNT > 0 else pct_cap_amount
         used = float(conn.execute(
@@ -883,11 +919,19 @@ def _check_daily_buy_controls(conn: sqlite3.Connection, account_id: int, code: s
     """
     account_id = int(account_id)
     today = _today_str()
-    acct = conn.execute(
-        "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
-        (account_id,),
-    ).fetchone()
-    total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and acct[2] else 0) or _load_max_total())
+    try:
+        acct = conn.execute(
+            "SELECT cash, total_value, initial_cash FROM sim_account WHERE id=?",
+            (account_id,),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        acct = conn.execute(
+            "SELECT cash, total_value FROM sim_account WHERE id=?",
+            (account_id,),
+        ).fetchone()
+        if acct:
+            acct = (acct[0], acct[1], acct[1])
+    total_value = float((acct[1] if acct and acct[1] else 0) or (acct[2] if acct and len(acct) > 2 and acct[2] else 0) or _load_max_total())
     pct_cap_amount = total_value * MAX_DAILY_BUY_PCT if MAX_DAILY_BUY_PCT > 0 else MAX_DAILY_BUY_AMOUNT
     daily_cap = min(MAX_DAILY_BUY_AMOUNT, pct_cap_amount) if MAX_DAILY_BUY_AMOUNT > 0 else pct_cap_amount
     used = float(conn.execute(
@@ -1803,24 +1847,32 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
             logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出（position 参数传入: {position["quantity"]}股）')
             return 'SELL_ALL'
         # 否则查数据库确认
-        conn = sqlite3.connect(_DB_PATH)
         try:
-            has_pos = conn.execute(
-                "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
-                (_ACCOUNT_ID, code)
-            ).fetchone()
-        finally:
-            conn.close()
+            conn = sqlite3.connect(_DB_PATH)
+            try:
+                has_pos = conn.execute(
+                    "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                    (_ACCOUNT_ID, code)
+                ).fetchone()
+            finally:
+                conn.close()
+        except sqlite3.OperationalError as e:
+            logger.warning(f'[{code}] trend_break 查仓失败({e})，有 position 参数则卖')
+            has_pos = None
+            if position and position.get('quantity', 0) > 0:
+                return 'SELL_ALL'
         if not has_pos:
             logger.info(f'ℹ️ [{code}] trend_break 触发但无持仓，仅提醒')
             return 'NO_ACTION'
         logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出')
         return 'SELL_ALL'
 
-    elif level in ('take_profit', 'take_profit_half', 'half_out'):
-        # REQ-048 修复：新增 take_profit_half 匹配（之前只匹配 take_profit/half_out）
-        # REQ-066: 止盈改为全仓卖出（SELL_ALL），避免浮盈坐过山车
+    elif level == 'take_profit':
+        # REQ-066: 完整止盈 → 全仓卖出，避免浮盈坐过山车
         return 'SELL_ALL'
+    elif level in ('take_profit_half', 'half_out'):
+        # REQ-048: 半仓止盈 / 回到成本线减仓
+        return 'SELL_HALF'
 
     elif level == 'trend_break_buy':
         # 趋势突破买入：价格突破阻力位 + 放量 → 买入
@@ -2126,14 +2178,22 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             # 写入成交记录
             trade_date = datetime.now().strftime('%Y-%m-%d')
             trade_time = datetime.now().strftime('%H:%M:%S')
-            # REQ-057: 回写 signal_reason，避免成交记录 signal_reason 为空无法追源
-            # TASK-20260710-2006-001: buy_zone/buy_strong 消息中附实际成交价与触发阈值，防串价误导
-            _raw_msg = rule.get('message', '')
+            # REQ-057 / REQ-062 / TASK-20260709: signal_reason 必须以成交价为准。
+            # 禁止把规则文案里的「跌至 X / MA10=Y」当成交参考价（串价根因）。
             _sig_level = rule.get('level', '')
-            if _sig_level in ('buy_zone', 'buy_strong') and _raw_msg:
-                _trigger_val = rule.get('trigger', '')
-                _raw_msg += f' [实际建仓价={cur_price:.2f}，阈值={_trigger_val}]'
-            _signal_reason = f"{_sig_level}|{_raw_msg}".strip('|')
+            try:
+                _trigger_val = float(rule.get('trigger') or 0)
+            except (TypeError, ValueError):
+                _trigger_val = 0.0
+            if _sig_level in ('buy_zone', 'buy_strong'):
+                _signal_reason = (
+                    f"{_sig_level}|建仓价={cur_price:.2f}"
+                    + (f"|触发阈值={_trigger_val:.2f}" if _trigger_val > 0 else "")
+                    + f"|{name} {_sig_level} 试探建仓"
+                )
+            else:
+                _raw_msg = (rule.get('message') or '').strip()
+                _signal_reason = f"{_sig_level}|{_raw_msg}".strip('|') or _sig_level
             conn.execute(
                 "INSERT INTO sim_trades (account_id, trade_date, trade_time, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

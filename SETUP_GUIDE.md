@@ -1,5 +1,8 @@
 # 量化模拟盘项目 — 部署与运行指南
 
+> ⚠️ **本文偏旧。Windows + OpenClaw 完整部署请以 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 为准。**  
+> 定时任务：[docs/CRON_JOBS.md](docs/CRON_JOBS.md)
+
 ## Git 地址
 
 ```

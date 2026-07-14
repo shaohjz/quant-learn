@@ -11,10 +11,16 @@
 
 ## 快速启动
 
+> **权威运行方式**：整份发给 OpenClaw → 打开 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)  
+> 文首 **「★ OpenClaw：如何跑这个项目」** = 交易系统逐步契约。  
+> **每日复盘 / 需求·PM·测试 / Cursor 修复队列**：[docs/REVIEW_LOOP.md](docs/REVIEW_LOOP.md)  
+> 实时监控：[docs/REALTIME.md](docs/REALTIME.md)  
+> 任务对照：[docs/CRON_JOBS.md](docs/CRON_JOBS.md)
+
 ```powershell
 cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 .venv\Scripts\python.exe -m runners.run_intraday          # 盘中盯盘（dry-run）
-.venv\Scripts\python.exe -m runners.run_gui               # GUI（按需）
+.venv\Scripts\python.exe scripts\swing_daily_report.py    # 波段结论：赚亏+挂单建议
 .venv\Scripts\python.exe scripts\test_vnpy_qmt.py         # QMT 连通验证
 ```
 

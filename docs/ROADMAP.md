@@ -1,8 +1,52 @@
-# 📊 量化学习项目路线图
+# 量化学习项目路线图
 
 > 项目路径：`C:\Users\Administrator\.openclaw\workspace\quant-learn`
 > 模拟盘DB：`data/sim_live_mirror.db` | PM DB：`data/pm.db`
-> 最后更新：2026-07-14
+> 最后更新：2026-07-14（审计修订）
+
+---
+
+## 〇、审计结论（2026-07-14）
+
+**总判：能跑模拟盘，但不宜当“已稳生产”。钱相关链路仍有洞。**
+
+### 立刻危险（先修这些）
+1. **止损只改状态、不减仓** — REQ-048 / REQ-061：代码侧已补 `record_sell_executed` 行数校验 / `reset_stuck_confirmed` / `audit_executed_without_trade`（2026-07-14）。产机需跑 `stop_loss_watch_runner.bat` + 验收。
+2. **信号标 executed、零成交** — REQ-057：`_exec_via_sim` 已按 `trade is not None` 判成交；相关单测绿。
+3. **串价** — REQ-062：`signal_reason` 改写为 `建仓价=成交价|触发阈值=...`，不再塞脏文案数字。TASK 串价等产机回归 002709 等。
+4. **双调度打架** — OpenClaw cron + Windows `schtasks` 并存。见 `docs/CRON_JOBS.md`。
+5. **LLM 改仓高风险** — 交易路径应收 `systemEvent`/bat（REQ-043 未做）。
+
+### 2026-07-14 本轮已落地
+- `vqlearn/services/threshold_state.py`：卖出闭环审计工具
+- `scripts/sim_executor.py`：DB 缺表不挡卖、review_decisions 兼容、signal_reason 防串价
+- `vqlearn/strategies/threshold_strategy.py`：下单带回 `trigger`
+- `tests/test_req062_signal_reason_no_stale_price.py` + 既有 REQ-048/057/BUG-009 单测绿
+- `scripts/stop_loss_watch_runner.bat`：盘中止损直跑
+- 根目录 junk → `legacy/root_junk/`；旧报告 → `docs/archive/`；假 Windows 嵌套目录搬走
+
+**产机还要你做**：`openclaw cron list` + `schtasks` 对账；挂上止损 bat；跑全量 pytest；QA 把 pm.db 标 verified。
+
+
+### 仓库乱（非立即爆，但一直拖后腿）
+| 问题 | 证据 |
+|------|------|
+| 多代框架并存 | `backtest.py` / `sim/` / `vqlearn/` / `quant_core/` / vnpy `runners/` |
+| `scripts/` 坟场 | ≈350 个文件，大量 `_tmp_*` `_patch_*` `_check_*` |
+| 根目录垃圾 | `=`、`run_daily.py.backup`、一堆 `test_*.py`、`PM_PROGRESS_*.md` |
+| 错误嵌套路径 | 仓库内出现目录名 `C:\Users\Administrator\.openclaw\workspace\quant-learn` |
+| 配置多套 | 根 `config.yaml` + `config/config.yaml` + `vqlearn/config/`（见 QL-013） |
+| webhook 占位 | `config.yaml` 仍是 `YOUR_KEY_HERE`（本副本）；Windows 机可能另有本地覆盖 |
+| 通知默认 dry-run | `NOTIFIER_DRY_RUN` 默认 `"1"`，企微可能“以为发了其实没发” |
+| 测试未绿 | 2026-07-13 日报：246 pass / 20 fail（含 REQ-048/057） |
+
+### 建议顺序
+1. 封死 P0：止损实卖 + 信号落地 + 串价单一价源  
+2. 清单化两套定时器（见 `docs/CRON_JOBS.md`）  
+3. OpenClaw 交易相关改 `systemEvent` 直跑脚本，LLM 只做报告  
+4. 按 QL-013 把旧入口迁 `legacy/`，根目录只留正式入口  
+
+详细架构债见 `docs/QUANT_OPTIMIZATION_IMPLEMENTATION_PLAN.md`、`docs/QL-013-LEGACY-MIGRATION.md`。
 
 ---
 
@@ -16,7 +60,7 @@
 - **通知推送**（企微 webhook）
 - **研发管理**（pm.db 任务追踪）
 - **短线波段扫描**（`scripts/swing_auto.py`）
-- **定时任务**（OpenClaw cron，LLM agent 驱动）
+- **定时任务**（OpenClaw cron + Windows schtasks，见 CRON_JOBS）
 
 ---
 
@@ -81,22 +125,29 @@
 
 ## 三、进行中 🔄
 
-### P0 紧急
-| ID | 标题 | 状态 | 说明 |
-|----|------|:----:|------|
-| REQ-048 | 止损执行链路 Bug | testing | threshold_state 已标记 executed 但 sim_positions 未卖出 |
-| REQ-057 | 盘中14信号executed但0笔买入成交 | testing | 信号-执行链路断裂复发 |
-| TASK-20260709-2004-001 | buy_zone 信号参考价/MA10 价系统性错乱 | testing | 002709/600021/001896 串价 |
+> 状态以 `pm.db` 为准（2026-07-14 查询）。`verified` ≠ 生产已稳，只表示有人标过验。
 
-### P1 待修复
+### P0 紧急（真金白银逻辑）
 | ID | 标题 | 状态 | 说明 |
 |----|------|:----:|------|
-| REQ-011 | 接入vnpy OmsEngine | pending | 详细订单成交回放 |
-| REQ-043 | 去大模型化 | pending | agentTurn → systemEvent，降低LLM消耗 |
-| REQ-058 | 持仓清仓后 threshold_state 悬挂记录未自动失效 | verified | 002709 案例 |
-| REQ-060 | news_sentiment 影子信号 price=0 且 stock_name 未解析 | verified | 全样本系统性缺陷 |
-| REQ-062 | buy_zone/buy_strong信号文本参考价仍串价 | verified | 展示未修复 |
-| REQ-063 | sim_daily_nav连续缺失 | verified | 07-11/07-12/07-13 无记录 |
+| REQ-048 | 止损执行链路 Bug | code-fixed* | 审计/重置已补；等产机挂 bat + QA |
+| REQ-057 | 信号 executed 但 0 成交 | code-fixed* | trade 字段口径单测绿 |
+| REQ-061 | 龙旗科技移动止损破位未卖 | verified | 结合 cleanup_orphaned 复测 |
+| TASK-20260709-2004-001 | buy_zone 参考价/MA10 串价 | code-fixed* | 见 REQ-062 文案修复 |
+
+\* `code-fixed` = 本仓库代码已修，**pm.db 未自动改状态**（等你/QA 验收后标 fixed→verified）。
+
+
+### P1 待修复 / 复发风险
+| ID | 标题 | 状态 | 说明 |
+|----|------|:----:|------|
+| REQ-011 | 接入 vnpy OmsEngine | pending | 订单成交回放 |
+| REQ-043 | 去大模型化 | pending | cron：`agentTurn` → `systemEvent` |
+| REQ-058 | 清仓后 threshold_state 悬挂 | verified | 清表过狠可能伤到 REQ-061 |
+| REQ-059 | buy_zone 串价（执行侧） | verified | 执行价修了；展示仍见 REQ-062 |
+| REQ-060 | news_sentiment price=0 / 无名 | verified | 影子信号脏数据 |
+| REQ-062 | 信号文本参考价仍串价 | verified | REQ-059 复发面 |
+| REQ-063 | sim_daily_nav 连续缺失 | verified | 日收益核算断档 |
 
 ### P2 待开发
 | ID | 标题 | 状态 | 说明 |
@@ -113,10 +164,11 @@
 ## 四、待办（新需求）📋
 
 ### 波段交易相关
-- [ ] **波段交易日报**：每天收盘后推送波段扫描结果+波段持仓盈亏
-- [ ] **波段策略回测**：对 swing_auto.py 的选股逻辑做历史回测
-- [ ] **波段信号分级推送**：A类（高盈亏比）自动推送，B/C类可选
-- [ ] **波段持仓止损线**：在 swing_positions 表中增加止损价字段
+- [x] **波段交易日报**：`swing_daily_report.py` — 账户#3 模拟成交 + 赚亏结论 + 实盘挂单建议
+- [ ] **波段策略回测**：对 swing 选股逻辑做历史回测
+- [ ] **波段信号分级推送**：已并入日报（A/B≥5 才模拟开仓）
+- [ ] **波段持仓止损线**：日报按 -5%/+8%，可再写入 positions 字段持久化
+
 
 ### 模拟盘改进
 - [ ] **测试数据隔离**：清理 sim_positions 中的测试股票（Test0/1/2）
@@ -142,18 +194,13 @@
 
 ---
 
-## 五、已关闭/不再维护 ❌
+## 五、已关闭（勿把 P0 误放这里）
 
-- REQ-002: 完整采样（已完成）
-- REQ-003: K线数据质量（已完成）
-- REQ-004: 每日扫描通知（已完成）
-- REQ-005: 总资产显示修复（已完成）
-- REQ-034: 执行一致性（已完成）
-- REQ-044: 设置文档（已完成）
-- REQ-065: 累计收益率修复（已完成）
-- REQ-066: 重置后自动交易（已完成）
-- REQ-059: buy_zone 串价 bug（已修复，待验证）
-- REQ-061: 龙旗科技移动止损未执行（已修复，待验证）
+- REQ-002 / REQ-003 / REQ-004：采样与通知相关（历史完成）
+- REQ-005（旧：总资产显示）— 注意同号另有「观察列表缩略图」P2 仍 testing
+- REQ-034 / REQ-044 / REQ-065 / REQ-066：已落地条目
+
+**禁止**：把 REQ-048 / 057 / 061 / TASK-串价 标进本段。状态未绿、单测未过 = 没关。
 
 ---
 
@@ -161,35 +208,33 @@
 
 | 类别 | 技术 |
 |------|------|
-| 语言 | Python 3.10+ |
-| 数据获取 | akshare、baostock、腾讯行情API、mootdx |
+| 语言 | Python 3.11+（`pyproject.toml`：`>=3.11,<3.14`；vnpy 建议 Win 上 3.11） |
+| 数据获取 | akshare、baostock、腾讯行情、mootdx |
 | 数据库 | SQLite（`sim_live_mirror.db` + `pm.db`） |
-| 通知 | 企微 webhook |
-| 定时任务 | OpenClaw Cron（LLM agent 驱动） |
-| 策略引擎 | 自研 `quant_core` + `vqlearn` |
-| 回测 | `vqlearn/runners/` + `research/walk_forward.py` |
+| 通知 | 企微 webhook（注意默认 dry-run） |
+| 定时任务 | OpenClaw Cron（LLM）+ Windows schtasks（`.bat`） |
+| 策略/执行 | `quant_core` + `vqlearn` + vnpy/QMT（并行未统一） |
+| 回测 | `vqlearn/runners/` + `research/walk_forward.py` + 旧 `backtest.py` |
 
 ---
 
-## 七、项目结构
+## 七、项目结构（目标收敛态）
 
 ```
 quant-learn/
-├── sim/                    # 模拟盘核心引擎
-├── quant_core/             # 量化核心库
-├── vqlearn/                # 新一代量化框架
-├── strategies/             # 策略库
-├── broker/                 # 券商接入
-├── gateways/               # 数据网关
-├── decision/               # 决策引擎
-├── notifier/               # 通知模块
-├── scripts/                # 脚本（交易、扫描、报告、工具）
+├── sim/                    # 模拟盘（现行主链路之一）
+├── quant_core/             # 无 IO 核心（目标统一层）
+├── vqlearn/                # paper/回测/阈值策略
+├── strategies/             # vnpy CTA 策略
+├── broker/ gateways/       # 执行与行情
+├── notifier/               # 企微
+├── runners/                # 正式启动入口（intraday/gui）
+├── scripts/                # 运维脚本（应收敛；勿再堆 _tmp）
+├── legacy/                 # 旧入口停放处（QL-013）
 ├── skills/                 # OpenClaw 技能
-├── tests/                  # 测试
-├── data/                   # 数据文件
-├── output/                 # 输出报告
-├── pm/                     # 研发管理
-├── docs/                   # 文档
-├── config.yaml             # 主配置
-└── docs/ROADMAP.md         # 本文件
+├── tests/                  # 唯一 pytest 收集目录
+├── data/ output/ pm/ docs/
+└── config.yaml             # 唯一主配置（目标）
 ```
+
+**当前现实**：根目录与 `scripts/` 仍大量临时文件；勿把杂物当正式 API。

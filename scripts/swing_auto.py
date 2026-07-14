@@ -30,7 +30,7 @@ DB_PATH = ROOT / 'data' / 'sim_live_mirror.db'
 # ========== 交易费用 ==========
 COMMISSION_RATE = 0.00025   # 佣金万2.5
 MIN_COMMISSION = 5.0        # 最低佣金5元
-STAMP_TAX_RATE = 0.001      # 印花税千1（卖出）
+STAMP_TAX_RATE = 0.0005     # 印花税万5（卖出，2023-08-28后）
 
 # ========== 稳定型股票池（低波动蓝筹） ==========
 STOCK_POOL = [

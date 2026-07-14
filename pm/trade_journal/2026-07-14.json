@@ -1,0 +1,55 @@
+{
+  "trade_date": "2026-07-14",
+  "generated_at": "2026-07-14 18:01:52",
+  "db_path": "/data/shaohjz/quant-learn/data/sim_live_mirror.db",
+  "totals": {
+    "accounts": 2,
+    "trades": 0,
+    "open_positions": 0
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "default",
+      "cash": 10000.0,
+      "total_value": 10000.0,
+      "day_pnl": null,
+      "day_pct": null,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 100000.0,
+      "total_value": 100000.0,
+      "day_pnl": null,
+      "day_pct": null,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": {
+        "id": 1,
+        "account_id": 3,
+        "trade_date": "2026-07-14",
+        "total_value": 100000.0,
+        "cash": 100000.0,
+        "market_value": 0.0,
+        "daily_return": 0.0,
+        "cumulative_return": 0.0,
+        "max_drawdown": null,
+        "created_at": "2026-07-14 09:28:08",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

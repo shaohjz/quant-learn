@@ -21,6 +21,8 @@
 | 盘中 5–10min | 真仓阈值（可被 pulse 覆盖） | 你的股到价 | `portfolio_alert_runner.bat` | 可与 pulse 二选一 |
 | **盘中 每30分** | **全市场异动** | 量价突破等 → 可进观察池 | `intraday_scanner_runner.bat` | **建议开**（消息会更多） |
 | **16:05** | **波段交易日报** | 全日赚/亏 + 挂单复盘 | `swing_daily_report_runner.bat` | **必开** |
+| **16:15** | **交易台账** | 全账户成交明细+持仓 → 复盘底稿 | `trade_journal_runner.bat` | **必开** |
+| 16:30 | 理财复盘备注（可选） | 填台账文末「复盘备注」 | OpenClaw 短会话 | 建议开 |
 | 20:00 | 复盘一句（可选） | 总览 | 理财师短报告 | 可选 |
 
 ### 大盘扫不扫？（直接回答）
@@ -76,6 +78,7 @@ REM 可选: --no-trade  --no-push  --skip-scan
 | 任务名（建议） | bat 文件 | 建议时间 | 状态建议 | 说明 |
 |----------------|----------|----------|----------|------|
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | 16:05 工作日 | **必开** | 波段结论 |
+| QuantLearn_TradeJournal | `trade_journal_runner.bat` | 16:15 工作日 | **必开** | 每日交易台账 |
 | QuantLearn_QuantPulse | `quant_pulse_runner.bat` | 09:35 起每10分 | **必开** | 真仓+波段+指数脉搏 |
 | QuantLearn_MorningScan | `morning_scanner_runner.bat` | 08:30 | **建议开** | 宽基≈800 选股 |
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 盘中每30分 | **建议开** | 全市场异动 |
@@ -100,11 +103,14 @@ REM 可选: --no-trade  --no-push  --skip-scan
 ```bat
 schtasks /create /f /tn "QuantLearn_SwingDaily" /tr "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\swing_daily_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 
+schtasks /create /f /tn "QuantLearn_TradeJournal" /tr "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\trade_journal_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
+
 REM 盘中波段盯盘：先建 09:35 触发，再在任务计划里设「每 10 分钟重复，持续到 14:50」
 schtasks /create /f /tn "QuantLearn_SwingIntraday" /tr "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\swing_intraday_watch_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 09:35
 
 schtasks /query /fo LIST | findstr QuantLearn
 schtasks /run /tn QuantLearn_SwingDaily
+schtasks /run /tn QuantLearn_TradeJournal
 ```
 
 ---
@@ -218,5 +224,7 @@ schtasks /run /tn QuantLearn_SwingDaily
 |------|------|
 | 波段结论 | `output/swing_daily/YYYY-MM-DD.md` |
 | 波段 JSON | `output/swing_daily/YYYY-MM-DD.json` |
+| **交易台账（复盘）** | `pm/trade_journal/YYYY-MM-DD.md` (+ `.json`) |
 | 结论表 | DB `swing_daily_conclusions` |
 | 净值 | DB `sim_daily_nav`（account_id=3） |
+| 成交明细 | DB `sim_trades` |

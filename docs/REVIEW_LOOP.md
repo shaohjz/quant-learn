@@ -72,6 +72,7 @@ open → in_progress → fixed → verified → deployed
 | Bug | `pm/bugs/BUG-xxx.md` |
 | 测试报告 | `pm/test_reports/TEST-YYYY-MM-DD-xxx.md` |
 | 理财复盘 | `output/reviews/` 或 `pm/daily/` |
+| **交易台账** | `pm/trade_journal/YYYY-MM-DD.md` ← **复盘事实底稿** |
 | **Cursor 队列** | `pm/cursor_queue/YYYY-MM-DD.md` ← **新增核心** |
 | 开发方案草稿 | `pm/dev/PLAN-REQ-xxx.md` |
 
@@ -85,7 +86,8 @@ open → in_progress → fixed → verified → deployed
 |:----:|----|------|----------|
 | 15:10 | 系统 bat | `daily_review` / 持仓摘要（已有） | 脚本 |
 | 16:05 | 系统 bat | 波段日报赚亏（已有） | 脚本 |
-| **16:30** | **理财经理** | 读波段结论+账户 → 写短复盘；可选提 0–2 条 REQ | OpenClaw 短会话 |
+| **16:15** | 系统 bat | **交易台账** `trade_journal` → `pm/trade_journal/今天.md` | 脚本 |
+| **16:30** | **理财经理** | 读台账+波段结论 → 填「复盘备注」；可选提 0–2 条 REQ | OpenClaw 短会话 |
 | **17:00** | **需求 + PM** | 消化复盘/ops/日志 → 开/更新 REQ·BUG；**去重**；标 priority | OpenClaw |
 | **17:30** | **QA** | `pytest -q`（或读昨日失败）→ 更新 testing 项；失败开 BUG | OpenClaw 或 bat |
 | **18:00** | **开发经理** | **只写方案**：对每个 P0 写 `PLAN-*.md`（改哪些文件、验收标准） | OpenClaw |
@@ -142,8 +144,10 @@ open → in_progress → fixed → verified → deployed
 ### 理财经理（16:30）
 
 ```text
-只读：output/swing_daily/今天.md、sim 账户摘要、当日告警。
-输出：pm/daily/YYYY-MM-DD-finance.md（短：赚亏、持仓风险、1～2 句建议）。
+只读：pm/trade_journal/今天.md、output/swing_daily/今天.md、当日告警。
+1) 禁止改台账里的成交/持仓表格数字（那是脚本事实）。
+2) 只在 pm/trade_journal/今天.md 文末「复盘备注」填写：做对了/做错了/明日挂单。
+3) 可选再写 pm/daily/YYYY-MM-DD-finance.md 短总结。
 若发现系统问题：用 pm_cli 开 BUG/REQ，不要改代码。
 ```
 
@@ -231,9 +235,10 @@ OpenClaw 挂治理任务时：`timeout` 短、只写 `pm/`，输出目录白名�
 
 ## 10. 你怎么用（日常三句话）
 
-1. **白天**：看交易提醒（DEPLOYMENT 四件套）。  
-2. **晚上**：企微看「Cursor 队列」；有空就打开 Cursor 丢上面的话术。  
-3. **周末**：PM 出周报；大需求（vnpy/架构）只进 ROADMAP，不进每日 P0。
+1. **白天**：看交易提醒（DEPLOYMENT 调度）。  
+2. **收盘后**：看 `pm/trade_journal/今天.md`（成交事实）+ 波段结论。  
+3. **晚上**：企微看「Cursor 队列」；有空就打开 Cursor 丢上面的话术。  
+4. **周末**：PM 出周报；大需求（vnpy/架构）只进 ROADMAP，不进每日 P0。
 
 ---
 
@@ -241,22 +246,39 @@ OpenClaw 挂治理任务时：`timeout` 短、只写 `pm/`，输出目录白名�
 
 ```text
 你是 PM+需求助理（不要改 strategies/scripts 业务代码）。
-1. 读今天 output/swing_daily/*.md、pm/bugs、pm/requirements、pytest 日志（若有）
+1. 读今天 pm/trade_journal/*.md、output/swing_daily/*.md、pm/bugs、pm/requirements、pytest 日志（若有）
 2. 去重后：必要则 pm_cli create REQ/BUG（今天新建 ≤3）
 3. 写出 pm/cursor_queue/今天.md：P0≤3，每项含文件路径+验收 pytest+做完改哪个状态
-4. 企微发短摘要给主人：今日队列标题列表
+4. 企微发短摘要给主人：今日队列标题列表 + 今日成交笔数一句
 5. 写 pm/daily/今天-pm.md 留档
-红线：禁止重构交易核心；禁止 force push；禁止动 webhook 密钥。
+红线：禁止改台账数字；禁止重构交易核心；禁止 force push；禁止动 webhook 密钥。
 ```
 
 ---
 
-## 12. 相关文件
+## 12. 给 OpenClaw 的「交易记录 / 复盘」口令（16:30）
+
+```text
+【任务】每日交易复盘（只写备注，不改代码、不改成交表）。
+
+1. 若尚无 pm/trade_journal/今天.md：先跑
+   .venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
+2. 打开 pm/trade_journal/今天.md + output/swing_daily/今天.md
+3. 只在「复盘备注」填写四项：做对了 / 做错了 / 明日挂单 / 是否开 REQ
+4. 可选：企微发 3～5 行复盘摘要（含成交笔数与波段结论一句）
+红线：表格里的价格数量盈亏禁止手改；发现问题开 BUG。
+```
+
+---
+
+## 13. 相关文件
 
 | 路径 | 说明 |
 |------|------|
 | `docs/DEPLOYMENT.md` | 交易系统怎么跑 |
 | `docs/REALTIME.md` | 盘中监控 |
+| `pm/trade_journal/` | **每日交易台账（复盘底稿）** |
 | `docs/FULL_AGENT_PROMPT.md` | 旧全自动设计（Dev 自动改码部分 **作废**，以本文为准） |
 | `pm/agents/*.md` | 角色细则可继续沿用「只读/只写 pm」约束 |
 | `scripts/pm_cli.py` | 状态工具 |
+| `scripts/trade_journal.py` | 台账脚本 |

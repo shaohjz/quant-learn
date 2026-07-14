@@ -13,7 +13,7 @@
 
 # ★ OpenClaw：如何跑这个项目（必读，按顺序做）
 
-你是 OpenClaw Agent。主人要的是：**盘中有提醒、收盘知道波段赚亏、能扫大盘找票**。  
+你是 OpenClaw Agent。主人要的是：**盘中有提醒、收盘知道波段赚亏、能扫大盘找票、每天有交易台账可复盘**。  
 按下面步骤执行。每步写清成功/失败。完成后写 `pm/ops/YYYY-MM-DD-deploy.md`。
 
 ## 约束（红线）
@@ -103,7 +103,10 @@ REM A 盘中脉搏（真仓阈值 + 波段盯盘 + 指数）
 REM B 波段收盘链路（模拟成交 + 赚亏结论）
 .venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
 
-REM C 盘前大盘扫（≈800，失败会 fallback lite）
+REM C 交易台账（全账户成交+持仓 → pm/trade_journal）
+.venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
+
+REM D 盘前大盘扫（≈800，失败会 fallback lite）
 .venv\Scripts\python.exe -u scripts\scanner_with_fallback.py
 ```
 
@@ -113,7 +116,8 @@ REM C 盘前大盘扫（≈800，失败会 fallback lite）
 |------|------|
 | A | 退出码 0；日志无未捕获 traceback |
 | B | 生成 `output\swing_daily\今天日期.md`，含「波段结论」「挂单建议」 |
-| C | 有 Top 输出或 fallback 成功；日志写入 `output\morning_scanner.log` 或 runner log |
+| C | 生成 `pm\trade_journal\今天日期.md`，含「交易台账」「复盘备注」 |
+| D | 有 Top 输出或 fallback 成功；日志写入 `output\morning_scanner.log` 或 runner log |
 | DB | 存在账户或 B 后出现 account_id=3 |
 
 任一步失败 → **先修再挂 schtasks**，把错误写进 deploy 报告。
@@ -137,15 +141,19 @@ schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intrada
 REM ④ 16:05 波段日报（赚亏结论）
 schtasks /create /f /tn "QuantLearn_SwingDaily" /tr "%ROOT%\scripts\swing_daily_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 
+REM ⑤ 16:15 交易台账（全账户成交+持仓 → pm/trade_journal，供复盘）
+schtasks /create /f /tn "QuantLearn_TradeJournal" /tr "%ROOT%\scripts\trade_journal_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
+
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开四件套：**
+**必开（交易四件套 + 台账）：**
 
 1. `QuantLearn_MorningScan` — 盘前扫大盘  
 2. `QuantLearn_QuantPulse` — 盘中真仓+波段+指数  
 3. `QuantLearn_IntradayScanner` — 盘中异动发现  
 4. `QuantLearn_SwingDaily` — 收盘波段赚亏  
+5. `QuantLearn_TradeJournal` — 每日交易记录落盘（复盘用）  
 
 若已单独挂 `PortfolioAlert` / `SwingIntraday`：可保留，或删掉改由 `QuantPulse` 统一调用（避免重复推送）。
 
@@ -154,8 +162,11 @@ schtasks /query /fo LIST | findstr QuantLearn
 ```bat
 schtasks /run /tn QuantLearn_QuantPulse
 schtasks /run /tn QuantLearn_SwingDaily
+schtasks /run /tn QuantLearn_TradeJournal
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
+type %ROOT%\output\trade_journal.log
+dir %ROOT%\pm\trade_journal
 ```
 
 ## 步骤 6 — 整理 OpenClaw Cron
@@ -274,6 +285,7 @@ notify:
 schtasks /query /tn QuantLearn_QuantPulse /v /fo LIST
 schtasks /query /tn QuantLearn_SwingDaily /v /fo LIST
 dir output\swing_daily
+dir pm\trade_journal
 dir output\scan
 type output\quant_pulse.log
 ```
@@ -305,17 +317,18 @@ type output\quant_pulse.log
 - 盘中每10分 quant_pulse（真仓阈值+波段机会+指数）
 - 盘中每30分 intraday_scanner（全市场异动）
 - 16:05 swing_daily_report（波段赚亏+挂单建议）
+- 16:15 trade_journal（全账户成交+持仓 → pm/trade_journal）
 
 必做：
 1. cd C:\Users\Administrator\.openclaw\workspace\quant-learn && git pull
 2. 确认 .venv；配置 config.local.yaml webhook（勿提交）
-3. 冒烟 A quant_pulse --force --no-push；B swing_daily_report --no-push；C scanner_with_fallback
-4. schtasks 确保四件套：MorningScan / QuantPulse / IntradayScanner / SwingDaily（Pulse 设10分钟重复到14:50）
+3. 冒烟 A quant_pulse --force --no-push；B swing_daily_report --no-push；C trade_journal --no-push；D scanner_with_fallback
+4. schtasks 确保：MorningScan / QuantPulse / IntradayScanner / SwingDaily / TradeJournal（Pulse 设10分钟重复到14:50）
 5. openclaw cron list：停掉与 SwingDaily 重复的 LLM 波段扫描；交易勿用 agentTurn 下单
 6. 写 pm/ops/今天-deploy.md（含 schtasks+cron 原文与试跑结果）
 
-红线：不开启实盘自动下单；密钥不入库；不双开同一扫描。
-参考：docs/REALTIME.md 、docs/CRON_JOBS.md
+红线：不开启实盘自动下单；密钥不入库；不双开同一扫描；台账数字由脚本写，禁止 LLM 瞎改表格。
+参考：docs/REALTIME.md 、docs/CRON_JOBS.md 、docs/REVIEW_LOOP.md
 ```
 
 ---

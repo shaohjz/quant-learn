@@ -85,6 +85,7 @@ output/reports/
 output/reviews_weekly/
 output/.armed_flags/
 output/*.log
+output/trade_journal/
 output/freshness_report.json
 output/generate_next_watchlist_cron.log
 output/intraday_scanner_cron.log

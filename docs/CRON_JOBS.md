@@ -7,6 +7,17 @@
 
 ---
 
+## ⚠️ 两套定时器，别混
+
+| 哪套 | 是什么 | 干什么 | 个数 |
+|------|--------|--------|------|
+| **Windows 任务计划** `schtasks` | 跑 `.bat` / python，**不占 LLM** | **全部交易扫描、Pulse、波段、台账** | 可多开 |
+| **OpenClaw Cron** | `openclaw cron` | **最多只留 2～3 条文案类**（复盘备注 / 写 queue） | **有限额**；**禁止**用来每 10 分钟扫盘 |
+
+盘中「每 10 分 / 每 30 分」= 在 **Windows「任务计划程序」GUI** 里给对应 schtasks 勾「重复任务间隔」，**不是**给 OpenClaw 挂一堆 LLM cron。
+
+---
+
 ## 一天长什么样（推荐态）
 
 ```mermaid
@@ -19,18 +30,19 @@ flowchart TD
   F --> G["16:30-18:30 OpenClaw 复盘入库 + Cursor队列"]
 ```
 
-| 时刻 | 任务 | bat / 入口 | 为什么开 |
-|:----:|------|------------|----------|
-| **08:30** | 宽基选股 | `morning_scanner_runner.bat` | 早上找票 |
-| **09:35→14:50 /10m** | 统一脉搏 | `quant_pulse_runner.bat` | 真仓阈值 + 波段机会 + 指数 |
-| **10:00→14:30 /30m** | 全市场异动 | `intraday_scanner_runner.bat` | 发现新票（吵可关） |
-| **16:05** | 波段日报 | `swing_daily_report_runner.bat` | #3 模拟 + 挂单建议 |
-| **16:15** | 交易台账 | `trade_journal_runner.bat` | `pm/trade_journal/` |
-| **16:20** | 双账户收盘摘要 | `daily_close_report_runner.bat` | #1+#3 概况（日盈亏相对昨日净值） |
-| **16:30** | 复盘备注 | OpenClaw | 填台账备注；有问题开 REQ/BUG |
-| **17:00** | 需求全量入库 | OpenClaw | 发现问题一律写进 `pm/` |
-| **18:15** | Cursor 完整队列 | OpenClaw | `pm/cursor_queue/今天.md` |
-| **18:30** | 企微队列摘要 | OpenClaw | 条数 + Cursor 话术 |
+| 时刻 | 任务 | **定时器在哪** | 入口 | 说明 |
+|:----:|------|----------------|------|------|
+| **08:30** | 宽基选股 | **Windows schtasks** | `morning_scanner_runner.bat` | 早上找票 |
+| **09:35→14:50 /10m** | 统一脉搏 | **Windows schtasks** + **任务计划 GUI 重复间隔 10 分** | `quant_pulse_runner.bat` | 真仓+波段+指数；**不要**开 LLM cron |
+| **10:00→14:30 /30m** | 全市场异动 | **Windows schtasks** + **GUI 重复 30 分**（可选） | `intraday_scanner_runner.bat` | 吵可关；**不要**开 LLM cron |
+| **16:05** | 波段日报 | **Windows schtasks** | `swing_daily_report_runner.bat` | #3 赚亏+挂单建议 |
+| **16:15** | 交易台账 | **Windows schtasks** | `trade_journal_runner.bat` | `pm/trade_journal/` |
+| **16:20** | 双账户摘要 | **Windows schtasks** | `daily_close_report_runner.bat` | #1+#3 |
+| **16:30** | 复盘备注 | **OpenClaw cron（agentTurn）最多 1 条** | 短提示词 | 只写 md |
+| **17:00** | 需求入库 | **可与 18:15 合并成 1 条** OpenClaw | 短提示词 | 写 `pm/` |
+| **18:15** | Cursor 队列 | **OpenClaw cron 1 条够** | 短提示词 | 写 `cursor_queue` |
+
+**OpenClaw 侧建议上限：1～2 个 agentTurn**（例如「18:15 入库+写队列」一条搞定）。交易类 **0 个** LLM cron。
 
 ### 必开 vs 可选（别纠结）
 

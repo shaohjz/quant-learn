@@ -132,10 +132,13 @@ set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
 REM ① 08:30 宽基大盘扫（≈800）
 schtasks /create /f /tn "QuantLearn_MorningScan" /tr "%ROOT%\scripts\morning_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 08:30
 
-REM ② 09:35 盘中统一脉搏（每10分钟重复 → 请在「任务计划程序」GUI 设：持续到 14:50，间隔 10 分钟）
+REM ② QuantPulse：先 schtasks 建「每天 09:35 触发一次」，再打开 Windows「任务计划程序」GUI
+REM    → 找到 QuantLearn_QuantPulse → 触发器 → 勾选「重复任务间隔」= 10 分钟，持续时间到 14:50
+REM    （这是 Windows 计划任务，不是 openclaw cron / 不是 LLM）
 schtasks /create /f /tn "QuantLearn_QuantPulse" /tr "%ROOT%\scripts\quant_pulse_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 09:35
 
-REM ③ 10:00 起全市场异动（每30分钟 → GUI 设重复到 14:30，间隔 30 分钟）
+REM ③ IntradayScanner：同样用 Windows GUI 设重复 30 分钟到 14:30（可选；消息多就别建）
+REM    （也是 Windows 计划任务，禁止做成 OpenClaw LLM 每 30 分一条）
 schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intraday_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 10:00
 
 REM ④ 16:05 波段日报（赚亏结论）

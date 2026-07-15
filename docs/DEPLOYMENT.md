@@ -6,8 +6,18 @@
 >  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
-> **配套**：[CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [ROADMAP.md](./ROADMAP.md) · [README.md](../README.md)  
+> **配套**：[CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
 > **更新**：2026-07-15
+
+---
+
+## 主人怎么喊你（一句话就够）
+
+主人只需说：
+
+> **重新部署：`git pull`，然后严格按 `docs/DEPLOYMENT.md` 文首 ★ 从步骤 0 做到步骤 7。**
+
+你就执行本文，**不要另编一套定时器**；做完写 `pm/ops/今天-deploy.md` 回复。
 
 ---
 
@@ -21,15 +31,28 @@
 1. **禁止**用 LLM `agentTurn` 去扫盘、模拟下单、改生产交易代码并自动 merge。  
 2. **禁止**把 webhook key 写进 git；放 `config.local.yaml`。  
 3. **禁止**开启实盘自动下单（QMT live），除非主人明文说「开 live」。  
-4. 交易/扫描类任务用 **schtasks bat** 或 OpenClaw **`systemEvent`**。  
-5. 同一功能只留一个入口：有 `QuantLearn_SwingDaily` 就停掉 LLM「短线波段扫描」。
+4. 交易/扫描类任务 **只用 Windows 任务计划（schtasks）跑 bat**；不要用 LLM cron 堆。  
+5. 同一功能只留一个入口：有 `QuantLearn_SwingDaily` 就停掉 LLM「短线波段扫描」。  
+6. OpenClaw **LLM cron 有个数限制** → **最多保留 1～2 条**晚间写 `pm/` 的文案任务（见步骤 6）。
 
-## 步骤 0 — 进入目录
+## ★★ 两套定时器（必懂，别混）
+
+| 哪套 | 命令/界面 | 干什么 | 数量 |
+|------|-----------|--------|------|
+| **Windows 任务计划** | `schtasks` + 「任务计划程序」GUI | **全部**交易：扫盘 / Pulse / 波段 / 台账 / 收盘摘要 | 可开多个 |
+| **OpenClaw Cron** | `openclaw cron` | **最多 1～2 条** LLM 文案（入库、写 cursor_queue） | **有限额** |
+
+- 「盘中每 10 分 / 每 30 分」= 在 **Windows GUI** 给对应 schtasks 勾「重复任务间隔」。  
+- **禁止**把 Pulse/Scanner 做成 OpenClaw LLM 每 N 分钟一条（占满名额还容易挂）。  
+- 细节表见 [CRON_JOBS.md](./CRON_JOBS.md)「两套定时器」。
+
+## 步骤 0 — 进入目录并拉代码
 
 ```bat
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 git status
 git pull
+git log -1 --oneline
 ```
 
 若目录不存在：按「第二节 环境安装」先 clone。
@@ -83,12 +106,12 @@ set QUANT_DB_PATH=C:\Users\Administrator\.openclaw\workspace\quant-learn\data\si
 .venv\Scripts\python.exe -c "from sim.db import init_tables; init_tables()"
 ```
 
-账户约定：
+账户约定（日常只盯两个）：
 
 | id | 名字 | 用途 |
 |----|------|------|
-| **1** | learn | **模拟学习仓**（日常看这个） |
-| 2 | real_portfolio | 真仓镜像（可选，默认可关推送） |
+| **1** | learn | **模拟学习仓** |
+| 2 | real_portfolio | 真仓镜像（可选，默认可不推） |
 | **3** | swing_trade | **波段模拟**（挂单建议 / 波段赚亏） |
 
 ## 步骤 4 — 冒烟（必须全绿再挂任务）
@@ -103,10 +126,13 @@ REM A 盘中脉搏（真仓阈值 + 波段盯盘 + 指数）
 REM B 波段收盘链路（模拟成交 + 赚亏结论）
 .venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
 
-REM C 交易台账（全账户成交+持仓 → pm/trade_journal）
+REM C 交易台账
 .venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
 
-REM D 盘前大盘扫（≈800，失败会 fallback lite）
+REM D 双账户收盘摘要（当日盈亏必须「相对昨日净值」，禁止再出现总资产-100000 的假 +119%）
+.venv\Scripts\python.exe -u scripts\daily_close_report.py --no-push
+
+REM E 盘前大盘扫（≈800，失败会 fallback lite）
 .venv\Scripts\python.exe -u scripts\scanner_with_fallback.py
 ```
 
@@ -114,51 +140,51 @@ REM D 盘前大盘扫（≈800，失败会 fallback lite）
 
 | 检查 | 期望 |
 |------|------|
-| A | 退出码 0；日志无未捕获 traceback |
-| B | 生成 `output\swing_daily\今天日期.md`，含「波段结论」「挂单建议」 |
-| C | 生成 `pm\trade_journal\今天日期.md`，含「交易台账」「复盘备注」 |
-| D | 有 Top 输出或 fallback 成功；日志写入 `output\morning_scanner.log` 或 runner log |
-| DB | 存在账户或 B 后出现 account_id=3 |
+| A | 退出码 0；无未捕获 traceback |
+| B | `output\swing_daily\今天.md` 含「波段结论」「挂单建议」 |
+| C | `pm\trade_journal\今天.md` 存在 |
+| D | 文案含「相对昨日净值」；**不能**再出现离谱日涨跌幅（如 +119%） |
+| E | Top 或 fallback 成功 |
+| DB | 有 account_id=1 与 3（B 可自动建 #3） |
 
 任一步失败 → **先修再挂 schtasks**，把错误写进 deploy 报告。
 
-## 步骤 5 — 挂 Windows 计划任务（主调度，这些必须存在）
+## 步骤 5 — 挂 Windows 计划任务（交易主调度，不占 LLM）
 
 管理员 CMD：
 
 ```bat
 set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
 
-REM ① 08:30 宽基大盘扫（≈800）
+REM ① 08:30 宽基选股
 schtasks /create /f /tn "QuantLearn_MorningScan" /tr "%ROOT%\scripts\morning_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 08:30
 
-REM ② QuantPulse：先 schtasks 建「每天 09:35 触发一次」，再打开 Windows「任务计划程序」GUI
-REM    → 找到 QuantLearn_QuantPulse → 触发器 → 勾选「重复任务间隔」= 10 分钟，持续时间到 14:50
-REM    （这是 Windows 计划任务，不是 openclaw cron / 不是 LLM）
+REM ② QuantPulse：先建 09:35 一次触发，再打开 Windows「任务计划程序」GUI
+REM    → QuantLearn_QuantPulse → 触发器 →「重复任务间隔」= 10 分钟，持续时间到 14:50
+REM    ※ 这是 Windows 计划任务，不是 openclaw cron，不是 LLM
 schtasks /create /f /tn "QuantLearn_QuantPulse" /tr "%ROOT%\scripts\quant_pulse_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 09:35
 
-REM ③ IntradayScanner：同样用 Windows GUI 设重复 30 分钟到 14:30（可选；消息多就别建）
-REM    （也是 Windows 计划任务，禁止做成 OpenClaw LLM 每 30 分一条）
+REM ③ IntradayScanner：可选。同样用 Windows GUI 设重复 30 分钟到 14:30
+REM    ※ 禁止做成 OpenClaw LLM 每 30 分一条
 schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intraday_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 10:00
 
-REM ④ 16:05 波段日报（赚亏结论）
+REM ④ 16:05 波段日报
 schtasks /create /f /tn "QuantLearn_SwingDaily" /tr "%ROOT%\scripts\swing_daily_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 
-REM ⑤ 16:15 交易台账（全账户成交+持仓 → pm/trade_journal，供复盘）
+REM ⑤ 16:15 交易台账
 schtasks /create /f /tn "QuantLearn_TradeJournal" /tr "%ROOT%\scripts\trade_journal_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
+
+REM ⑥ 16:20 双账户收盘摘要
+schtasks /create /f /tn "QuantLearn_DailyClose" /tr "%ROOT%\scripts\daily_close_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:20
 
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（交易四件套 + 台账）：**
+**必开（Windows）：** MorningScan · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose  
 
-1. `QuantLearn_MorningScan` — 盘前扫大盘  
-2. `QuantLearn_QuantPulse` — 盘中真仓+波段+指数  
-3. `QuantLearn_IntradayScanner` — 盘中异动发现  
-4. `QuantLearn_SwingDaily` — 收盘波段赚亏  
-5. `QuantLearn_TradeJournal` — 每日交易记录落盘（复盘用）  
+**可选（Windows）：** IntradayScanner（消息多就关）  
 
-若已单独挂 `PortfolioAlert` / `SwingIntraday`：可保留，或删掉改由 `QuantPulse` 统一调用（避免重复推送）。
+**勿双开：** 已开 Pulse 则关掉单独的 `PortfolioAlert` / `SwingIntraday` schtasks。
 
 试跑：
 
@@ -166,13 +192,15 @@ schtasks /query /fo LIST | findstr QuantLearn
 schtasks /run /tn QuantLearn_QuantPulse
 schtasks /run /tn QuantLearn_SwingDaily
 schtasks /run /tn QuantLearn_TradeJournal
+schtasks /run /tn QuantLearn_DailyClose
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
 type %ROOT%\output\trade_journal.log
 dir %ROOT%\pm\trade_journal
+dir %ROOT%\output\swing_daily
 ```
 
-## 步骤 6 — 整理 OpenClaw Cron
+## 步骤 6 — 整理 OpenClaw Cron（LLM 限量）
 
 ```bat
 openclaw cron list
@@ -180,51 +208,41 @@ openclaw cron list
 
 | 动作 | 对象 |
 |------|------|
-| **停用/删除** | 名称含「短线波段扫描」且与 16:05 日报重复的 LLM 任务 |
-| **停用（建议）** | 每日多轮「研发修复」LLM（09/18/21），避免半夜改仓控代码 |
-| **可保留** | 纯文案日报（PM/理财师），`delivery.mode=announce` |
-| **交易类新建** | 只用 `systemEvent` 调 `.venv\Scripts\python.exe -u scripts\...`，或完全交给 schtasks |
+| **全部删/停** | 任何交易扫描、波段扫描、每 N 分钟盯盘的 **LLM agentTurn** |
+| **停用（建议）** | 每日多轮「研发修复」LLM（09/18/21） |
+| **最多保留 1～2 条** | 晚间文案：按 [REVIEW_LOOP.md](./REVIEW_LOOP.md) 写 `pm/` + `cursor_queue`（可合并成 **18:15 一条**） |
+| **不要** | schtasks 已跑的脚本再在 OpenClaw 挂一份（双推） |
 
-波段日报若也用 OpenClaw（可选，schtasks 已够）：
-
-```json
-{
-  "name": "波段交易日报-systemEvent",
-  "schedule": { "kind": "cron", "expr": "5 16 * * 1-5", "tz": "Asia/Shanghai" },
-  "sessionTarget": "isolated",
-  "payload": {
-    "kind": "systemEvent",
-    "command": ".venv\\Scripts\\python.exe -u scripts\\swing_daily_report.py"
-  },
-  "delivery": { "mode": "announce", "channel": "wecom", "to": "jizhouhu" }
-}
-```
-
-**不要** schtasks + OpenClaw 同时跑同一脚本（双份消息）。
+可选：若不用 schtasks，交易脚本可用 OpenClaw **`systemEvent`（非 LLM）** 调 bat/python——仍算「脚本调度」，不占 LLM 名额。优先 schtasks。
 
 ## 步骤 7 — 交付报告
 
 写入 `pm/ops/YYYY-MM-DD-deploy.md`，必须包含：
 
 1. `git log -1 --oneline`  
-2. 冒烟 A/B/C 结果  
-3. `schtasks` 最终清单（findstr QuantLearn 原文）  
-4. `openclaw cron list` 最终清单  
-5. 已停用的重复任务名  
+2. 冒烟 A～E 结果  
+3. **【Windows schtasks】** `findstr QuantLearn` 原文 + Pulse 是否已在 GUI 设 10 分重复  
+4. **【OpenClaw cron】** 最终 list 原文（应几乎无交易 LLM）  
+5. 已停用的重复/LLM 任务名  
 6. 企微是否真推测过（是/否）  
+
+报告里 **必须分开两节**写 schtasks 与 openclaw cron，禁止混在一堆。
 
 ---
 
 # 主人每天会收到什么（你要保证这套在跑）
 
 ```
-08:30  宽基≈800 扫描 → Top 候选（早盘看票）
-09:35~14:50  每10分 quant_pulse：
-             · 真仓/观察股阈值到价
-             · 波段蓝筹好价 / 波段仓止盈止损
-             · 指数大跌一句提醒
-10:00~14:30  每30分 全市场异动扫描（可进观察池）
-16:05  波段模拟成交 +「今天赚/亏」+ 挂单复盘
+【全是 Windows schtasks，不是 OpenClaw LLM cron】
+08:30            MorningScan 宽基扫
+09:35~14:50 /10m QuantPulse（GUI 设重复）真仓阈值+波段+指数
+10:00~14:30 /30m IntradayScanner（可选，GUI 设重复）
+16:05            SwingDaily 波段赚亏+挂单建议
+16:15            TradeJournal 台账
+16:20            DailyClose 双账户摘要
+
+【OpenClaw LLM：最多 1～2 条】
+18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
 ```
 
 详情：[REALTIME.md](./REALTIME.md)
@@ -310,31 +328,17 @@ type output\quant_pulse.log
 
 ---
 
-# 给 OpenClaw 的一键口令（复制即用）
+# 给 OpenClaw 的一键口令（主人复制即用）
+
+主人只需发下面这一段（细节全在本文 ★，不要另写长提示）：
 
 ```text
-【任务】按 docs/DEPLOYMENT.md「★ OpenClaw：如何跑这个项目」把 quant-learn 跑起来。
-
-定时器铁律：
-- 交易/扫描/Pulse/波段/台账 = Windows「任务计划程序」schtasks 跑 bat（不占 LLM 名额）
-- OpenClaw LLM(agentTurn) cron 有个数限制 → 最多 1～2 条晚间写 pm/
-- 禁止把「每10分 Pulse / 每30分扫描」做成 OpenClaw LLM cron
-
-目标态：
-- Windows schtasks：MorningScan、QuantPulse（任务计划 GUI 里设重复间隔10分到14:50）、SwingDaily、TradeJournal
-  （IntradayScanner 可选，同样用 Windows GUI 重复30分；DailyClose 建议16:20）
-- OpenClaw LLM：≤2 条（建议只留 18:15「需求入库+写 cursor_queue」一条）
-
-必做：
-1. cd C:\Users\Administrator\.openclaw\workspace\quant-learn && git pull
-2. 确认 .venv；config.local.yaml webhook（勿提交）
-3. 冒烟 A quant_pulse --force --no-push；B swing_daily_report --no-push；C trade_journal --no-push；D daily_close_report --no-push
-4. 用 schtasks 创建上述 Windows 任务；QuantPulse/Intraday 的「重复间隔」只在 Windows 任务计划程序 GUI 设置
-5. openclaw cron list：删光交易类 LLM 任务；勿 agentTurn 下单/扫盘
-6. 写 pm/ops/今天-deploy.md（必须分开写：schtasks 清单 vs openclaw cron 清单）
-
-红线：不开实盘自动下单；密钥不入库；不双开同一扫描。
-参考：docs/CRON_JOBS.md「两套定时器」
+重新部署 quant-learn：
+cd C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+然后严格按 docs/DEPLOYMENT.md 文首「★ OpenClaw：如何跑这个项目」从步骤 0 做到步骤 7。
+定时器用 Windows schtasks（见文内「两套定时器」）；OpenClaw LLM cron ≤1～2 条。
+做完写 pm/ops/今天-deploy.md 回复我。
 ```
 
 ---

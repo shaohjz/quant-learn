@@ -1,284 +1,218 @@
 # 每日复盘与多角色迭代规划（OpenClaw 轻量 + Cursor 重活）
 
-> **问题**：角色很多（理财经理 / 开发经理 / 测试 / PM / 需求），以前设计成 OpenClaw 自动改代码；  
-> 但 OpenClaw 模型弱 → 容易乱改、消化不了大仓库。  
-> **解法**：**OpenClaw 只做观察、写需求/Bug、改状态、排队**；**真改代码由你在 Cursor 手动触发（或 Cursor Cloud Agent）**。  
-> 更新：2026-07-14
+> **问题**：OpenClaw 模型弱 → 不能乱改仓。  
+> **解法**：**OpenClaw 把问题/需求全部写进仓库 `pm/`**；**晚上 Cursor 按队列尽量多修**（不限只做 P0）。  
+> 更新：2026-07-15
 
-配套：已有机制见 `docs/FULL_AGENT_PROMPT.md`、`pm/agents/*`、`scripts/pm_cli.py`。  
-本文是 **新主契约**，与旧「Dev Agent 15:30 自动改代码」冲突处以本文为准。
+配套：`pm/agents/*`、`scripts/pm_cli.py`。旧「Dev Agent 自动改代码」**作废**，以本文为准。
 
 ---
 
 ## 1. 目标一句话
 
 ```
-交易日运行 → 各角色复盘提问 → 写入 git(pm/) + pm.db
-     → 每晚生成「给 Cursor 的修复队列」
-     → 你有空时在 Cursor 说「按队列修 P0」→ 合入 → 改状态
+OpenClaw 全量写 REQ/BUG → pm/requirements + pm/bugs + pm.db
+     → 每晚生成「给 Cursor 的完整修复队列」
+     → 你在 Cursor 说「按队列从顶往下做」→ 能修多少修多少 → commit → push
 ```
 
-自动优化 ≠ OpenClaw 半夜改策略；  
-自动优化 = **自动发现问题 + 自动排队 + 你触发强模型落地**。
+OpenClaw **不藏需求在聊天里**；没写进项目 = 没存在过。  
+Cursor **不卡死在「只做 3 条 P0」**；有空就扫完整队列。
 
 ---
 
-## 2. 角色分工（谁干什么、什么不做）
+## 2. 角色分工
 
-| 角色 | OpenClaw 能否做 | 做什么 | **禁止** |
-|------|----------------|--------|----------|
-| **理财经理** Finance | ✅ 轻量 | 读模拟盘/波段结论，写「行情+账户」复盘；可提 P1/P2 产品建议 | 改 `scripts/` / 策略代码 |
-| **需求** Requirements | ✅ 轻量 | 从复盘/日志提炼 `REQ-xxx.md`，写入 `pm.db`，优先级 | 写实现代码 |
-| **PM** | ✅ 轻量 | 排期、去重、日报、维护 backlog、指定「今日 Cursor 队列」 | 大改代码 |
-| **开发经理** Dev-Mgr | ⚠️ 只分析 | 读失败测试/日志，写「修复方案草稿」进 `pm/dev/` | 擅自大范围 commit |
-| **测试** QA | ✅ 轻量 | 跑 pytest（或读报告）、写 `TEST-*.md`、改 testing→done / reopen | 改业务逻辑「凑绿」 |
-| **运维** Ops | ✅ 轻量 | 查 schtasks/日志/数据源，写 ops 报告、开 Bug | 乱删任务 |
-| **Cursor（你触发）** | — | **唯一默认允许改业务代码的执行器** | — |
-
-OpenClaw 模型弱时：**Dev 角色降级为「写方案 + 贴文件路径」**，不直接改仓控/止损核心。
+| 角色 | OpenClaw | 做什么 | **禁止** |
+|------|----------|--------|----------|
+| 理财 | ✅ | 填台账复盘备注；发现问题 → 提 REQ/BUG | 改策略代码 |
+| **需求** | ✅ | **发现的问题一律入库**（md + pm_cli）；去重；标 P0/P1/P2 | 写实现代码 |
+| **PM** | ✅ | 整理 backlog → **完整** `cursor_queue/今天.md`；企微摘要 | 大改代码 |
+| 开发经理 | ⚠️ | 给队列里可动手的项写 `PLAN-*.md`（路径+验收） | 擅自大范围 commit |
+| QA | ✅ | pytest / 报告；失败 reopen | 改断言凑绿 |
+| Ops | ✅ | 调度/日志问题开 Bug | 乱删任务 |
+| **Cursor** | — | **按队列修代码，尽量多做** | — |
 
 ---
 
-## 3. 状态机（统一，写入 git + pm.db）
-
-### 需求 REQ
+## 3. 状态机 + 落盘（必须进 git）
 
 ```
-pending → ready（PM 确认可做）→ in_progress（Cursor 认领）
-       → testing（代码已交测）→ done → deployed
-失败：testing → pending（并开 BUG）
+REQ:  pending → ready → in_progress → testing → done → deployed
+BUG:  open → in_progress → fixed → verified → deployed
 ```
-
-### Bug
-
-```
-open → in_progress → fixed → verified → deployed
-失败：fixed → reopened
-```
-
-命令（已有）：
 
 ```bat
-.venv\Scripts\python.exe scripts\pm_cli.py create --type story --title "..." --priority P0
+.venv\Scripts\python.exe scripts\pm_cli.py create --type story --title "..." --priority P1
 .venv\Scripts\python.exe scripts\pm_cli.py update REQ-048 --status testing
 .venv\Scripts\python.exe scripts\pm_cli.py list --status pending
 ```
 
-文件落盘（给人/Cursor 看）：
+| 类型 | 路径 | 规则 |
+|------|------|------|
+| 需求 | `pm/requirements/REQ-xxx.md` | **每条发现都要有文件**，禁止只口头提 |
+| Bug | `pm/bugs/BUG-xxx.md` | 同上 |
+| 方案 | `pm/dev/PLAN-*.md` | Cursor 动手前应有；没有则 Cursor 先补最短方案 |
+| **Cursor 队列** | `pm/cursor_queue/YYYY-MM-DD.md` | **每晚必有，含全量可做项** |
+| 台账 | `pm/trade_journal/` | 脚本事实 |
+| 测试 | `pm/test_reports/` | QA |
 
-| 类型 | 路径 |
-|------|------|
-| 需求 | `pm/requirements/REQ-xxx.md` |
-| Bug | `pm/bugs/BUG-xxx.md` |
-| 测试报告 | `pm/test_reports/TEST-YYYY-MM-DD-xxx.md` |
-| 理财复盘 | `output/reviews/` 或 `pm/daily/` |
-| **交易台账** | `pm/trade_journal/YYYY-MM-DD.md` ← **复盘事实底稿** |
-| **Cursor 队列** | `pm/cursor_queue/YYYY-MM-DD.md` ← **新增核心** |
-| 开发方案草稿 | `pm/dev/PLAN-REQ-xxx.md` |
+**入库原则**
 
----
-
-## 4. 每日时间线（交易日，推荐）
-
-与交易调度错开，避免抢盘中。
-
-| 时间 | 谁 | 动作 | 模型强度 |
-|:----:|----|------|----------|
-| 15:10 | 系统 bat | `daily_review` / 持仓摘要（已有） | 脚本 |
-| 16:05 | 系统 bat | 波段日报赚亏（已有） | 脚本 |
-| **16:15** | 系统 bat | **交易台账** `trade_journal` → `pm/trade_journal/今天.md` | 脚本 |
-| **16:30** | **理财经理** | 读台账+波段结论 → 填「复盘备注」；可选提 0–2 条 REQ | OpenClaw 短会话 |
-| **17:00** | **需求 + PM** | 消化复盘/ops/日志 → 开/更新 REQ·BUG；**去重**；标 priority | OpenClaw |
-| **17:30** | **QA** | `pytest -q`（或读昨日失败）→ 更新 testing 项；失败开 BUG | OpenClaw 或 bat |
-| **18:00** | **开发经理** | **只写方案**：对每个 P0 写 `PLAN-*.md`（改哪些文件、验收标准） | OpenClaw |
-| **18:15** | **PM** | 生成 **`pm/cursor_queue/今天.md`**（给 Cursor 的修复菜单） | OpenClaw |
-| **18:30** | **PM → 你** | 企微一条：「今日队列 N 条 P0，在 Cursor 执行：…」 | OpenClaw 投递 |
-| （你空时） | **你 + Cursor** | 打开队列，按条修、自测、commit | **Cursor 强模型** |
-| 次日盘前 | PM/QA | 看你昨晚 commit → 把对应 REQ 标 testing/done | OpenClaw |
-
-非交易日：只跑 QA 摘要 + PM 整理 backlog，不刷行情复盘。
+1. 聊天/企微里提到的缺陷 → 当天必须变成 `pm/bugs` 或 `pm/requirements` 文件  
+2. 去重：同症状合并，不重复开单  
+3. 大需求（vnpy Oms、架构重构）→ 仍入库，标 `epic` / 放队列「本周不做」区  
+4. **不再限制「每天新建 ≤3」**；可执行小单优先标 P0/P1，但 P2 也要写进仓库
 
 ---
 
-## 5. Cursor 队列格式（强制，方便你一键开干）
+## 4. 每日时间线
 
-每天 PM（或脚本）写出：
+| 时间 | 谁 | 动作 |
+|:----:|----|------|
+| 16:05–16:15 | 脚本 | 波段日报 + 交易台账 |
+| 16:30 | 理财 | 填复盘备注；有问题就开 BUG/REQ |
+| **17:00** | **需求+PM** | **扫日志/复盘/企微 → 全量入库去重** |
+| 17:30 | QA | pytest 结果入库 / reopen |
+| 18:00 | 开发经理 | 给队列前段写 PLAN（P0+P1 尽量全覆盖） |
+| **18:15** | **PM** | 写 **完整** `pm/cursor_queue/今天.md` + **git add/commit（若产机有权限）** 或至少落盘等主人 pull |
+| 18:30 | PM | 企微：今日队列条数（P0/P1/P2 计数）+ Cursor 一键话术 |
+| **晚上** | **你+Cursor** | **按队列从上到下尽量做完**，每项单独 commit；结束可 `git push` |
+| 次日盘前 | PM/QA | 对昨夜 commit 改状态 |
+
+---
+
+## 5. Cursor 队列格式（完整菜单）
 
 `pm/cursor_queue/YYYY-MM-DD.md`
 
 ```markdown
-# Cursor 修复队列 2026-07-14
+# Cursor 修复队列 2026-07-15
 
-> 在 Cursor 对话里说：按 pm/cursor_queue/今天.md 从 P0 往下做，每项单独 commit。
+> 主人在 Cursor 说：按本文件从上方往下做，能做多少做多少；不限 P0。
+> 每项单独 commit；做完打勾并 pm_cli 改状态。
 
-## P0（今晚必做，≤3 条）
-### 1. REQ-048 止损状态已 executed 仓还在
-- 状态: testing
-- 方案: pm/dev/PLAN-REQ-048.md
-- 关键文件: vqlearn/services/threshold_state.py, scripts/sim_executor.py
-- 验收: pytest tests/test_req057_req048_fix.py 全绿
-- 做完: pm_cli update REQ-048 --status done
+## 统计
+- P0: N | P1: N | P2: N | 本周不做: N
 
-### 2. ...
+## P0（今晚优先）
+### 1. REQ-xxx 标题
+- 状态: pending
+- 文档: pm/requirements/REQ-xxx.md
+- 方案: pm/dev/PLAN-REQ-xxx.md
+- 关键文件: a.py, b.py
+- 验收: pytest … 
+- 做完: pm_cli update REQ-xxx --status testing
 
-## P1（有空再做）
-- ...
+## P1（接着做）
+### 1. …
+## P2（有空继续）
+- BUG-… / REQ-…（一行摘要 + 路径即可）
+
+## 本周不做（已入库，勿删）
+- REQ-011 vnpy OmsEngine — 太大，另开专轮
 
 ## 不要动
-- REQ-011 vnpy OmsEngine（大需求，另开专轮）
-- 不要改 config.local.yaml / webhook
+- config.local.yaml / webhook
+- 勿 force push
 ```
 
-你在 Cursor 触发话术（复制）：
+### 你在 Cursor 一键话术（复制）
 
 ```text
-读 pm/cursor_queue/今天的日期.md，只做 P0。
-每项：按 PLAN 改代码 → 跑写明的 pytest → 通过则 pm_cli 改状态 → 单独 commit。
-不碰「不要动」列表。做完更新队列文件打勾。
+读 pm/cursor_queue/今天的日期.md（没有就用最新一天）。
+规则：从 P0 → P1 → P2 尽量多修，不要只做 P0 就停。
+每项：读 REQ/BUG + PLAN（无则先写 10 行方案）→ 改代码 → 跑验收 pytest → 通过则 pm_cli 改状态 → 队列打勾 → 单独 commit。
+全部能做的做完后 git push（除非我另说）。
+不碰「不要动」与「本周不做」。
 ```
 
 ---
 
-## 6. OpenClaw 各角色提示词要点（瘦身版）
+## 6. OpenClaw 提示词
 
-### 理财经理（16:30）
+### 需求入库（17:00）— 核心
 
 ```text
-只读：pm/trade_journal/今天.md、output/swing_daily/今天.md、当日告警。
-1) 禁止改台账里的成交/持仓表格数字（那是脚本事实）。
-2) 只在 pm/trade_journal/今天.md 文末「复盘备注」填写：做对了/做错了/明日挂单。
-3) 可选再写 pm/daily/YYYY-MM-DD-finance.md 短总结。
-若发现系统问题：用 pm_cli 开 BUG/REQ，不要改代码。
+你是需求+PM 助理。禁止改 strategies/scripts 业务代码。
+
+目标：今天发现的问题/想法【全部】写入项目，禁止只留在对话里。
+
+1. 读：pm/trade_journal/今天.md、output/swing_daily/、output/*.log 尾部、
+   pm/bugs、pm/requirements、ROADMAP、企微/运维提到的异常
+2. list 已有单 → 去重合并
+3. 新问题：写 pm/requirements/REQ-xxx.md 或 pm/bugs/BUG-xxx.md
+   + pm_cli create（priority 标 P0/P1/P2）
+4. 文件必须含：现象、复现/日志线索、怀疑路径、验收想法
+5. 同步更新 docs/ROADMAP.md「相关条目」若是中长期项
+6. 向主人确认：本日新建 N 条、合并 N 条（列标题）
+
+红线：不改交易核心代码；不删旧 REQ；密钥不入库。
 ```
 
-### 需求（17:00）
+### PM 写完整队列（18:15）
 
 ```text
-输入：finance 复盘、ops 日志、失败测试。
-规则：每日新建 REQ ≤ 3；先 list 去重；写 pm/requirements/REQ-xxx.md + pm_cli create。
-禁止改业务代码。
+你是 PM。禁止大改业务代码。
+
+1. pm_cli list 出所有 pending/open/ready/testing
+2. 写 pm/cursor_queue/今天.md：
+   - 【完整列表】P0+P1+P2，不要只塞 3 条
+   - 每项尽量带：md 路径、关键文件猜测、验收命令、做完改哪个状态
+   - 超大项放「本周不做」但保留在文件里
+3. 对前段（P0 与靠前 P1）若无 PLAN，在 pm/dev/ 写最短 PLAN
+4. 企微短消息：P0x / P1x / P2x + 让主人复制 REVIEW_LOOP「Cursor 一键话术」
+5. 若有 git 权限：git add pm/requirements pm/bugs pm/dev pm/cursor_queue docs/ROADMAP.md
+   && commit -m "pm: YYYY-MM-DD backlog + cursor queue"（不要 push 除非主人要求）
+
+红线：禁止 force push；禁止动 webhook；禁止把队列缩成「只留 P0」。
 ```
 
-### PM（18:15）
+### 理财复盘（16:30）
 
 ```text
-输入：pending/open 的 REQ/BUG、今日 finance、QA 报告。
-输出：1) 更新优先级 2) 写 pm/cursor_queue/今天.md（P0≤3）
-3) 企微通知主人队列摘要。
-禁止自己大改代码。
+【任务】交易复盘备注（不改成交表）。
+1. 必要时跑 trade_journal.py --no-push
+2. 填 pm/trade_journal/今天.md「复盘备注」
+3. 发现问题 → 直接开 BUG/REQ 文件（不要只吐槽）
 ```
 
 ### 开发经理（18:00）
 
 ```text
-对每个 P0：写 pm/dev/PLAN-REQ-xxx.md
-必须含：根因假设、改哪些路径、测试命令、风险。
-禁止直接改 strategies/止损核心超过「贴补丁级」；默认留给 Cursor。
-```
-
-### QA（17:30）
-
-```text
-跑或汇总 pytest；更新 TEST 报告；testing 项不通过 → Bug + reopen。
-禁止为了绿而改断言或业务。
+对 cursor_queue 将出现的 P0 与主要 P1：写 pm/dev/PLAN-*.md
+含：根因假设、改哪些路径、pytest、风险。禁止直接大改代码。
 ```
 
 ---
 
-## 7. 和交易调度的关系（别搅在一起）
+## 7. 交易轨道 vs 治理轨道
 
-| 轨道 | 内容 | 调度 |
-|------|------|------|
-| **交易轨道** | pulse / 大盘扫 / 波段日报 | schtasks（见 DEPLOYMENT） |
-| **治理轨道** | 理财/需求/PM/QA/队列 | OpenClaw cron **agentTurn 短任务** 或你手动 |
-
-治理轨道 **晚于 16:05**，用复盘产物当输入。  
-OpenClaw 挂治理任务时：`timeout` 短、只写 `pm/`，输出目录白名单。
+| 轨道 | 内容 | 谁 |
+|------|------|-----|
+| 交易 | Pulse / 扫盘 / 波段 / 台账 | schtasks |
+| 治理 | 入库 / 队列 / 复盘备注 | OpenClaw 晚间 |
 
 ---
 
-## 8. 分阶段落地（务实）
-
-### 阶段 A（本周就能用）— 推荐先做
-
-1. 固定产出目录：`pm/cursor_queue/`、`pm/dev/`  
-2. 每天 18:15 **一个** OpenClaw「PM 排队」任务：读 pm.db + 写队列 md + 推企微  
-3. 理财复盘：复用/缩短现有理财师 cron，**只写 md，不改代码**  
-4. 你用 Cursor 消化 P0  
-
-### 阶段 B
-
-1. QA 用 bat：`pytest -q > output/pytest_daily.txt`，OpenClaw 只读结果改状态  
-2. 需求 Agent 每日最多 3 条，带去重  
-3. 开发经理只出 PLAN  
-
-### 阶段 C（可选）
-
-1. Cursor Cloud / API：对队列 P0 自动开 PR（仍要你点 merge）  
-2. 合并后 webhook → 自动 `pm_cli update --status done`  
-
-**不建议**：让弱模型 Dev Agent 每日自动 push 策略代码到 master。
-
----
-
-## 9. 成功标准
+## 8. 成功标准
 
 | 指标 | 健康 |
 |------|------|
-| 每日有无 `cursor_queue/今天.md` | 有 |
-| P0 条数 | ≤ 3（多了说明在堆债，先砍范围） |
-| OpenClaw 改业务代码 commit | ≈ 0（除非你特批小补丁） |
-| Cursor 修完 → 状态更新 | 同一天内能对上 |
-| 主人企微 | 1 条队列摘要 + 交易提醒（不刷研发长文） |
+| 聊天里提过的缺陷是否都有 md | 是 |
+| 每晚是否有完整 cursor_queue | 是（含 P1/P2） |
+| Cursor 是否被要求「只修 P0」 | **否** |
+| OpenClaw 改业务代码 | ≈ 0 |
+| 次日状态能否对上昨夜 commit | 能 |
 
 ---
 
-## 10. 你怎么用（日常三句话）
-
-1. **白天**：看交易提醒（DEPLOYMENT 调度）。  
-2. **收盘后**：看 `pm/trade_journal/今天.md`（成交事实）+ 波段结论。  
-3. **晚上**：企微看「Cursor 队列」；有空就打开 Cursor 丢上面的话术。  
-4. **周末**：PM 出周报；大需求（vnpy/架构）只进 ROADMAP，不进每日 P0。
-
----
-
-## 11. 给 OpenClaw 的治理口令（晚间）
-
-```text
-你是 PM+需求助理（不要改 strategies/scripts 业务代码）。
-1. 读今天 pm/trade_journal/*.md、output/swing_daily/*.md、pm/bugs、pm/requirements、pytest 日志（若有）
-2. 去重后：必要则 pm_cli create REQ/BUG（今天新建 ≤3）
-3. 写出 pm/cursor_queue/今天.md：P0≤3，每项含文件路径+验收 pytest+做完改哪个状态
-4. 企微发短摘要给主人：今日队列标题列表 + 今日成交笔数一句
-5. 写 pm/daily/今天-pm.md 留档
-红线：禁止改台账数字；禁止重构交易核心；禁止 force push；禁止动 webhook 密钥。
-```
-
----
-
-## 12. 给 OpenClaw 的「交易记录 / 复盘」口令（16:30）
-
-```text
-【任务】每日交易复盘（只写备注，不改代码、不改成交表）。
-
-1. 若尚无 pm/trade_journal/今天.md：先跑
-   .venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
-2. 打开 pm/trade_journal/今天.md + output/swing_daily/今天.md
-3. 只在「复盘备注」填写四项：做对了 / 做错了 / 明日挂单 / 是否开 REQ
-4. 可选：企微发 3～5 行复盘摘要（含成交笔数与波段结论一句）
-红线：表格里的价格数量盈亏禁止手改；发现问题开 BUG。
-```
-
----
-
-## 13. 相关文件
+## 9. 相关文件
 
 | 路径 | 说明 |
 |------|------|
-| `docs/DEPLOYMENT.md` | 交易系统怎么跑 |
-| `docs/REALTIME.md` | 盘中监控 |
-| `pm/trade_journal/` | **每日交易台账（复盘底稿）** |
-| `docs/FULL_AGENT_PROMPT.md` | 旧全自动设计（Dev 自动改码部分 **作废**，以本文为准） |
-| `pm/agents/*.md` | 角色细则可继续沿用「只读/只写 pm」约束 |
-| `scripts/pm_cli.py` | 状态工具 |
-| `scripts/trade_journal.py` | 台账脚本 |
+| `pm/cursor_queue/` | 每晚完整修复菜单 |
+| `pm/requirements/` / `pm/bugs/` | 需求与缺陷正文 |
+| `pm/dev/` | 方案草稿 |
+| `scripts/pm_cli.py` | 状态 |
+| `docs/DEPLOYMENT.md` | 交易怎么跑 |

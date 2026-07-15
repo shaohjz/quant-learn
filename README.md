@@ -1,145 +1,239 @@
-# A股量化交易系统（vnpy 版）
+# quant-learn · A股量化学习仓
 
-基于 [vnpy 4.x](https://www.vnpy.com/) 的 A 股盘中盯盘 + 双账户并行框架。
-老的自研框架（Backtrader + AKShare 回测 + sim/engine.py + scripts/portfolio_alert.py）
-全部保留作为对照组，详见 [docs/vnpy_migration.md](docs/vnpy_migration.md)。
-
-- **交易网关**：自封装 `gateways/qmt_gateway.py`（基于 xtquant 直连国金 QMT mini）
-- **账户**：QMT mini 模拟 90072426（1000 万）+ 本地 sim 25000（双账户并行）
-- **策略**：ThresholdAlertStrategy（阈值告警） + FusionStrategy（双账户融合决策）
-- **推送**：企微群机器人 webhook（`notifier/wecom_notifier.py`）
-
-## 快速启动
-
-> **权威运行方式**：整份发给 OpenClaw → 打开 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)  
-> 文首 **「★ OpenClaw：如何跑这个项目」** = 交易系统逐步契约。  
-> **每日复盘 / 需求·PM·测试 / Cursor 修复队列**：[docs/REVIEW_LOOP.md](docs/REVIEW_LOOP.md)  
-> 实时监控：[docs/REALTIME.md](docs/REALTIME.md)  
-> 任务对照：[docs/CRON_JOBS.md](docs/CRON_JOBS.md)
-
-```powershell
-cd C:\Users\Administrator\.openclaw\workspace\quant-learn
-.venv\Scripts\python.exe -m runners.run_intraday          # 盘中盯盘（dry-run）
-.venv\Scripts\python.exe scripts\swing_daily_report.py    # 波段结论：赚亏+挂单建议
-.venv\Scripts\python.exe scripts\test_vnpy_qmt.py         # QMT 连通验证
-```
-
-所有默认 dry_run，要真下单加 `--live` 并 `set NOTIFIER_DRY_RUN=0`。
+> **目标**：模拟验证 → 每天给你 **实盘挂单建议**（不默认自动实盘下单）  
+> **跑起来**：发给 OpenClaw → [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)  
+> **定时器**： [docs/CRON_JOBS.md](docs/CRON_JOBS.md) · **复盘**：[docs/REVIEW_LOOP.md](docs/REVIEW_LOOP.md)
 
 ---
 
-# 老 README（仅供参考）
+## 一句话地图
 
-基于 Backtrader + AKShare 的 A 股量化回测框架，支持多策略对比分析。
-
-## 目录结构
-
-```
-quant/
-├── README.md              # 使用说明
-├── backtest.py            # 回测主程序
-├── run_backtest.sh        # 一键运行脚本
-├── data/
-│   ├── fetch_data.py      # 数据获取脚本
-│   ├── 000967.csv         # 盈峰环境日线数据
-│   └── 002256.csv         # 兆新股份日线数据
-├── strategies/
-│   ├── sma_cross.py       # 双均线交叉策略
-│   ├── macd_strategy.py   # MACD策略
-│   └── bollinger_strategy.py  # 布林带策略
-└── output/
-    ├── *.png              # 收益曲线图
-    └── summary.csv        # 回测结果汇总
+```mermaid
+flowchart LR
+  A[扫票 / 盯盘] --> B[信号]
+  B --> C{账户}
+  C -->|#1 学习| D[阈值策略<br/>模拟成交]
+  C -->|#2 真仓镜像| E[只提醒<br/>不到价不吵]
+  C -->|#3 波段| F[±5% / +8%<br/>模拟 + 挂单建议]
+  D --> G[企微]
+  E --> G
+  F --> G
+  F --> H[台账复盘]
 ```
 
-## 快速开始
+| 账户 | 干什么 | 自动成交？ |
+|:----:|--------|:----------:|
+| **#1 learn** | 模拟学习仓（阈值） | 模拟 ✅ |
+| **#3 swing_trade** | 波段模拟 → 挂单建议 | 模拟 ✅ |
 
-### 一键运行（推荐）
+> #2 真仓镜像可选，日常企微**默认不盯**。
+
+---
+
+## 一天怎么转
+
+```mermaid
+flowchart TD
+  subgraph 盘前
+    M[08:30 宽基扫 ≈800]
+  end
+  subgraph 盘中
+    P[每10分 QuantPulse<br/>真仓阈值 + 波段机会 + 指数]
+    I[每30分 异动扫<br/>可选]
+  end
+  subgraph 收盘后
+    S[16:05 波段日报 赚/亏]
+    T[16:15 交易台账]
+    R[16:30 填复盘备注]
+  end
+  M --> P --> S --> T --> R
+  I -.-> P
+```
+
+详情与 schtasks 模板 → [CRON_JOBS.md](docs/CRON_JOBS.md)
+
+---
+
+## 买什么 · 卖什么
+
+### ① 波段策略（你每天主要看的）
+
+池子：稳定蓝筹 ≈44 · 数据：腾讯行情 + 前复权日 K
+
+```mermaid
+flowchart TD
+  Q[报价 + 均线/量能/RSI] --> SIG{信号类型}
+  SIG -->|A 缩量回踩 MA20±1.5%| AB[可执行候选]
+  SIG -->|B 缩量回踩 MA10±1%| AB
+  SIG -->|C/D/E/F 其他| W[观察<br/>不自动开仓]
+  AB --> F{score≥5<br/>盈亏比≥1.2<br/>预期涨≥0.5%}
+  F -->|是| BUY[买 · 预算≈1万/只<br/>最多 3 仓]
+  F -->|否| SKIP[跳过]
+  BUY --> HOLD[持仓]
+  HOLD -->|跌 ≥5%| SELL1[卖 · 止损]
+  HOLD -->|涨 ≥8%| SELL2[卖 · 止盈]
+```
+
+| | 条件（白话） |
+|--|-------------|
+| **买** | 类型 **A/B** + 分 ≥5 + 过过滤；一手约 **1 万元**；仓位 **≤3** |
+| **卖** | 成本 **-5%** 止损 / **+8%** 止盈 |
+| **盘中** | Pulse 只 **提醒**；**收盘** `swing_daily_report` 才在 #3 模拟成交 |
+
+信号速查：
+
+| 型 | 含义 | 默认可成交？ |
+|:--:|------|:------------:|
+| A | 缩量回踩 MA20 | ✅ |
+| B | 缩量回踩 MA10 | ✅ |
+| C | 布林下轨 | ❌ 观察 |
+| D | RSI&lt;35 | ❌ |
+| E | 三连阴缩量企稳 | ❌ |
+| F | 单日大跌缩量 | ❌ |
+
+代码：`scripts/swing_auto.py` · `scripts/swing_daily_report.py`
+
+---
+
+### ② 学习仓阈值（#1）
+
+阈值日更：买区≈MA10，强买≈MA20，破位/止盈用 MA+ATR 校准。
+
+```mermaid
+flowchart TD
+  P[现价] --> B{价 ≤ 强买 / 买区?}
+  B -->|是| G[风控通过?<br/>大盘·仓位·偏离]
+  G -->|是| BUY[买 · 预算约1万]
+  G -->|否| N[不买]
+  B -->|否| HOLD
+  BUY --> HOLD[持仓]
+  HOLD --> S1{破位 trend_break?}
+  HOLD --> S2{到止盈?}
+  HOLD --> S3{跟踪/硬止损?}
+  S1 -->|两段确认| SELL[卖 · 通常全清]
+  S2 -->|两段确认| SELL
+  S3 --> SELL
+```
+
+| | 条件（白话） |
+|--|-------------|
+| **买** | 价进 **buy_strong / buy_zone** + 风控过关 |
+| **卖** | 破位 / 止盈：**盘中挂起 → 收盘武装 → 次日确认** 再卖（防假跌） |
+| **仓** | 约 1 万/笔；总仓位有上限（config） |
+
+代码：`vqlearn/strategies/threshold_strategy.py` · `scripts/sim_executor.py`
+
+---
+
+## 怎么回测
+
+```mermaid
+flowchart LR
+  D[日线 CSV / BaoStock<br/>前复权] --> E[引擎]
+  E --> R[收益 · 回撤 · 夏普 · 胜率]
+  E -.->|注意| X[同 bar 收盘可见再成交<br/>偏乐观]
+```
+
+| 代际 | 入口 | 数据 | 用途 |
+|------|------|------|------|
+| 老 Backtrader | `backtest.py` | AKShare / BaoStock CSV | 均线·MACD·布林·复合 |
+| vqlearn v2 | `vqlearn/runners/run_backtest_v2.py` | baostock | 阈值 / 基线对比 |
+| 冒烟 | `vqlearn/runners/run_backtest.py` | 新浪→akshare | 短窗自检 |
+
+**费用模型（常见）**：佣金万 2.5 量级 · 印花税卖出 0.05% · 100 股一手 ·（细节以各脚本为准）
 
 ```bash
-cd /root/.openclaw/workspace/quant
-bash run_backtest.sh
-```
-
-这会自动拉取数据、对盈峰环境和兆新股份分别跑三个策略、输出对比结果。
-
-### 分步运行
-
-#### 1. 拉取数据
-
-```bash
-# 拉取默认股票（盈峰环境 + 兆新股份，最近2年）
-python3 data/fetch_data.py
-
-# 拉取指定股票
-python3 data/fetch_data.py 600519 20230101 20260513
-```
-
-#### 2. 运行回测
-
-```bash
-# 使用双均线策略回测盈峰环境
+# 例：老链路
 python3 backtest.py --stock 000967 --strategy sma_cross
 
-# 使用MACD策略回测兆新股份
-python3 backtest.py --stock 002256 --strategy macd_strategy
-
-# 使用布林带策略，自定义初始资金
-python3 backtest.py --stock 000967 --strategy bollinger_strategy --cash 200000
+# 例：vqlearn
+python -m vqlearn.runners.run_backtest_v2 --start 2024-01-01 --end 2026-05-20
 ```
 
-## 策略说明
+---
 
-### 1. 双均线策略 (sma_cross)
-- **买入信号**: 5日均线上穿20日均线（金叉）
-- **卖出信号**: 5日均线下穿20日均线（死叉）
-- **风控**: 10% 止损
+## 回测数据长什么样
 
-### 2. MACD策略 (macd_strategy)
-- **买入信号**: MACD线上穿信号线（金叉）
-- **卖出信号**: MACD线下穿信号线（死叉）
-- **仓位管理**: 每次交易只使用 50% 可用资金
+来源样例：`output/weekly_backtest_20260523.md`  
+条件：本地 CSV 四票 · 初始 **10 万** · **复合策略** Top：
 
-### 3. 布林带策略 (bollinger_strategy)
-- **买入信号**: 收盘价触及或跌破布林带下轨
-- **卖出信号**: 收盘价触及或突破布林带上轨
-- **止损**: 价格跌破布林带中轨时平仓
-
-## 费用模型
-
-- 手续费: 0.1%（双边）
-- 印花税: 0.05%（仅卖出）
-- 最低手续费: 5元/笔
-- 交易单位: 100股（1手）
-
-## 评估指标
-
-| 指标 | 说明 |
-|------|------|
-| 总收益率 | 期末市值 / 初始资金 - 1 |
-| 年化收益率 | 按 252 个交易日年化 |
-| 最大回撤 | 净值从峰值到谷值的最大跌幅 |
-| 夏普比率 | 风险调整后收益（无风险利率 3%） |
-| 交易次数 | 总开平仓次数 |
-| 胜率 | 盈利交易 / 总完成交易 |
-
-## 数据来源
-
-- **AKShare**: `stock_zh_a_hist` 接口，前复权日线数据
-- **备选**: BaoStock（当 AKShare 接口受限时自动降级）
-
-## 依赖
-
-```
-backtrader>=1.9.78
-akshare>=1.18
-matplotlib>=3.5
-pandas>=2.0
+```mermaid
+xychart-beta
+    title "复合策略 总收益（周报样例）"
+    x-axis ["002453", "000967", "600330", "002256"]
+    y-axis "收益 %" 0 --> 80
+    bar [69.86, 59.93, 56.67, 46.05]
 ```
 
-## 注意事项
+| 标的 | 总收益 | 年化 | 夏普 | 胜率 |
+|------|-------:|-----:|-----:|-----:|
+| 002453 × 复合 | **+69.9%** | 31.8% | 1.58 | 42% |
+| 000967 × 复合 | +59.9% | 27.8% | 7.89* | 50% |
+| 600330 × 复合 | +56.7% | 26.4% | 0.81 | 67% |
+| 002256 × 复合 | +46.1% | 21.9% | 1.04 | 50% |
 
-1. AKShare 接口有调用频率限制，脚本内置 1 秒间隔
-2. 数据默认为前复权（qfq），确保回测准确
-3. matplotlib 使用 Agg 后端，无需 GUI 环境
-4. 收益曲线图保存在 `output/` 目录
+> \* 极高夏普多来自**短样本 + 乐观撮合**，**不能**当实盘预期。  
+> 阈值策略在基线上常 **0 成交** 或个别票大亏（参数窗没对齐）→ 看 `output/baseline_backtest.csv`。  
+> **波段 A/B 策略正式历史回测：尚未做完**（见 ROADMAP）。
+
+---
+
+## 模拟效果（实盘旁路）
+
+```mermaid
+flowchart LR
+  subgraph 学习仓 #1
+    L1[日报 2026-07-12]
+    L2["总值 ≈21.9 万<br/>累计 ≈ +9.6%<br/>(初始 20 万)"]
+  end
+  subgraph 波段仓 #3
+    S1[日报/台账]
+    S2["常从 10 万起<br/>空仓日：赚亏 0<br/>有信号才成交"]
+  end
+```
+
+| 仓 | 近期快照 | 怎么看 |
+|----|----------|--------|
+| **#1** | ≈ **+9.6%**（`daily_reports/2026-07-12.md`） | 看持仓纪律与止损是否执行 |
+| **#3** | 许多日 **0 成交 / 净值持平** | 看 `output/swing_daily/` 是否出「挂单建议」 |
+| **台账** | `pm/trade_journal/今天.md` | **事实底稿**；备注给人填 |
+
+本地仓库 DB 可能是空快照 ≠ 产机 Windows 上的数字。以产机 `sim_live_mirror.db` + 日报为准。
+
+---
+
+## 你每天看什么
+
+| 优先级 | 看哪 | 得到什么 |
+|:------:|------|----------|
+| 1 | 企微 Pulse / 波段日报 | 到价提醒、今天赚亏、挂什么价 |
+| 2 | `pm/trade_journal/` | 成交明细复盘 |
+| 3 | `pm/cursor_queue/` | 晚上 Cursor **尽量多修**（不限 P0） |
+
+```powershell
+cd C:\Users\Administrator\.openclaw\workspace\quant-learn
+.venv\Scripts\python.exe -u scripts\quant_pulse.py --force --no-push
+.venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
+.venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
+```
+
+---
+
+## 文档导航
+
+| 文档 | 一句话 |
+|------|--------|
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | OpenClaw 怎么把系统跑起来 |
+| [CRON_JOBS.md](docs/CRON_JOBS.md) | 定时器是否合理、必开清单 |
+| [REALTIME.md](docs/REALTIME.md) | 盘中监控全景 |
+| [REVIEW_LOOP.md](docs/REVIEW_LOOP.md) | 复盘 / 需求 / Cursor 队列 |
+| [ROADMAP.md](docs/ROADMAP.md) | 需求与缺口（含「波段回测未做」） |
+
+---
+
+## 红线
+
+- 默认 **不** 自动实盘下单（要 live 需你明文开）  
+- webhook 放 `config.local.yaml`，**不进 git**  
+- 交易扫描用 **bat / schtasks**，别让弱模型 agentTurn 半夜改仓控  
+- 台账表格数字：**脚本写**，人工/LLM 只填「复盘备注」

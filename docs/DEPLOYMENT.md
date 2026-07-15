@@ -6,8 +6,8 @@
 >  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
-> **配套**：[CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [ROADMAP.md](./ROADMAP.md)  
-> **更新**：2026-07-14
+> **配套**：[CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [ROADMAP.md](./ROADMAP.md) · [README.md](../README.md)  
+> **更新**：2026-07-15
 
 ---
 
@@ -87,9 +87,9 @@ set QUANT_DB_PATH=C:\Users\Administrator\.openclaw\workspace\quant-learn\data\si
 
 | id | 名字 | 用途 |
 |----|------|------|
-| 1 | learn | 阈值学习仓 |
-| 2 | real_portfolio | 主人真实持仓镜像 |
-| 3 | swing_trade | 波段模拟（日报赚亏看这个；脚本可自动建） |
+| **1** | learn | **模拟学习仓**（日常看这个） |
+| 2 | real_portfolio | 真仓镜像（可选，默认可关推送） |
+| **3** | swing_trade | **波段模拟**（挂单建议 / 波段赚亏） |
 
 ## 步骤 4 — 冒烟（必须全绿再挂任务）
 

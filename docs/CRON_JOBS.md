@@ -10,34 +10,27 @@
 ## 一天长什么样（推荐态）
 
 ```mermaid
-gantt
-    title 交易日调度（Asia/Shanghai）
-    dateFormat HH:mm
-    axisFormat %H:%M
-    section 盘前
-    MorningScan 宽基≈800     :m1, 08:30, 40m
-    section 盘中
-    QuantPulse 每10分        :active, p1, 09:35, 315m
-    IntradayScanner 每30分   :i1, 10:00, 270m
-    section 收盘后
-    SwingDaily 波段赚亏      :s1, 16:05, 10m
-    TradeJournal 台账        :t1, 16:15, 10m
-    OpenClaw 复盘/入库       :crit, r1, 16:30, 120m
-    CursorQueue 完整菜单      :crit, q1, 18:15, 30m
+flowchart TD
+  A["08:30 MorningScan 宽基选股"] --> B["09:35-14:50 QuantPulse 每10分"]
+  B --> C["10:00-14:30 IntradayScanner 可选"]
+  B --> D["16:05 SwingDaily 波段结论"]
+  D --> E["16:15 TradeJournal 台账"]
+  E --> F["16:20 daily_close 双账户摘要"]
+  F --> G["16:30-18:30 OpenClaw 复盘入库 + Cursor队列"]
 ```
 
-| 时刻 | 任务 | bat | 为什么开 |
-|:----:|------|-----|----------|
-| **08:30** | 宽基选股 | `morning_scanner_runner.bat` → `scanner_with_fallback` | 早上找票 |
-| **09:35→14:50 /10m** | 统一脉搏 | `quant_pulse_runner.bat` | **真仓阈值 + 波段机会 + 指数**（一条链路） |
-| **10:00→14:30 /30m** | 全市场异动 | `intraday_scanner_runner.bat` | 发现新票（消息多，可选） |
-| **16:05** | 波段日报 | `swing_daily_report_runner.bat` | #3 模拟成交 + 挂单建议 |
-| **16:15** | 交易台账 | `trade_journal_runner.bat` | 复盘底稿 `pm/trade_journal/` |
-| 15:10 或 16:20 | 双账户收盘摘要 | `daily_close_report_runner.bat` | #1+#3 概况（**已修日盈亏**） |
-| **16:30** | 复盘备注 | OpenClaw 短会话 | 填台账备注；有问题就开 REQ/BUG |
-| **17:00** | 需求全量入库 | OpenClaw | **发现问题一律写进 pm/**（不限条数） |
-| **18:15** | Cursor 完整队列 | OpenClaw | `pm/cursor_queue/今天.md`（P0+P1+P2） |
-| 18:30 | 企微队列摘要 | OpenClaw | 条数统计 + Cursor 一键话术 |
+| 时刻 | 任务 | bat / 入口 | 为什么开 |
+|:----:|------|------------|----------|
+| **08:30** | 宽基选股 | `morning_scanner_runner.bat` | 早上找票 |
+| **09:35→14:50 /10m** | 统一脉搏 | `quant_pulse_runner.bat` | 真仓阈值 + 波段机会 + 指数 |
+| **10:00→14:30 /30m** | 全市场异动 | `intraday_scanner_runner.bat` | 发现新票（吵可关） |
+| **16:05** | 波段日报 | `swing_daily_report_runner.bat` | #3 模拟 + 挂单建议 |
+| **16:15** | 交易台账 | `trade_journal_runner.bat` | `pm/trade_journal/` |
+| **16:20** | 双账户收盘摘要 | `daily_close_report_runner.bat` | #1+#3 概况（日盈亏相对昨日净值） |
+| **16:30** | 复盘备注 | OpenClaw | 填台账备注；有问题开 REQ/BUG |
+| **17:00** | 需求全量入库 | OpenClaw | 发现问题一律写进 `pm/` |
+| **18:15** | Cursor 完整队列 | OpenClaw | `pm/cursor_queue/今天.md` |
+| **18:30** | 企微队列摘要 | OpenClaw | 条数 + Cursor 话术 |
 
 ### 必开 vs 可选（别纠结）
 

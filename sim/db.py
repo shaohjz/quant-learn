@@ -253,11 +253,31 @@ def ensure_sim_positions_trailing_columns(cur=None) -> None:
         conn.close()
 
 
+def get_default_trailing_stop(entry_price: float, stop_pct: float = 0.05) -> float:
+    """REQ-041/REQ-067: 计算初始跟踪止损价（建仓时写入）。
+
+    默认在成本价下方 -stop_pct（默认 5%）作为初始止损，
+    后续由 calc_trailing_stop_price 在浮盈>5% 后上移。
+    """
+    if entry_price <= 0:
+        return 0.0
+    return round(entry_price * (1.0 - stop_pct), 4)
+
+
 def calc_trailing_stop_price(entry_price: float, highest_price: float, current_trailing: float | None = None) -> tuple[float, str]:
-    """按 REQ-041 计算跟踪止损价；结果只能上移不能下移。"""
+    """按 REQ-041 计算跟踪止损价；结果只能上移不能下移。
+
+    新增 REQ-067：若 current_trailing 为空/0，先回退到
+    get_default_trailing_stop(entry_price) 作为初始止损基准，
+    确保所有持仓都有止损保护。
+    """
     current = float(current_trailing or 0.0)
     if entry_price <= 0 or highest_price <= 0:
         return current, ""
+
+    # REQ-067: 若当前无跟踪止损，从默认初始止损开始
+    if current <= 0:
+        current = get_default_trailing_stop(entry_price)
 
     profit_pct = (highest_price - entry_price) / entry_price
     if profit_pct > 0.20:
@@ -271,7 +291,7 @@ def calc_trailing_stop_price(entry_price: float, highest_price: float, current_t
         reason = "浮盈>5%，止损抬到保本位"
     else:
         candidate = current
-        reason = "浮盈未超过5%，跟踪止损未启动"
+        reason = "浮盈未超过5%，保持初始止损(-5%)"
 
     candidate = round(float(candidate or 0.0), 4)
     if current > candidate:

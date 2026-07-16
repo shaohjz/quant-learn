@@ -1,19 +1,21 @@
-import sqlite3
+import sqlite3, os, json
 
-conn = sqlite3.connect('data/pm.db')
-c = conn.cursor()
+db_path = r'C:\Users\Administrator\.openclaw\workspace\quant-learn\data\pm.db'
+db = sqlite3.connect(db_path)
 
-# Get all actionable items (pending, in_progress, open)
-c.execute("SELECT id, title, status, priority, type FROM tasks WHERE status IN ('pending', 'in_progress', 'open') ORDER BY priority, id")
-rows = c.fetchall()
-print("Actionable items (pending/in_progress/open):")
-for row in rows:
-    print(f"  {row[0]} ({row[2]}) [{row[3]}] ({row[4]}): {row[1]}")
+print("=== ACTIVE TASKS (status+priority) ===")
+for t in db.execute("SELECT id, type, title, status, priority, assigned_to, created_at, updated_at, work_notes FROM tasks ORDER BY updated_at DESC").fetchall():
+    print(f"\n[{t[3]}] [{t[4]}] {t[0]} - {t[2]} (type={t[1]}, assigned={t[5]})")
+    print(f"  created={t[6]}, updated={t[7]}")
+    if t[8]:
+        print(f"  notes: {t[8][:300]}")
 
-print("\n\nAll testing/fixed items (P0/S0/S1):")
-c.execute("SELECT id, title, status, priority, type FROM tasks WHERE status IN ('testing', 'fixed') AND (priority LIKE 'P0%' OR priority LIKE 'S%') ORDER BY priority, id")
-rows = c.fetchall()
-for row in rows:
-    print(f"  {row[0]} ({row[2]}) [{row[3]}] ({row[4]}): {row[1]}")
+print("\n\n=== FRESHNESS ALERTS ===")
+for a in db.execute("SELECT * FROM freshness_alerts ORDER BY check_time DESC").fetchall():
+    print(a)
 
-conn.close()
+print("\n\n=== ARCHIVED TASKS (last 10) ===")
+for t in db.execute("SELECT id, type, title, status, archived_at FROM tasks_archive ORDER BY archived_at DESC LIMIT 10").fetchall():
+    print(f"[{t[3]}] {t[0]} - {t[2]} (archived={t[4]})")
+
+db.close()

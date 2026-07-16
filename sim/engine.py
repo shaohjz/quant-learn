@@ -376,6 +376,9 @@ class SimEngine:
                      pos["id"]),
                 )
             else:
+                # REQ-067: 使用统一默认初始止损（-5%），与 calc_trailing_stop_price 保持一致
+                from sim.db import get_default_trailing_stop
+                init_stop = get_default_trailing_stop(price)
                 cur.execute(
                     "INSERT INTO sim_positions "
                     "(account_id, stock_code, stock_name, quantity, avg_cost, "
@@ -385,7 +388,7 @@ class SimEngine:
                     (self.account_id, stock_code, stock_name, quantity,
                      round(price, 4), round(price, 4),
                      round(price * quantity, 2), 0, 0,
-                     round(price, 4), None),
+                     round(price, 4), init_stop),
                 )
 
             # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失

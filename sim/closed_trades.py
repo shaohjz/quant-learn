@@ -11,6 +11,8 @@ from datetime import date, datetime
 from typing import Callable, Iterable, Any
 import sqlite3
 
+from sim.trade_attribution import entry_signal_label, is_non_strategy_entry
+
 
 def _as_float(value: Any, default: float = 0.0) -> float:
     try:
@@ -102,12 +104,18 @@ def build_closed_trades(trades: Iterable[dict]) -> list[dict]:
         trade_date = _parse_date(_row_get(row, 'trade_date'))
 
         if direction == 'BUY':
+            buy_reason = _row_get(row, 'signal_reason') or ''
+            buy_broker = _row_get(row, 'broker') or ''
             lots[code].append({
                 'remaining_qty': qty,
                 'price': price,
                 'fee_per_share': fee / qty if qty else 0.0,
                 'trade_date': trade_date,
                 'trade_id': _row_get(row, 'id'),
+                'signal_reason': buy_reason,
+                'broker': buy_broker,
+                'entry_signal': entry_signal_label(buy_reason),
+                'is_strategy': not is_non_strategy_entry(buy_reason, buy_broker),
             })
             continue
 
@@ -117,6 +125,8 @@ def build_closed_trades(trades: Iterable[dict]) -> list[dict]:
         buy_fee_total = 0.0
         buy_dates: list[date] = []
         source_lots: list[dict] = []
+        strategy_qty = 0
+        entry_signals: list[str] = []
 
         while remaining > 0 and lots[code]:
             lot = lots[code][0]
@@ -129,11 +139,16 @@ def build_closed_trades(trades: Iterable[dict]) -> list[dict]:
             buy_fee_total += take * _as_float(lot.get('fee_per_share'))
             if lot.get('trade_date'):
                 buy_dates.append(lot['trade_date'])
+            if lot.get('is_strategy'):
+                strategy_qty += take
+            entry_signals.append(str(lot.get('entry_signal') or 'unknown'))
             source_lots.append({
                 'buy_trade_id': lot.get('trade_id'),
                 'qty': take,
                 'price': _as_float(lot.get('price')),
                 'date': lot.get('trade_date').isoformat() if lot.get('trade_date') else None,
+                'entry_signal': lot.get('entry_signal') or 'unknown',
+                'is_strategy': bool(lot.get('is_strategy')),
             })
             lot['remaining_qty'] -= take
             remaining -= take
@@ -151,6 +166,10 @@ def build_closed_trades(trades: Iterable[dict]) -> list[dict]:
         pnl_pct = pnl / invested * 100.0 if invested > 0 else 0.0
         first_buy_date = min(buy_dates) if buy_dates else None
         holding_days = (trade_date - first_buy_date).days if trade_date and first_buy_date else None
+        # Majority-lot rule: treat as strategy only when most matched shares came from strategy buys.
+        is_strategy = strategy_qty >= (matched_qty / 2.0) if matched_qty else False
+        # Prefer first strategy label; fall back to first lot label.
+        entry_signal = next((s for s in entry_signals if s != 'init_snapshot'), entry_signals[0] if entry_signals else 'unknown')
 
         closed.append({
             'account_id': _as_int(_row_get(row, 'account_id')),
@@ -170,6 +189,8 @@ def build_closed_trades(trades: Iterable[dict]) -> list[dict]:
             'holding_days': holding_days,
             'broker': _row_get(row, 'broker') or 'sim',
             'signal_reason': _row_get(row, 'signal_reason') or '',
+            'entry_signal': entry_signal,
+            'is_strategy': is_strategy,
             'source_lots': source_lots,
         })
 
@@ -246,16 +267,31 @@ def analyze_closed_trades(
     *,
     conn_factory: Callable[[], sqlite3.Connection] | None = None,
     limit: int | None = None,
+    strategy_only: bool = True,
 ) -> dict:
-    """Return closed-trade rows and summary for an account."""
+    """Return closed-trade rows and summary for an account.
+
+    ``strategy_only=True`` (default) excludes init-snapshot / live-mirror sync
+    lots from the primary win-rate / expectancy summary so dashboard numbers
+    reflect automatic strategy edge instead of imported real holdings.
+    """
     trades = fetch_trade_rows(account_id, as_of, conn_factory=conn_factory)
     closed = build_closed_trades(trades)
     closed.sort(key=lambda r: (r.get('close_date') or '', _as_int(r.get('sell_trade_id'))), reverse=True)
-    summary = summarize_closed_trades(closed)
+    strategy_closed = [r for r in closed if r.get('is_strategy')]
+    excluded = [r for r in closed if not r.get('is_strategy')]
+    primary = strategy_closed if strategy_only else closed
+    summary = summarize_closed_trades(primary)
+    summary_all = summarize_closed_trades(closed)
     return {
         'account_id': account_id,
         'as_of': as_of.isoformat() if as_of else None,
+        'strategy_only': strategy_only,
         'summary': summary,
-        'closed_trades': closed[:limit] if limit else closed,
-        'total_closed_trades': len(closed),
+        'summary_all': summary_all,
+        'excluded_non_strategy_count': len(excluded),
+        'closed_trades': primary[:limit] if limit else primary,
+        'closed_trades_all': closed[:limit] if limit else closed,
+        'total_closed_trades': len(primary),
+        'total_closed_trades_all': len(closed),
     }

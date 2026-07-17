@@ -13,6 +13,8 @@ import json
 import re
 import sqlite3
 
+from sim.trade_attribution import entry_signal_label, is_non_strategy_entry
+
 
 def _as_float(value: Any, default: float = 0.0) -> float:
     try:
@@ -55,11 +57,15 @@ def normalize_signal(raw_reason: Any = '', raw_detail: Any = None) -> str:
     """Return a stable signal label from ``signal_detail``/``signal_reason``.
 
     Preference order:
-    1. structured detail keys (trigger_type/signal/level/rule)
-    2. common strategy tags embedded in reason text (buy_zone, buy_strong, ...)
-    3. short cleaned reason prefix
-    4. ``unknown``
+    1. non-strategy snapshot/sync markers → ``init_snapshot``
+    2. structured detail keys (trigger_type/signal/level/rule)
+    3. common strategy tags embedded in reason text (buy_zone, buy_strong, ...)
+    4. short cleaned reason prefix
+    5. ``unknown``
     """
+    if is_non_strategy_entry(raw_reason, signal_detail=raw_detail):
+        return 'init_snapshot'
+
     detail = _parse_detail(raw_detail)
     for key in ('trigger_type', 'signal', 'level', 'rule'):
         val = detail.get(key)
@@ -84,6 +90,10 @@ def normalize_signal(raw_reason: Any = '', raw_detail: Any = None) -> str:
     match = re.search(r'\b(buy_zone|buy_strong|buy_weak|right_confirm|stop_loss|take_profit|ai_buy|qlib_buy|manual)\b', reason, re.I)
     if match:
         return match.group(1).lower()
+
+    labeled = entry_signal_label(reason, raw_detail)
+    if labeled not in {'unknown', 'init_snapshot'}:
+        return labeled
 
     cleaned = re.sub(r'^[自动手工\s:：-]+', '', reason).strip()
     cleaned = re.split(r'[|，,；;。\n]', cleaned, maxsplit=1)[0].strip()
@@ -262,15 +272,27 @@ def analyze_signal_performance(
     *,
     conn_factory: Callable[[], sqlite3.Connection] | None = None,
     limit: int | None = None,
+    strategy_only: bool = True,
 ) -> dict:
-    """Return signal-level realized PnL analytics for an account."""
+    """Return signal-level realized PnL analytics for an account.
+
+    ``strategy_only=True`` drops ``init_snapshot`` segments from the primary
+    summary while still returning ``summary_all`` for full attribution.
+    """
     trades = fetch_trade_rows(account_id, as_of, conn_factory=conn_factory)
     segments = build_signal_segments(trades)
-    summary = summarize_signal_segments(segments)
+    strategy_segments = [s for s in segments if s.get('signal') != 'init_snapshot']
+    primary = strategy_segments if strategy_only else segments
+    summary = summarize_signal_segments(primary)
+    summary_all = summarize_signal_segments(segments)
     if limit is not None:
         summary['by_signal'] = summary['by_signal'][:limit]
+        summary_all['by_signal'] = summary_all['by_signal'][:limit]
     return {
         'account_id': account_id,
         'as_of': as_of.isoformat() if as_of else None,
+        'strategy_only': strategy_only,
         'summary': summary,
+        'summary_all': summary_all,
+        'excluded_non_strategy_count': len(segments) - len(strategy_segments),
     }

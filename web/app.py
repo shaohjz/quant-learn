@@ -656,6 +656,8 @@ def api_stats():
         'avg_hold_days': round(closed_summary['avg_holding_days'] or 0, 1),
         'max_profit_trade': _trade_card(max_profit),
         'max_loss_trade': _trade_card(max_loss),
+        'strategy_only': closed_data.get('strategy_only', True),
+        'excluded_non_strategy_count': closed_data.get('excluded_non_strategy_count', 0),
         'closed_trades': {
             'closed_count': closed_summary['closed_count'],
             'win_count': closed_summary['win_count'],
@@ -669,6 +671,7 @@ def api_stats():
             'profit_factor': None if closed_summary['profit_factor'] is None or closed_summary['profit_factor'] == float('inf') else round(closed_summary['profit_factor'], 2),
             'by_symbol': closed_summary['by_symbol'][:8],
             'recent': closed_data['closed_trades'][:8],
+            'excluded_non_strategy_count': closed_data.get('excluded_non_strategy_count', 0),
         },
         'week_trades': {
             'buy_count': week_buy_count,

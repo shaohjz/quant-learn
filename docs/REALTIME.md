@@ -11,7 +11,8 @@
 
 ```
 盘前 ~08:30     宽基选股扫描（沪深300+中证500 ≈800 只）→ Top 候选
-盘中 每10分     QuantPulse = 真仓阈值 + 波段机会 + 指数（主心跳）
+盘前 ~08:40     SwingPool 动态稳定池 Top20（优胜劣汰）→ output/swing_pool/
+盘中 每10分     QuantPulse = 真仓阈值 + 波段机会(扫Top20) + 指数（主心跳）
 盘中 每30分     （可选）全市场异动扫描 ≈800 只
 收盘 16:05      波段模拟成交 + 赚亏结论 + 挂单复盘
 收盘 16:15      交易台账 → pm/trade_journal/
@@ -36,7 +37,8 @@
 |------|--------|------|--------|
 | `quant_pulse.py` | **统一入口**：调 portfolio_alert + swing_intraday + 指数 | 盘中 10 分 | 主推送 |
 | `portfolio_alert.py` | `config.yaml` 里 **real_portfolio_rules + watchlist** | （由 Pulse 调） | 你的股破止损/到买区 |
-| `swing_intraday_watch.py` | 稳定蓝筹池 + 波段账户#3 | （由 Pulse 调） | 好价买 / 波段止盈止损 |
+| `swing_pool_builder.py` | 沪深300+中证500 → Top20 稳定池 | 盘前 08:40 | 每日优胜劣汰 |
+| `swing_intraday_watch.py` | 动态稳定池 + 波段账户#3 | （由 Pulse 调） | 好价买 / 波段止盈止损 |
 | `swing_daily_report.py` | 全日波段模拟 | 16:05 | 赚亏结论 |
 | `trade_journal.py` | 全账户成交+持仓 | 16:15 | 复盘台账 |
 

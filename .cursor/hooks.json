@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/check-deploy-docs.py",
+        "matcher": "git\\s+commit",
+        "failClosed": false
+      }
+    ]
+  }
+}

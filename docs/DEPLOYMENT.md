@@ -7,7 +7,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**：[CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
-> **更新**：2026-07-15
+> **更新**：2026-07-17（动态稳定池 SwingPool Top20 + 周末 hist）
 
 ---
 
@@ -18,6 +18,11 @@
 > **重新部署：`git pull`，然后严格按 `docs/DEPLOYMENT.md` 文首 ★ 从步骤 0 做到步骤 7。**
 
 你就执行本文，**不要另编一套定时器**；做完写 `pm/ops/今天-deploy.md` 回复。
+
+### 文档同步（给 Cursor / 提交者）
+
+改了调度、runner bat、波段池、Pulse/日报入口时，**同一次提交必须改** `docs/DEPLOYMENT.md`（及必要时 `CRON_JOBS.md` / `REALTIME.md`）。  
+项目已挂 Cursor hook：`git commit` 若漏改部署文档会拦截提醒。
 
 ---
 
@@ -123,6 +128,9 @@ set NOTIFIER_DRY_RUN=1
 REM A 盘中脉搏（真仓阈值 + 波段盯盘 + 指数）
 .venv\Scripts\python.exe -u scripts\quant_pulse.py --force --no-push
 
+REM A2 动态稳定池（周末/休市用 --mode hist；交易日可用 auto）
+.venv\Scripts\python.exe -u scripts\swing_pool_builder.py --top 20 --mode hist --force
+
 REM B 波段收盘链路（模拟成交 + 赚亏结论）
 .venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
 
@@ -141,6 +149,7 @@ REM E 盘前大盘扫（≈800，失败会 fallback lite）
 | 检查 | 期望 |
 |------|------|
 | A | 退出码 0；无未捕获 traceback |
+| A2 | `output\swing_pool\latest.json` 存在且 `stocks` 约 20 只；`data_mode` 为 hist/live |
 | B | `output\swing_daily\今天.md` 含「波段结论」「挂单建议」 |
 | C | `pm\trade_journal\今天.md` 存在 |
 | D | 文案含「相对昨日净值」；**不能**再出现离谱日涨跌幅（如 +119%） |
@@ -158,6 +167,9 @@ set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
 
 REM ① 08:30 宽基选股
 schtasks /create /f /tn "QuantLearn_MorningScan" /tr "%ROOT%\scripts\morning_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 08:30
+
+REM ①b 08:40 动态稳定波段池 Top20（优胜劣汰）
+schtasks /create /f /tn "QuantLearn_SwingPool" /tr "%ROOT%\scripts\swing_pool_builder_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 08:40
 
 REM ② QuantPulse：先建 09:35 一次触发，再打开 Windows「任务计划程序」GUI
 REM    → QuantLearn_QuantPulse → 触发器 →「重复任务间隔」= 10 分钟，持续时间到 14:50
@@ -180,7 +192,7 @@ schtasks /create /f /tn "QuantLearn_DailyClose" /tr "%ROOT%\scripts\daily_close_
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（Windows）：** MorningScan · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose  
+**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose  
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
 
@@ -189,17 +201,32 @@ schtasks /query /fo LIST | findstr QuantLearn
 试跑：
 
 ```bat
+schtasks /run /tn QuantLearn_SwingPool
 schtasks /run /tn QuantLearn_QuantPulse
 schtasks /run /tn QuantLearn_SwingDaily
 schtasks /run /tn QuantLearn_TradeJournal
 schtasks /run /tn QuantLearn_DailyClose
+type %ROOT%\output\swing_pool_builder.log
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
 type %ROOT%\output\trade_journal.log
+dir %ROOT%\output\swing_pool
 dir %ROOT%\pm\trade_journal
 dir %ROOT%\output\swing_daily
 ```
 
+### 波段池说明（2026-07-17）
+
+| 项 | 内容 |
+|----|------|
+| 脚本 | `scripts/swing_pool_builder.py` + `swing_pool_builder_runner.bat` |
+| 任务 | `QuantLearn_SwingPool` **08:40** 必开 |
+| 池大小 | **Top20**（优胜劣汰：每日重排，分低出局） |
+| 底池 | 沪深300+中证500（`data/universe_cache.json`） |
+| 盘中扫谁 | Pulse → `swing_intraday_watch` 读 `output/swing_pool/latest.json` |
+| 周末 | `--mode hist`（日K）；`auto` 周末自动 hist |
+| 持仓 | 账户 #3 持仓强制保留在池内 |
+| 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
 ## 步骤 6 — 整理 OpenClaw Cron（LLM 限量）
 
 ```bat
@@ -235,7 +262,8 @@ openclaw cron list
 ```
 【全是 Windows schtasks，不是 OpenClaw LLM cron】
 08:30            MorningScan 宽基扫
-09:35~14:50 /10m QuantPulse（GUI 设重复）真仓阈值+波段+指数
+08:40            SwingPool 动态稳定池 Top20（优胜劣汰；周末可用 hist）
+09:35~14:50 /10m QuantPulse（GUI 设重复）真仓阈值+波段(扫池)+指数
 10:00~14:30 /30m IntradayScanner（可选，GUI 设重复）
 16:05            SwingDaily 波段赚亏+挂单建议
 16:15            TradeJournal 台账
@@ -244,7 +272,6 @@ openclaw cron list
 【OpenClaw LLM：最多 1～2 条】
 18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
 ```
-
 详情：[REALTIME.md](./REALTIME.md)
 
 **本系统默认：提醒 + 模拟；挂单由主人在券商软件自己下。**
@@ -324,6 +351,7 @@ type output\quant_pulse.log
 | bat Result:1 | `cmd /k` 手动跑 bat；看对应 `output\*.log` |
 | 波段赚亏永远 0 | 看 `sim_trades` account_id=3；机会分是否从未成交 |
 | 盘中完全没提醒 | 查 `QuantLearn_QuantPulse` 是否启用+重复间隔；日志 `quant_pulse.log` |
+| 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
 
 ---
@@ -337,6 +365,7 @@ type output\quant_pulse.log
 cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 git pull
 然后严格按 docs/DEPLOYMENT.md 文首「★ OpenClaw：如何跑这个项目」从步骤 0 做到步骤 7。
+重点确认：QuantLearn_SwingPool（08:40）已创建且 Ready；冒烟含 swing_pool_builder --mode hist。
 定时器用 Windows schtasks（见文内「两套定时器」）；OpenClaw LLM cron ≤1～2 条。
 做完写 pm/ops/今天-deploy.md 回复我。
 ```

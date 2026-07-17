@@ -211,6 +211,12 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
+## Deploy docs sync
+
+改调度 / runner bat / 波段池 / Pulse 入口时，**同提交更新** `docs/DEPLOYMENT.md`（必要时 `CRON_JOBS.md`、`REALTIME.md`）。  
+Cursor hook：`.cursor/hooks/check-deploy-docs.py`（`git commit` 时检查）。  
+OpenClaw 部署口令见 `docs/DEPLOYMENT.md` 文末「一键口令」。
+
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.

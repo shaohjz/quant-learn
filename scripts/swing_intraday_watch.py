@@ -3,7 +3,7 @@
 解决：波段日报只在 16:05，盘中好价砸到也听不见。
 
 做什么（交易时段）：
-  1. 扫稳定蓝筹池（同 swing_auto.STOCK_POOL）
+  1. 扫每日动态稳定池（output/swing_pool/latest.json，默认 Top20）
   2. A/B 类且评分≥阈值 → 企微提醒「价格合适，可挂买入」
   3. 波段账户 #3 持仓触及止损/止盈 → 提醒卖
   4. 同股同日同类型只推一次（output/swing_intraday_state.json）
@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from swing_auto import STOCK_POOL, scan_stock  # noqa: E402
+from swing_auto import get_stock_pool, scan_stock  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_intraday")
@@ -182,7 +182,7 @@ def check_positions() -> list[dict]:
 
 def scan_opportunities(min_score: int) -> list[dict]:
     hits = []
-    for code, name in STOCK_POOL:
+    for code, name in get_stock_pool():
         try:
             r = scan_stock(code, name)
         except Exception:
@@ -197,22 +197,27 @@ def scan_opportunities(min_score: int) -> list[dict]:
             time.sleep(0.1)
             continue
         code6 = str(r["code"])[-6:]
+        support = float(r.get("support") or 0)
+        resist = float(r.get("resist") or 0)
+        price = float(r["price"])
         hits.append({
             "kind": "BUY",
             "code": code6,
             "name": r["name"],
-            "price": r["price"],
+            "price": price,
             "score": r["score"],
             "signal_type": r["signal_type"],
-            "support": r["support"],
-            "resist": r["resist"],
+            "support": support,
+            "resist": resist,
             "net_rr": r["net_rr"],
             "signals": "; ".join(s[0] for s in r.get("signals", [])[:2]),
-            "stop": round(r["support"] * 0.98, 2),
-            "target": r["resist"],
+            "stop": round(support * 0.98, 2) if support else round(price * 0.95, 2),
+            "target": resist if resist else round(price * 1.08, 2),
             "msg": (
-                f"机会：限价 {r['support']:.2f}~{r['price']:.2f} 介入，"
-                f"目标 {r['resist']:.2f}，止损 {r['support']*0.98:.2f}"
+                f"机会：限价 {support:.2f}~{price:.2f} 介入，"
+                f"目标 {resist:.2f}，止损 {support*0.98:.2f}"
+                if support and resist
+                else f"现价附近介入 ~{price:.2f}"
             ),
         })
         time.sleep(0.1)

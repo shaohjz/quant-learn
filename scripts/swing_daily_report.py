@@ -3,7 +3,7 @@
 目标：你每天只看短结论 —— 波段今天赚还是亏、该挂什么价。
 
 流程：
-  1. 扫描稳定蓝筹池 → 写 swing_scan_results
+  1. 扫描动态稳定池 → 写 swing_scan_results
   2. 在账户 #3 (swing_trade) 上模拟买卖（止损/止盈/新建）
   3. 记净值 → 算今日盈亏 / 累计盈亏
   4. 推一条短结论 + 给你真实账户的挂单建议
@@ -30,10 +30,10 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from swing_auto import (  # noqa: E402
-    STOCK_POOL,
     STAMP_TAX_RATE,
     COMMISSION_RATE,
     MIN_COMMISSION,
+    get_stock_pool,
     scan_stock,
     save_results,
 )
@@ -283,7 +283,7 @@ def refresh_and_mark(positions: list[dict]) -> list[dict]:
 
 def run_scan() -> list[dict]:
     results = []
-    for code, name in STOCK_POOL:
+    for code, name in get_stock_pool():
         try:
             r = scan_stock(code, name)
             if r:
@@ -523,7 +523,7 @@ def build_conclusion(
         else:
             advice.append({
                 "action": "IDLE",
-                "hint": "空仓观望，今天稳定池无强买点。",
+                "hint": "空仓观望，今天动态稳定池无强买点。",
             })
 
     return {
@@ -684,6 +684,13 @@ def main() -> int:
 
     today = date.today().isoformat()
     ensure_swing_account()
+
+    # 今日动态池缺失则补建（优胜劣汰 Top20）
+    try:
+        from swing_pool_builder import ensure_today_pool
+        ensure_today_pool(top=20)
+    except Exception as e:
+        log.warning("ensure_today_pool 失败，将回退种子池: %s", e)
 
     # 盘前净值（交易前）
     before = snapshot()

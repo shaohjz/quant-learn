@@ -32,7 +32,7 @@ COMMISSION_RATE = 0.00025   # 佣金万2.5
 MIN_COMMISSION = 5.0        # 最低佣金5元
 STAMP_TAX_RATE = 0.0005     # 印花税万5（卖出，2023-08-28后）
 
-# ========== 稳定型股票池（低波动蓝筹） ==========
+# ========== 种子池（动态池缺失时兜底；日常以 output/swing_pool/latest.json 为准） ==========
 STOCK_POOL = [
     # 银行
     ("sh600036", "招商银行"), ("sh601166", "兴业银行"), ("sh600000", "浦发银行"),
@@ -68,6 +68,39 @@ STOCK_POOL = [
     # 建材
     ("sh600585", "海螺水泥"), ("sh600019", "宝钢股份"),
 ]
+
+SWING_POOL_LATEST = ROOT / "output" / "swing_pool" / "latest.json"
+
+
+def get_stock_pool(allow_stale: bool = True) -> list[tuple[str, str]]:
+    """读每日动态稳定池；缺失/损坏则回退 STOCK_POOL。
+
+    allow_stale=True：日期不是今天也用（盘中别因 builder 挂了就空扫）。
+    """
+    if not SWING_POOL_LATEST.exists():
+        return list(STOCK_POOL)
+    try:
+        data = json.loads(SWING_POOL_LATEST.read_text(encoding="utf-8"))
+    except Exception:
+        return list(STOCK_POOL)
+    if not allow_stale and data.get("date") != date.today().isoformat():
+        return list(STOCK_POOL)
+    stocks = data.get("stocks") or []
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for s in stocks:
+        code = str(s.get("prefixed") or s.get("code") or "")
+        if not code:
+            continue
+        if code.isdigit() or (len(code) == 6 and not code.startswith(("sh", "sz"))):
+            c6 = code.zfill(6)[-6:]
+            code = ("sh" if c6.startswith(("5", "6", "9")) else "sz") + c6
+        name = str(s.get("name") or code)
+        if code in seen:
+            continue
+        seen.add(code)
+        out.append((code, name))
+    return out if out else list(STOCK_POOL)
 
 
 def get_quote(code):
@@ -399,7 +432,8 @@ def build_report(results, account):
     
     lines = []
     lines.append(f"# 📊 短线波段扫描报告")
-    lines.append(f"> 扫描时间：{now} | 扫描范围：{len(STOCK_POOL)}只稳定型蓝筹")
+    pool = get_stock_pool()
+    lines.append(f"> 扫描时间：{now} | 扫描范围：{len(pool)}只动态稳定池")
     lines.append("")
     
     # 账户概况
@@ -410,11 +444,11 @@ def build_report(results, account):
     
     if not results:
         lines.append("## ❌ 今日无信号")
-        lines.append("当前稳定型股票池中未发现符合条件的短线波段机会。")
+        lines.append("当前动态稳定池中未发现符合条件的短线波段机会。")
         lines.append("")
         lines.append("**可能原因：**")
         lines.append("- 市场整体趋势偏强，回调机会较少")
-        lines.append("- 稳定型股票波动率偏低，未触发信号阈值")
+        lines.append("- 池内股票波动偏低或未触发 A/B 信号阈值")
         lines.append("- 建议收盘后再次扫描确认")
         return "\n".join(lines)
     
@@ -484,8 +518,9 @@ def main():
     scan_date = date.today().strftime("%Y-%m-%d")
     scan_time = datetime.now().strftime("%Y-%m-%d %H:%M")
     
+    pool = get_stock_pool()
     print(f"📡 短线波段扫描 - {scan_time}")
-    print(f"   股票池: {len(STOCK_POOL)}只")
+    print(f"   股票池: {len(pool)}只（动态稳定池）")
     
     # 获取账户信息
     account = get_account_info()
@@ -493,7 +528,7 @@ def main():
     
     # 扫描
     results = []
-    for code, name in STOCK_POOL:
+    for code, name in pool:
         try:
             r = scan_stock(code, name)
             if r:

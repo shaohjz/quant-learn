@@ -125,11 +125,28 @@ risk:
   max_total_positions: 6
   stop_loss_pct: -0.08
   take_profit_pct: 0.15
+  # Pause buy_strong until paper sample is large enough; buy_zone remains active.
+  buy_strong_enabled: false
+  # Same-day reverse guard still blocks fluff exits, but hard -8% cost breach may sell.
+  hard_stop_bypasses_same_day: true
+  # First take-profit / +1R: sell half; runner rides ATR trailing stop.
+  take_profit_mode: half
+  scale_out:
+    enabled: true
+    at_r: 1.0
+    min_qty: 200
+    allow_same_day: true
+  trailing:
+    mode: atr_hybrid
+    activate_profit_pct: 5.0
+    atr_mult: 2.0
+    default_atr_pct: 3.0
   warn_industry_pct: 0.25
   warn_sector_pct: 0.3
   post_buy_protection:
     protect_minutes: 120
-    protect_loss_pct: -15.0
+    # Align with stop_loss_pct: do not let protected losers drift to -15%.
+    protect_loss_pct: -8.0
 stock_pool: []
 watchlist:
   auto_discovered: {}

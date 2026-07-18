@@ -537,7 +537,7 @@ def _load_post_buy_protection() -> tuple[int, float]:
     返回 (protect_minutes, protect_loss_pct)：
     - protect_minutes: 买入后多长时间内不触发止损（默认 120 分钟）
     - protect_loss_pct: 保护期内允许的最大亏损百分比，超过此值仍触发止损
-      设为 0 或负数表示禁止止损；默认 -15%（即亏损超过15%才触发）
+      设为 0 或负数表示禁止止损；默认 -8%（与 risk.stop_loss_pct 对齐）
     """
     try:
         import yaml
@@ -545,10 +545,15 @@ def _load_post_buy_protection() -> tuple[int, float]:
         risk = cfg.get('risk') or {}
         pb = risk.get('post_buy_protection') or {}
         protect_minutes = int(pb.get('protect_minutes', 120))
-        protect_loss_pct = float(pb.get('protect_loss_pct', -15.0))
+        # Prefer explicit post_buy override; else fall back to stop_loss_pct * 100.
+        if 'protect_loss_pct' in pb:
+            protect_loss_pct = float(pb.get('protect_loss_pct'))
+        else:
+            stop_pct = float(risk.get('stop_loss_pct', -0.08))
+            protect_loss_pct = stop_pct * 100.0 if abs(stop_pct) <= 1.0 else stop_pct
         return protect_minutes, protect_loss_pct
     except Exception:
-        return 120, -15.0
+        return 120, -8.0
 
 
 POST_BUY_PROTECT_MINUTES, POST_BUY_PROTECT_LOSS_PCT = _load_post_buy_protection()
@@ -558,6 +563,111 @@ _POST_BUY_SUPPRESS_LEVELS = frozenset({
     'stop_loss', 'stop_loss_tight', 'soft_stop', 'hard_stop', 'deep_drop',
     'trend_break', 'trend_break_warn',
 })
+
+
+def _load_stop_exit_controls() -> tuple[float, bool, bool]:
+    """Load hard-stop / buy_strong gates from config.yaml.
+
+    Returns:
+        stop_loss_pct: fraction e.g. -0.08
+        hard_stop_bypasses_same_day: allow same-day exit when hard stop / -8% hit
+        buy_strong_enabled: whether buy_strong entries may execute
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        stop_loss_pct = float(risk.get('stop_loss_pct', -0.08))
+        if abs(stop_loss_pct) > 1.0:
+            stop_loss_pct = stop_loss_pct / 100.0
+        bypass = bool(risk.get('hard_stop_bypasses_same_day', True))
+        buy_strong_enabled = bool(risk.get('buy_strong_enabled', False))
+        return stop_loss_pct, bypass, buy_strong_enabled
+    except Exception:
+        return -0.08, True, False
+
+
+STOP_LOSS_PCT, HARD_STOP_BYPASSES_SAME_DAY, BUY_STRONG_ENABLED = _load_stop_exit_controls()
+
+
+def _load_scale_out_and_trailing() -> dict:
+    """Load half take-profit + ATR trailing knobs from config.yaml."""
+    defaults = {
+        'take_profit_mode': 'half',
+        'scale_out_enabled': True,
+        'scale_out_at_r': 1.0,
+        'scale_out_min_qty': 200,
+        'scale_out_allow_same_day': True,
+        'trailing_mode': 'atr_hybrid',
+        'trailing_activate_pct': 5.0,
+        'trailing_atr_mult': 2.0,
+        'trailing_default_atr_pct': 3.0,
+    }
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        so = risk.get('scale_out') or {}
+        tr = risk.get('trailing') or {}
+        mode = str(risk.get('take_profit_mode', defaults['take_profit_mode']) or 'half').lower()
+        if mode not in ('half', 'full'):
+            mode = 'half'
+        return {
+            'take_profit_mode': mode,
+            'scale_out_enabled': bool(so.get('enabled', True)),
+            'scale_out_at_r': float(so.get('at_r', 1.0)),
+            'scale_out_min_qty': int(so.get('min_qty', 200)),
+            'scale_out_allow_same_day': bool(so.get('allow_same_day', True)),
+            'trailing_mode': str(tr.get('mode', 'atr_hybrid') or 'atr_hybrid').lower(),
+            'trailing_activate_pct': float(tr.get('activate_profit_pct', 5.0)),
+            'trailing_atr_mult': float(tr.get('atr_mult', 2.0)),
+            'trailing_default_atr_pct': float(tr.get('default_atr_pct', 3.0)),
+        }
+    except Exception:
+        return defaults
+
+
+_SCALE_TRAIL = _load_scale_out_and_trailing()
+TAKE_PROFIT_MODE = _SCALE_TRAIL['take_profit_mode']
+SCALE_OUT_ENABLED = _SCALE_TRAIL['scale_out_enabled']
+SCALE_OUT_AT_R = _SCALE_TRAIL['scale_out_at_r']
+SCALE_OUT_MIN_QTY = _SCALE_TRAIL['scale_out_min_qty']
+SCALE_OUT_ALLOW_SAME_DAY = _SCALE_TRAIL['scale_out_allow_same_day']
+TRAILING_MODE = _SCALE_TRAIL['trailing_mode']
+TRAILING_ACTIVATE_PCT = _SCALE_TRAIL['trailing_activate_pct']
+TRAILING_ATR_MULT = _SCALE_TRAIL['trailing_atr_mult']
+TRAILING_DEFAULT_ATR_PCT = _SCALE_TRAIL['trailing_default_atr_pct']
+
+# Cache watchlist atr_pct lookups
+_ATR_PCT_CACHE: dict[str, float | None] = {}
+
+
+def _get_atr_pct_for_code(code: str) -> float | None:
+    """Read atr_pct from watchlist trend_filter.
+
+    atr_hybrid: only use ATR when the stock has a known atr (else ladder-only).
+    atr mode: fall back to trailing.default_atr_pct.
+    """
+    code = str(code or '')
+    if code in _ATR_PCT_CACHE:
+        return _ATR_PCT_CACHE[code]
+    atr: float | None = None
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        wl = ((cfg.get('watchlist') or {}).get('user_manual') or {})
+        item = wl.get(code) or {}
+        tf = item.get('trend_filter') or {}
+        if tf.get('atr_pct'):
+            atr = float(tf['atr_pct'])
+        elif tf.get('atr_stop_pct'):
+            atr = float(tf['atr_stop_pct']) / 2.0
+    except Exception:
+        atr = None
+    if atr is None and TRAILING_MODE == 'atr':
+        atr = TRAILING_DEFAULT_ATR_PCT
+    _ATR_PCT_CACHE[code] = atr  # may cache None
+    return atr
 
 
 # ============================================================
@@ -809,7 +919,7 @@ def _is_protected_by_post_buy(
 
     如果最近一次买入距现在不足 protect_minutes 分钟，且：
     - level 属于止损类信号（stop_loss/trend_break 等）
-    - 当前浮亏未超过 protect_loss_pct（默认 -15%）
+    - 当前浮亏未超过 protect_loss_pct（默认 -8%）
     则抑制卖出，返回 (True, reason)。
     """
     if POST_BUY_PROTECT_MINUTES <= 0:
@@ -817,6 +927,17 @@ def _is_protected_by_post_buy(
 
     if level not in _POST_BUY_SUPPRESS_LEVELS:
         return False, ''  # 非止损类信号，不抑制
+
+    # Explicit hard_stop / deep_drop always pierce protection once price is at/below stop.
+    if level in ('hard_stop', 'deep_drop'):
+        avg_cost = _get_position_avg_cost(conn, code, int(account_id or _ACCOUNT_ID))
+        if avg_cost > 0:
+            loss_pct = (cur_price - avg_cost) / avg_cost * 100
+            threshold_pct = STOP_LOSS_PCT * 100.0
+            if loss_pct <= threshold_pct:
+                return False, ''
+            # hard_stop level even without full -8% still pierces soft protection window
+            # only when protect_loss_pct already breached — fall through to normal check.
 
     account_id = int(account_id or _ACCOUNT_ID)
     last_buy = _get_last_buy_time(conn, code, account_id)
@@ -843,6 +964,106 @@ def _is_protected_by_post_buy(
         f"抑制 {level} 止损信号{loss_str}（保护阈值 {POST_BUY_PROTECT_LOSS_PCT:.0f}%）"
     )
     return True, reason
+
+
+def _cost_loss_pct(conn: sqlite3.Connection, code: str, cur_price: float,
+                   account_id: int | None = None) -> float | None:
+    """Return unrealized loss percent vs avg_cost, or None if no cost basis."""
+    avg_cost = _get_position_avg_cost(conn, code, int(account_id or _ACCOUNT_ID))
+    if avg_cost <= 0 or cur_price <= 0:
+        return None
+    return (cur_price - avg_cost) / avg_cost * 100.0
+
+
+def _same_day_hard_stop_allowed(
+    conn: sqlite3.Connection, code: str, cur_price: float, level: str,
+    account_id: int | None = None,
+) -> tuple[bool, str]:
+    """Whether same-day sell may proceed despite today's BUY.
+
+    Soft exits (trend_break / early take-profit fluff) stay blocked. Hard cost
+    breach at ``STOP_LOSS_PCT``, explicit ``hard_stop``/``deep_drop``, or
+    configured +R scale-out / take-profit may exit.
+    """
+    if not HARD_STOP_BYPASSES_SAME_DAY and not SCALE_OUT_ALLOW_SAME_DAY:
+        return False, ''
+
+    level = str(level or '')
+    if HARD_STOP_BYPASSES_SAME_DAY and level in ('hard_stop', 'deep_drop'):
+        return True, f'硬止损 level={level} 允许同日卖出'
+
+    loss_pct = _cost_loss_pct(conn, code, cur_price, account_id)
+    if loss_pct is None:
+        return False, ''
+
+    threshold_pct = STOP_LOSS_PCT * 100.0
+    if HARD_STOP_BYPASSES_SAME_DAY and loss_pct <= threshold_pct:
+        return True, f'成本浮亏 {loss_pct:.2f}% ≤ 硬止损 {threshold_pct:.1f}%，允许同日卖出'
+
+    # +R scale-out / take-profit half may bank winners same day.
+    if SCALE_OUT_ALLOW_SAME_DAY and level in (
+        'take_profit', 'take_profit_half', 'half_out', 'scale_out',
+    ):
+        target_pct = abs(STOP_LOSS_PCT) * 100.0 * float(SCALE_OUT_AT_R)
+        if loss_pct >= target_pct:  # loss_pct is signed; profit is positive
+            return True, f'浮盈 {loss_pct:.2f}% ≥ +{SCALE_OUT_AT_R:.1f}R ({target_pct:.1f}%)，允许同日半仓止盈'
+    return False, ''
+
+
+def _has_sell_since_last_buy(
+    conn: sqlite3.Connection, code: str, account_id: int | None = None,
+) -> bool:
+    """True if any SELL exists after the latest BUY for this code (already scaled/stopped)."""
+    account_id = int(account_id or _ACCOUNT_ID)
+    last_buy = conn.execute(
+        "SELECT id FROM sim_trades WHERE account_id=? AND stock_code=? AND direction='BUY' "
+        "ORDER BY trade_date DESC, id DESC LIMIT 1",
+        (account_id, code),
+    ).fetchone()
+    if not last_buy:
+        return False
+    row = conn.execute(
+        "SELECT COUNT(*) FROM sim_trades WHERE account_id=? AND stock_code=? AND direction='SELL' "
+        "AND id > ?",
+        (account_id, code, last_buy[0]),
+    ).fetchone()
+    return bool(row and row[0] > 0)
+
+
+def _scale_out_target_price(avg_cost: float) -> float:
+    """Price at +scale_out_at_r * R, where R = |stop_loss_pct|."""
+    r = abs(float(STOP_LOSS_PCT))
+    return float(avg_cost) * (1.0 + float(SCALE_OUT_AT_R) * r)
+
+
+def _check_cost_scale_out(
+    conn: sqlite3.Connection,
+    code: str,
+    cur_price: float,
+    quantity: int,
+    avg_cost: float,
+    account_id: int | None = None,
+) -> tuple[bool, str]:
+    """Cost-based +1R half take-profit when qty allows a lot-sized half."""
+    if not SCALE_OUT_ENABLED or TAKE_PROFIT_MODE != 'half':
+        return False, ''
+    if quantity < SCALE_OUT_MIN_QTY:
+        return False, ''
+    half_qty = int(quantity / 2 / LOT_SIZE) * LOT_SIZE
+    if half_qty < LOT_SIZE:
+        return False, ''
+    if avg_cost <= 0 or cur_price <= 0:
+        return False, ''
+    if _has_sell_since_last_buy(conn, code, account_id):
+        return False, ''
+    target = _scale_out_target_price(avg_cost)
+    if cur_price + 1e-9 < target:
+        return False, ''
+    profit_pct = (cur_price - avg_cost) / avg_cost * 100.0
+    return True, (
+        f'scale_out|+{SCALE_OUT_AT_R:.1f}R 半仓止盈: 现价¥{cur_price:.2f} ≥ '
+        f'目标¥{target:.2f}（成本¥{avg_cost:.2f} 浮盈{profit_pct:.1f}%）'
+    )
 
 
 def _parse_trade_datetime(trade_date: str | None, trade_time: str | None) -> datetime | None:
@@ -1375,19 +1596,32 @@ def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position:
     return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
 
 
-def calc_trailing_stop(entry_price: float, highest_price: float, current_trailing: float | None = None) -> tuple[float, str]:
-    """P2: 跟踪止损计算。只能上移，不能下移。"""
+def calc_trailing_stop(
+    entry_price: float,
+    highest_price: float,
+    current_trailing: float | None = None,
+    atr_pct: float | None = None,
+) -> tuple[float, str]:
+    """P2: 跟踪止损计算。只能上移，不能下移。
+
+    Ladder (legacy):
+      <5% idle; ≥5% breakeven; ≥10% lock +2%; ≥20% max(entry×1.10, high×0.92)
+
+    ATR hybrid (default when atr_pct given / trailing.mode=atr_hybrid):
+      also trail high × (1 - atr_mult × atr_pct/100), floored at entry once activated.
+    """
     if entry_price <= 0 or highest_price <= 0:
         return current_trailing or 0.0, ''
-    
+
     profit_pct = (highest_price - entry_price) / entry_price * 100
-    
-    if profit_pct < 5.0:
+    activate = float(TRAILING_ACTIVATE_PCT)
+
+    if profit_pct < activate:
         new_stop = current_trailing or 0.0
-        reason = f'浮盈 {profit_pct:.1f}% < 5%, 跟踪止损未启动'
+        reason = f'浮盈 {profit_pct:.1f}% < {activate:.0f}%, 跟踪止损未启动'
     elif profit_pct < 10.0:
         new_stop = round(entry_price * 1.0, 2)
-        reason = f'赚过 5% → 保本位 ¥{new_stop:.2f}'
+        reason = f'赚过 {activate:.0f}% → 保本位 ¥{new_stop:.2f}'
     elif profit_pct < 20.0:
         new_stop = round(entry_price * 1.02, 2)
         reason = f'赚过 10% → 锁 2% 利润 ¥{new_stop:.2f}'
@@ -1396,7 +1630,27 @@ def calc_trailing_stop(entry_price: float, highest_price: float, current_trailin
         floor_b = highest_price * 0.92
         new_stop = round(max(floor_a, floor_b), 2)
         reason = f'赚过 20% → 跟踪高点 max(entry×1.10, high×0.92) = ¥{new_stop:.2f}'
-    
+
+    # ATR hybrid: ratchet with high - k*ATR once activated.
+    use_atr = TRAILING_MODE in ('atr', 'atr_hybrid') and atr_pct is not None and atr_pct > 0
+    if use_atr and profit_pct >= activate:
+        atr_stop = highest_price * (1.0 - float(TRAILING_ATR_MULT) * float(atr_pct) / 100.0)
+        # Never give back below entry once trail is live.
+        atr_stop = max(atr_stop, entry_price)
+        atr_stop = round(atr_stop, 2)
+        if atr_stop > new_stop:
+            new_stop = atr_stop
+            reason = (
+                f'ATR跟踪 high¥{highest_price:.2f} - {TRAILING_ATR_MULT:.1f}×ATR({atr_pct:.2f}%) '
+                f'= ¥{new_stop:.2f}'
+            )
+        elif TRAILING_MODE == 'atr':
+            new_stop = atr_stop
+            reason = (
+                f'ATR跟踪 high¥{highest_price:.2f} - {TRAILING_ATR_MULT:.1f}×ATR({atr_pct:.2f}%) '
+                f'= ¥{new_stop:.2f}'
+            )
+
     # 只能上移不能下移
     if current_trailing and current_trailing > new_stop:
         return current_trailing, f'保持现跟踪位 ¥{current_trailing:.2f} (新计算 ¥{new_stop:.2f} 低于现位，不下移)'
@@ -1418,7 +1672,8 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
             return {'updated': False, 'reason': '无持仓'}
         qty, avg_cost, prev_high, prev_trailing = row
         new_high = max(prev_high or avg_cost, current_price)
-        new_trailing, reason = calc_trailing_stop(avg_cost, new_high, prev_trailing)
+        atr_pct = _get_atr_pct_for_code(code) if TRAILING_MODE in ('atr', 'atr_hybrid') else None
+        new_trailing, reason = calc_trailing_stop(avg_cost, new_high, prev_trailing, atr_pct=atr_pct)
         cur.execute(
             "UPDATE sim_positions SET highest_price=?, trailing_stop_price=? "
             "WHERE account_id=? AND stock_code=?",
@@ -1430,6 +1685,7 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
             'highest': new_high,
             'trailing': new_trailing,
             'reason': reason,
+            'atr_pct': atr_pct,
         }
     finally:
         conn.close()
@@ -1462,7 +1718,8 @@ def update_all_positions_market_value(price_dict: dict, account_id: int | None =
                 continue
             qty, avg_cost, prev_high, prev_trailing = row
             new_high = max(float(prev_high or avg_cost or 0), cur_price)
-            new_trailing, _reason = calc_trailing_stop(avg_cost, new_high, prev_trailing)
+            atr_pct = _get_atr_pct_for_code(code) if TRAILING_MODE in ('atr', 'atr_hybrid') else None
+            new_trailing, _reason = calc_trailing_stop(avg_cost, new_high, prev_trailing, atr_pct=atr_pct)
             conn.execute(
                 "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, "
                 "highest_price=?, trailing_stop_price=?, updated_at=CURRENT_TIMESTAMP "
@@ -1656,6 +1913,13 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
     direction = rule.get('dir', 'below')
 
     if level in ('buy_zone', 'buy_strong'):
+
+        # Pause buy_strong until config re-enables it (edge sample was weak).
+        if level == 'buy_strong' and not BUY_STRONG_ENABLED:
+            reason = 'buy_strong 已暂停（risk.buy_strong_enabled=false），仅执行 buy_zone'
+            logger.info(f'🚫 [{code}] {reason}')
+            _write_review_decision(_ACCOUNT_ID, code, 'buy_strong_disabled', 0, reason)
+            return 'NO_ACTION'
 
         # ── REQ-038 持仓数量硬上限检查 ─────────────────────────────────────
         # 1) 总持仓数上限
@@ -1868,10 +2132,35 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         return 'SELL_ALL'
 
     elif level == 'take_profit':
-        # REQ-066: 完整止盈 → 全仓卖出，避免浮盈坐过山车
-        return 'SELL_ALL'
-    elif level in ('take_profit_half', 'half_out'):
-        # REQ-048: 半仓止盈 / 回到成本线减仓
+        # half: first hit sells half; second hit (already scaled) clears runner.
+        # full: legacy REQ-066 clear-all behaviour.
+        if TAKE_PROFIT_MODE == 'full':
+            return 'SELL_ALL'
+        try:
+            conn = sqlite3.connect(_DB_PATH)
+            try:
+                already = _has_sell_since_last_buy(conn, code, _ACCOUNT_ID)
+                row = conn.execute(
+                    "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+                    (_ACCOUNT_ID, code),
+                ).fetchone()
+            finally:
+                conn.close()
+        except Exception:
+            already, row = False, None
+        qty = int(row[0]) if row else 0
+        if already:
+            logger.info(f'🟡 [{code}] take_profit 二次触发（已半仓过），余仓清仓')
+            return 'SELL_ALL'
+        half_qty = int(qty / 2 / LOT_SIZE) * LOT_SIZE if qty else 0
+        if half_qty < LOT_SIZE:
+            # Single lot cannot scale — bank full at take_profit trigger.
+            logger.info(f'🟡 [{code}] take_profit 但仓位不足半仓（qty={qty}），全仓止盈')
+            return 'SELL_ALL'
+        logger.info(f'🟡 [{code}] take_profit 半仓止盈，余仓 ATR 跟踪')
+        return 'SELL_HALF'
+    elif level in ('take_profit_half', 'half_out', 'scale_out'):
+        # REQ-048: 半仓止盈 / 回到成本线减仓 / +1R 成本半仓
         return 'SELL_HALF'
 
     elif level == 'trend_break_buy':
@@ -1987,6 +2276,35 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
     action = decide_action(rule, cur_price, position=position)
     severity = None
     severity_label = ''
+
+    # Cost-based +1R half take-profit even when current rule is not take_profit.
+    if action in ('NO_ACTION', 'DEFER', None):
+        try:
+            conn_so = sqlite3.connect(_DB_PATH)
+            try:
+                row_so = conn_so.execute(
+                    "SELECT quantity, avg_cost FROM sim_positions "
+                    "WHERE account_id=? AND stock_code=? AND quantity > 0",
+                    (_ACCOUNT_ID, code),
+                ).fetchone()
+                if row_so:
+                    ok_so, reason_so = _check_cost_scale_out(
+                        conn_so, code, cur_price, int(row_so[0]), float(row_so[1]), _ACCOUNT_ID,
+                    )
+                    if ok_so:
+                        action = 'SELL_HALF'
+                        rule = dict(rule)
+                        rule['level'] = 'scale_out'
+                        rule['message'] = reason_so
+                        logger.info(f'🟡 [{code}] {reason_so}')
+                        try:
+                            _write_review_decision(_ACCOUNT_ID, code, 'scale_out', 1, reason_so)
+                        except Exception:
+                            pass
+            finally:
+                conn_so.close()
+        except Exception as e:
+            logger.warning(f'[{code}] scale_out 检查失败: {e}')
     
     # 🔥 P0+P2: 智能止损三档评级 + 跟踪止损 — 只对 stop_loss 类 level 作修正
     stop_levels = {'stop_loss', 'soft_stop', 'hard_stop', 'deep_drop'}
@@ -2228,16 +2546,25 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
 
             # TASK-20260702-2004-001: 同日反向交易防御 — 今日刚买入则禁止当日卖出
             # 防止 buy_strong + trend_break 同K线矛盾信号导致瞬时反向交易
+            # 例外：硬止损 / 成本浮亏已达 stop_loss_pct（默认 -8%）必须允许出清
             if _has_today_buy(conn, code):
-                msg = f'TASK-2004-001: 今日刚买入 {code}，拒绝同日卖出（buy_strong+trend_break 矛盾防御）'
-                conn.execute("ROLLBACK")
-                logger.info(f"🛡️ [{code}] {msg}")
+                allowed, allow_reason = _same_day_hard_stop_allowed(
+                    conn, code, cur_price, rule.get('level', ''), _ACCOUNT_ID)
+                if not allowed:
+                    msg = f'TASK-2004-001: 今日刚买入 {code}，拒绝同日卖出（buy_strong+trend_break 矛盾防御）'
+                    conn.execute("ROLLBACK")
+                    logger.info(f"🛡️ [{code}] {msg}")
+                    try:
+                        _write_review_decision(_ACCOUNT_ID, code, 'same_day_reverse_guard', 0, msg)
+                    except Exception as e:
+                        logger.warning(f"写入同日反向风控记录失败 {code}: {e}")
+                    return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
+                            'severity': severity, 'severity_label': severity_label}
+                logger.info(f"⚠️ [{code}] 同日卖出放行: {allow_reason}")
                 try:
-                    _write_review_decision(_ACCOUNT_ID, code, 'same_day_reverse_guard', 0, msg)
-                except Exception as e:
-                    logger.warning(f"写入同日反向风控记录失败 {code}: {e}")
-                return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
-                        'severity': severity, 'severity_label': severity_label}
+                    _write_review_decision(_ACCOUNT_ID, code, 'same_day_hard_stop_bypass', 1, allow_reason)
+                except Exception:
+                    pass
 
             if action == 'SELL_HALF':
                 sell_qty = int(row[0] / 2 / LOT_SIZE) * LOT_SIZE
@@ -2259,13 +2586,31 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             new_qty = row[0] - sell_qty
             if new_qty > 0:
                 new_cost = row[1]  # 剩余仓位成本不变
-                conn.execute(
-                    "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
-                    "WHERE account_id=? AND stock_code=?",
-                    (new_qty, cur_price, quantize_amount(new_qty * cur_price),
-                     quantize_amount((cur_price - new_cost) * new_qty), (cur_price - new_cost) / new_cost * 100,
-                     _ACCOUNT_ID, code)
-                )
+                # After scale-out / half take-profit, ratchet trailing to at least breakeven.
+                trail_bump = None
+                if action == 'SELL_HALF' and str(rule.get('level', '')) in (
+                    'take_profit', 'take_profit_half', 'half_out', 'scale_out',
+                ):
+                    trail_bump = round(float(new_cost), 2)
+                if trail_bump is not None:
+                    conn.execute(
+                        "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=?, "
+                        "trailing_stop_price=MAX(COALESCE(trailing_stop_price, 0), ?) "
+                        "WHERE account_id=? AND stock_code=?",
+                        (new_qty, cur_price, quantize_amount(new_qty * cur_price),
+                         quantize_amount((cur_price - new_cost) * new_qty),
+                         (cur_price - new_cost) / new_cost * 100 if new_cost else 0,
+                         trail_bump, _ACCOUNT_ID, code)
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE sim_positions SET quantity=?, current_price=?, market_value=?, pnl=?, pnl_pct=? "
+                        "WHERE account_id=? AND stock_code=?",
+                        (new_qty, cur_price, quantize_amount(new_qty * cur_price),
+                         quantize_amount((cur_price - new_cost) * new_qty),
+                         (cur_price - new_cost) / new_cost * 100 if new_cost else 0,
+                         _ACCOUNT_ID, code)
+                    )
             else:
                 conn.execute(
                     "DELETE FROM sim_positions WHERE account_id=? AND stock_code=?",

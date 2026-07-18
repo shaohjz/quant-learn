@@ -43,8 +43,9 @@ flowchart TD
 | **16:30** | 复盘备注 | **OpenClaw cron（agentTurn）最多 1 条** | 短提示词 | 只写 md |
 | **17:00** | 需求入库 | **可与 18:15 合并成 1 条** OpenClaw | 短提示词 | 写 `pm/` |
 | **18:15** | Cursor 队列 | **OpenClaw cron 1 条够** | 短提示词 | 写 `cursor_queue` |
+| **18:45** | 治理产物推 master | **Windows schtasks** | `daily_git_sync_runner.bat` | 台账/PM/QA/Ops 白名单 push |
 
-**OpenClaw 侧建议上限：1～2 个 agentTurn**（例如「18:15 入库+写队列」一条搞定）。交易类 **0 个** LLM cron。
+**OpenClaw 侧建议上限：1～2 个 agentTurn**（例如「18:15 入库+写队列」一条搞定）。交易类 **0 个** LLM cron。晚间 **push 用 schtasks 脚本**，别让 LLM 自己乱 `git push`。
 
 ### 必开 vs 可选（别纠结）
 
@@ -95,6 +96,7 @@ schtasks /create /f /tn "QuantLearn_QuantPulse"     /tr "%ROOT%\scripts\quant_pu
 schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intraday_scanner_runner.bat"   /sc weekly /d MON,TUE,WED,THU,FRI /st 10:00
 schtasks /create /f /tn "QuantLearn_SwingDaily"     /tr "%ROOT%\scripts\swing_daily_report_runner.bat"  /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 schtasks /create /f /tn "QuantLearn_TradeJournal"   /tr "%ROOT%\scripts\trade_journal_runner.bat"       /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
+schtasks /create /f /tn "QuantLearn_DailyGitSync"   /tr "%ROOT%\scripts\daily_git_sync_runner.bat"      /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
 
 schtasks /query /fo LIST | findstr QuantLearn
 ```
@@ -114,6 +116,7 @@ schtasks /query /fo LIST | findstr QuantLearn
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 建议开 / 吵则关 |
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | **必开** |
 | QuantLearn_TradeJournal | `trade_journal_runner.bat` | **必开** |
+| QuantLearn_DailyGitSync | `daily_git_sync_runner.bat` | **必开**（18:45 台账/PM/QA 推 master） |
 | QuantLearn_SwingIntraday | `swing_intraday_watch_runner.bat` | Pulse 已开则关 |
 | QuantLearn_PortfolioAlert | `portfolio_alert_runner.bat` | Pulse 已开则关 |
 | QuantLearn_StopLossWatch | `stop_loss_watch_runner.bat` | 学习仓用，可选 |

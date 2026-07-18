@@ -75,9 +75,10 @@ BUG:  open → in_progress → fixed → verified → deployed
 | **17:00** | **需求+PM** | **扫日志/复盘/企微 → 全量入库去重** |
 | 17:30 | QA | pytest 结果入库 / reopen |
 | 18:00 | 开发经理 | 给队列前段写 PLAN（P0+P1 尽量全覆盖） |
-| **18:15** | **PM** | 写 **完整** `pm/cursor_queue/今天.md` + **git add/commit（若产机有权限）** 或至少落盘等主人 pull |
+| **18:15** | **PM** | 写 **完整** `pm/cursor_queue/今天.md` + commit 或等 18:45 统一同步 |
 | 18:30 | PM | 企微：今日队列条数（P0/P1/P2 计数）+ Cursor 一键话术 |
-| **晚上** | **你+Cursor** | **按队列从上到下尽量做完**，每项单独 commit；结束可 `git push` |
+| **18:45** | **schtasks** | **`QuantLearn_DailyGitSync`**：台账/PM/QA/Ops 白名单 `commit + push master` |
+| **晚上** | **你+Cursor** | **按队列从上到下尽量做完**，每项单独 commit；代码改动你自己 push |
 | 次日盘前 | PM/QA | 对昨夜 commit 改状态 |
 
 ---
@@ -163,9 +164,29 @@ BUG:  open → in_progress → fixed → verified → deployed
 3. 对前段（P0 与靠前 P1）若无 PLAN，在 pm/dev/ 写最短 PLAN
 4. 企微短消息：P0x / P1x / P2x + 让主人复制 REVIEW_LOOP「Cursor 一键话术」
 5. 若有 git 权限：git add pm/requirements pm/bugs pm/dev pm/cursor_queue docs/ROADMAP.md
-   && commit -m "pm: YYYY-MM-DD backlog + cursor queue"（不要 push 除非主人要求）
+   && commit -m "pm: YYYY-MM-DD backlog + cursor queue"
+   （也可只落盘，交给 18:45 `QuantLearn_DailyGitSync` 统一 push）
 
-红线：禁止 force push；禁止动 webhook；禁止把队列缩成「只留 P0」。
+红线：禁止 force push；禁止动 webhook；禁止把队列缩成「只留 P0」；禁止改交易核心代码。
+```
+
+### 晚间统一推 master（18:45，推荐 schtasks，不占 LLM）
+
+产机任务名：`QuantLearn_DailyGitSync` → `scripts/daily_git_sync_runner.bat`
+
+只提交白名单：`pm/trade_journal`、`pm/cursor_queue`、`pm/requirements|bugs|dev|test_reports|ops`、`output/swing_daily|swing_pool`、日报 md。  
+**不推**：`scripts/` 交易代码、`*.db`、`config.local.yaml`。
+
+```bat
+schtasks /create /f /tn "QuantLearn_DailyGitSync" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
+```
+
+手动试跑：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+.venv\Scripts\python.exe -u scripts\daily_git_sync.py --dry-run
+.venv\Scripts\python.exe -u scripts\daily_git_sync.py
 ```
 
 ### 理财复盘（16:30）

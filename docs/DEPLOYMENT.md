@@ -6,8 +6,8 @@
 >  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
-> **配套**：[CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
-> **更新**：2026-07-17（动态稳定池 SwingPool Top20 + 周末 hist）
+> **配套**：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md)（**每日运行+推 master，优先读这个**）· [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
+> **更新**：2026-07-18（DailyGitSync 晚间白名单推 master + OPENCLAW_DAILY_RUN）
 
 ---
 
@@ -15,9 +15,13 @@
 
 主人只需说：
 
+> **读 `docs/OPENCLAW_DAILY_RUN.md` 并按文档部署/检查；需要全量重建再按 `docs/DEPLOYMENT.md` 步骤 0→7。**
+
+或：
+
 > **重新部署：`git pull`，然后严格按 `docs/DEPLOYMENT.md` 文首 ★ 从步骤 0 做到步骤 7。**
 
-你就执行本文，**不要另编一套定时器**；做完写 `pm/ops/今天-deploy.md` 回复。
+你就执行，**不要另编一套定时器**；做完写 `pm/ops/今天-deploy.md` 回复。
 
 ### 文档同步（给 Cursor / 提交者）
 
@@ -189,10 +193,13 @@ schtasks /create /f /tn "QuantLearn_TradeJournal" /tr "%ROOT%\scripts\trade_jour
 REM ⑥ 16:20 双账户收盘摘要
 schtasks /create /f /tn "QuantLearn_DailyClose" /tr "%ROOT%\scripts\daily_close_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:20
 
+REM ⑦ 18:45 台账/PM/QA/Ops 白名单推 master（不占 LLM）
+schtasks /create /f /tn "QuantLearn_DailyGitSync" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
+
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose  
+**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **DailyGitSync**
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
 
@@ -206,6 +213,7 @@ schtasks /run /tn QuantLearn_QuantPulse
 schtasks /run /tn QuantLearn_SwingDaily
 schtasks /run /tn QuantLearn_TradeJournal
 schtasks /run /tn QuantLearn_DailyClose
+schtasks /run /tn QuantLearn_DailyGitSync
 type %ROOT%\output\swing_pool_builder.log
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
@@ -271,8 +279,11 @@ openclaw cron list
 
 【OpenClaw LLM：最多 1～2 条】
 18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
+
+【Windows schtasks 晚间同步】
+18:45            DailyGitSync 台账/PM/QA/Ops → push master
 ```
-详情：[REALTIME.md](./REALTIME.md)
+详情：[REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
 
 **本系统默认：提醒 + 模拟；挂单由主人在券商软件自己下。**
 

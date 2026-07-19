@@ -3,15 +3,22 @@ accounts:
     account_id: 1
     account_name: learn
     auto_trade: true
-    description: vqlearn 量化策略自学习账户（2026-06-24 清仓重置到10万，全自动选股交易）
-    initial_cash: 200000.0
-    max_total_value: 200000.0
+    description: vqlearn 量化策略自学习账户（2026-07-19 重置到10万，全自动选股交易）
+    initial_cash: 100000.0
+    max_total_value: 100000.0
   real:
     account_id: 2
     account_name: real_portfolio
     auto_trade: false
     description: 用户实际持仓镜像，由 scripts/sync_real_position.py 维护
     initial_cash: 25000.0
+  swing:
+    account_id: 3
+    account_name: swing_trade
+    auto_trade: false
+    description: 波段模拟账户（起始 5 万，挂单建议 / 波段赚亏）
+    initial_cash: 50000.0
+    max_total_value: 50000.0
 data:
   use_cache_only: false
   max_retries: 3

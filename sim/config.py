@@ -63,34 +63,72 @@ def initial_cash() -> float:
                                 get("account.initial_cash", 20000)))
 
 
-def get_account_config(account_id: int | str = 1) -> dict:
-    """Return merged config for an account id.
+# account_id → 兜底元数据。仅当 config.yaml 的 accounts.* 缺该账户时使用。
+# 资金真源永远是 config.yaml；这里只是防止 config 缺失时用一个可预期的默认值，
+# 避免各模块各写一套硬编码（历史上出现过 20000/100000/200000/50000 混用）。
+_ACCOUNT_FALLBACK: dict[int, dict] = {
+    1: {"key": "learn", "account_name": "learn", "initial_cash": 100000.0},
+    2: {"key": "real", "account_name": "real_portfolio", "initial_cash": 25000.0},
+    3: {"key": "swing", "account_name": "swing_trade", "initial_cash": 50000.0},
+}
 
-    The project now keeps dual-account settings under ``accounts.learn`` and
-    ``accounts.real``.  Older code paths still ask by numeric account id, so this
-    helper centralises the mapping and applies ``config.local.yaml`` overrides
-    via ``load_config()``.
+
+def _account_fallback(aid: int) -> dict:
+    return _ACCOUNT_FALLBACK.get(
+        aid,
+        {"key": f"acct{aid}", "account_name": f"account_{aid}", "initial_cash": 100000.0},
+    )
+
+
+def get_account_config(account_id: int | str = 1) -> dict:
+    """按 account_id 返回账户配置。config.yaml 的 accounts.* 是唯一真源。
+
+    所有需要「初始资金 / 总额上限 / 账户名」的模块都应经此函数取值，
+    不要再各自 `'learn' if id==1 else 'real'` 或硬编码默认金额。
+    匹配规则：遍历 accounts.* 用 account_id 匹配；缺失时用 _ACCOUNT_FALLBACK 兜底。
     """
     aid = int(account_id)
+    fb = _account_fallback(aid)
     cfg = load_config()
     accounts = cfg.get("accounts") or {}
     for key, val in accounts.items():
         if isinstance(val, dict) and int(val.get("account_id", -1)) == aid:
             out = dict(val)
             out.setdefault("key", key)
-            out.setdefault("account_name", "live_mirror" if aid == 1 else "real_portfolio")
-            out.setdefault("initial_cash", 100000.0 if aid == 1 else 25000.0)
+            out.setdefault("account_name", fb["account_name"])
+            out.setdefault("initial_cash", fb["initial_cash"])
             return out
 
-    # Backward-compatible fallback when config lacks the new accounts block.
-    key = "learn" if aid == 1 else "real"
+    # config 缺该账户 → 兜底（含环境变量覆盖）
     return {
-        "key": key,
+        "key": fb["key"],
         "account_id": aid,
-        "account_name": "live_mirror" if aid == 1 else "real_portfolio",
-        "initial_cash": float(os.environ.get("QUANT_INITIAL_CASH", get("account.initial_cash", 100000.0 if aid == 1 else 25000.0))),
+        "account_name": fb["account_name"],
+        "initial_cash": float(
+            os.environ.get("QUANT_INITIAL_CASH", get("account.initial_cash", fb["initial_cash"]))
+        ),
         "auto_trade": aid == 1,
     }
+
+
+def account_key(account_id: int | str = 1) -> str:
+    """account_id → config key（learn/real/swing/...）。"""
+    return str(get_account_config(account_id).get("key"))
+
+
+def account_name(account_id: int | str = 1) -> str:
+    return str(get_account_config(account_id).get("account_name") or "")
+
+
+def account_initial_cash(account_id: int | str = 1) -> float:
+    """账户声明的初始资金（config 真源）。NAV 基准仍以 DB.initial_cash 为准（REQ-094）。"""
+    return float(get_account_config(account_id).get("initial_cash") or 0.0)
+
+
+def account_max_total_value(account_id: int | str = 1) -> float:
+    """账户总额上限；未配置 max_total_value 时回退到 initial_cash。"""
+    acct = get_account_config(account_id)
+    return float(acct.get("max_total_value") or acct.get("initial_cash") or 0.0)
 
 
 def stock_pool_enabled() -> dict:

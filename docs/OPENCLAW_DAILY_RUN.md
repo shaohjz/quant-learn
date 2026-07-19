@@ -205,8 +205,82 @@ openclaw cron list
 
 ---
 
-## 7. 一句话给主人
+## 8. 产机异常：ahead / scripts 脏（OpenClaw 照做）
 
-> 交易靠 Windows 任务计划；OpenClaw 只写 `pm/`；18:45 脚本把台账和各 Agent 运行落盘推到 `master`。
+自检时若出现下面两类，**分开处理**，不要混进 DailyGitSync。
+
+### 8.1 `Your branch is ahead of origin/master by N commits`
+
+含义：产机本地有 **已 commit 未 push** 的提交（常发生在 merge/`git pull` 后只落盘没推）。
+
+先看是什么：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git status -sb
+git log --oneline origin/master..HEAD
+git diff --stat origin/master..HEAD
+```
+
+| 提交内容 | OpenClaw 动作 |
+|----------|----------------|
+| **只有** `pm/`、`output/swing_*`、台账、ops 等白名单 | 可执行：`git push origin master`（禁止 `--force`） |
+| 含 `scripts/`、`vqlearn/`、`config.yaml`、交易核心 | **不要 push**；写 `pm/ops/今天-openclaw-check.md` + `pm/cursor_queue` 条目，等主人/Cursor |
+| 说不清 / 有冲突风险 | **不要 push**；原文贴进 ops 报告，问主人 |
+
+白名单 push 成功后再：
+
+```bat
+git status -sb
+git log -1 --oneline
+```
+
+期望：`## master...origin/master`（无 ahead）。
+
+### 8.2 `scripts/` 有未提交改动（如 `daily_review.py`、`pm_report.py`）
+
+含义：业务代码脏工作区。**DailyGitSync 故意不推这些。**
+
+OpenClaw **禁止**：
+
+- `git add scripts/`
+- 擅自 commit / push 交易或复盘脚本
+- 为「变干净」而 `git checkout --` 丢掉主人可能要的改动（除非主人明文说丢弃）
+
+OpenClaw **必须**：
+
+1. 记录 diff 摘要（不要贴密钥）：
+
+```bat
+git status -sb
+git diff --stat -- scripts/
+git diff -- scripts/daily_review.py scripts/pm_report.py
+```
+
+2. 写入 `pm/ops/YYYY-MM-DD-openclaw-check.md`（路径 + `git diff --stat` 原文）  
+3. 在 `pm/cursor_queue/今天.md` 加一条 **P1**：`产机 scripts 脏：daily_review.py / pm_report.py — 需 Cursor 审阅后提交或丢弃`  
+4. 回复主人：**「scripts 改动留给 Cursor；我只处理了 pm/ 与推送诊断」**
+
+主人在 Cursor 侧（本开发机或连产机）处理完后，产机再：
+
+```bat
+git pull --ff-only origin master
+```
+
+### 8.3 给主人的固定回复模板（OpenClaw 用）
+
+```text
+【产机 git】
+- ahead N：已列出 origin/master..HEAD；[已 push 白名单 / 含代码未 push，等 Cursor]
+- scripts 脏：[文件列表]；已写入 pm/ops/… 与 cursor_queue；未擅自提交代码
+【下一步】主人/Cursor 处理 scripts 后产机 git pull
+```
+
+---
+
+## 9. 一句话给主人
+
+> 交易靠 Windows 任务计划；OpenClaw 只写 `pm/`；18:45 脚本把台账和各 Agent 运行落盘推到 `master`。  
+> 产机 ahead 只推白名单；`scripts/` 脏一律交 Cursor。
 
 完。

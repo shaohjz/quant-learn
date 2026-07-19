@@ -45,7 +45,12 @@ DB_PATH = ROOT / "data" / "sim_live_mirror.db"
 OUT_DIR = ROOT / "output" / "swing_daily"
 SWING_ACCOUNT_ID = 3
 SWING_ACCOUNT_NAME = "swing_trade"
-SWING_INITIAL_CASH = 100_000.0
+# 资金真源：config.yaml accounts.swing.initial_cash（缺失时兜底 5 万）
+try:
+    from sim.config import account_initial_cash as _account_initial_cash
+    SWING_INITIAL_CASH = _account_initial_cash(SWING_ACCOUNT_ID)
+except Exception:
+    SWING_INITIAL_CASH = 50_000.0
 STOP_LOSS_PCT = 0.05
 TAKE_PROFIT_PCT = 0.08
 MAX_POSITIONS = 3

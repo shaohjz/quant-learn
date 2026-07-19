@@ -33,7 +33,14 @@ logger = logging.getLogger('swing_auto')
 
 # ── 波段账户配置 ──────────────────────────────────────────────────────────
 SWING_ACCOUNT_ID = 3
-SWING_INITIAL_CASH = 50000.0
+# 资金真源：config.yaml accounts.swing.initial_cash（缺失时兜底 5 万）
+try:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from sim.config import account_initial_cash as _account_initial_cash
+    SWING_INITIAL_CASH = _account_initial_cash(SWING_ACCOUNT_ID)
+except Exception:
+    SWING_INITIAL_CASH = 50000.0
 MAX_POSITIONS = 5          # 最多同时持有5只
 SINGLE_POSITION_PCT = 0.20  # 单只上限20%
 STOP_LOSS_PCT = 0.05       # 固定止损5%

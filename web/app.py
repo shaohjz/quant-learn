@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 from sim.closed_trades import analyze_closed_trades
 from sim.asset_allocation import summarize_allocation
 from sim.market_sentiment import fetch_market_sentiment
+from sim.config import get_account_config
 
 app = Flask(__name__)
 DB_PATH = ROOT / "data" / "sim_live_mirror.db"
@@ -102,14 +103,10 @@ def api_portfolio():
     acc = acc_rows[0] if acc_rows else {'cash': 0, 'initial_cash': 0, 'total_value': 0}
     cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
 
-    # 根据 account_id 读取对应配置
-    acct_key = 'learn' if account_id == 1 else 'real'
-    initial_cash = float(
-        cfg.get('accounts', {}).get(acct_key, {}).get(
-            'initial_cash', acc.get('initial_cash') or 200000
-        )
-    )
-    account_name = cfg.get('accounts', {}).get(acct_key, {}).get('account_name', acc.get('account_name', ''))
+    # 资金真源：config.yaml accounts.*（按 account_id 匹配，含 #3 波段）
+    acct_cfg = get_account_config(account_id)
+    initial_cash = float(acct_cfg.get('initial_cash') or acc.get('initial_cash') or 0)
+    account_name = acct_cfg.get('account_name') or acc.get('account_name', '')
 
     codes = [p['stock_code'] for p in positions]
     rt = get_sina_prices(codes)
@@ -361,9 +358,8 @@ def api_strategy_control():
     cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
     risk = cfg.get('risk', {}) or {}
     accounts = cfg.get('accounts', {}) or {}
-    # 根据 account_id 选择对应配置
-    acct_key = 'learn' if account_id == 1 else 'real'
-    acct_cfg = accounts.get(acct_key, {}) or {}
+    # 资金真源：按 account_id 匹配 config.yaml accounts.*（含 #3 波段）
+    acct_cfg = get_account_config(account_id)
 
     account = query_db("SELECT * FROM sim_account WHERE id=?", (account_id,))
     account = account[0] if account else {'cash': 0, 'initial_cash': acct_cfg.get('initial_cash', cfg.get('account', {}).get('initial_cash', 0))}
@@ -704,12 +700,8 @@ def api_equity_curve():
     if not snapshots:
         return jsonify({'dates': [], 'total_asset': [], 'benchmark': [], 'returns': []})
     
-    # 获取 initial_cash 用于计算收益率
-    cfg = yaml.safe_load(config_path().read_text(encoding='utf-8')) or {}
-    acct_key = 'learn' if account_id == 1 else 'real'
-    initial_cash = float(
-        cfg.get('accounts', {}).get(acct_key, {}).get('initial_cash', 100000.0)
-    )
+    # 获取 initial_cash 用于计算收益率（资金真源：config accounts.*，按 account_id 匹配）
+    initial_cash = float(get_account_config(account_id).get('initial_cash') or 100000.0)
     
     dates = [s['trade_date'] for s in snapshots]
     total_assets = [round(float(s['total_value']), 2) for s in snapshots]

@@ -39,13 +39,13 @@ _ACCOUNT_ID: int = int(os.environ.get('SIM_ACCOUNT_ID', '1'))
 
 
 def _load_max_total() -> float:
-    """从 config.yaml 读取学习账户总额上限，默认 200000。"""
+    """从 config.yaml 读取学习账户总额上限，默认 100000。"""
     try:
         import yaml
         cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8'))
-        return float((cfg.get('accounts') or {}).get('learn', {}).get('max_total_value', 200000.0))
+        return float((cfg.get('accounts') or {}).get('learn', {}).get('max_total_value', 100000.0))
     except Exception:
-        return 200000.0
+        return 100000.0
 
 
 def set_active_account(account_id: int):

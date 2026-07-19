@@ -7,7 +7,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md)（**每日运行+推 master，优先读这个**）· [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
-> **更新**：2026-07-18（DailyGitSync 晚间白名单推 master + OPENCLAW_DAILY_RUN）
+> **更新**：2026-07-19（资金真源统一到 config.yaml accounts.*；learn=10万 / swing=5万；新增 capital_status 自查）
 
 ---
 
@@ -117,11 +117,29 @@ set QUANT_DB_PATH=C:\Users\Administrator\.openclaw\workspace\quant-learn\data\si
 
 账户约定（日常只盯两个）：
 
-| id | 名字 | 用途 |
-|----|------|------|
-| **1** | learn | **模拟学习仓** |
-| 2 | real_portfolio | 真仓镜像（可选，默认可不推） |
-| **3** | swing_trade | **波段模拟**（挂单建议 / 波段赚亏） |
+| id | 名字 | 用途 | 初始资金 |
+|----|------|------|:--------:|
+| **1** | learn | **模拟学习仓** | **10 万** |
+| 2 | real_portfolio | 真仓镜像（可选，默认可不推） | 2.5 万（镜像，不在模拟 DB） |
+| **3** | swing_trade | **波段模拟**（挂单建议 / 波段赚亏） | **5 万** |
+
+### 资金真源（唯一入口）
+
+- **`config.yaml` 的 `accounts.*` 是资金的唯一声明**（`initial_cash` / `max_total_value` / `account_name`）。
+- 所有代码读资金必须走 `sim.config.get_account_config(account_id)`（或 `account_initial_cash` / `account_max_total_value`）。**禁止**再写 `'learn' if id==1 else 'real'` 或散落硬编码（历史上 2 万 / 10 万 / 20 万 / 5 万混用导致收益率鬼畜）。
+- **NAV / 收益率基准以 DB.initial_cash 为准**（REQ-094，反映历史资金事件）；config 只做「声明 + 变更告警」，不自动覆盖 DB。
+- 一致性自查（只读，随时可跑）：
+
+```bat
+.venv\Scripts\python.exe -u scripts\capital_status.py
+```
+
+- 要按 config 重置账户资金（清仓 + 归零 NAV）：
+
+```bat
+.venv\Scripts\python.exe -u scripts\reset_account.py            REM 重置 #1 + #3
+.venv\Scripts\python.exe -u scripts\reset_account.py --only swing
+```
 
 ## 步骤 4 — 冒烟（必须全绿再挂任务）
 

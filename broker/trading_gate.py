@@ -104,7 +104,7 @@ class LiveTradingGate:
         max_single_amount_pct = self._risk.get("max_daily_build_amount_pct", 0.30)
         # 需要总资产来计算限额 — 从配置中的 max_total_value 推算
         max_total_value = float(
-            self._config.get("accounts", {}).get("learn", {}).get("max_total_value", 200000.0)
+            self._config.get("accounts", {}).get("learn", {}).get("max_total_value", 100000.0)
         )
         max_single_amount = max_total_value * max_single_amount_pct
         if order_amount > max_single_amount:

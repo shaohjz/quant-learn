@@ -1,18 +1,19 @@
-"""scripts/swing_intraday_watch.py — 盘中波段机会盯盘（给你挂单提醒）
+"""scripts/swing_intraday_watch.py — 盘中波段机会盯盘（提醒 + 模拟成交）
 
 解决：波段日报只在 16:05，盘中好价砸到也听不见。
 
 做什么（交易时段）：
   1. 扫每日动态稳定池（output/swing_pool/latest.json，默认 Top20）
-  2. A/B 类且评分≥阈值 → 企微提醒「价格合适，可挂买入」
-  3. 波段账户 #3 持仓触及止损/止盈 → 提醒卖
-  4. 同股同日同类型只推一次（output/swing_intraday_state.json）
+  2. A/B 类且评分≥阈值 → 企微提醒「可挂买入」+ 账户 #3 同步模拟买入
+  3. 波段账户 #3 持仓触及止损/止盈 → 提醒卖 + 同步模拟卖出
+  4. 同股同日同类型只推/成交一次（output/swing_intraday_state.json）
 
 用法：
   python scripts/swing_intraday_watch.py
   python scripts/swing_intraday_watch.py --min-score 5 --no-push
+  python scripts/swing_intraday_watch.py --no-trade   # 只提醒不模拟
 
-建议 schtasks：交易日 09:35–14:50 每 10 分钟。
+建议 schtasks：交易日 09:35–14:50 每 10 分钟（由 QuantPulse 调用）。
 """
 from __future__ import annotations
 
@@ -266,6 +267,25 @@ def _fmt_pnl_block(a: dict) -> str:
     return "\n".join(lines)
 
 
+def _fmt_sim_footer(a: dict) -> str:
+    fill = a.get("sim_fill")
+    if not fill:
+        return "> 模拟验证用提醒，请你自己在券商挂单"
+    if fill.get("ok") and fill.get("side") == "BUY":
+        return (
+            f"- **模拟已买**：账户#3 {fill.get('qty')}股 @ {fill.get('price'):.2f}，"
+            f"止损 {fill.get('stop')} / 目标 {fill.get('target')}\n"
+            f"> 模拟仓已进；实盘请你自己在券商挂单"
+        )
+    if fill.get("ok") and fill.get("side") == "SELL":
+        return (
+            f"- **模拟已卖**：账户#3 {fill.get('qty')}股 @ {fill.get('price'):.2f}，"
+            f"已实现约 ¥{float(fill.get('realized') or 0):+.0f}\n"
+            f"> 模拟仓已出；实盘请你自己确认后挂卖单"
+        )
+    return f"- 模拟未成交：{fill.get('reason') or '未知'}\n> 仍可作挂单参考，请你自己在券商操作"
+
+
 def format_alert(a: dict, now: str) -> str:
     if a["kind"] == "BUY":
         return (
@@ -274,7 +294,7 @@ def format_alert(a: dict, now: str) -> str:
             f"{_fmt_pnl_block(a)}\n"
             f"- 信号：{a.get('signals','')}\n"
             f"- **挂单建议**：{a['msg']}\n"
-            f"> 模拟验证用提醒，请你自己在券商挂单"
+            f"{_fmt_sim_footer(a)}"
         )
     tag = "止损" if a["kind"] == "SELL_STOP" else "止盈"
     return (
@@ -282,8 +302,44 @@ def format_alert(a: dict, now: str) -> str:
         f"**{a['name']}({a['code']})** 现价 **{a['price']:.2f}**（{a['pnl_pct']:+.1f}%）\n"
         f"- {a['msg']}\n"
         f"- 参考止损 {a['stop']:.2f} / 目标 {a['target']:.2f}\n"
-        f"> 请你自己确认后挂卖单"
+        f"{_fmt_sim_footer(a)}"
     )
+
+
+def try_sim_fill(a: dict) -> dict:
+    """提醒同时写账户 #3：买→sim_buy，卖→sim_sell。"""
+    from swing_daily_report import (  # noqa: WPS433
+        MAX_POSITIONS,
+        ensure_swing_account,
+        load_positions,
+        sim_buy,
+        sim_sell,
+    )
+
+    ensure_swing_account()
+    code = str(a["code"]).zfill(6)[-6:]
+    if a["kind"] == "BUY":
+        held = load_positions()
+        held_codes = {str(p["stock_code"]).zfill(6)[-6:] for p in held}
+        if code in held_codes:
+            return {"ok": False, "code": code, "reason": "已持有，跳过重复买"}
+        if len(held) >= MAX_POSITIONS:
+            return {"ok": False, "code": code, "reason": f"仓位已满({MAX_POSITIONS})"}
+        reason = (
+            f"盘中提醒|{a.get('signal_type','?')}分{a.get('score','?')} "
+            f"rr={float(a.get('net_rr') or 0):.2f}"
+        )
+        return sim_buy(code, a.get("name") or code, float(a["price"]), reason)
+
+    if a["kind"] in ("SELL_STOP", "SELL_TP"):
+        held = load_positions()
+        pos = next((p for p in held if str(p["stock_code"]).zfill(6)[-6:] == code), None)
+        if not pos:
+            return {"ok": False, "code": code, "reason": "无持仓可卖"}
+        tag = "盘中止损" if a["kind"] == "SELL_STOP" else "盘中止盈"
+        return sim_sell(pos, float(a["price"]), tag)
+
+    return {"ok": False, "code": code, "reason": f"未知类型 {a.get('kind')}"}
 
 
 def main() -> int:
@@ -291,6 +347,7 @@ def main() -> int:
     ap.add_argument("--min-score", type=int, default=DEFAULT_MIN_SCORE)
     ap.add_argument("--force", action="store_true", help="非交易时段也跑（调试）")
     ap.add_argument("--no-push", action="store_true")
+    ap.add_argument("--no-trade", action="store_true", help="只提醒，不写模拟成交")
     ap.add_argument("--max-buy-alerts", type=int, default=3, help="单次最多推几只买入")
     args = ap.parse_args()
 
@@ -309,30 +366,45 @@ def main() -> int:
     alerts.extend(buys)
 
     pushed = 0
+    traded = 0
     for a in alerts:
         key = f"{a['kind']}:{a['code']}"
         if already_fired(state, key):
-            log.info("已推过，跳过 %s", key)
+            log.info("已处理，跳过 %s", key)
             continue
+
+        # 先模拟再推：避免只提醒不成交；同 key 只成交一次
+        if not args.no_trade:
+            fill = try_sim_fill(a)
+            a["sim_fill"] = fill
+            if fill.get("ok"):
+                traded += 1
+            log.info("模拟 %s %s -> %s", a["kind"], a["code"], fill)
+        else:
+            a["sim_fill"] = None
+
         md = format_alert(a, now)
         log.info("%s %s %s", a["kind"], a["code"], a.get("msg"))
+        log_payload = {k: v for k, v in a.items() if k != "sim_fill"}
+        log_payload["sim_fill"] = a.get("sim_fill")
         (LOG_DIR / f"{date.today().isoformat()}.log").open("a", encoding="utf-8").write(
-            f"{datetime.now().isoformat()} {key} {json.dumps(a, ensure_ascii=False)}\n"
+            f"{datetime.now().isoformat()} {key} {json.dumps(log_payload, ensure_ascii=False)}\n"
         )
+
+        # 无论推送成败都 mark：防止 Pulse 重试导致重复买入
+        mark_fired(state, key)
         if not args.no_push:
             if push_markdown(md):
-                mark_fired(state, key)
                 pushed += 1
-                time.sleep(0.5)  # 企微频控
+                time.sleep(0.5)
         else:
             print(md)
             print("---")
-            mark_fired(state, key)
             pushed += 1
 
     save_state(state)
-    log.info("本轮新提醒 %d / 候选 %d", pushed, len(alerts))
-    print(f"新提醒 {pushed} 条（候选 {len(alerts)}）")
+    log.info("本轮新提醒 %d / 模拟成交 %d / 候选 %d", pushed, traded, len(alerts))
+    print(f"新提醒 {pushed} 条（模拟成交 {traded}，候选 {len(alerts)}）")
     return 0
 
 

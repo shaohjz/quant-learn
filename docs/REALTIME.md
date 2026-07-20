@@ -39,7 +39,7 @@
 | `portfolio_alert.py` | `config.yaml` 里 **real_portfolio_rules + watchlist** | （由 Pulse 调） | 你的股破止损/到买区 |
 | `swing_pool_builder.py` | 沪深300+中证500 → Top20 稳定池 | 盘前 08:40 | 建池；同 bat 调 `swing_auto` 推企微 |
 | `swing_auto.py` | 稳定池 A/B 机会 + 盈亏比 | 盘前 08:40（跟 SwingPool） | 盘前波段扫描报告 |
-| `swing_intraday_watch.py` | 动态稳定池 + 波段账户#3 | （由 Pulse 调） | 好价买（含盈亏字段）/ 波段止盈止损 |
+| `swing_intraday_watch.py` | 动态稳定池 + 波段账户#3 | （由 Pulse 调） | 好价买/止盈止损提醒，**并同步模拟成交** |
 | `swing_daily_report.py` | 全日波段模拟 | 16:05 | 赚亏结论 |
 | `trade_journal.py` | 全账户成交+持仓 | 16:15 | 复盘台账 |
 

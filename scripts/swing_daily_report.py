@@ -4,9 +4,12 @@
 
 流程：
   1. 扫描动态稳定池 → 写 swing_scan_results
-  2. 在账户 #3 (swing_trade) 上模拟买卖（止损/止盈/新建）
-  3. 记净值 → 算今日盈亏 / 累计盈亏
-  4. 推一条短结论 + 给你真实账户的挂单建议
+  2. 合并盘中盯盘已提醒但未成交的 BUY（补漏）
+  3. 在账户 #3 (swing_trade) 上模拟买卖（止损/止盈/新建）
+  4. 记净值 → 算今日盈亏 / 累计盈亏
+  5. 推一条短结论 + 给你真实账户的挂单建议
+
+说明：盘中 Pulse→swing_intraday_watch 已会同步模拟买入；本脚本收盘再扫 + 补漏。
 
 用法：
   python scripts/swing_daily_report.py
@@ -348,6 +351,90 @@ def pick_buys(scan_rows: list[dict], positions: list[dict]) -> list[dict]:
     return picks
 
 
+def load_intraday_buy_alerts(today: str | None = None) -> list[dict]:
+    """读盘中盯盘日志里的 BUY，供收盘补漏（提醒过但未写入持仓）。"""
+    day = today or date.today().isoformat()
+    path = ROOT / "output" / "swing_intraday" / f"{day}.log"
+    if not path.exists():
+        return []
+    out: list[dict] = []
+    seen: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # 格式: ISO BUY:300059 {...}
+        parts = line.split(" ", 2)
+        if len(parts) < 3:
+            continue
+        key, raw = parts[1], parts[2]
+        if not key.startswith("BUY:"):
+            continue
+        code = key.split(":", 1)[1].zfill(6)[-6:]
+        if code in seen:
+            continue
+        try:
+            a = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        # 日志里已记模拟成交成功 → 不进补漏名单
+        fill = a.get("sim_fill") or {}
+        if fill.get("ok") and fill.get("side") == "BUY":
+            seen.add(code)
+            continue
+        price = float(a.get("price") or 0)
+        if price <= 0:
+            continue
+        support = float(a.get("support") or 0)
+        resist = float(a.get("resist") or 0)
+        seen.add(code)
+        out.append({
+            "code": code,
+            "name": a.get("name") or code,
+            "price": price,
+            "score": int(a.get("score") or 0),
+            "signal_type": a.get("signal_type") or "A",
+            "support": support,
+            "resist": resist,
+            "net_rr": float(a.get("net_rr") or 0),
+            "stop": float(a.get("stop") or round(price * (1 - STOP_LOSS_PCT), 2)),
+            "target": float(a.get("target") or round(price * (1 + TAKE_PROFIT_PCT), 2)),
+            "signals": a.get("signals"),
+            "from_intraday": True,
+        })
+    return out
+
+
+def merge_buys(scan_picks: list[dict], intraday: list[dict], positions: list[dict]) -> list[dict]:
+    """收盘扫描 + 盘中提醒补漏；盘中提醒优先保留（按提醒价模拟）。"""
+    held = {str(p["stock_code"]).zfill(6)[-6:] for p in positions}
+    merged: list[dict] = []
+    seen: set[str] = set()
+    for b in intraday + scan_picks:
+        code = str(b["code"]).zfill(6)[-6:]
+        if code in held or code in seen:
+            continue
+        seen.add(code)
+        merged.append(b)
+        if len(merged) >= MAX_POSITIONS:
+            break
+    return merged
+
+
+def today_bought_codes(today: str) -> set[str]:
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT stock_code FROM sim_trades WHERE account_id=? AND trade_date=? AND direction='BUY'",
+            (SWING_ACCOUNT_ID, today),
+        ).fetchall()
+        return {str(r[0]).zfill(6)[-6:] for r in rows}
+    except sqlite3.OperationalError:
+        return set()
+    finally:
+        conn.close()
+
+
 def execute_sim(marked: list[dict], buys: list[dict]) -> list[dict]:
     """真模拟：先卖后买。返回成交列表。"""
     fills = []
@@ -357,7 +444,8 @@ def execute_sim(marked: list[dict], buys: list[dict]) -> list[dict]:
     positions = load_positions()
     slots = max(0, MAX_POSITIONS - len(positions))
     for b in buys[:slots]:
-        reason = f"{b['signal_type']}分{b['score']} rr={b['net_rr']:.2f}"
+        tag = "盘中补漏" if b.get("from_intraday") else "收盘扫描"
+        reason = f"{tag}|{b['signal_type']}分{b['score']} rr={b['net_rr']:.2f}"
         fills.append(sim_buy(b["code"], b["name"], b["price"], reason))
     return fills
 
@@ -528,7 +616,7 @@ def build_conclusion(
         else:
             advice.append({
                 "action": "IDLE",
-                "hint": "空仓观望，今天动态稳定池无强买点。",
+                "hint": "空仓观望：盘中无买入提醒，收盘扫描也无强买点。",
             })
 
     return {
@@ -714,7 +802,18 @@ def main() -> int:
         scan_rows = _norm(run_scan())
 
     marked = refresh_and_mark(load_positions())
-    buys = pick_buys(scan_rows, marked)
+    scan_buys = pick_buys(scan_rows, marked)
+    # 盘中已提醒但未成交的 BUY 要补漏（避免「10:05提醒买、16:05说空仓」）
+    already = today_bought_codes(today) | {
+        str(p["stock_code"]).zfill(6)[-6:] for p in marked
+    }
+    intraday = [
+        b for b in load_intraday_buy_alerts(today)
+        if b["code"] not in already
+    ]
+    buys = merge_buys(scan_buys, intraday, marked)
+    if intraday:
+        log.info("盘中补漏候选 %d: %s", len(intraday), [b["code"] for b in intraday])
 
     fills: list[dict] = []
     if not args.no_trade:

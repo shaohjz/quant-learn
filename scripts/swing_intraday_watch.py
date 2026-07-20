@@ -200,6 +200,8 @@ def scan_opportunities(min_score: int) -> list[dict]:
         support = float(r.get("support") or 0)
         resist = float(r.get("resist") or 0)
         price = float(r["price"])
+        stop = round(support * 0.98, 2) if support else round(price * 0.95, 2)
+        target = resist if resist else round(price * 1.08, 2)
         hits.append({
             "kind": "BUY",
             "code": code6,
@@ -209,10 +211,18 @@ def scan_opportunities(min_score: int) -> list[dict]:
             "signal_type": r["signal_type"],
             "support": support,
             "resist": resist,
+            "support_name": r.get("support_name") or "",
+            "resist_name": r.get("resist_name") or "",
             "net_rr": r["net_rr"],
+            "risk_reward": r.get("risk_reward"),
+            "upside_pct": r.get("upside_pct"),
+            "downside_pct": r.get("downside_pct"),
+            "fee_ratio": r.get("fee_ratio"),
+            "suggested_shares": r.get("suggested_shares"),
+            "suggested_amount": r.get("suggested_amount"),
             "signals": "; ".join(s[0] for s in r.get("signals", [])[:2]),
-            "stop": round(support * 0.98, 2) if support else round(price * 0.95, 2),
-            "target": resist if resist else round(price * 1.08, 2),
+            "stop": stop,
+            "target": target,
             "msg": (
                 f"机会：限价 {support:.2f}~{price:.2f} 介入，"
                 f"目标 {resist:.2f}，止损 {support*0.98:.2f}"
@@ -225,12 +235,43 @@ def scan_opportunities(min_score: int) -> list[dict]:
     return hits
 
 
+def _fmt_pnl_block(a: dict) -> str:
+    """买入提醒：把扫描里算过的盈亏字段全写上。"""
+    lines = [
+        f"- 类型 {a['signal_type']} | 分 {a['score']} | 净盈亏比 {a['net_rr']:.2f}"
+    ]
+    up = a.get("upside_pct")
+    down = a.get("downside_pct")
+    rr = a.get("risk_reward")
+    fee = a.get("fee_ratio")
+    bits = []
+    if up is not None and down is not None:
+        bits.append(f"预期涨 {float(up):+.2f}% / 跌 {float(down):.2f}%")
+    if rr is not None:
+        bits.append(f"毛盈亏比 {float(rr):.2f}")
+    if fee is not None:
+        bits.append(f"手续费约 {float(fee):.3f}%")
+    if bits:
+        lines.append(f"- 盈亏：{' | '.join(bits)}")
+    sn = a.get("support_name") or ""
+    rn = a.get("resist_name") or ""
+    if a.get("support") and a.get("resist"):
+        s_lab = f"{sn}{a['support']:.2f}" if sn else f"{a['support']:.2f}"
+        r_lab = f"{rn}{a['resist']:.2f}" if rn else f"{a['resist']:.2f}"
+        lines.append(f"- 技术位：支撑 {s_lab} → 阻力 {r_lab}")
+    amt = a.get("suggested_amount")
+    shares = a.get("suggested_shares")
+    if amt is not None and shares is not None:
+        lines.append(f"- 建议仓位：约 {float(amt):.0f} 元（{int(shares)} 股）")
+    return "\n".join(lines)
+
+
 def format_alert(a: dict, now: str) -> str:
     if a["kind"] == "BUY":
         return (
             f"## 盘中波段买入提醒 {now}\n"
             f"**{a['name']}({a['code']})** 现价 **{a['price']:.2f}**\n"
-            f"- 类型 {a['signal_type']} | 分 {a['score']} | 净盈亏比 {a['net_rr']:.2f}\n"
+            f"{_fmt_pnl_block(a)}\n"
             f"- 信号：{a.get('signals','')}\n"
             f"- **挂单建议**：{a['msg']}\n"
             f"> 模拟验证用提醒，请你自己在券商挂单"

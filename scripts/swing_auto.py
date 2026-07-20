@@ -374,22 +374,47 @@ def scan_stock(code, name):
     }
 
 
-def get_account_info():
-    """获取账户信息"""
+SWING_ACCOUNT_ID = 3
+
+
+def get_account_info(account_id: int = SWING_ACCOUNT_ID):
+    """获取波段模拟账户信息（默认 #3）。"""
     db = sqlite3.connect(str(DB_PATH))
     c = db.cursor()
-    c.execute("SELECT total_value, cash FROM sim_account WHERE id = 1")
-    row = c.fetchone()
-    c.execute("SELECT cumulative_return FROM sim_daily_nav WHERE account_id = 1 ORDER BY id DESC LIMIT 1")
+    # 兼容旧表名 sim_account / 新表 sim_accounts
+    row = None
+    for sql in (
+        "SELECT total_value, cash FROM sim_accounts WHERE id = ?",
+        "SELECT total_value, cash FROM sim_account WHERE id = ?",
+    ):
+        try:
+            c.execute(sql, (account_id,))
+            row = c.fetchone()
+            if row:
+                break
+        except sqlite3.OperationalError:
+            continue
+    c.execute(
+        "SELECT cumulative_return FROM sim_daily_nav WHERE account_id = ? ORDER BY id DESC LIMIT 1",
+        (account_id,),
+    )
     nav = c.fetchone()
-    c.execute("SELECT stock_name, stock_code, quantity, avg_cost, current_price, pnl_pct FROM sim_positions WHERE account_id = 1 AND quantity > 0")
-    positions = [{'name': r[0], 'code': r[1], 'qty': r[2], 'cost': r[3], 'price': r[4], 'pnl_pct': r[5]} for r in c.fetchall()]
+    c.execute(
+        "SELECT stock_name, stock_code, quantity, avg_cost, current_price, pnl_pct "
+        "FROM sim_positions WHERE account_id = ? AND quantity > 0",
+        (account_id,),
+    )
+    positions = [
+        {'name': r[0], 'code': r[1], 'qty': r[2], 'cost': r[3], 'price': r[4], 'pnl_pct': r[5]}
+        for r in c.fetchall()
+    ]
     db.close()
     return {
         'total': row[0] if row else 0,
         'cash': row[1] if row else 0,
-        'total_pnl_pct': nav[0] * 100 if nav else 0,
+        'total_pnl_pct': (nav[0] * 100) if nav and nav[0] is not None else 0,
         'positions': positions,
+        'account_id': account_id,
     }
 
 
@@ -426,18 +451,19 @@ def save_results(results, scan_date):
     db.close()
 
 
-def build_report(results, account):
+def build_report(results, account, title: str | None = None):
     """生成企微Markdown报告"""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     
     lines = []
-    lines.append(f"# 📊 短线波段扫描报告")
+    lines.append(f"# {title or '盘前波段扫描报告'}")
     pool = get_stock_pool()
-    lines.append(f"> 扫描时间：{now} | 扫描范围：{len(pool)}只动态稳定池")
+    aid = account.get("account_id", SWING_ACCOUNT_ID)
+    lines.append(f"> 扫描时间：{now} | 扫描范围：{len(pool)}只动态稳定池 | 账户 #{aid}")
     lines.append("")
     
     # 账户概况
-    lines.append("## 📋 账户概况")
+    lines.append("## 账户概况")
     lines.append(f"> 总资产：**{account['total']:.2f}** | 现金：**{account['cash']:.2f}**")
     lines.append(f"> 累计收益：**{account['total_pnl_pct']:+.2f}%** | 持仓：**{len(account['positions'])}**只")
     lines.append("")
@@ -514,43 +540,51 @@ def build_report(results, account):
     return "\n".join(lines)
 
 
-def main():
+def main(argv: list[str] | None = None):
+    import argparse
+    ap = argparse.ArgumentParser(description="盘前/盘中短线波段扫描 → 企微")
+    ap.add_argument("--no-push", action="store_true", help="只打印不推企微")
+    ap.add_argument(
+        "--title",
+        default="盘前波段扫描报告",
+        help="报告标题（早盘默认盘前）",
+    )
+    args = ap.parse_args(argv)
+
     scan_date = date.today().strftime("%Y-%m-%d")
     scan_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-    
+
     pool = get_stock_pool()
-    print(f"📡 短线波段扫描 - {scan_time}")
+    print(f"短线波段扫描 - {scan_time}")
     print(f"   股票池: {len(pool)}只（动态稳定池）")
-    
-    # 获取账户信息
+
     account = get_account_info()
-    print(f"   账户: 总资产{account['total']:.2f} 现金{account['cash']:.2f}")
-    
-    # 扫描
+    print(f"   账户#{account.get('account_id')}: 总资产{account['total']:.2f} 现金{account['cash']:.2f}")
+
     results = []
     for code, name in pool:
         try:
             r = scan_stock(code, name)
             if r:
                 results.append(r)
-            time.sleep(0.2)  # 限流
-        except Exception as e:
+            time.sleep(0.2)
+        except Exception:
             pass
-    
-    # 排序
+
     results.sort(key=lambda x: x['score'], reverse=True)
-    
     print(f"   发现 {len(results)} 只波段机会")
-    
-    # 保存数据库
+
     save_results(results, scan_date)
-    print(f"   结果已保存到数据库")
-    
-    # 生成报告并推送
-    report = build_report(results, account)
+    print("   结果已保存到数据库")
+
+    report = build_report(results, account, title=args.title)
+    if args.no_push:
+        print(report)
+        print("   推送: 跳过 (--no-push)")
+        return results
+
     ok = push_markdown(report)
-    print(f"   推送结果: {'✅ 成功' if ok else '❌ 失败'}")
-    
+    print(f"   推送结果: {'成功' if ok else '失败'}")
     return results
 
 

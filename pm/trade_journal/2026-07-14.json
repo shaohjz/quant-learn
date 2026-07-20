@@ -1,20 +1,136 @@
 {
   "trade_date": "2026-07-14",
-  "generated_at": "2026-07-14 18:01:52",
-  "db_path": "/data/shaohjz/quant-learn/data/sim_live_mirror.db",
+  "generated_at": "2026-07-14 18:42:35",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
   "totals": {
-    "accounts": 2,
-    "trades": 0,
-    "open_positions": 0
+    "accounts": 3,
+    "trades": 3,
+    "open_positions": 6
   },
   "accounts": [
     {
       "account_id": 1,
-      "label": "default",
-      "cash": 10000.0,
-      "total_value": 10000.0,
-      "day_pnl": null,
-      "day_pct": null,
+      "label": "learn",
+      "cash": 141175.21999999997,
+      "total_value": 218862.22,
+      "day_pnl": 1183.7000000000116,
+      "day_pct": 0.5437835575140862,
+      "buy_amount": 29197.3,
+      "sell_amount": 0,
+      "commission": 7.300000000000001,
+      "trade_count": 3,
+      "trades": [
+        {
+          "id": 74,
+          "account_id": 1,
+          "trade_time": "09:30:09",
+          "stock_code": "000725",
+          "stock_name": "京东方A",
+          "direction": "BUY",
+          "price": 6.91,
+          "quantity": 1400,
+          "amount": 9676.42,
+          "commission": 2.42,
+          "signal_reason": "buy_strong|💰💰 京东方A跌至 7.48！回踩 MA20(7.48)，优质建仓区 [实际建仓价=6.91，阈值=7.48]"
+        },
+        {
+          "id": 75,
+          "account_id": 1,
+          "trade_time": "09:30:35",
+          "stock_code": "600310",
+          "stock_name": "广西能源",
+          "direction": "BUY",
+          "price": 3.85,
+          "quantity": 2500,
+          "amount": 9627.41,
+          "commission": 2.41,
+          "signal_reason": "buy_strong|💰💰 广西能源跌至 4.18！回踩 MA20(4.18)，优质建仓区 [实际建仓价=3.85，阈值=4.18]"
+        },
+        {
+          "id": 76,
+          "account_id": 1,
+          "trade_time": "09:30:37",
+          "stock_code": "600863",
+          "stock_name": "华能蒙电",
+          "direction": "BUY",
+          "price": 4.71,
+          "quantity": 2100,
+          "amount": 9893.47,
+          "commission": 2.47,
+          "signal_reason": "buy_strong|💰💰 华能蒙电跌至 4.92！回踩 MA20(4.92)，优质建仓区 [实际建仓价=4.71，阈值=4.92]"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "000725",
+          "stock_name": "京东方A",
+          "quantity": 1400,
+          "avg_cost": 6.91,
+          "current_price": 6.97,
+          "market_value": 9758.0,
+          "pnl": 84.0,
+          "pnl_pct": 0.8683068017366079,
+          "trailing_stop_price": 6.36
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600233",
+          "stock_name": "圆通速递",
+          "quantity": 500,
+          "avg_cost": 17.36,
+          "current_price": 17.21,
+          "market_value": 8605.0,
+          "pnl": -75.0,
+          "pnl_pct": -0.8640552995391624,
+          "trailing_stop_price": 15.97
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600310",
+          "stock_name": "广西能源",
+          "quantity": 7600,
+          "avg_cost": 3.843,
+          "current_price": 3.94,
+          "market_value": 29944.0,
+          "pnl": 737.2,
+          "pnl_pct": 2.5240697371844907,
+          "trailing_stop_price": 3.84
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600863",
+          "stock_name": "华能蒙电",
+          "quantity": 4100,
+          "avg_cost": 4.749,
+          "current_price": 4.79,
+          "market_value": 19639.0,
+          "pnl": 168.1,
+          "pnl_pct": 0.8633396504527346,
+          "trailing_stop_price": 4.41
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601728",
+          "stock_name": "中国电信",
+          "quantity": 1700,
+          "avg_cost": 5.64,
+          "current_price": 5.73,
+          "market_value": 9741.0,
+          "pnl": 153.0,
+          "pnl_pct": 1.5957446808510771,
+          "trailing_stop_price": 5.19
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
       "buy_amount": 0,
       "sell_amount": 0,
       "commission": 0,
@@ -26,8 +142,8 @@
     {
       "account_id": 3,
       "label": "swing_trade",
-      "cash": 100000.0,
-      "total_value": 100000.0,
+      "cash": 39039.0,
+      "total_value": 50089.0,
       "day_pnl": null,
       "day_pct": null,
       "buy_amount": 0,
@@ -35,18 +151,31 @@
       "commission": 0,
       "trade_count": 0,
       "trades": [],
-      "positions": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "600809",
+          "stock_name": "山西汾酒",
+          "quantity": 100,
+          "avg_cost": 109.56,
+          "current_price": 110.5,
+          "market_value": 11050.0,
+          "pnl": 93.99999999999977,
+          "pnl_pct": 0.857977364001461,
+          "trailing_stop_price": null
+        }
+      ],
       "nav_today": {
-        "id": 1,
+        "id": 185,
         "account_id": 3,
         "trade_date": "2026-07-14",
-        "total_value": 100000.0,
-        "cash": 100000.0,
-        "market_value": 0.0,
+        "total_value": 50089.0,
+        "cash": 39039.0,
+        "market_value": 11050.0,
         "daily_return": 0.0,
-        "cumulative_return": 0.0,
+        "cumulative_return": 0.0017799999999998928,
         "max_drawdown": null,
-        "created_at": "2026-07-14 09:28:08",
+        "created_at": "2026-07-14 10:37:13",
         "cash_jump_detected": 0,
         "cash_jump_reason": null
       }

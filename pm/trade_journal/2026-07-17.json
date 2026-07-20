@@ -1,0 +1,196 @@
+{
+  "trade_date": "2026-07-17",
+  "generated_at": "2026-07-17 19:35:17",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 4,
+    "open_positions": 6
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 124517.19999999997,
+      "total_value": 220225.2,
+      "day_pnl": 745.7700000000186,
+      "day_pct": 0.33979038491216174,
+      "buy_amount": 23845.95,
+      "sell_amount": 28436.66,
+      "commission": 13.06,
+      "trade_count": 4,
+      "trades": [
+        {
+          "id": 90,
+          "account_id": 1,
+          "trade_time": "09:30:22",
+          "stock_code": "002709",
+          "stock_name": "天赐材料",
+          "direction": "BUY",
+          "price": 36.45,
+          "quantity": 200,
+          "amount": 7291.82,
+          "commission": 1.82,
+          "signal_reason": "buy_strong|建仓价=36.45|触发阈值=50.24|天赐材料 buy_strong 试探建仓"
+        },
+        {
+          "id": 91,
+          "account_id": 1,
+          "trade_time": "09:30:25",
+          "stock_code": "600863",
+          "stock_name": "华能蒙电",
+          "direction": "SELL",
+          "price": 4.59,
+          "quantity": 6200,
+          "amount": 28436.66,
+          "commission": 7.11,
+          "signal_reason": "trend_break|⚠️ 华能蒙电破 4.6！跌破 MA20-1.5ATR，趋势可能反转"
+        },
+        {
+          "id": 92,
+          "account_id": 1,
+          "trade_time": "09:30:26",
+          "stock_code": "601991",
+          "stock_name": "大唐发电",
+          "direction": "BUY",
+          "price": 5.7,
+          "quantity": 1700,
+          "amount": 9692.42,
+          "commission": 2.42,
+          "signal_reason": "buy_strong|建仓价=5.70|触发阈值=7.58|大唐发电 buy_strong 试探建仓"
+        },
+        {
+          "id": 93,
+          "account_id": 1,
+          "trade_time": "09:30:29",
+          "stock_code": "603005",
+          "stock_name": "晶方科技",
+          "direction": "BUY",
+          "price": 34.3,
+          "quantity": 200,
+          "amount": 6861.71,
+          "commission": 1.71,
+          "signal_reason": "buy_strong|建仓价=34.30|触发阈值=46.45|晶方科技 buy_strong 试探建仓"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "002709",
+          "stock_name": "天赐材料",
+          "quantity": 200,
+          "avg_cost": 36.45,
+          "current_price": 35.9,
+          "market_value": 7180.0,
+          "pnl": -110.0,
+          "pnl_pct": -1.50891632373115,
+          "trailing_stop_price": 33.53
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600233",
+          "stock_name": "圆通速递",
+          "quantity": 500,
+          "avg_cost": 17.36,
+          "current_price": 17.22,
+          "market_value": 8610.0,
+          "pnl": -70.0,
+          "pnl_pct": -0.8064516129032291,
+          "trailing_stop_price": 16.492
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600310",
+          "stock_name": "广西能源",
+          "quantity": 10000,
+          "avg_cost": 3.905,
+          "current_price": 4.38,
+          "market_value": 43800.0,
+          "pnl": 4750.0,
+          "pnl_pct": 12.163892445582588,
+          "trailing_stop_price": 3.98
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601728",
+          "stock_name": "中国电信",
+          "quantity": 1700,
+          "avg_cost": 5.64,
+          "current_price": 6.0,
+          "market_value": 10200.0,
+          "pnl": 612.0,
+          "pnl_pct": 6.382978723404261,
+          "trailing_stop_price": 5.64
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601991",
+          "stock_name": "大唐发电",
+          "quantity": 3400,
+          "avg_cost": 5.7,
+          "current_price": 5.78,
+          "market_value": 19652.0,
+          "pnl": 272.0,
+          "pnl_pct": 1.4035087719298258,
+          "trailing_stop_price": 5.415
+        },
+        {
+          "account_id": 1,
+          "stock_code": "603005",
+          "stock_name": "晶方科技",
+          "quantity": 200,
+          "avg_cost": 34.3,
+          "current_price": 31.33,
+          "market_value": 6266.0,
+          "pnl": -594.0,
+          "pnl_pct": -8.65889212827988,
+          "trailing_stop_price": 31.56
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 50943.042499999996,
+      "total_value": 50943.042499999996,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": {
+        "id": 193,
+        "account_id": 3,
+        "trade_date": "2026-07-17",
+        "total_value": 50943.042499999996,
+        "cash": 50943.042499999996,
+        "market_value": 0.0,
+        "daily_return": 0.0,
+        "cumulative_return": 0.018860849999999818,
+        "max_drawdown": null,
+        "created_at": "2026-07-17 08:05:16",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

@@ -34,7 +34,7 @@ flowchart TD
 | 时刻 | 任务 | **定时器在哪** | 入口 | 说明 |
 |:----:|------|----------------|------|------|
 | **08:30** | 宽基选股 | **Windows schtasks** | `morning_scanner_runner.bat` | 早上找票 |
-| **08:40** | 动态稳定池 | **Windows schtasks** | `swing_pool_builder_runner.bat` | Top20 优胜劣汰 |
+| **08:40** | 动态稳定池+盘前机会 | **Windows schtasks** | `swing_pool_builder_runner.bat` | Top20 优胜劣汰 → `swing_auto` 推企微 |
 | **09:35→14:50 /10m** | 统一脉搏 | **Windows schtasks** + **任务计划 GUI 重复间隔 10 分** | `quant_pulse_runner.bat` | 真仓+波段+指数；**不要**开 LLM cron |
 | **10:00→14:30 /30m** | 全市场异动 | **Windows schtasks** + **GUI 重复 30 分**（可选） | `intraday_scanner_runner.bat` | 吵可关；**不要**开 LLM cron |
 | **16:05** | 波段日报 | **Windows schtasks** | `swing_daily_report_runner.bat` | #3 赚亏+挂单建议 |
@@ -52,7 +52,7 @@ flowchart TD
 | 级别 | 任务名 | 说明 |
 |------|--------|------|
 | **必开** | `QuantLearn_QuantPulse` | 盘中主心跳；已含真仓+波段盯盘 |
-| **必开** | `QuantLearn_SwingPool` | 08:40 动态稳定池 Top20 优胜劣汰 |
+| **必开** | `QuantLearn_SwingPool` | 08:40 动态稳定池 Top20 + 盘前波段扫描推企微 |
 | **必开** | `QuantLearn_SwingDaily` | 收盘波段结论 |
 | **必开** | `QuantLearn_TradeJournal` | 每日交易记录 |
 | **建议开** | `QuantLearn_MorningScan` | 盘前宽基 |
@@ -111,7 +111,7 @@ schtasks /query /fo LIST | findstr QuantLearn
 | 任务名 | bat | 建议 |
 |--------|-----|------|
 | QuantLearn_MorningScan | `morning_scanner_runner.bat` | 建议开 |
-| QuantLearn_SwingPool | `swing_pool_builder_runner.bat` | **必开**（08:40 动态稳定池 Top20，优胜劣汰） |
+| QuantLearn_SwingPool | `swing_pool_builder_runner.bat` | **必开**（08:40 建池 Top20 + `swing_auto` 盘前推企微） |
 | QuantLearn_QuantPulse | `quant_pulse_runner.bat` | **必开** |
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 建议开 / 吵则关 |
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | **必开** |

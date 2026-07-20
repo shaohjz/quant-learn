@@ -153,6 +153,9 @@ REM A 盘中脉搏（真仓阈值 + 波段盯盘 + 指数）
 REM A2 动态稳定池（周末/休市用 --mode hist；交易日可用 auto）
 .venv\Scripts\python.exe -u scripts\swing_pool_builder.py --top 20 --mode hist --force
 
+REM A3 盘前波段机会文案（正式 bat 会推企微；冒烟用 --no-push）
+.venv\Scripts\python.exe -u scripts\swing_auto.py --no-push --title "盘前波段扫描报告"
+
 REM B 波段收盘链路（模拟成交 + 赚亏结论）
 .venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
 
@@ -172,6 +175,7 @@ REM E 盘前大盘扫（≈800，失败会 fallback lite）
 |------|------|
 | A | 退出码 0；无未捕获 traceback |
 | A2 | `output\swing_pool\latest.json` 存在且 `stocks` 约 20 只；`data_mode` 为 hist/live |
+| A3 | 打印「盘前波段扫描报告」；账户 #3；有机会则含盈亏比/建议仓位 |
 | B | `output\swing_daily\今天.md` 含「波段结论」「挂单建议」 |
 | C | `pm\trade_journal\今天.md` 存在 |
 | D | 文案含「相对昨日净值」；**不能**再出现离谱日涨跌幅（如 +119%） |
@@ -245,11 +249,12 @@ dir %ROOT%\output\swing_daily
 
 | 项 | 内容 |
 |----|------|
-| 脚本 | `scripts/swing_pool_builder.py` + `swing_pool_builder_runner.bat` |
+| 脚本 | `scripts/swing_pool_builder.py` + `swing_auto.py`（同 bat） |
 | 任务 | `QuantLearn_SwingPool` **08:40** 必开 |
 | 池大小 | **Top20**（优胜劣汰：每日重排，分低出局） |
 | 底池 | 沪深300+中证500（`data/universe_cache.json`） |
-| 盘中扫谁 | Pulse → `swing_intraday_watch` 读 `output/swing_pool/latest.json` |
+| 盘前通知 | builder 后跑 `swing_auto.py` → 企微「盘前波段扫描报告」（账户 #3 + 盈亏比） |
+| 盘中扫谁 | Pulse → `swing_intraday_watch` 读 `output/swing_pool/latest.json`；买入提醒含涨跌空间/毛净盈亏比/手续费/建议仓位 |
 | 周末 | `--mode hist`（日K）；`auto` 周末自动 hist |
 | 持仓 | 账户 #3 持仓强制保留在池内 |
 | 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
@@ -288,7 +293,7 @@ openclaw cron list
 ```
 【全是 Windows schtasks，不是 OpenClaw LLM cron】
 08:30            MorningScan 宽基扫
-08:40            SwingPool 动态稳定池 Top20（优胜劣汰；周末可用 hist）
+08:40            SwingPool 动态稳定池 Top20 + 盘前波段扫描推企微
 09:35~14:50 /10m QuantPulse（GUI 设重复）真仓阈值+波段(扫池)+指数
 10:00~14:30 /30m IntradayScanner（可选，GUI 设重复）
 16:05            SwingDaily 波段赚亏+挂单建议
@@ -394,8 +399,13 @@ type output\quant_pulse.log
 cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 git pull
 然后严格按 docs/DEPLOYMENT.md 文首「★ OpenClaw：如何跑这个项目」从步骤 0 做到步骤 7。
-重点确认：QuantLearn_SwingPool（08:40）已创建且 Ready；冒烟含 swing_pool_builder --mode hist。
-定时器用 Windows schtasks（见文内「两套定时器」）；OpenClaw LLM cron ≤1～2 条。
+
+本次重点（2026-07-20 波段提醒）：
+1) QuantLearn_SwingPool（08:40）必开且 Ready；bat 现已：建池 → swing_auto 盘前推企微。
+2) 冒烟：schtasks /run /tn QuantLearn_SwingPool；看 output\swing_pool_builder.log 有 Morning swing_auto notify；企微应收到「盘前波段扫描报告」。
+3) 盘中买入提醒已含：预期涨跌%、毛/净盈亏比、手续费、技术位、建议仓位（Pulse→swing_intraday_watch）。
+4) 定时器用 Windows schtasks；OpenClaw LLM cron ≤1～2 条，别再挂交易 LLM。
+
 做完写 pm/ops/今天-deploy.md 回复我。
 ```
 

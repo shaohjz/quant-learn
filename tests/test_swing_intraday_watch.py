@@ -20,6 +20,16 @@ def test_buy_alert_text_has_order_hint():
             "score": 7,
             "signal_type": "A",
             "net_rr": 2.0,
+            "risk_reward": 2.1,
+            "upside_pct": 4.5,
+            "downside_pct": 2.0,
+            "fee_ratio": 0.12,
+            "support": 27.5,
+            "resist": 29.5,
+            "support_name": "MA20",
+            "resist_name": "MA5",
+            "suggested_shares": 300,
+            "suggested_amount": 8430.0,
             "signals": "缩量回踩MA20",
             "msg": "限价 27.5~28.1 介入",
             "stop": 26.95,
@@ -30,6 +40,11 @@ def test_buy_alert_text_has_order_hint():
     assert "挂单建议" in md
     assert "长江电力" in md
     assert "盘中波段买入提醒" in md
+    assert "预期涨" in md
+    assert "毛盈亏比" in md
+    assert "手续费约" in md
+    assert "建议仓位" in md
+    assert "技术位" in md
 
 
 def test_sell_alert_text():

@@ -254,7 +254,8 @@ dir %ROOT%\output\swing_daily
 | 池大小 | **Top20**（优胜劣汰：每日重排，分低出局） |
 | 底池 | 沪深300+中证500（`data/universe_cache.json`） |
 | 盘前通知 | builder 后跑 `swing_auto.py` → 企微「盘前波段扫描报告」（账户 #3 + 盈亏比） |
-| 盘中扫谁 | Pulse → `swing_intraday_watch` 读 `output/swing_pool/latest.json`；买入提醒含涨跌空间/毛净盈亏比/手续费/建议仓位 |
+| 盘中扫谁 | Pulse → `swing_intraday_watch` 读 `output/swing_pool/latest.json`；**提醒同时模拟买卖账户#3**；买入文案含涨跌空间/毛净盈亏比/手续费/建议仓位 |
+| 收盘 | `swing_daily_report` 再扫 + **盘中提醒补漏**（防「盘中喊买、收盘空仓」） |
 | 周末 | `--mode hist`（日K）；`auto` 周末自动 hist |
 | 持仓 | 账户 #3 持仓强制保留在池内 |
 | 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
@@ -403,8 +404,9 @@ git pull
 本次重点（2026-07-20 波段提醒）：
 1) QuantLearn_SwingPool（08:40）必开且 Ready；bat 现已：建池 → swing_auto 盘前推企微。
 2) 冒烟：schtasks /run /tn QuantLearn_SwingPool；看 output\swing_pool_builder.log 有 Morning swing_auto notify；企微应收到「盘前波段扫描报告」。
-3) 盘中买入提醒已含：预期涨跌%、毛/净盈亏比、手续费、技术位、建议仓位（Pulse→swing_intraday_watch）。
-4) 定时器用 Windows schtasks；OpenClaw LLM cron ≤1～2 条，别再挂交易 LLM。
+3) 盘中买入提醒含盈亏字段；**提醒时同步账户#3 模拟买卖**（文案见「模拟已买/已卖」）。
+4) 收盘 SwingDaily 会合并盘中 BUY 日志补漏，避免「盘中喊买、收盘空仓」。
+5) 定时器用 Windows schtasks；OpenClaw LLM cron ≤1～2 条，别再挂交易 LLM。
 
 做完写 pm/ops/今天-deploy.md 回复我。
 ```

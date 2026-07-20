@@ -47,6 +47,35 @@ def test_buy_alert_text_has_order_hint():
     assert "技术位" in md
 
 
+def test_buy_alert_shows_sim_fill():
+    md = format_alert(
+        {
+            "kind": "BUY",
+            "code": "300059",
+            "name": "东方财富",
+            "price": 20.08,
+            "score": 7,
+            "signal_type": "A",
+            "net_rr": 1.23,
+            "signals": "缩量回踩MA20",
+            "msg": "限价 20.04~20.08 介入",
+            "stop": 19.64,
+            "target": 20.38,
+            "sim_fill": {
+                "ok": True,
+                "side": "BUY",
+                "qty": 400,
+                "price": 20.08,
+                "stop": 19.08,
+                "target": 21.69,
+            },
+        },
+        "10:05",
+    )
+    assert "模拟已买" in md
+    assert "400股" in md
+
+
 def test_sell_alert_text():
     md = format_alert(
         {

@@ -240,11 +240,9 @@ def _do_sell(
             (round(new_cash, 2), account_id),
         )
 
-        # 5. 更新持仓（清仓）
+        # 5. 删除持仓（清仓）— TASK-20260718-2003-001: DELETE 替代 UPDATE SET quantity=0
         cur.execute(
-            "UPDATE sim_positions SET quantity = 0, market_value = 0, "
-            "pnl = 0, pnl_pct = 0, updated_at = CURRENT_TIMESTAMP "
-            "WHERE id = ?",
+            "DELETE FROM sim_positions WHERE id = ?",
             (pos_id,),
         )
 

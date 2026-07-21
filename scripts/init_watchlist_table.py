@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS watchlist_history (
     added_reason TEXT,
     discovery_score REAL,
     metadata TEXT,
+    last_alert_at TEXT DEFAULT NULL,
+    alert_count INTEGER DEFAULT 0,
+    removed_at TEXT,
+    removed_reason TEXT,
     PRIMARY KEY (code, added_at)
 )
 """)

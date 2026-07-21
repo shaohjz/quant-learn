@@ -46,17 +46,11 @@ def get_stock_name(code: str) -> str:
     try:
         conn = sqlite3.connect(str(DB_PATH))
         c = conn.cursor()
-        # 优先从 watchlist_history 获取
-        c.execute("SELECT stock_name FROM watchlist_history WHERE stock_code=? LIMIT 1", (code,))
+        # 优先从 watchlist_history 获取（列名为 code/name）
+        c.execute("SELECT name FROM watchlist_history WHERE code=? LIMIT 1", (code,))
         r = c.fetchone()
         if r and r[0] and r[0] != code:
             conn.close()
-            return r[0]
-        # 其次从 config.yaml 的 user_manual watchlist
-        c.execute("SELECT DISTINCT name FROM watchlist_config WHERE code=? LIMIT 1", (code,))
-        r = c.fetchone()
-        conn.close()
-        if r and r[0] and r[0] != code:
             return r[0]
     except Exception:
         pass
@@ -112,7 +106,8 @@ def write_signal(stock_code: str, stock_name: str, news_title: str, news_content
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             resp = urllib.request.urlopen(req, timeout=5)
             data = _json.loads(resp.read().decode("utf-8"))
-            klines = data.get("data", {}).get(f"{market}{stock_code}", {}).get("day", []) or []
+            node = data.get("data", {}).get(f"{market}{stock_code}", {})
+            klines = node.get("qfqday", []) or node.get("day", []) or []
             if klines:
                 ref_price = float(klines[-1][2])
         except Exception:

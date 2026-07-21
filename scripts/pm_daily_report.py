@@ -1,60 +1,62 @@
-import sqlite3
+import sqlite3, os, json
 from collections import Counter, defaultdict
-from datetime import datetime
 
-DB = "data/pm.db"
-NOW = datetime(2026, 7, 8, 20, 4)  # Asia/Shanghai
+db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "pm.db"))
+conn = sqlite3.connect(db_path)
+conn.row_factory = sqlite3.Row
+cur = conn.cursor()
 
-c = sqlite3.connect(DB)
-c.row_factory = sqlite3.Row
-cur = c.cursor()
-cur.execute("SELECT * FROM tasks ORDER BY priority, id")
-rows = cur.fetchall()
+cur.execute("SELECT id,type,title,status,priority,created_at,updated_at,assigned_to,result_notes,work_notes FROM tasks ORDER BY id")
+tasks = [dict(r) for r in cur.fetchall()]
 
-# Normalize status into canonical PM flow buckets
+# Normalize status buckets
 def bucket(s):
     s = (s or "").lower()
-    if s in ("done", "verified", "fixed"):
-        return "done"
-    if s in ("testing",):
-        return "testing"  # done-code complete, awaiting verification
-    if s in ("in_progress", "pending", "claimed", "back_to_in_progress"):
-        return "in_progress"
-    if s in ("blocked", "stalled"):
-        return "blocked"
-    if s in ("todo", "open", "new"):
-        return "todo"
-    return "other"
+    if s in ("todo","pending","open"): return "todo"
+    if s in ("in_progress","doing","progress"): return "in_progress"
+    if s in ("done","verified","fixed","closed"): return "done"
+    if s in ("blocked","block"): return "blocked"
+    # testing is a mid-state; count separately
+    return s  # testing etc.
 
-buckets = Counter()
-by_status = Counter()
-recs = []
-for r in rows:
-    b = bucket(r["status"])
-    buckets[b] += 1
-    by_status[r["status"]] += 1
-    recs.append(dict(r))
+buckets = defaultdict(list)
+for t in tasks:
+    buckets[bucket(t["status"])].append(t)
 
-print("=== CANONICAL BUCKETS ===")
-for k in ["todo", "in_progress", "testing", "blocked", "done", "other"]:
-    print(f"{k}: {buckets.get(k,0)}")
-print("TOTAL:", len(recs))
-print("\n=== RAW STATUS ===")
-for k, v in sorted(by_status.items()):
-    print(f"{k}: {v}")
+print("=== STATUS DISTRIBUTION (active tasks, n=%d) ===" % len(tasks))
+cnt = Counter(bucket(t["status"]) for t in tasks)
+for k,v in sorted(cnt.items(), key=lambda x:-x[1]):
+    print(f"  {k}: {v}")
 
-# active = not done
-active = [r for r in recs if bucket(r["status"]) != "done"]
-print("\n=== ACTIVE TASKS (not done) ===")
-for r in sorted(active, key=lambda x: (x["priority"], x["id"])):
-    print(f"{r['id']} [{r['status']}] {r['priority']} {r['title']} @{(r['assigned_to'] or '-')}")
+print("\n=== TODO / PENDING ===")
+for t in buckets["todo"]:
+    print(f"  [{t['priority']}] {t['id']} - {t['title']}  (assigned: {t['assigned_to']})")
 
-# blocked / test-agent stuck
-print("\n=== STUCK / NEEDS ATTENTION ===")
-for r in active:
-    notes = r["work_notes"] or ""
-    if ("failed" in notes.lower()) or r["status"] == "pending" or r["status"] == "blocked":
-        print(f"{r['id']} [{r['status']}] {r['priority']} assign={r['assigned_to']} updated={r['updated_at']}")
-        print("   notes:", (r["result_notes"] or r["work_notes"] or "")[:300].replace("\n", " "))
+print("\n=== IN_PROGRESS ===")
+for t in buckets["in_progress"]:
+    print(f"  [{t['priority']}] {t['id']} - {t['title']}")
 
-c.close()
+print("\n=== TESTING (needs verify) ===")
+for t in buckets["testing"]:
+    print(f"  [{t['priority']}] {t['id']} - {t['title']}  (updated: {t['updated_at']})")
+
+print("\n=== DONE/VERIFIED ===")
+for t in buckets["done"]:
+    print(f"  [{t['priority']}] {t['id']} - {t['title']}")
+
+print("\n=== BLOCKED ===")
+for t in buckets["blocked"]:
+    print(f"  [{t['priority']}] {t['id']} - {t['title']}")
+
+# Priority breakdown among active non-done
+print("\n=== PRIORITY x STATUS MATRIX ===")
+prio_order = ["P0","high","P1","P2","P3"]
+matrix = defaultdict(Counter)
+for t in tasks:
+    matrix[t["priority"]][bucket(t["status"])] += 1
+for p in prio_order:
+    if matrix[p]:
+        parts = ", ".join(f"{k}={v}" for k,v in matrix[p].items())
+        print(f"  {p}: {parts}")
+
+conn.close()

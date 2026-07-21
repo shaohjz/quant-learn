@@ -8,8 +8,14 @@
 
 import sys
 import os
+import io
 import sqlite3
 from datetime import datetime, date as DateType
+
+# Windows GBK 兼容：强制 stdout 使用 UTF-8
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # 只做 sys.path 设置，不连接数据库
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

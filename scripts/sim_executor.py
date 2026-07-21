@@ -664,7 +664,7 @@ def _get_atr_pct_for_code(code: str) -> float | None:
             atr = float(tf['atr_stop_pct']) / 2.0
     except Exception:
         atr = None
-    if atr is None and TRAILING_MODE == 'atr':
+    if atr is None and TRAILING_MODE in ('atr', 'atr_hybrid'):
         atr = TRAILING_DEFAULT_ATR_PCT
     _ATR_PCT_CACHE[code] = atr  # may cache None
     return atr
@@ -1620,8 +1620,8 @@ def calc_trailing_stop(
         new_stop = current_trailing or 0.0
         reason = f'浮盈 {profit_pct:.1f}% < {activate:.0f}%, 跟踪止损未启动'
     elif profit_pct < 10.0:
-        new_stop = round(entry_price * 1.0, 2)
-        reason = f'赚过 {activate:.0f}% → 保本位 ¥{new_stop:.2f}'
+        new_stop = round(entry_price * 1.01, 2)
+        reason = f'赚过 {activate:.0f}% → 锁 1% 利润 ¥{new_stop:.2f}'
     elif profit_pct < 20.0:
         new_stop = round(entry_price * 1.02, 2)
         reason = f'赚过 10% → 锁 2% 利润 ¥{new_stop:.2f}'
@@ -1650,6 +1650,15 @@ def calc_trailing_stop(
                 f'ATR跟踪 high¥{highest_price:.2f} - {TRAILING_ATR_MULT:.1f}×ATR({atr_pct:.2f}%) '
                 f'= ¥{new_stop:.2f}'
             )
+
+    # P2-BUGFIX: 确保已激活的跟踪止损至少覆盖成本价 + 1% 保护垫
+    # 场景：ATR 止损被 floor 在 entry 或阶梯保本位 = entry，但浮盈已达激活条件，
+    # 此时 trailing_stop 应至少为 entry * 1.01 以真正锁定利润而非原地踏保。
+    if profit_pct >= activate:
+        min_activated = round(entry_price * 1.005, 2)
+        if new_stop > 0 and new_stop < min_activated:
+            new_stop = min_activated
+            reason = f'已激活 → 保本+垫 ¥{new_stop:.2f} (防 ATR 过宽/阶梯归本位原地踏保)'
 
     # 只能上移不能下移
     if current_trailing and current_trailing > new_stop:

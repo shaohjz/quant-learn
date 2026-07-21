@@ -486,10 +486,10 @@ class SimEngine:
                      pos["id"]),
                 )
             else:
+                # TASK-20260718-2003-001: 清仓后 DELETE 而非 UPDATE SET quantity=0，
+                # 避免残留记录污染 sim_positions 表导致市值/盈亏统计重复计算。
                 cur.execute(
-                    "UPDATE sim_positions SET quantity = 0, market_value = 0, "
-                    "pnl = 0, pnl_pct = 0, updated_at = CURRENT_TIMESTAMP "
-                    "WHERE id = ?",
+                    "DELETE FROM sim_positions WHERE id = ?",
                     (pos["id"],),
                 )
 

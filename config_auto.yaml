@@ -363,4 +363,238 @@ auto_discovered:
         trigger: 27.37
         dir: below
         msg: ⚠️ 宁波银行破 27.37！趋势反转，移除观察
+  '601628':
+    name: 中国人寿
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-15'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 39.31
+        dir: below
+        msg: 💰 中国人寿回踩至 39.31！试探建仓
+      buy_strong:
+        trigger: 37.69
+        dir: below
+        msg: 💰💰 中国人寿跌至 37.69！优质建仓区
+      trend_break:
+        trigger: 34.45
+        dir: below
+        msg: ⚠️ 中国人寿破 34.45！趋势反转，移除观察
+  '300760':
+    name: 迈瑞医疗
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-15'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.5，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 141.68
+        dir: below
+        msg: 💰 迈瑞医疗回踩至 141.68！试探建仓
+      buy_strong:
+        trigger: 135.84
+        dir: below
+        msg: 💰💰 迈瑞医疗跌至 135.84！优质建仓区
+      trend_break:
+        trigger: 124.15
+        dir: below
+        msg: ⚠️ 迈瑞医疗破 124.15！趋势反转，移除观察
+  002739:
+    name: 儒意电影
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-17'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.5，接近20日高）
+    discovery_score: 85
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 10.38
+        dir: below
+        msg: 💰 儒意电影回踩至 10.38！试探建仓
+      buy_strong:
+        trigger: 9.95
+        dir: below
+        msg: 💰💰 儒意电影跌至 9.95！优质建仓区
+      trend_break:
+        trigger: 9.09
+        dir: below
+        msg: ⚠️ 儒意电影破 9.09！趋势反转，移除观察
+  '300146':
+    name: 汤臣倍健
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-17'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.7，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 10.11
+        dir: below
+        msg: 💰 汤臣倍健回踩至 10.11！试探建仓
+      buy_strong:
+        trigger: 9.69
+        dir: below
+        msg: 💰💰 汤臣倍健跌至 9.69！优质建仓区
+      trend_break:
+        trigger: 8.86
+        dir: below
+        msg: ⚠️ 汤臣倍健破 8.86！趋势反转，移除观察
+  '600602':
+    name: 云赛智联
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-17'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 18.12
+        dir: below
+        msg: 💰 云赛智联回踩至 18.12！试探建仓
+      buy_strong:
+        trigger: 17.37
+        dir: below
+        msg: 💰💰 云赛智联跌至 17.37！优质建仓区
+      trend_break:
+        trigger: 15.88
+        dir: below
+        msg: ⚠️ 云赛智联破 15.88！趋势反转，移除观察
+  '601816':
+    name: 京沪高铁
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-17'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.6，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 4.7
+        dir: below
+        msg: 💰 京沪高铁回踩至 4.7！试探建仓
+      buy_strong:
+        trigger: 4.51
+        dir: below
+        msg: 💰💰 京沪高铁跌至 4.51！优质建仓区
+      trend_break:
+        trigger: 4.12
+        dir: below
+        msg: ⚠️ 京沪高铁破 4.12！趋势反转，移除观察
+  '002432':
+    name: 九安医疗
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-20'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比1.5，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 78.71
+        dir: below
+        msg: 💰 九安医疗回踩至 78.71！试探建仓
+      buy_strong:
+        trigger: 75.46
+        dir: below
+        msg: 💰💰 九安医疗跌至 75.46！优质建仓区
+      trend_break:
+        trigger: 68.97
+        dir: below
+        msg: ⚠️ 九安医疗破 68.97！趋势反转，移除观察
+  '600406':
+    name: 国电南瑞
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-20'
+    added_by: 盘中异动扫描
+    added_reason: 量价突破（量比2.0，接近20日高）
+    discovery_score: 90
+    signal_type: volume_breakout
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 22.55
+        dir: below
+        msg: 💰 国电南瑞回踩至 22.55！试探建仓
+      buy_strong:
+        trigger: 21.62
+        dir: below
+        msg: 💰💰 国电南瑞跌至 21.62！优质建仓区
+      trend_break:
+        trigger: 19.76
+        dir: below
+        msg: ⚠️ 国电南瑞破 19.76！趋势反转，移除观察
+  '002436':
+    name: 兴森科技
+    enabled: true
+    source: intraday_scanner
+    added_at: '2026-07-21'
+    added_by: 盘中异动扫描
+    added_reason: 涨停回落（早盘涨停，现+6.1%，量比1.5）
+    discovery_score: 75
+    signal_type: pullback_from_limit
+    last_alert_at: null
+    alert_count: 0
+    max_inactive_days: 7
+    tags: []
+    rules:
+      buy_zone:
+        trigger: 31.61
+        dir: below
+        msg: 💰 兴森科技回踩至 31.61！试探建仓
+      buy_strong:
+        trigger: 30.31
+        dir: below
+        msg: 💰💰 兴森科技跌至 30.31！优质建仓区
+      trend_break:
+        trigger: 27.7
+        dir: below
+        msg: ⚠️ 兴森科技破 27.7！趋势反转，移除观察
 cooldown: {}

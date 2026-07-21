@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-14T08:00:10.966933",
+  "timestamp": "2026-07-17T08:00:08.162283",
   "all_ok": false,
   "results": {
     "pm_service": {
@@ -12,7 +12,7 @@
     },
     "account": {
       "ok": true,
-      "msg": "账户正常: 现金¥170,373, 总资产¥217,679"
+      "msg": "账户正常: 现金¥119,926, 总资产¥217,923"
     },
     "scheduled_tasks": {
       "ok": true,

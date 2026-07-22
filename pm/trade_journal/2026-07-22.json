@@ -1,0 +1,156 @@
+{
+  "trade_date": "2026-07-22",
+  "generated_at": "2026-07-22 16:15:00",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 0,
+    "open_positions": 7
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 43421.87000000001,
+      "total_value": 101628.87,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "000600",
+          "stock_name": "建投能源",
+          "quantity": 1100,
+          "avg_cost": 8.41,
+          "current_price": 8.83,
+          "market_value": 9713.0,
+          "pnl": 462.0,
+          "pnl_pct": 4.994054696789536,
+          "trailing_stop_price": 8.49
+        },
+        {
+          "account_id": 1,
+          "stock_code": "000725",
+          "stock_name": "京东方A",
+          "quantity": 3300,
+          "avg_cost": 5.981,
+          "current_price": 6.13,
+          "market_value": 20229.0,
+          "pnl": 491.7,
+          "pnl_pct": 2.4912222036448757,
+          "trailing_stop_price": 5.62
+        },
+        {
+          "account_id": 1,
+          "stock_code": "001896",
+          "stock_name": "豫能控股",
+          "quantity": 700,
+          "avg_cost": 14.06,
+          "current_price": 14.3,
+          "market_value": 10010.0,
+          "pnl": 168.0,
+          "pnl_pct": 1.7069701280227612,
+          "trailing_stop_price": 14.2
+        },
+        {
+          "account_id": 1,
+          "stock_code": "300017",
+          "stock_name": "网宿科技",
+          "quantity": 600,
+          "avg_cost": 14.48,
+          "current_price": 14.72,
+          "market_value": 8832.0,
+          "pnl": 144.0,
+          "pnl_pct": 1.657458563535913,
+          "trailing_stop_price": 13.32
+        },
+        {
+          "account_id": 1,
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "quantity": 900,
+          "avg_cost": 10.05,
+          "current_price": 10.47,
+          "market_value": 9423.0,
+          "pnl": 378.0,
+          "pnl_pct": 4.179104477611939,
+          "trailing_stop_price": 10.15
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 32638.0,
+      "total_value": 50140.0,
+      "day_pnl": -24.0,
+      "day_pct": -0.04784307471493501,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "quantity": 400,
+          "avg_cost": 20.08,
+          "current_price": 20.08,
+          "market_value": 8031.999999999999,
+          "pnl": 0.0,
+          "pnl_pct": 0.0,
+          "trailing_stop_price": 19.08
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601211",
+          "stock_name": "国泰海通",
+          "quantity": 500,
+          "avg_cost": 18.64,
+          "current_price": 18.94,
+          "market_value": 9470.0,
+          "pnl": 150.00000000000034,
+          "pnl_pct": 1.6094420600858417,
+          "trailing_stop_price": 17.71
+        }
+      ],
+      "nav_today": {
+        "id": 207,
+        "account_id": 3,
+        "trade_date": "2026-07-22",
+        "total_value": 50140.0,
+        "cash": 32638.0,
+        "market_value": 17502.0,
+        "daily_return": -0.00047843074714937206,
+        "cumulative_return": 0.0027999999999999137,
+        "max_drawdown": null,
+        "created_at": "2026-07-22 08:05:07",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

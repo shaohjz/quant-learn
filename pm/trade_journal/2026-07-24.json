@@ -1,0 +1,169 @@
+{
+  "trade_date": "2026-07-24",
+  "generated_at": "2026-07-24 01:06:26",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 0,
+    "open_positions": 7
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 24004.020000000008,
+      "total_value": 103033.02,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "000600",
+          "stock_name": "建投能源",
+          "quantity": 1100,
+          "avg_cost": 8.41,
+          "current_price": 9.22,
+          "market_value": 10142.0,
+          "pnl": 891.0,
+          "pnl_pct": 9.631391200951255,
+          "trailing_stop_price": 8.58
+        },
+        {
+          "account_id": 1,
+          "stock_code": "000725",
+          "stock_name": "京东方A",
+          "quantity": 4900,
+          "avg_cost": 6.017,
+          "current_price": 6.05,
+          "market_value": 29645.0,
+          "pnl": 161.7,
+          "pnl_pct": 0.5484460694698267,
+          "trailing_stop_price": 5.62
+        },
+        {
+          "account_id": 1,
+          "stock_code": "001896",
+          "stock_name": "豫能控股",
+          "quantity": 1300,
+          "avg_cost": 14.485,
+          "current_price": 16.29,
+          "market_value": 21177.0,
+          "pnl": 2346.5,
+          "pnl_pct": 12.461166724197444,
+          "trailing_stop_price": 14.77
+        },
+        {
+          "account_id": 1,
+          "stock_code": "300017",
+          "stock_name": "网宿科技",
+          "quantity": 1200,
+          "avg_cost": 14.455,
+          "current_price": 14.22,
+          "market_value": 17064.0,
+          "pnl": -282.0,
+          "pnl_pct": -1.6257350397786192,
+          "trailing_stop_price": 13.32
+        },
+        {
+          "account_id": 1,
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "quantity": 100,
+          "avg_cost": 10.05,
+          "current_price": 10.01,
+          "market_value": 1001.0,
+          "pnl": -4.0,
+          "pnl_pct": -0.3980099502487654,
+          "trailing_stop_price": 10.15
+        }
+      ],
+      "nav_today": {
+        "id": 213,
+        "account_id": 1,
+        "trade_date": "2026-07-24",
+        "total_value": 103033.02,
+        "cash": 24004.02,
+        "market_value": 79029.0,
+        "daily_return": 0.0,
+        "cumulative_return": 0.0303302,
+        "max_drawdown": -7.01e-05,
+        "created_at": "2026-07-23 17:04:40",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 32638.0,
+      "total_value": 50275.0,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "quantity": 400,
+          "avg_cost": 20.08,
+          "current_price": 20.28,
+          "market_value": 8112.0,
+          "pnl": 80.00000000000114,
+          "pnl_pct": 0.9960159362550014,
+          "trailing_stop_price": 19.08
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601211",
+          "stock_name": "国泰海通",
+          "quantity": 500,
+          "avg_cost": 18.64,
+          "current_price": 19.05,
+          "market_value": 9525.0,
+          "pnl": 205.00000000000006,
+          "pnl_pct": 2.1995708154506355,
+          "trailing_stop_price": 17.71
+        }
+      ],
+      "nav_today": {
+        "id": 214,
+        "account_id": 3,
+        "trade_date": "2026-07-24",
+        "total_value": 50275.0,
+        "cash": 32638.0,
+        "market_value": 17637.0,
+        "daily_return": 0.0,
+        "cumulative_return": 0.00550000000000006,
+        "max_drawdown": -0.00047843,
+        "created_at": "2026-07-23 17:04:40",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

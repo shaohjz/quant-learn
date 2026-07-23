@@ -1,31 +1,31 @@
 # 量化项目部署与运行手册（给 OpenClaw）
 
-> **本文权威。** OpenClaw 部署/运维以此为准；`SETUP_GUIDE.md` 作废参考。  
+> **本文唯一权威。** 主人让你部署/检查时：**只读本文并严格执行**；不要另找提示词、不要另编定时器。  
+> `OPENCLAW_DAILY_RUN.md` / `CRON_JOBS.md` 等是配套细读，**缺省可只靠本文**。  
 > **项目目的**：模拟验证 → **每天给人（主人）实盘挂单建议**（盘中提醒 + 收盘赚亏）。  
 > **默认不代客实盘下单**（除非主人另行要求开 QMT live）。  
 >  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
-> **配套**：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md)（**每日运行+推 master，优先读这个**）· [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
-> **更新**：2026-07-24（波段池改方法过滤+软上限50；模拟成交立刻 @all 同步实盘；硬 SLO/守夜/DailyGitSync）
+> **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
+> **更新**：2026-07-24（本文自包含守夜提示词；主人一句话读 DEPLOYMENT 即可）
 
 ---
 
 ## 主人怎么喊你（一句话就够）
 
-主人只需说：
+主人只需说下面任意一句，你就执行本文 ★ 全流程：
 
-> **读 `docs/OPENCLAW_DAILY_RUN.md` 并按文档部署/检查；需要全量重建再按 `docs/DEPLOYMENT.md` 步骤 0→7。重点挂好 DailyGitSync + 19:15 守夜。**
+> **读 `docs/DEPLOYMENT.md`，按文档从 ★ 做到交付报告。**
 
-或：
+> **重新部署 quant-learn：`git pull` 后严格按 `docs/DEPLOYMENT.md` 执行。**
 
-> **重新部署：`git pull`，然后严格按 `docs/DEPLOYMENT.md` 文首 ★ 从步骤 0 做到步骤 7。**
-
-你就执行，**不要另编一套定时器**；做完写 `pm/ops/今天-deploy.md` 回复。
+你就执行，**不要另编一套定时器、不要问主人要提示词**（提示词全在本文步骤 6）。  
+做完写 `pm/ops/今天-deploy.md` 回复。
 
 ### 文档同步（给 Cursor / 提交者）
 
-改了调度、runner bat、波段池、Pulse/日报入口时，**同一次提交必须改** `docs/DEPLOYMENT.md`（及必要时 `CRON_JOBS.md` / `REALTIME.md` / `OPENCLAW_DAILY_RUN.md`）。  
+改了调度、runner bat、波段池、Pulse/日报/守夜入口时，**同一次提交必须改** `docs/DEPLOYMENT.md`（及必要时 `CRON_JOBS.md` / `REALTIME.md`）。  
 项目已挂 Cursor hook：`git commit` 若漏改部署文档会拦截提醒。
 
 ---
@@ -38,8 +38,9 @@
 | 同日有 `output/daily_close_交易日.md` | 同上 | 同上 |
 | 企微有台账/收盘或 DailyGitSync 短讯 | 当日 19:30 前 | 查 webhook + schtasks Last Result |
 
-**上传不是 LLM 文案任务的副作用，是 schtasks `QuantLearn_DailyGitSync` 的主职；OpenClaw 的主职是守夜验货。**  
-旧提示词「落盘即可，18:45 会推」= **失职设计**，已废，见 [OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §3 任务 B。
+**上传主职** = schtasks `QuantLearn_DailyGitSync`（18:45）。  
+**OpenClaw 主职** = **19:15 守夜验货**（提示词就在本文步骤 6，禁止只写「落盘即可」）。  
+旧提示词「落盘即可，18:45 会推」= **失职设计，已废**。
 
 ---
 
@@ -308,7 +309,7 @@ REM 4) 盘中链路冒烟（非交易时段加 --force；--no-push 不真发企�
 
 **不用做：** 不用改 schtasks 创建命令；不用改账户 #3；不用动 webhook key。
 
-## 步骤 6 — 整理 OpenClaw Cron（LLM 限量）
+## 步骤 6 — 整理 OpenClaw Cron（LLM 限量 + 提示词全文）
 
 ```bat
 openclaw cron list
@@ -318,11 +319,88 @@ openclaw cron list
 |------|------|
 | **全部删/停** | 任何交易扫描、波段扫描、每 N 分钟盯盘的 **LLM agentTurn** |
 | **停用（建议）** | 每日多轮「研发修复」LLM（09/18/21） |
-| **必留** | **19:15 守夜**：验收台账已进 `origin/master`，缺则补跑 DailyGitSync + 企微告警（提示词见 [OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §3 任务 B） |
-| **最多再留 1～2 条** | 晚间文案：写 `pm/` + `cursor_queue`（可合并成 **18:15 一条**） |
+| **必留 1 条** | **工作日 19:15 守夜** — 用下面「提示词 B」整段贴进 cron |
+| **最多再留 1 条** | **工作日 18:15 治理落盘** — 用下面「提示词 A」（可与理财合并） |
 | **不要** | schtasks 已跑的脚本再在 OpenClaw 挂一份（双推）；不要只写「落盘即可」却不看远程 |
 
 可选：若不用 schtasks，交易脚本可用 OpenClaw **`systemEvent`（非 LLM）** 调 bat/python——仍算「脚本调度」，不占 LLM 名额。优先 schtasks。
+
+### 提示词 A — 治理落盘（cron 约 18:15，可选）
+
+把下面 **整段** 贴进 OpenClaw `agentTurn`：
+
+```text
+你是 OpenClaw 治理 Agent。工作目录：
+C:\Users\Administrator\.openclaw\workspace\quant-learn
+先读 docs/DEPLOYMENT.md（本文权威），再执行。
+
+禁止：改交易核心代码；force push；提交密钥/config.local/*.db。
+禁止假设「别人会推 git」——你只负责落盘；推送由 18:45 schtasks 做，
+但 19:15 守夜会验收（见 DEPLOYMENT 提示词 B）。
+
+今日必须落盘（没有就创建）：
+1) 确认本地已有（没有则立刻 schtasks /run）：
+   - QuantLearn_TradeJournal → pm/trade_journal/今天.md
+   - QuantLearn_DailyClose → output/daily_close_今天.md
+   - QuantLearn_SwingDaily → output/swing_daily/今天.md
+2) 读台账；若「复盘备注」空，补短备注（做对/做错/明日关注）。
+3) 扫 output/ / 台账 / 日志，问题入库 pm/bugs 或 pm/requirements（可用 pm_cli）。
+4) PM：写完整 pm/cursor_queue/今天.md（P0+P1+P2 全量）。
+5) 企微短摘要：P0x/P1x/P2x + Cursor 话术提醒。
+
+不要自己 git push（交给 18:45 DailyGitSync）。
+回复列出：本地新建/更新了哪些路径；三项 schtasks 产物是否存在。
+```
+
+### 提示词 B — ★守夜验收（cron 约 19:15，必开）
+
+> **缺这条 = 上传失职无人管。** 必须验货 + 补跑 + 告警。
+
+把下面 **整段** 贴进 OpenClaw `agentTurn`（工作日 19:15）：
+
+```text
+你是 OpenClaw 守夜 Agent。工作目录：
+C:\Users\Administrator\.openclaw\workspace\quant-learn
+时区 Asia/Shanghai。今天=本地日期。权威文档：docs/DEPLOYMENT.md。
+
+目标（硬 SLO）：origin/master 上必须有今日台账与收盘摘要。
+禁止：force push；改交易核心代码；提交 *.db / config.local。
+
+按顺序做，每步记录原文：
+
+1) git fetch origin
+   git log -1 --oneline origin/master
+   git ls-tree -r --name-only origin/master | findstr /C:"pm/trade_journal/今天" /C:"daily_close_今天"
+   （把「今天」换成真实 YYYY-MM-DD）
+
+2) 若远程已有今日 trade_journal + daily_close → 写 pm/ops/今天-nightwatch.md
+   「SLO OK」+ 最新 commit，结束。
+
+3) 若远程没有：
+   a. dir 本地 pm\trade_journal\今天.md 与 output\daily_close_今天.md
+   b. 本地没有 → schtasks /run 依次：
+      QuantLearn_TradeJournal / QuantLearn_DailyClose / QuantLearn_SwingDaily
+      等 30s 再 dir 一次
+   c. 本地有或补跑后 → schtasks /run /tn QuantLearn_DailyGitSync
+      type output\daily_git_sync.log（看尾部）
+   d. 再 git fetch；确认 origin/master 出现今日文件或 chore(daily) 提交
+
+4) 仍失败 → 企微告警（用现有 webhook / 通知脚本），标题：
+   「【量化失职】今日台账未进 master」
+   正文含：schtasks Last Run 原文、daily_git_sync.log 尾 30 行、git status -sb
+   并写 pm/ops/今天-nightwatch.md + pm/bugs/BUG-上传失败-日期.md
+
+5) 额外健康抽查（失败只记 ops，不阻断）：
+   schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
+   schtasks /query /tn QuantLearn_TradeJournal /v /fo LIST
+   （看 Last Run Time / Last Result；Result≠0 记入 ops）
+
+允许：为达成 SLO，执行
+  .venv\Scripts\python.exe -u scripts\daily_git_sync.py
+禁止：git add scripts/ 或交易核心。
+
+回复主人三行：SLO=OK/FAIL；补跑了哪些任务；远程最新 commit。
+```
 
 ## 步骤 7 — 交付报告
 
@@ -358,7 +436,7 @@ openclaw cron list
 18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
 19:15            ★守夜验收：远程有今日台账？没有 → 补跑 + 企微【量化失职】
 ```
-详情：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
+详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
 
 **本系统默认：提醒 + 模拟；挂单由主人在券商软件自己下。**
 
@@ -413,7 +491,7 @@ notify:
 
 # 日常运维（OpenClaw 心跳 / 19:15 守夜必须做）
 
-交易日抽查（守夜提示词完整版见 OPENCLAW_DAILY_RUN §3 任务 B）：
+交易日抽查（完整动作 = 本文步骤 6「提示词 B」）：
 
 ```bat
 schtasks /query /tn QuantLearn_QuantPulse /v /fo LIST
@@ -427,7 +505,7 @@ git fetch origin
 git log -1 --oneline origin/master
 ```
 
-异常时优先查：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §7 · [REALTIME.md](./REALTIME.md) · 下文排障。
+异常时优先查：本文故障排查 · [REALTIME.md](./REALTIME.md)。
 
 ---
 
@@ -443,32 +521,19 @@ git log -1 --oneline origin/master
 | 盘中完全没提醒 | 查 `QuantLearn_QuantPulse` 是否启用+重复间隔；日志 `quant_pulse.log`；持续时间是否到 **14:50**（误设 4h 会在 13:35 掐断） |
 | 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
-| Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜**，重贴 OPENCLAW_DAILY_RUN §3 任务 B |
+| Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜**，重贴本文步骤 6「提示词 B」 |
 
 ---
 
 # 给 OpenClaw 的一键口令（主人复制即用）
 
-主人只需发下面这一段（细节全在本文 ★，不要另写长提示）：
+主人 **只发下面这一句**（细节全在本文，不要另贴长提示）：
 
 ```text
-重新部署 quant-learn（波段池扩容 + 立刻同步实盘）：
-cd C:\Users\Administrator\.openclaw\workspace\quant-learn
-git pull
-然后严格按 docs/DEPLOYMENT.md 文首「★」步骤 0→7，并读 docs/OPENCLAW_DAILY_RUN.md。
-
-本次重点（2026-07-24）：
-A) 波段池：已从 Top20 改为「方法过滤 + score≥70 + 软上限50」。
-   按 DEPLOYMENT「★ 本次变更怎么部署」跑 swing_pool_builder --max-pool 50 --min-score 70 --force，
-   确认 latest.json stocks 明显大于 20。
-B) 立刻同步：模拟买卖成功会企微 text+@all「立刻同步实盘」。确认 webhook 可用。
-C) 必开 schtasks：SwingPool / QuantPulse / SwingDaily / TradeJournal / DailyClose / **DailyGitSync(18:45)**。
-D) OpenClaw：删交易类 agentTurn；保留 **19:15 守夜**（OPENCLAW_DAILY_RUN 任务 B）。
-E) 立刻试跑：
-   schtasks /run /tn QuantLearn_SwingPool
-   type output\swing_pool_builder.log
-   看 output\swing_pool\latest.json 只数
-F) 写 pm/ops/今天-deploy.md：池只数？@all 同步文案就绪？DailyGitSync Ready？
+读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7 交付报告。
+重点：DailyGitSync(18:45) + 19:15 守夜（本文步骤 6 提示词 B）+ 波段池软上限50/立刻@all同步。
+缺 7/23、7/24 台账就立刻补跑 TradeJournal/DailyClose/DailyGitSync。
+做完写 pm/ops/今天-deploy.md。
 ```
 
 ---
@@ -477,9 +542,11 @@ F) 写 pm/ops/今天-deploy.md：池只数？@all 同步文案就绪？DailyGitS
 
 | 文档 | 用途 |
 |------|------|
-| [REVIEW_LOOP.md](./REVIEW_LOOP.md) | **每日复盘 / 多角色 / Cursor 队列（治理轨道）** |
-| [REALTIME.md](./REALTIME.md) | 实时监控全景 / 大盘扫不扫 |
-| [CRON_JOBS.md](./CRON_JOBS.md) | 全量任务表与历史 ID |
+| **本文 DEPLOYMENT.md** | **唯一权威：部署 + 日程 + 守夜提示词** |
+| [OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) | 可选细读（与本文重复处以本文为准） |
+| [REVIEW_LOOP.md](./REVIEW_LOOP.md) | 每日复盘 / 多角色 / Cursor 队列 |
+| [REALTIME.md](./REALTIME.md) | 实时监控全景 |
+| [CRON_JOBS.md](./CRON_JOBS.md) | 全量任务表 |
 | [ROADMAP.md](./ROADMAP.md) | 需求与缺陷 |
 | [qmt_integration.md](./qmt_integration.md) | QMT（可选） |
 | [wecom_webhook_setup.md](./wecom_webhook_setup.md) | 企微 |

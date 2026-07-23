@@ -1,6 +1,7 @@
 # OpenClaw 每日运行手册（读完按做）
 
-> **给谁读**：OpenClaw Agent / 产机运维  
+> **给谁读**：OpenClaw Agent / 产机运维（**细读**）  
+> **唯一权威部署入口**：[DEPLOYMENT.md](./DEPLOYMENT.md) ← 主人一句话让你部署时 **优先读那个**；本文与之冲突以 DEPLOYMENT 为准。  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **目标**：交易脚本按时跑；晚间把台账 / PM / 研发 / 测试落盘 **自动 push 到 `master`**  
 > **权威对照**：[DEPLOYMENT.md](./DEPLOYMENT.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)

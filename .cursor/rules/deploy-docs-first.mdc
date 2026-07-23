@@ -1,0 +1,43 @@
+---
+description: 最高规则 — 代码改动必须同改 DEPLOYMENT，push 后只给主人 OpenClaw 一句话
+alwaysApply: true
+---
+
+# 部署文档优先（最高规则）
+
+本仓库 **最高优先级** 工作流。与其它习惯冲突时，以本规则为准。
+
+## 必须做
+
+凡改动会影响产机怎么跑（脚本、runner bat、调度、波段/Pulse/台账/收盘/DailyGitSync、守夜、企微推送），**同一次改动必须**：
+
+1. **更新** `docs/DEPLOYMENT.md`（权威唯一入口）
+   - 写清：改了什么、产机怎么拉、要不要重建 schtasks、冒烟命令、验收标准
+   - 若改了 OpenClaw 行为：步骤 6 提示词 / 一键口令一并改
+   - 必要时同改 `docs/CRON_JOBS.md` / `docs/REALTIME.md` / `docs/OPENCLAW_DAILY_RUN.md`
+2. **commit + push** 到 `origin/master`（主人说 push / 部署 / 给 OpenClaw 时视为已授权）
+3. **回复主人时只给一句 OpenClaw 口令**（不要再贴长提示词）
+
+## 给主人的固定回复格式
+
+push 成功后，回复里 **只保留**类似这一句（可按本次变更改「重点」半句）：
+
+```text
+读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
+重点：<本次变更一句话>。做完写 pm/ops/今天-deploy.md。
+```
+
+禁止：再让主人去读 OPENCLAW_DAILY_RUN 另贴提示词；禁止只改代码不改 DEPLOYMENT。
+
+## 什么算「影响部署」
+
+- `scripts/*_runner.bat`、`scripts/daily_git_sync*`
+- `scripts/quant_pulse*`、`scripts/swing_*`、`scripts/morning_*`、`scripts/intraday_*`
+- `scripts/trade_journal*`、`scripts/daily_close*`、`scripts/portfolio_alert*`
+- 调度文档、企微通知路径、账户/资金约定、守夜/cron 职责
+
+纯文档笔误、无关测试、仅 `pm/` 台账 → 可不改 DEPLOYMENT。
+
+## 提交门禁
+
+`git commit` 会跑 `.cursor/hooks/check-deploy-docs.py`：改了影响文件却没带 `docs/DEPLOYMENT.md` → 拦截确认。

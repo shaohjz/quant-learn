@@ -22,7 +22,7 @@
 
 ```mermaid
 flowchart TD
-  A["08:30 MorningScan 宽基选股"] --> A2["08:40 SwingPool Top20"]
+  A["08:30 MorningScan 宽基选股"] --> A2["08:40 SwingPool 方法池≤50"]
   A2 --> B["09:35-14:50 QuantPulse 每10分"]
   B --> C["10:00-14:30 IntradayScanner 可选"]
   B --> D["16:05 SwingDaily 波段结论"]
@@ -36,7 +36,7 @@ flowchart TD
 | 时刻 | 任务 | **定时器在哪** | 入口 | 说明 |
 |:----:|------|----------------|------|------|
 | **08:30** | 宽基选股 | **Windows schtasks** | `morning_scanner_runner.bat` | 早上找票 |
-| **08:40** | 动态稳定池+盘前机会 | **Windows schtasks** | `swing_pool_builder_runner.bat` | Top20 优胜劣汰 → `swing_auto` 推企微 |
+| **08:40** | 动态稳定池+盘前机会 | **Windows schtasks** | `swing_pool_builder_runner.bat` | 方法过滤+软上限50 → `swing_auto` 推企微 |
 | **09:35→14:50 /10m** | 统一脉搏 | **Windows schtasks** + **任务计划 GUI 重复间隔 10 分** | `quant_pulse_runner.bat` | 真仓+波段+指数；**不要**开 LLM cron |
 | **10:00→14:30 /30m** | 全市场异动 | **Windows schtasks** + **GUI 重复 30 分**（可选） | `intraday_scanner_runner.bat` | 吵可关；**不要**开 LLM cron |
 | **16:05** | 波段日报 | **Windows schtasks** | `swing_daily_report_runner.bat` | #3 赚亏+挂单建议 |
@@ -55,7 +55,7 @@ flowchart TD
 | 级别 | 任务名 | 说明 |
 |------|--------|------|
 | **必开** | `QuantLearn_QuantPulse` | 盘中主心跳；已含真仓+波段盯盘 |
-| **必开** | `QuantLearn_SwingPool` | 08:40 动态稳定池 Top20 + 盘前波段扫描推企微 |
+| **必开** | `QuantLearn_SwingPool` | 08:40 方法过滤池(≤50) + 盘前波段扫描推企微 |
 | **必开** | `QuantLearn_SwingDaily` | 收盘波段结论 |
 | **必开** | `QuantLearn_TradeJournal` | 每日交易记录 |
 | **必开** | `QuantLearn_DailyClose` | 收盘双账户摘要 |
@@ -72,7 +72,7 @@ flowchart TD
 | 扫什么 | 有没有 | 谁推 |
 |--------|:------:|------|
 | 盘前宽基 ≈800 | ✅ | MorningScan |
-| 动态稳定池 Top20 | ✅ | SwingPool → Pulse/SwingDaily |
+| 动态稳定池≤50 | ✅ | SwingPool → Pulse/SwingDaily |
 | 盘中异动 ≈800 | ✅ | IntradayScanner（可选） |
 | 你的持仓阈值 | ✅ | **QuantPulse 内嵌** |
 
@@ -117,7 +117,7 @@ schtasks /query /fo LIST | findstr QuantLearn
 | 任务名 | bat | 建议 |
 |--------|-----|------|
 | QuantLearn_MorningScan | `morning_scanner_runner.bat` | 建议开 |
-| QuantLearn_SwingPool | `swing_pool_builder_runner.bat` | **必开**（08:40 建池 Top20 + `swing_auto` 盘前推企微） |
+| QuantLearn_SwingPool | `swing_pool_builder_runner.bat` | **必开**（08:40 建池≤50 + `swing_auto` 盘前推企微） |
 | QuantLearn_QuantPulse | `quant_pulse_runner.bat` | **必开** |
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 建议开 / 吵则关 |
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | **必开** |
@@ -135,18 +135,18 @@ schtasks /query /fo LIST | findstr QuantLearn
 
 ```
 swing_daily_report.py
-  → 扫动态稳定池(Top20) → #3 模拟买卖（佣金+印花）
+  → 扫动态稳定池(方法合格≤50) → #3 模拟买卖（佣金+印花）
   → sim_daily_nav → output/swing_daily/今天.md
-  → 企微短结论 + 实盘挂单建议
+  → 企微短结论 + 实盘挂单建议；成交成功另发 @all 同步提醒
 ```
 
-### 动态稳定池（优胜劣汰）
+### 动态稳定池（方法过滤 + 软上限）
 
-- `scripts/swing_pool_builder.py`：沪深300+中证500 → 低波动/流动性过滤 → **Top20**
-- 每天重排：分低出局、分高进池；账户 #3 持仓强制保留
+- `scripts/swing_pool_builder.py`：沪深300+中证500 → 硬过滤 → `score≥70` 入池 → **软上限 50**
+- 每天重排：不够格出局、够格进来；账户 #3 持仓强制保留
 - 产物：`output/swing_pool/latest.json`（含 entered/exited）
 - 盘中 Pulse / 收盘 SwingDaily 都读这个池；缺失则回退旧种子蓝筹
-
+- 模拟买卖成功 → `swing_intraday_watch.push_sync_trade`：**text + @all「立刻同步实盘」**
 ---
 
 ## D. OpenClaw Cron（对账用）

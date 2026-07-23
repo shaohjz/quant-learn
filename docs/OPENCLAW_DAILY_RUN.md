@@ -21,7 +21,7 @@
 ```
 【Windows schtasks — 交易，不占 LLM】
 08:30            MorningScan
-08:40            SwingPool Top20
+08:40            SwingPool 方法池≤50
 09:35~14:50 /10m QuantPulse（GUI 设 10 分重复）
 10:00~14:30 /30m IntradayScanner（可选）
 16:05            SwingDaily

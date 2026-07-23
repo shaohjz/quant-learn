@@ -7,7 +7,7 @@ os.chdir(ROOT)
 
 # Run swing_pool_builder
 result = subprocess.run(
-    [sys.executable, "scripts/swing_pool_builder.py", "--top", "20", "--mode", "auto", "--force"],
+    [sys.executable, "scripts/swing_pool_builder.py", "--max-pool", "50", "--min-score", "70", "--mode", "auto", "--force"],
     capture_output=True, text=True, timeout=120
 )
 print("=== STDOUT ===")

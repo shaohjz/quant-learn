@@ -7,7 +7,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md)（**每日运行+推 master，优先读这个**）· [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
-> **更新**：2026-07-24（补：硬 SLO——次日 origin 必须有昨台账；OpenClaw **19:15 守夜**验货+补跑；DailyGitSync 升格必开）
+> **更新**：2026-07-24（波段池改方法过滤+软上限50；模拟成交立刻 @all 同步实盘；硬 SLO/守夜/DailyGitSync）
 
 ---
 
@@ -273,6 +273,41 @@ dir %ROOT%\output\swing_daily
 | 周末 | `--mode hist`（日K）；`auto` 周末自动 hist |
 | 持仓 | 账户 #3 持仓强制保留在池内 |
 | 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
+
+### ★ 本次变更怎么部署（波段池扩容 + 立刻同步实盘）
+
+产机只做下面几步即可（**不用重建全部 schtasks**，旧任务名照旧）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM 1) 立刻按新规则重建池（方法过滤 + 软上限50）
+.venv\Scripts\python.exe -u scripts\swing_pool_builder.py --max-pool 50 --min-score 70 --mode auto --force
+
+REM 2) 确认池子变大了（stocks 应明显 >20，一般几十只，≤50）
+.venv\Scripts\python.exe -c "import json; d=json.load(open(r'output\swing_pool\latest.json',encoding='utf-8')); print(d.get('date'), 'stocks=', len(d.get('stocks',[])), 'min_score=', d.get('min_score'), 'max_pool=', d.get('max_pool'), 'selection=', d.get('selection'))"
+
+REM 3) 确认 bat 已是新参数（pull 后应含 --max-pool 50）
+findstr /C:"max-pool" scripts\swing_pool_builder_runner.bat
+
+REM 4) 盘中链路冒烟（非交易时段加 --force；--no-push 不真发企微）
+.venv\Scripts\python.exe -u scripts\swing_intraday_watch.py --force --no-push --no-trade
+```
+
+**验收：**
+
+| 项 | 过关标准 |
+|----|----------|
+| 代码 | `git log -1` 含本次 commit；runner bat 有 `--max-pool 50 --min-score 70` |
+| 池 | `latest.json` 的 `selection=method+cap`，`stocks` 约几十只（≤50） |
+| 调度 | `QuantLearn_SwingPool` / `QuantLearn_QuantPulse` / `QuantLearn_SwingDaily` 仍启用（任务名不变，拉代码即生效） |
+| 立刻同步 | 下一笔模拟买卖成功后，企微应收到两条：markdown 详情 + **text @所有人「立刻同步实盘」** |
+| 企微 | `config.local.yaml` 里 `notify.wecom_webhook` 有效；别开 `NOTIFIER_DRY_RUN=1` 挡正式推送 |
+
+**不用做：** 不用改 schtasks 创建命令；不用改账户 #3；不用动 webhook key。
+
 ## 步骤 6 — 整理 OpenClaw Cron（LLM 限量）
 
 ```bat
@@ -311,7 +346,7 @@ openclaw cron list
 ```
 【全是 Windows schtasks，不是 OpenClaw LLM cron】
 08:30            MorningScan 宽基扫
-08:40            SwingPool 动态稳定池 Top20 + 盘前波段扫描推企微
+08:40            SwingPool 方法过滤池≤50 + 盘前波段扫描推企微
 09:35~14:50 /10m QuantPulse（GUI 设重复）真仓阈值+波段(扫池)+指数
 10:00~14:30 /30m IntradayScanner（可选，GUI 设重复）
 16:05            SwingDaily 波段赚亏+挂单建议
@@ -417,29 +452,23 @@ git log -1 --oneline origin/master
 主人只需发下面这一段（细节全在本文 ★，不要另写长提示）：
 
 ```text
-重新部署 quant-learn（上传失职修复版）：
+重新部署 quant-learn（波段池扩容 + 立刻同步实盘）：
 cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 git pull
 然后严格按 docs/DEPLOYMENT.md 文首「★」步骤 0→7，并读 docs/OPENCLAW_DAILY_RUN.md。
 
 本次重点（2026-07-24）：
-1) 必开 schtasks：TradeJournal(16:15) + DailyClose(16:20) + **DailyGitSync(18:45)** + SwingPool/Pulse/SwingDaily。
-   列表里没有 QuantLearn_DailyGitSync → 立刻按文档创建。
-2) 产机电源：禁止睡眠；任务勾「唤醒计算机运行」。
-3) QuantPulse GUI：重复 10 分，持续时间到 14:50（不要 4 小时）。
-4) OpenClaw cron：
-   - 删光交易类 agentTurn
-   - 保留/新建 **19:15 守夜**（整段提示词复制 OPENCLAW_DAILY_RUN.md「任务 B」）
-   - 可选再留 18:15 治理落盘一条
-5) 立刻试跑：
-   schtasks /run /tn QuantLearn_TradeJournal
-   schtasks /run /tn QuantLearn_DailyClose
-   schtasks /run /tn QuantLearn_DailyGitSync
-   type output\daily_git_sync.log
-   git fetch & git log -1 --oneline origin/master
-6) 验收硬 SLO：远程能看到今日（或补跑日）pm/trade_journal/与 daily_close_。
-
-做完写 pm/ops/今天-deploy.md（必须写明：DailyGitSync Ready？守夜 cron 已挂？试跑远程是否有文件？）。
+A) 波段池：已从 Top20 改为「方法过滤 + score≥70 + 软上限50」。
+   按 DEPLOYMENT「★ 本次变更怎么部署」跑 swing_pool_builder --max-pool 50 --min-score 70 --force，
+   确认 latest.json stocks 明显大于 20。
+B) 立刻同步：模拟买卖成功会企微 text+@all「立刻同步实盘」。确认 webhook 可用。
+C) 必开 schtasks：SwingPool / QuantPulse / SwingDaily / TradeJournal / DailyClose / **DailyGitSync(18:45)**。
+D) OpenClaw：删交易类 agentTurn；保留 **19:15 守夜**（OPENCLAW_DAILY_RUN 任务 B）。
+E) 立刻试跑：
+   schtasks /run /tn QuantLearn_SwingPool
+   type output\swing_pool_builder.log
+   看 output\swing_pool\latest.json 只数
+F) 写 pm/ops/今天-deploy.md：池只数？@all 同步文案就绪？DailyGitSync Ready？
 ```
 
 ---

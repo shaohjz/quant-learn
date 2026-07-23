@@ -211,11 +211,18 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
-## Deploy docs sync
+## Deploy docs sync（最高规则）
 
-改调度 / runner bat / 波段池 / Pulse 入口时，**同提交更新** `docs/DEPLOYMENT.md`（必要时 `CRON_JOBS.md`、`REALTIME.md`）。  
+> 细则见 `.cursor/rules/deploy-docs-first.mdc`（`alwaysApply`）。与其它习惯冲突时以它为准。
+
+改调度 / runner bat / 波段池 / Pulse / 台账 / 收盘 / DailyGitSync / 守夜 / 企微推送时：
+
+1. **同提交**更新 `docs/DEPLOYMENT.md`（必要时 `CRON_JOBS.md`、`REALTIME.md`）
+2. **push** `origin/master`
+3. 回复主人 **只给一句** OpenClaw 口令（读 DEPLOYMENT，不要另贴长提示）
+
 Cursor hook：`.cursor/hooks/check-deploy-docs.py`（`git commit` 时检查）。  
-OpenClaw 部署口令见 `docs/DEPLOYMENT.md` 文末「一键口令」。
+OpenClaw 口令模板见 `docs/DEPLOYMENT.md` 文末「一键口令」。
 
 ## Make It Yours
 

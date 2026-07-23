@@ -17,14 +17,20 @@ ROOT = Path(__file__).resolve().parents[2]
 IMPACT = re.compile(
     r"("
     r"scripts/.*_runner\.bat|"
+    r"scripts/daily_git_sync|"
     r"scripts/swing_pool|"
     r"scripts/swing_daily|"
     r"scripts/swing_intraday|"
     r"scripts/quant_pulse|"
     r"scripts/morning_scanner|"
     r"scripts/intraday_scanner|"
+    r"scripts/trade_journal|"
+    r"scripts/daily_close|"
+    r"scripts/portfolio_alert|"
     r"docs/CRON_JOBS\.md|"
-    r"docs/REALTIME\.md"
+    r"docs/REALTIME\.md|"
+    r"docs/OPENCLAW_DAILY_RUN\.md|"
+    r"\.cursor/rules/deploy-docs-first\.mdc"
     r")"
 )
 

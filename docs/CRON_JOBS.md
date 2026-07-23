@@ -3,7 +3,7 @@
 > **权威跑法**：[DEPLOYMENT.md](./DEPLOYMENT.md) ★ 章节  
 > **实时层**：[REALTIME.md](./REALTIME.md) · **复盘**：[REVIEW_LOOP.md](./REVIEW_LOOP.md)  
 > 产机：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
-> 更新：2026-07-15
+> 更新：2026-07-24（补 18:45 DailyGitSync 必开 + 19:15 OpenClaw 守夜）
 
 ---
 
@@ -11,8 +11,8 @@
 
 | 哪套 | 是什么 | 干什么 | 个数 |
 |------|--------|--------|------|
-| **Windows 任务计划** `schtasks` | 跑 `.bat` / python，**不占 LLM** | **全部交易扫描、Pulse、波段、台账** | 可多开 |
-| **OpenClaw Cron** | `openclaw cron` | **最多只留 2～3 条文案类**（复盘备注 / 写 queue） | **有限额**；**禁止**用来每 10 分钟扫盘 |
+| **Windows 任务计划** `schtasks` | 跑 `.bat` / python，**不占 LLM** | **全部交易扫描、Pulse、波段、台账、推 master** | 可多开 |
+| **OpenClaw Cron** | `openclaw cron` | **文案落盘 + ★守夜验货**（禁止用来每 10 分钟扫盘） | **有限额** |
 
 盘中「每 10 分 / 每 30 分」= 在 **Windows「任务计划程序」GUI** 里给对应 schtasks 勾「重复任务间隔」，**不是**给 OpenClaw 挂一堆 LLM cron。
 
@@ -28,7 +28,9 @@ flowchart TD
   B --> D["16:05 SwingDaily 波段结论"]
   D --> E["16:15 TradeJournal 台账"]
   E --> F["16:20 daily_close 双账户摘要"]
-  F --> G["16:30-18:30 OpenClaw 复盘入库 + Cursor队列"]
+  F --> G["16:30-18:15 OpenClaw 复盘入库 + Cursor队列"]
+  G --> H["18:45 DailyGitSync push master"]
+  H --> I["19:15 OpenClaw 守夜验货"]
 ```
 
 | 时刻 | 任务 | **定时器在哪** | 入口 | 说明 |
@@ -44,8 +46,9 @@ flowchart TD
 | **17:00** | 需求入库 | **可与 18:15 合并成 1 条** OpenClaw | 短提示词 | 写 `pm/` |
 | **18:15** | Cursor 队列 | **OpenClaw cron 1 条够** | 短提示词 | 写 `cursor_queue` |
 | **18:45** | 治理产物推 master | **Windows schtasks** | `daily_git_sync_runner.bat` | 台账/PM/QA/Ops 白名单 push |
+| **19:15** | ★守夜验货 | **OpenClaw cron（必留）** | OPENCLAW_DAILY_RUN §3 任务 B | 远程无今日台账 → 补跑 + 企微告警 |
 
-**OpenClaw 侧建议上限：1～2 个 agentTurn**（例如「18:15 入库+写队列」一条搞定）。交易类 **0 个** LLM cron。晚间 **push 用 schtasks 脚本**，别让 LLM 自己乱 `git push`。
+**OpenClaw 侧**：交易类 **0** 条 LLM；文案 **≤2** 条；**守夜 1 条必留**。晚间 **push 用 schtasks**；守夜只负责验收/补跑脚本，别让 LLM 乱 `git add scripts/`。
 
 ### 必开 vs 可选（别纠结）
 
@@ -55,6 +58,9 @@ flowchart TD
 | **必开** | `QuantLearn_SwingPool` | 08:40 动态稳定池 Top20 + 盘前波段扫描推企微 |
 | **必开** | `QuantLearn_SwingDaily` | 收盘波段结论 |
 | **必开** | `QuantLearn_TradeJournal` | 每日交易记录 |
+| **必开** | `QuantLearn_DailyClose` | 收盘双账户摘要 |
+| **必开** | `QuantLearn_DailyGitSync` | **18:45 推 master**（上传主职；漏挂=主人永远拉不到） |
+| **必开** | OpenClaw **19:15 守夜** | 验货+补跑；提示词见 OPENCLAW_DAILY_RUN |
 | **建议开** | `QuantLearn_MorningScan` | 盘前宽基 |
 | **消息多再关** | `QuantLearn_IntradayScanner` | 异动扫；吵就关 |
 | **勿双开** | `SwingIntraday` / `PortfolioAlert` | 已被 Pulse 覆盖时请关，防重复推送 |

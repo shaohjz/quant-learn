@@ -156,19 +156,26 @@ BUG:  open → in_progress → fixed → verified → deployed
 ```text
 你是 PM。禁止大改业务代码。
 
-1. pm_cli list 出所有 pending/open/ready/testing
-2. 写 pm/cursor_queue/今天.md：
+1. 先确认本地有 pm/trade_journal/今天.md；没有则 schtasks /run QuantLearn_TradeJournal
+2. pm_cli list 出所有 pending/open/ready/testing
+3. 写 pm/cursor_queue/今天.md：
    - 【完整列表】P0+P1+P2，不要只塞 3 条
    - 每项尽量带：md 路径、关键文件猜测、验收命令、做完改哪个状态
    - 超大项放「本周不做」但保留在文件里
-3. 对前段（P0 与靠前 P1）若无 PLAN，在 pm/dev/ 写最短 PLAN
-4. 企微短消息：P0x / P1x / P2x + 让主人复制 REVIEW_LOOP「Cursor 一键话术」
-5. 若有 git 权限：git add pm/requirements pm/bugs pm/dev pm/cursor_queue docs/ROADMAP.md
-   && commit -m "pm: YYYY-MM-DD backlog + cursor queue"
-   （也可只落盘，交给 18:45 `QuantLearn_DailyGitSync` 统一 push）
+4. 对前段（P0 与靠前 P1）若无 PLAN，在 pm/dev/ 写最短 PLAN
+5. 企微短消息：P0x / P1x / P2x + 让主人复制 REVIEW_LOOP「Cursor 一键话术」
+6. 不要自己 git push；交给 18:45 DailyGitSync。远程是否成功由 19:15 守夜验收。
 
 红线：禁止 force push；禁止动 webhook；禁止把队列缩成「只留 P0」；禁止改交易核心代码。
 ```
+
+### ★守夜验货（19:15，必开）
+
+完整提示词见 [OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §3 **任务 B**。摘要：
+
+1. `git fetch` 后检查 `origin/master` 是否有今日台账+收盘摘要  
+2. 没有 → 补跑 TradeJournal/DailyClose/DailyGitSync  
+3. 仍没有 → 企微【量化失职】+ 写 `pm/ops/今天-nightwatch.md`
 
 ### 晚间统一推 master（18:45，推荐 schtasks，不占 LLM）
 
@@ -211,8 +218,10 @@ cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 
 | 轨道 | 内容 | 谁 |
 |------|------|-----|
-| 交易 | Pulse / 扫盘 / 波段 / 台账 | schtasks |
-| 治理 | 入库 / 队列 / 复盘备注 | OpenClaw 晚间 |
+| 交易 | Pulse / 扫盘 / 波段 / 台账 / 收盘 | schtasks |
+| 上传 | 白名单 push master | schtasks `DailyGitSync` |
+| 治理 | 入库 / 队列 / 复盘备注 | OpenClaw 18:15 |
+| 守夜 | 验货远程有今日产物；失败补跑+告警 | OpenClaw 19:15 **必开** |
 
 ---
 
@@ -222,9 +231,10 @@ cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 |------|------|
 | 聊天里提过的缺陷是否都有 md | 是 |
 | 每晚是否有完整 cursor_queue | 是（含 P1/P2） |
+| **次日 `git pull` 能否看到昨台账** | **是（硬 SLO）** |
 | Cursor 是否被要求「只修 P0」 | **否** |
 | OpenClaw 改业务代码 | ≈ 0 |
-| 次日状态能否对上昨夜 commit | 能 |
+| 19:15 守夜是否挂着 | **是** |
 
 ---
 

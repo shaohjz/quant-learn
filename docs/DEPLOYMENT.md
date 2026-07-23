@@ -7,7 +7,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md)（**每日运行+推 master，优先读这个**）· [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · [README.md](../README.md)  
-> **更新**：2026-07-19（资金真源统一到 config.yaml accounts.*；learn=10万 / swing=5万；新增 capital_status 自查）
+> **更新**：2026-07-24（补：硬 SLO——次日 origin 必须有昨台账；OpenClaw **19:15 守夜**验货+补跑；DailyGitSync 升格必开）
 
 ---
 
@@ -15,7 +15,7 @@
 
 主人只需说：
 
-> **读 `docs/OPENCLAW_DAILY_RUN.md` 并按文档部署/检查；需要全量重建再按 `docs/DEPLOYMENT.md` 步骤 0→7。**
+> **读 `docs/OPENCLAW_DAILY_RUN.md` 并按文档部署/检查；需要全量重建再按 `docs/DEPLOYMENT.md` 步骤 0→7。重点挂好 DailyGitSync + 19:15 守夜。**
 
 或：
 
@@ -25,8 +25,21 @@
 
 ### 文档同步（给 Cursor / 提交者）
 
-改了调度、runner bat、波段池、Pulse/日报入口时，**同一次提交必须改** `docs/DEPLOYMENT.md`（及必要时 `CRON_JOBS.md` / `REALTIME.md`）。  
+改了调度、runner bat、波段池、Pulse/日报入口时，**同一次提交必须改** `docs/DEPLOYMENT.md`（及必要时 `CRON_JOBS.md` / `REALTIME.md` / `OPENCLAW_DAILY_RUN.md`）。  
 项目已挂 Cursor hook：`git commit` 若漏改部署文档会拦截提醒。
+
+---
+
+# ★ 主人验收（硬 SLO，写进脑子）
+
+| 验收项 | 截止 | 失败怎么办 |
+|--------|------|------------|
+| `origin/master` 有 `pm/trade_journal/交易日.md` | 当日 19:30 前 | OpenClaw 守夜补跑；仍无 → 企微【量化失职】 |
+| 同日有 `output/daily_close_交易日.md` | 同上 | 同上 |
+| 企微有台账/收盘或 DailyGitSync 短讯 | 当日 19:30 前 | 查 webhook + schtasks Last Result |
+
+**上传不是 LLM 文案任务的副作用，是 schtasks `QuantLearn_DailyGitSync` 的主职；OpenClaw 的主职是守夜验货。**  
+旧提示词「落盘即可，18:45 会推」= **失职设计**，已废，见 [OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §3 任务 B。
 
 ---
 
@@ -151,7 +164,7 @@ REM A 盘中脉搏（真仓阈值 + 波段盯盘 + 指数）
 .venv\Scripts\python.exe -u scripts\quant_pulse.py --force --no-push
 
 REM A2 动态稳定池（周末/休市用 --mode hist；交易日可用 auto）
-.venv\Scripts\python.exe -u scripts\swing_pool_builder.py --top 20 --mode hist --force
+.venv\Scripts\python.exe -u scripts\swing_pool_builder.py --max-pool 50 --min-score 70 --mode hist --force
 
 REM A3 盘前波段机会文案（正式 bat 会推企微；冒烟用 --no-push）
 .venv\Scripts\python.exe -u scripts\swing_auto.py --no-push --title "盘前波段扫描报告"
@@ -174,7 +187,7 @@ REM E 盘前大盘扫（≈800，失败会 fallback lite）
 | 检查 | 期望 |
 |------|------|
 | A | 退出码 0；无未捕获 traceback |
-| A2 | `output\swing_pool\latest.json` 存在且 `stocks` 约 20 只；`data_mode` 为 hist/live |
+| A2 | `output\swing_pool\latest.json` 存在且 `stocks` 约几十只（方法合格+软上限50）；`data_mode` 为 hist/live |
 | A3 | 打印「盘前波段扫描报告」；账户 #3；有机会则含盈亏比/建议仓位 |
 | B | `output\swing_daily\今天.md` 含「波段结论」「挂单建议」 |
 | C | `pm\trade_journal\今天.md` 存在 |
@@ -194,7 +207,7 @@ set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
 REM ① 08:30 宽基选股
 schtasks /create /f /tn "QuantLearn_MorningScan" /tr "%ROOT%\scripts\morning_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 08:30
 
-REM ①b 08:40 动态稳定波段池 Top20（优胜劣汰）
+REM ①b 08:40 动态稳定波段池（方法过滤+软上限50）
 schtasks /create /f /tn "QuantLearn_SwingPool" /tr "%ROOT%\scripts\swing_pool_builder_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 08:40
 
 REM ② QuantPulse：先建 09:35 一次触发，再打开 Windows「任务计划程序」GUI
@@ -245,16 +258,17 @@ dir %ROOT%\pm\trade_journal
 dir %ROOT%\output\swing_daily
 ```
 
-### 波段池说明（2026-07-17）
+### 波段池说明（2026-07-24）
 
 | 项 | 内容 |
 |----|------|
 | 脚本 | `scripts/swing_pool_builder.py` + `swing_auto.py`（同 bat） |
 | 任务 | `QuantLearn_SwingPool` **08:40** 必开 |
-| 池大小 | **Top20**（优胜劣汰：每日重排，分低出局） |
+| 入池规则 | **方法过滤优先**：硬条件（非ST/价位/成交额/ATR/振幅/回撤）+ `stability_score≥70`；**软上限 50**（防 Pulse 扫爆；不是死卡 Top20） |
 | 底池 | 沪深300+中证500（`data/universe_cache.json`） |
 | 盘前通知 | builder 后跑 `swing_auto.py` → 企微「盘前波段扫描报告」（账户 #3 + 盈亏比） |
 | 盘中扫谁 | Pulse → `swing_intraday_watch` 读 `output/swing_pool/latest.json`；**提醒同时模拟买卖账户#3**；买入文案含涨跌空间/毛净盈亏比/手续费/建议仓位 |
+| 立刻同步 | 模拟买卖成功 → 另发企微 **text + @all**「🚨【立刻同步实盘】…请马上挂单」；收盘补漏成交同样推 |
 | 收盘 | `swing_daily_report` 再扫 + **盘中提醒补漏**（防「盘中喊买、收盘空仓」） |
 | 周末 | `--mode hist`（日K）；`auto` 周末自动 hist |
 | 持仓 | 账户 #3 持仓强制保留在池内 |
@@ -269,8 +283,9 @@ openclaw cron list
 |------|------|
 | **全部删/停** | 任何交易扫描、波段扫描、每 N 分钟盯盘的 **LLM agentTurn** |
 | **停用（建议）** | 每日多轮「研发修复」LLM（09/18/21） |
-| **最多保留 1～2 条** | 晚间文案：按 [REVIEW_LOOP.md](./REVIEW_LOOP.md) 写 `pm/` + `cursor_queue`（可合并成 **18:15 一条**） |
-| **不要** | schtasks 已跑的脚本再在 OpenClaw 挂一份（双推） |
+| **必留** | **19:15 守夜**：验收台账已进 `origin/master`，缺则补跑 DailyGitSync + 企微告警（提示词见 [OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §3 任务 B） |
+| **最多再留 1～2 条** | 晚间文案：写 `pm/` + `cursor_queue`（可合并成 **18:15 一条**） |
+| **不要** | schtasks 已跑的脚本再在 OpenClaw 挂一份（双推）；不要只写「落盘即可」却不看远程 |
 
 可选：若不用 schtasks，交易脚本可用 OpenClaw **`systemEvent`（非 LLM）** 调 bat/python——仍算「脚本调度」，不占 LLM 名额。优先 schtasks。
 
@@ -281,9 +296,11 @@ openclaw cron list
 1. `git log -1 --oneline`  
 2. 冒烟 A～E 结果  
 3. **【Windows schtasks】** `findstr QuantLearn` 原文 + Pulse 是否已在 GUI 设 10 分重复  
-4. **【OpenClaw cron】** 最终 list 原文（应几乎无交易 LLM）  
-5. 已停用的重复/LLM 任务名  
-6. 企微是否真推测过（是/否）  
+4. **`QuantLearn_DailyGitSync` 是否 Ready**（历史漏挂过，必写 Last Run）  
+5. **【OpenClaw cron】** 最终 list 原文（应几乎无交易 LLM；**必须有 19:15 守夜**）  
+6. 已停用的重复/LLM 任务名  
+7. 企微是否真推测过（是/否）  
+8. 守夜试跑：故意 `dir` 检查今日台账路径；`schtasks /run /tn QuantLearn_DailyGitSync` 后 `git fetch` 看远程  
 
 报告里 **必须分开两节**写 schtasks 与 openclaw cron，禁止混在一堆。
 
@@ -300,14 +317,13 @@ openclaw cron list
 16:05            SwingDaily 波段赚亏+挂单建议
 16:15            TradeJournal 台账
 16:20            DailyClose 双账户摘要
+18:45            DailyGitSync 台账/PM/QA/Ops → push master   ★上传主职
 
-【OpenClaw LLM：最多 1～2 条】
+【OpenClaw LLM】
 18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
-
-【Windows schtasks 晚间同步】
-18:45            DailyGitSync 台账/PM/QA/Ops → push master
+19:15            ★守夜验收：远程有今日台账？没有 → 补跑 + 企微【量化失职】
 ```
-详情：[REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
+详情：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
 
 **本系统默认：提醒 + 模拟；挂单由主人在券商软件自己下。**
 
@@ -360,20 +376,23 @@ notify:
 
 ---
 
-# 日常运维（OpenClaw 心跳时可做）
+# 日常运维（OpenClaw 心跳 / 19:15 守夜必须做）
 
-交易日抽查：
+交易日抽查（守夜提示词完整版见 OPENCLAW_DAILY_RUN §3 任务 B）：
 
 ```bat
 schtasks /query /tn QuantLearn_QuantPulse /v /fo LIST
-schtasks /query /tn QuantLearn_SwingDaily /v /fo LIST
-dir output\swing_daily
+schtasks /query /tn QuantLearn_TradeJournal /v /fo LIST
+schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
 dir pm\trade_journal
-dir output\scan
-type output\quant_pulse.log
+dir output\daily_close_*.md
+dir output\swing_daily
+type output\daily_git_sync.log
+git fetch origin
+git log -1 --oneline origin/master
 ```
 
-异常时优先查：[REALTIME.md](./REALTIME.md) 误解表 + 下文排障。
+异常时优先查：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) §7 · [REALTIME.md](./REALTIME.md) · 下文排障。
 
 ---
 
@@ -381,13 +400,15 @@ type output\quant_pulse.log
 
 | 现象 | 处理 |
 |------|------|
+| **git 里没有昨天/今天台账** | **先查这张表**：①产机是否睡眠 ②`TradeJournal`/`DailyClose` Last Run ③`DailyGitSync` Last Result ④`type output\daily_git_sync.log` ⑤立刻 `/run` 补推；OpenClaw 守夜本应已告警 |
 | 企微没消息 | key / `delivery.mode` / `NOTIFIER_DRY_RUN` |
 | 早盘扫超时 | 正常走 `scanner_with_fallback` → lite；查网络/Zscaler |
 | bat Result:1 | `cmd /k` 手动跑 bat；看对应 `output\*.log` |
 | 波段赚亏永远 0 | 看 `sim_trades` account_id=3；机会分是否从未成交 |
-| 盘中完全没提醒 | 查 `QuantLearn_QuantPulse` 是否启用+重复间隔；日志 `quant_pulse.log` |
+| 盘中完全没提醒 | 查 `QuantLearn_QuantPulse` 是否启用+重复间隔；日志 `quant_pulse.log`；持续时间是否到 **14:50**（误设 4h 会在 13:35 掐断） |
 | 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
+| Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜**，重贴 OPENCLAW_DAILY_RUN §3 任务 B |
 
 ---
 
@@ -396,19 +417,29 @@ type output\quant_pulse.log
 主人只需发下面这一段（细节全在本文 ★，不要另写长提示）：
 
 ```text
-重新部署 quant-learn：
+重新部署 quant-learn（上传失职修复版）：
 cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 git pull
-然后严格按 docs/DEPLOYMENT.md 文首「★ OpenClaw：如何跑这个项目」从步骤 0 做到步骤 7。
+然后严格按 docs/DEPLOYMENT.md 文首「★」步骤 0→7，并读 docs/OPENCLAW_DAILY_RUN.md。
 
-本次重点（2026-07-20 波段提醒）：
-1) QuantLearn_SwingPool（08:40）必开且 Ready；bat 现已：建池 → swing_auto 盘前推企微。
-2) 冒烟：schtasks /run /tn QuantLearn_SwingPool；看 output\swing_pool_builder.log 有 Morning swing_auto notify；企微应收到「盘前波段扫描报告」。
-3) 盘中买入提醒含盈亏字段；**提醒时同步账户#3 模拟买卖**（文案见「模拟已买/已卖」）。
-4) 收盘 SwingDaily 会合并盘中 BUY 日志补漏，避免「盘中喊买、收盘空仓」。
-5) 定时器用 Windows schtasks；OpenClaw LLM cron ≤1～2 条，别再挂交易 LLM。
+本次重点（2026-07-24）：
+1) 必开 schtasks：TradeJournal(16:15) + DailyClose(16:20) + **DailyGitSync(18:45)** + SwingPool/Pulse/SwingDaily。
+   列表里没有 QuantLearn_DailyGitSync → 立刻按文档创建。
+2) 产机电源：禁止睡眠；任务勾「唤醒计算机运行」。
+3) QuantPulse GUI：重复 10 分，持续时间到 14:50（不要 4 小时）。
+4) OpenClaw cron：
+   - 删光交易类 agentTurn
+   - 保留/新建 **19:15 守夜**（整段提示词复制 OPENCLAW_DAILY_RUN.md「任务 B」）
+   - 可选再留 18:15 治理落盘一条
+5) 立刻试跑：
+   schtasks /run /tn QuantLearn_TradeJournal
+   schtasks /run /tn QuantLearn_DailyClose
+   schtasks /run /tn QuantLearn_DailyGitSync
+   type output\daily_git_sync.log
+   git fetch & git log -1 --oneline origin/master
+6) 验收硬 SLO：远程能看到今日（或补跑日）pm/trade_journal/与 daily_close_。
 
-做完写 pm/ops/今天-deploy.md 回复我。
+做完写 pm/ops/今天-deploy.md（必须写明：DailyGitSync Ready？守夜 cron 已挂？试跑远程是否有文件？）。
 ```
 
 ---

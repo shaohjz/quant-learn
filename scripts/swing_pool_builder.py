@@ -1,7 +1,8 @@
-"""scripts/swing_pool_builder.py — 每日动态稳定波段池（优胜劣汰）
+"""scripts/swing_pool_builder.py — 每日动态稳定波段池（方法过滤 + 软上限）
 
-从沪深300+中证500（~800）筛低波动、够流动性的票，取 Top N（默认 20）。
-每天重算排名：分不够的出局，分更高的进来。持仓股强制保留（方便盯止盈止损）。
+从沪深300+中证500（~800）用硬过滤筛合格票（流动性/价位/ATR/振幅/回撤），
+再按稳定性分 ≥ min_score 入池；人数过多时按分截断到 max_pool（默认 50）。
+不是死卡「Top20」：先方法、后软上限。持仓股强制保留（方便盯止盈止损）。
 
 周末/休市：--mode hist（或 auto）用日K历史收盘+均成交额估流动性，照样能扫。
 
@@ -11,8 +12,8 @@
 
 用法：
   python scripts/swing_pool_builder.py
-  python scripts/swing_pool_builder.py --top 20 --mode hist --force
-  python scripts/swing_pool_builder.py --top 20 --limit 80
+  python scripts/swing_pool_builder.py --max-pool 50 --min-score 70 --mode hist --force
+  python scripts/swing_pool_builder.py --max-pool 50 --limit 80
 """
 from __future__ import annotations
 
@@ -40,7 +41,8 @@ UNIVERSE_CACHE = ROOT / "data" / "universe_cache.json"
 DB_PATH = ROOT / "data" / "sim_live_mirror.db"
 SWING_ACCOUNT_ID = 3
 
-DEFAULT_TOP = 20
+DEFAULT_MAX_POOL = 50  # 软上限：Pulse 每 10 分要扫完，别涨到 300+
+DEFAULT_MIN_SCORE = 70.0  # 稳定性分地板（硬过滤过了还得够格）
 MIN_AMOUNT = 1e8  # 1 亿
 MIN_PRICE = 5.0
 MAX_PRICE = 200.0
@@ -260,8 +262,13 @@ def evaluate_one(code6: str, mode: str = "auto") -> dict | None:
     return out
 
 
-def select_pool(candidates: list[dict], held: set[str], top: int) -> list[dict]:
-    """优胜劣汰：按分取 Top；持仓强制保留（占名额）。"""
+def select_pool(
+    candidates: list[dict],
+    held: set[str],
+    max_pool: int = DEFAULT_MAX_POOL,
+    min_score: float = DEFAULT_MIN_SCORE,
+) -> list[dict]:
+    """方法入池：硬过滤已过的候选里，分≥min_score 全收；超 max_pool 按分截断。持仓强制保留。"""
     by_code = {c["code"]: dict(c) for c in candidates}
     selected: list[dict] = []
     used: set[str] = set()
@@ -289,18 +296,25 @@ def select_pool(candidates: list[dict], held: set[str], top: int) -> list[dict]:
             used.add(code)
 
     ranked = sorted(
-        (c for c in candidates if c["code"] not in used),
+        (
+            c for c in candidates
+            if c["code"] not in used and float(c.get("stability_score") or 0) >= min_score
+        ),
         key=lambda x: x["stability_score"],
         reverse=True,
     )
     for c in ranked:
-        if len(selected) >= top:
+        if len(selected) >= max_pool:
             break
         selected.append(c)
         used.add(c["code"])
 
     selected.sort(key=lambda x: (not x.get("protected"), -x["stability_score"]))
-    return selected[:top]
+    # 持仓保护可略超 max_pool（盯止盈止损优先）
+    non_prot = [x for x in selected if not x.get("protected")]
+    prot = [x for x in selected if x.get("protected")]
+    room = max(0, max_pool - len(prot))
+    return prot + non_prot[:room]
 
 
 def churn(prev_codes: set[str], new_codes: set[str]) -> dict:
@@ -312,19 +326,23 @@ def churn(prev_codes: set[str], new_codes: set[str]) -> dict:
 
 
 def build_pool(
-    top: int = DEFAULT_TOP,
+    max_pool: int = DEFAULT_MAX_POOL,
+    min_score: float = DEFAULT_MIN_SCORE,
     limit: int | None = None,
     workers: int = 8,
     mode: str = "auto",
+    top: int | None = None,
 ) -> dict:
+    if top is not None:
+        max_pool = top
     universe = load_universe()
     if limit:
         universe = universe[:limit]
     held = load_held_codes()
     effective = "hist" if (mode == "hist" or (mode == "auto" and is_weekend())) else "live"
     log.info(
-        "扫描 %d 只 | 持仓保护 %d | Top %d | 数据=%s",
-        len(universe), len(held), top, effective,
+        "扫描 %d 只 | 持仓保护 %d | min_score≥%.1f | max_pool %d | 数据=%s",
+        len(universe), len(held), min_score, max_pool, effective,
     )
 
     candidates: list[dict] = []
@@ -343,19 +361,24 @@ def build_pool(
                 candidates.append(r)
             time.sleep(0.01)
 
-    pool = select_pool(candidates, held, top)
+    pool = select_pool(candidates, held, max_pool=max_pool, min_score=min_score)
     prev = load_prev_pool()
     prev_codes = {to_code6(x.get("code", "")) for x in prev.get("stocks", []) if x.get("code")}
     new_codes = {x["code"] for x in pool}
     change = churn(prev_codes, new_codes)
+    above_floor = sum(1 for c in candidates if float(c.get("stability_score") or 0) >= min_score)
 
     payload = {
         "date": date.today().isoformat(),
         "built_at": datetime.now().isoformat(timespec="seconds"),
-        "top": top,
+        "selection": "method+cap",
+        "min_score": min_score,
+        "max_pool": max_pool,
+        "top": max_pool,  # 兼容旧字段
         "data_mode": effective,
         "universe_scanned": len(universe),
         "candidates": len(candidates),
+        "above_min_score": above_floor,
         "held_protected": sorted(held),
         "churn": change,
         "stocks": pool,
@@ -377,9 +400,11 @@ def save_pool(payload: dict) -> Path:
     day_path.write_text(text, encoding="utf-8")
     latest.write_text(text, encoding="utf-8")
     log.info(
-        "写池 %s | %d只 | 新进%d 出局%d 留存%d",
+        "写池 %s | %d只 | 合格≥%.0f共%d | 新进%d 出局%d 留存%d",
         day_path,
         len(payload["stocks"]),
+        float(payload.get("min_score") or 0),
+        int(payload.get("above_min_score") or 0),
         len(payload["churn"]["entered"]),
         len(payload["churn"]["exited"]),
         len(payload["churn"]["kept"]),
@@ -387,8 +412,16 @@ def save_pool(payload: dict) -> Path:
     return latest
 
 
-def ensure_today_pool(top: int = DEFAULT_TOP, force: bool = False, mode: str = "auto") -> Path | None:
+def ensure_today_pool(
+    max_pool: int = DEFAULT_MAX_POOL,
+    min_score: float = DEFAULT_MIN_SCORE,
+    force: bool = False,
+    mode: str = "auto",
+    top: int | None = None,
+) -> Path | None:
     """今日池不存在则构建。供 SwingDaily / 其它入口调用。"""
+    if top is not None:
+        max_pool = top
     latest = OUT_DIR / "latest.json"
     if not force and latest.exists():
         try:
@@ -397,13 +430,24 @@ def ensure_today_pool(top: int = DEFAULT_TOP, force: bool = False, mode: str = "
                 return latest
         except Exception:
             pass
-    payload = build_pool(top=top, mode=mode)
+    payload = build_pool(max_pool=max_pool, min_score=min_score, mode=mode)
     return save_pool(payload)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="每日动态稳定波段池（支持周末历史K线）")
-    ap.add_argument("--top", type=int, default=DEFAULT_TOP, help="池子大小，默认20")
+    ap = argparse.ArgumentParser(description="每日动态稳定波段池（方法过滤+软上限）")
+    ap.add_argument(
+        "--max-pool", type=int, default=DEFAULT_MAX_POOL,
+        help=f"软上限，默认{DEFAULT_MAX_POOL}（防 Pulse 扫爆）",
+    )
+    ap.add_argument(
+        "--min-score", type=float, default=DEFAULT_MIN_SCORE,
+        help=f"稳定性分地板，默认{DEFAULT_MIN_SCORE}（方法合格才入池）",
+    )
+    ap.add_argument(
+        "--top", type=int, default=None,
+        help="兼容旧参数：等同 --max-pool",
+    )
     ap.add_argument("--limit", type=int, default=None, help="调试：只扫前 N 只")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--force", action="store_true")
@@ -414,6 +458,7 @@ def main() -> int:
         help="auto=周末自动用日K；hist=强制历史；live=强制实时成交额",
     )
     args = ap.parse_args()
+    max_pool = args.top if args.top is not None else args.max_pool
 
     if not args.force:
         latest = OUT_DIR / "latest.json"
@@ -426,7 +471,13 @@ def main() -> int:
             except Exception:
                 pass
 
-    payload = build_pool(top=args.top, limit=args.limit, workers=args.workers, mode=args.mode)
+    payload = build_pool(
+        max_pool=max_pool,
+        min_score=args.min_score,
+        limit=args.limit,
+        workers=args.workers,
+        mode=args.mode,
+    )
     save_pool(payload)
     for s in payload["stocks"][:10]:
         flag = "🔒" if s.get("protected") else "  "
@@ -435,6 +486,8 @@ def main() -> int:
             flag, s["code"], s["name"], s["stability_score"], s["atr_pct"],
             s.get("data_mode", "?"),
         )
+    if len(payload["stocks"]) > 10:
+        log.info("... 共 %d 只", len(payload["stocks"]))
     return 0
 
 

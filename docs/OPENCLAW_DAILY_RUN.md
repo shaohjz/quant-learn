@@ -1,6 +1,7 @@
 # OpenClaw 每日运行手册（读完按做）
 
-> **给谁读**：OpenClaw Agent / 产机运维  
+> **给谁读**：OpenClaw Agent / 产机运维（**细读**）  
+> **唯一权威部署入口**：[DEPLOYMENT.md](./DEPLOYMENT.md) ← 主人一句话让你部署时 **优先读那个**；本文与之冲突以 DEPLOYMENT 为准。  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **目标**：交易脚本按时跑；晚间把台账 / PM / 研发 / 测试落盘 **自动 push 到 `master`**  
 > **权威对照**：[DEPLOYMENT.md](./DEPLOYMENT.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
@@ -21,20 +22,25 @@
 ```
 【Windows schtasks — 交易，不占 LLM】
 08:30            MorningScan
-08:40            SwingPool Top20
+08:40            SwingPool 方法池≤50
 09:35~14:50 /10m QuantPulse（GUI 设 10 分重复）
 10:00~14:30 /30m IntradayScanner（可选）
 16:05            SwingDaily
 16:15            TradeJournal → pm/trade_journal/
 16:20            DailyClose
 
-【OpenClaw LLM — 最多 1～2 条】
-16:30            理财：填台账「复盘备注」；有问题开 BUG/REQ
-17:00~18:15      需求/PM/QA/开发经理：入库 + 写 cursor_queue（可合并成 18:15 一条）
+【OpenClaw LLM — 最多 2～3 条】
+16:30            理财：填台账「复盘备注」；有问题开 BUG/REQ（可并进 18:15）
+17:00~18:15      需求/PM/QA/开发经理：入库 + 写 cursor_queue（建议合并成 18:15 一条）
+19:15            ★守夜：验收今日台账已进 origin/master；缺则补跑+企微告警（必开）
 
 【Windows schtasks — 推 master】
 18:45            DailyGitSync → 白名单 commit + push origin/master
 ```
+
+> **硬 SLO（主人验收）**：每个交易日 **次日 00:00 前**，`origin/master` 必须能看到  
+> `pm/trade_journal/昨天.md` + `output/daily_close_昨天.md`（或当日 `chore(daily)` 提交）。  
+> 缺任一 = **部署失败 / Agent 失职**，不是「可选项」。
 
 ---
 
@@ -98,10 +104,11 @@ openclaw cron list
 | 处理 | 内容 |
 |------|------|
 | **全部删/停** | 任何交易扫描、波段扫描、每 N 分钟盯盘的 `agentTurn` |
-| **最多 1～2 条** | 晚间：入库 + 写 `pm/cursor_queue`（建议 **18:15 一条合并**） |
-| **不要** | schtasks 已跑的脚本再挂一份 LLM（双推） |
+| **必留 1 条** | **19:15 守夜验收**（§3 任务 B）——缺这条 = 上传失职无人管 |
+| **最多再 1～2 条** | 晚间：入库 + 写 `pm/cursor_queue`（建议 **18:15 一条合并**） |
+| **不要** | schtasks 已跑的脚本再挂一份 LLM（双推）；不要只写「落盘即可」却不验收远程 |
 
-### 推荐唯一 LLM 任务提示词（约 18:15）
+### 推荐 LLM 任务 A：治理落盘（约 18:15）
 
 把下面整段贴进 OpenClaw cron `agentTurn`：
 
@@ -110,23 +117,75 @@ openclaw cron list
 C:\Users\Administrator\.openclaw\workspace\quant-learn
 先读 docs/OPENCLAW_DAILY_RUN.md 与 docs/REVIEW_LOOP.md，再执行。
 
-禁止：改交易核心代码；force push；提交密钥/config.local/*.db；自己 git push。
+禁止：改交易核心代码；force push；提交密钥/config.local/*.db。
+禁止假设「别人会推 git」——你只负责落盘；推送由 18:45 schtasks 做，
+但 19:15 守夜任务会验收（见同文档「任务 B」）。
 
 今日必须落盘（没有就创建）：
-1) 读 pm/trade_journal/今天.md；若「复盘备注」空，补短备注（做对/做错/明日关注）。
-2) 扫 output/ / 台账 / 企微相关日志，发现的问题一律入库：
-   - pm/bugs/BUG-xxx.md 或 pm/requirements/REQ-xxx.md
-   - 可用：.venv\Scripts\python.exe scripts\pm_cli.py create ...
-3) QA：若跑了测试，写 pm/test_reports/；失败则 reopen 对应 BUG。
-4) 开发经理：对将进队列的 P0/靠前 P1，在 pm/dev/ 写最短 PLAN-*.md（路径+验收）。
-5) PM：写完整 pm/cursor_queue/今天.md（P0+P1+P2 全量，不要只留 3 条 P0）。
-6) 企微短摘要：P0x/P1x/P2x + 提醒主人用 Cursor 话术「按 cursor_queue 从顶往下做」。
+1) 确认本地已有（没有则立刻 schtasks /run）：
+   - QuantLearn_TradeJournal → pm/trade_journal/今天.md
+   - QuantLearn_DailyClose → output/daily_close_今天.md
+   - QuantLearn_SwingDaily → output/swing_daily/今天.md
+2) 读台账；若「复盘备注」空，补短备注（做对/做错/明日关注）。
+3) 扫 output/ / 台账 / 日志，问题入库 pm/bugs 或 pm/requirements（可用 pm_cli）。
+4) PM：写完整 pm/cursor_queue/今天.md（P0+P1+P2 全量）。
+5) 企微短摘要：P0x/P1x/P2x + Cursor 话术提醒。
 
-落盘即可。18:45 的 QuantLearn_DailyGitSync 会白名单 commit+push master。
-结束后在回复里列出：新建/更新了哪些文件路径。
+不要自己 git push（交给 18:45 DailyGitSync）。
+回复列出：本地新建/更新了哪些路径；三项 schtasks 产物是否存在。
 ```
 
-理财单独短任务（可选 16:30，也可并进上面）：
+### 推荐 LLM 任务 B：★守夜验收（约 19:15，必开）
+
+> **这是修复「Agent 不履行职能」的关键提示词。**  
+> 旧提示词只写「落盘即可，18:45 会推」→ schtasks 挂了也没人管。守夜必须 **验货+补跑+告警**。
+
+```text
+你是 OpenClaw 守夜 Agent。工作目录：
+C:\Users\Administrator\.openclaw\workspace\quant-learn
+时区 Asia/Shanghai。今天=本地日期。先读 docs/OPENCLAW_DAILY_RUN.md §6/§7。
+
+目标（硬 SLO）：origin/master 上必须有今日台账与收盘摘要。
+禁止：force push；改交易核心代码；提交 *.db / config.local。
+
+按顺序做，每步记录原文：
+
+1) git fetch origin
+   git log -1 --oneline origin/master
+   git ls-tree -r --name-only origin/master | findstr /C:"pm/trade_journal/今天" /C:"daily_close_今天"
+   （把「今天」换成真实 YYYY-MM-DD）
+
+2) 若远程已有今日 trade_journal + daily_close → 写 pm/ops/今天-nightwatch.md
+   「SLO OK」+ 最新 commit，结束。
+
+3) 若远程没有：
+   a. dir 本地 pm\trade_journal\今天.md 与 output\daily_close_今天.md
+   b. 本地没有 → schtasks /run 依次：
+      QuantLearn_TradeJournal / QuantLearn_DailyClose / QuantLearn_SwingDaily
+      等 30s 再 dir 一次
+   c. 本地有或补跑后 → schtasks /run /tn QuantLearn_DailyGitSync
+      type output\daily_git_sync.log（看尾部）
+   d. 再 git fetch；确认 origin/master 出现今日文件或 chore(daily) 提交
+
+4) 仍失败 → 企微告警（用现有 webhook / 通知脚本），标题：
+   「【量化失职】今日台账未进 master」
+   正文含：schtasks Last Run 原文、daily_git_sync.log 尾 30 行、git status -sb
+   并写 pm/ops/今天-nightwatch.md + pm/bugs/BUG-上传失败-日期.md
+
+5) 额外健康抽查（失败只记 ops，不阻断）：
+   schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
+   schtasks /query /tn QuantLearn_TradeJournal /v /fo LIST
+   （看 Last Run Time / Last Result；Result≠0 记入 ops）
+
+允许：为达成 SLO，对白名单路径执行
+  .venv\Scripts\python.exe -u scripts\daily_git_sync.py
+（这是脚本推送，不是乱改代码。）
+禁止：git add scripts/ 或交易核心。
+
+回复主人三行：SLO=OK/FAIL；补跑了哪些任务；远程最新 commit。
+```
+
+理财单独短任务（可选 16:30，也可并进任务 A）：
 
 ```text
 【交易复盘备注】不改成交数字。
@@ -179,14 +238,18 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 
 ---
 
-## 6. 每日自检（OpenClaw 可在心跳/收工时做）
+## 6. 每日自检（OpenClaw **必须**做，不是可选）
+
+> 旧文写「可在心跳时做」→ Agent 经常跳过。现改为：**交易日 19:15 守夜必跑**（见 §3 任务 B）；  
+> 心跳若开启，也应跑同一套检查。
 
 ```bat
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
-git pull --ff-only origin master
+git fetch origin
+git log -1 --oneline origin/master
 schtasks /query /fo LIST | findstr QuantLearn
 dir pm\trade_journal
-dir pm\cursor_queue
+dir output\daily_close_*.md
 type output\daily_git_sync.log
 openclaw cron list
 ```
@@ -195,13 +258,27 @@ openclaw cron list
 
 | 项 | 期望 |
 |----|------|
-| QuantLearn_TradeJournal | 有；当日 `pm/trade_journal/YYYY-MM-DD.md` 存在 |
-| QuantLearn_DailyGitSync | 有；日志无 push 失败 |
+| QuantLearn_TradeJournal | Ready；**本地**当日 `pm/trade_journal/YYYY-MM-DD.md` 存在 |
+| QuantLearn_DailyClose | Ready；**本地**当日 `output/daily_close_YYYY-MM-DD.md` 存在 |
+| QuantLearn_DailyGitSync | Ready；`output\daily_git_sync.log` 无 push 失败；**远程**有当日台账 |
 | OpenClaw 交易 LLM cron | **0 条** |
-| OpenClaw 文案 LLM | **≤2 条** |
-| cursor_queue | 交易日晚间有「今天」文件 |
+| OpenClaw 文案 LLM | **≤2 条落盘 + 1 条 19:15 守夜**（守夜可算第 3 条） |
+| cursor_queue | 交易日晚间有「今天」文件（守夜不替代，但可缺省告警） |
 
-异常写入：`pm/ops/YYYY-MM-DD-openclaw-check.md`（简述失败命令与原文）。
+异常写入：`pm/ops/YYYY-MM-DD-nightwatch.md`（命令原文 + SLO OK/FAIL）。
+
+---
+
+## 7. 为什么「提示词看起来对、还是不上传」（根因备忘）
+
+| 误解 | 真相 |
+|------|------|
+| OpenClaw Agent 负责 push master | **否**。push 是 `QuantLearn_DailyGitSync` schtasks |
+| 写了 18:15「落盘即可」就够 | **不够**。落盘只写本地；schtasks 挂了远程永远没有 |
+| 心跳会自动发现 | **不会**。旧文档把自检写成可选；`HEARTBEAT` 空则跳过 |
+| 没 cursor_queue = 没上传 | **不一定**。台账/收盘是 schtasks；两者都缺 = 产机任务链死了 |
+
+**正确分工**：schtasks 生产+推送；OpenClaw **守夜验收**；失败则补跑/告警。
 
 ---
 
@@ -280,7 +357,8 @@ git pull --ff-only origin master
 
 ## 9. 一句话给主人
 
-> 交易靠 Windows 任务计划；OpenClaw 只写 `pm/`；18:45 脚本把台账和各 Agent 运行落盘推到 `master`。  
-> 产机 ahead 只推白名单；`scripts/` 脏一律交 Cursor。
+> 交易靠 Windows 任务计划；18:45 `DailyGitSync` 负责上传；OpenClaw **19:15 守夜验货**，缺台账就补跑+告警。  
+> 产机 ahead 只推白名单；`scripts/` 脏一律交 Cursor。  
+> 主人验收：次日 `git pull` 必须看到昨天 `pm/trade_journal/`。
 
 完。

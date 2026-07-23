@@ -778,10 +778,10 @@ def main() -> int:
     today = date.today().isoformat()
     ensure_swing_account()
 
-    # 今日动态池缺失则补建（优胜劣汰 Top20）
+    # 今日动态池缺失则补建（方法过滤 + 软上限50）
     try:
         from swing_pool_builder import ensure_today_pool
-        ensure_today_pool(top=20)
+        ensure_today_pool(max_pool=50, min_score=70)
     except Exception as e:
         log.warning("ensure_today_pool 失败，将回退种子池: %s", e)
 
@@ -818,6 +818,16 @@ def main() -> int:
     fills: list[dict] = []
     if not args.no_trade:
         fills = execute_sim(marked, buys)
+        # 收盘补漏成交也立刻 @all，别等整份日报被淹没
+        if fills and not args.no_push:
+            try:
+                from swing_intraday_watch import push_sync_trade
+                for f in fills:
+                    if f.get("ok"):
+                        push_sync_trade(f)
+                        time.sleep(0.3)
+            except Exception as e:
+                log.warning("同步实盘提醒失败: %s", e)
     else:
         # 仅建议：把拟买卖写进 advice，不写成交
         for p in marked:

@@ -3,10 +3,11 @@
 解决：波段日报只在 16:05，盘中好价砸到也听不见。
 
 做什么（交易时段）：
-  1. 扫每日动态稳定池（output/swing_pool/latest.json，默认 Top20）
+  1. 扫每日动态稳定池（output/swing_pool/latest.json，方法过滤+软上限约50）
   2. A/B 类且评分≥阈值 → 企微提醒「可挂买入」+ 账户 #3 同步模拟买入
-  3. 波段账户 #3 持仓触及止损/止盈 → 提醒卖 + 同步模拟卖出
-  4. 同股同日同类型只推/成交一次（output/swing_intraday_state.json）
+  3. 模拟买卖成功 → 立刻另发一条 text+@all「请同步实盘」
+  4. 波段账户 #3 持仓触及止损/止盈 → 提醒卖 + 同步模拟卖出
+  5. 同股同日同类型只推/成交一次（output/swing_intraday_state.json）
 
 用法：
   python scripts/swing_intraday_watch.py
@@ -82,9 +83,8 @@ def mark_fired(state: dict, key: str) -> None:
     state.setdefault("fired", []).append(key)
 
 
-def push_markdown(md: str) -> bool:
+def _webhook_url() -> str | None:
     import yaml
-    url = None
     for name in ("config.local.yaml", "config.yaml"):
         p = ROOT / name
         if not p.exists():
@@ -92,12 +92,16 @@ def push_markdown(md: str) -> bool:
         data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         url = (data.get("notify") or {}).get("wecom_webhook") or (data.get("notifier") or {}).get("wecom_webhook")
         if url and "YOUR_KEY" not in str(url):
-            break
-        url = None
+            return str(url)
+    return None
+
+
+def _post_wecom(payload: dict) -> bool:
+    url = _webhook_url()
     if not url:
         log.warning("无 webhook，跳过推送")
         return False
-    body = json.dumps({"msgtype": "markdown", "markdown": {"content": md[:3500]}}, ensure_ascii=False).encode()
+    body = json.dumps(payload, ensure_ascii=False).encode()
     req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
@@ -108,6 +112,58 @@ def push_markdown(md: str) -> bool:
     except Exception as e:
         log.error("推送失败: %s", e)
         return False
+
+
+def push_markdown(md: str) -> bool:
+    return _post_wecom({"msgtype": "markdown", "markdown": {"content": md[:3500]}})
+
+
+def push_text(content: str, mentioned_list: list[str] | None = None) -> bool:
+    text: dict = {"content": content[:2000]}
+    if mentioned_list:
+        text["mentioned_list"] = mentioned_list
+    return _post_wecom({"msgtype": "text", "text": text})
+
+
+def format_sync_trade_text(fill: dict) -> str | None:
+    """模拟成交立刻同步实盘的明文（给人手机震一下）。"""
+    if not fill or not fill.get("ok"):
+        return None
+    side = fill.get("side")
+    name = fill.get("name") or fill.get("code")
+    code = fill.get("code")
+    qty = fill.get("qty")
+    price = float(fill.get("price") or 0)
+    reason = fill.get("reason") or ""
+    if side == "BUY":
+        return (
+            f"🚨【立刻同步实盘】波段模拟已买入\n"
+            f"{name}({code}) {qty}股 @ {price:.2f}\n"
+            f"止损 {fill.get('stop')} / 目标 {fill.get('target')}\n"
+            f"原因：{reason}\n"
+            f"请马上在券商挂同样买单"
+        )
+    if side == "SELL":
+        realized = float(fill.get("realized") or 0)
+        return (
+            f"🚨【立刻同步实盘】波段模拟已卖出\n"
+            f"{name}({code}) {qty}股 @ {price:.2f}\n"
+            f"已实现约 ¥{realized:+.0f}\n"
+            f"原因：{reason}\n"
+            f"请马上在券商确认后挂卖单"
+        )
+    return None
+
+
+def push_sync_trade(fill: dict) -> bool:
+    """模拟成交成功 → text + @all，催人同步实盘。"""
+    text = format_sync_trade_text(fill)
+    if not text:
+        return False
+    ok = push_text(text, mentioned_list=["@all"])
+    if ok:
+        log.info("同步实盘提醒已推 %s %s", fill.get("side"), fill.get("code"))
+    return ok
 
 
 def get_quote_6(code6: str) -> dict | None:
@@ -275,21 +331,28 @@ def _fmt_sim_footer(a: dict) -> str:
         return (
             f"- **模拟已买**：账户#3 {fill.get('qty')}股 @ {fill.get('price'):.2f}，"
             f"止损 {fill.get('stop')} / 目标 {fill.get('target')}\n"
-            f"> 模拟仓已进；实盘请你自己在券商挂单"
+            f"> 🚨 已另发@所有人同步提醒；请立刻在券商挂同样买单"
         )
     if fill.get("ok") and fill.get("side") == "SELL":
         return (
             f"- **模拟已卖**：账户#3 {fill.get('qty')}股 @ {fill.get('price'):.2f}，"
             f"已实现约 ¥{float(fill.get('realized') or 0):+.0f}\n"
-            f"> 模拟仓已出；实盘请你自己确认后挂卖单"
+            f"> 🚨 已另发@所有人同步提醒；请立刻在券商确认后挂卖单"
         )
     return f"- 模拟未成交：{fill.get('reason') or '未知'}\n> 仍可作挂单参考，请你自己在券商操作"
 
 
 def format_alert(a: dict, now: str) -> str:
+    fill = a.get("sim_fill") or {}
+    synced = fill.get("ok")
     if a["kind"] == "BUY":
+        title = (
+            f"## 🚨【立刻同步实盘】波段模拟已买入 {now}"
+            if synced
+            else f"## 盘中波段买入提醒 {now}"
+        )
         return (
-            f"## 盘中波段买入提醒 {now}\n"
+            f"{title}\n"
             f"**{a['name']}({a['code']})** 现价 **{a['price']:.2f}**\n"
             f"{_fmt_pnl_block(a)}\n"
             f"- 信号：{a.get('signals','')}\n"
@@ -297,8 +360,13 @@ def format_alert(a: dict, now: str) -> str:
             f"{_fmt_sim_footer(a)}"
         )
     tag = "止损" if a["kind"] == "SELL_STOP" else "止盈"
+    title = (
+        f"## 🚨【立刻同步实盘】波段模拟已卖出({tag}) {now}"
+        if synced
+        else f"## 盘中波段{tag}提醒 {now}"
+    )
     return (
-        f"## 盘中波段{tag}提醒 {now}\n"
+        f"{title}\n"
         f"**{a['name']}({a['code']})** 现价 **{a['price']:.2f}**（{a['pnl_pct']:+.1f}%）\n"
         f"- {a['msg']}\n"
         f"- 参考止损 {a['stop']:.2f} / 目标 {a['target']:.2f}\n"
@@ -367,6 +435,7 @@ def main() -> int:
 
     pushed = 0
     traded = 0
+    sync_pushed = 0
     for a in alerts:
         key = f"{a['kind']}:{a['code']}"
         if already_fired(state, key):
@@ -396,15 +465,26 @@ def main() -> int:
         if not args.no_push:
             if push_markdown(md):
                 pushed += 1
-                time.sleep(0.5)
+                time.sleep(0.3)
+            # 成交成功再砸一条 @all 明文，手机必震
+            if a.get("sim_fill") and a["sim_fill"].get("ok"):
+                if push_sync_trade(a["sim_fill"]):
+                    sync_pushed += 1
+                    time.sleep(0.3)
         else:
             print(md)
+            sync_txt = format_sync_trade_text(a.get("sim_fill") or {})
+            if sync_txt:
+                print(sync_txt)
             print("---")
             pushed += 1
 
     save_state(state)
-    log.info("本轮新提醒 %d / 模拟成交 %d / 候选 %d", pushed, traded, len(alerts))
-    print(f"新提醒 {pushed} 条（模拟成交 {traded}，候选 {len(alerts)}）")
+    log.info(
+        "本轮新提醒 %d / 模拟成交 %d / 同步@all %d / 候选 %d",
+        pushed, traded, sync_pushed, len(alerts),
+    )
+    print(f"新提醒 {pushed} 条（模拟成交 {traded}，同步@all {sync_pushed}，候选 {len(alerts)}）")
     return 0
 
 

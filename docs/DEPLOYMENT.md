@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-24（Cursor 最高规则：改代码必须同改本文并 push；主人只收一句话口令）  
+> **更新**：2026-07-25（20:30 DailyGitSyncEvening 承接 20:00 LLM 各类日报进 Git）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -38,10 +38,11 @@
 | `origin/master` 有 `pm/trade_journal/交易日.md` | 当日 19:30 前 | OpenClaw 守夜补跑；仍无 → 企微【量化失职】 |
 | 同日有 `output/daily_close_交易日.md` | 同上 | 同上 |
 | 企微有台账/收盘或 DailyGitSync 短讯 | 当日 19:30 前 | 查 webhook + schtasks Last Result |
+| `origin/master` 有 `daily_reports/交易日-*-report.md`（LLM 日报） | 当日 **21:00** 前 | 20:00 写完后跑 Evening sync；仍无 → 企微【量化失职-日报未入库】 |
 
-**上传主职** = schtasks `QuantLearn_DailyGitSync`（18:45）。  
-**OpenClaw 主职** = **19:15 守夜验货**（提示词就在本文步骤 6，禁止只写「落盘即可」）。  
-旧提示词「落盘即可，18:45 会推」= **失职设计，已废**。
+**上传主职** = schtasks `QuantLearn_DailyGitSync`（**18:45** 台账）+ `QuantLearn_DailyGitSyncEvening`（**20:30** LLM 日报）。  
+**OpenClaw 主职** = **19:15 守夜验货**（提示词 B）+ **20:00 各类日报必须落盘**（提示词 C）。  
+旧提示词「落盘即可，18:45 会推」= **失职设计，已废**（18:45 赶不上 20:00 写的日报）。
 
 ---
 
@@ -233,10 +234,13 @@ schtasks /create /f /tn "QuantLearn_DailyClose" /tr "%ROOT%\scripts\daily_close_
 REM ⑦ 18:45 台账/PM/QA/Ops 白名单推 master（不占 LLM）
 schtasks /create /f /tn "QuantLearn_DailyGitSync" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
 
+REM ⑧ 20:30 再推一次 —— 承接 20:00 LLM 各类日报（同 bat，必开）
+schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
+
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **DailyGitSync**
+**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)**
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
 
@@ -251,13 +255,16 @@ schtasks /run /tn QuantLearn_SwingDaily
 schtasks /run /tn QuantLearn_TradeJournal
 schtasks /run /tn QuantLearn_DailyClose
 schtasks /run /tn QuantLearn_DailyGitSync
+schtasks /run /tn QuantLearn_DailyGitSyncEvening
 type %ROOT%\output\swing_pool_builder.log
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
 type %ROOT%\output\trade_journal.log
+type %ROOT%\output\daily_git_sync.log
 dir %ROOT%\output\swing_pool
 dir %ROOT%\pm\trade_journal
 dir %ROOT%\output\swing_daily
+dir %ROOT%\daily_reports
 ```
 
 ### 波段池说明（2026-07-24）
@@ -308,7 +315,41 @@ REM 4) 盘中链路冒烟（非交易时段加 --force；--no-push 不真发企�
 | 立刻同步 | 下一笔模拟买卖成功后，企微应收到两条：markdown 详情 + **text @所有人「立刻同步实盘」** |
 | 企微 | `config.local.yaml` 里 `notify.wecom_webhook` 有效；别开 `NOTIFIER_DRY_RUN=1` 挡正式推送 |
 
-**不用做：** 不用改 schtasks 创建命令；不用改账户 #3；不用动 webhook key。
+**不用做（波段池那次）：** 不用改账户 #3；不用动 webhook key。
+
+### ★ 本次变更怎么部署（LLM 日报进 Git：20:30 Evening sync）
+
+> **问题**：18:45 DailyGitSync 早于 20:00 LLM 日报 → 日报只在产机本地，Git 经常缺。  
+> **解法**：再建一条 **20:30** 同 bat 任务 + 提示词 C 强制落盘 `daily_reports/`。
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM ★必须新建（旧机只有 18:45 那条不够）
+set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
+schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
+
+schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
+schtasks /query /tn QuantLearn_DailyGitSyncEvening /v /fo LIST
+
+REM 冒烟：手动跑晚班（无新文件时会「无白名单变更，跳过」也算过）
+schtasks /run /tn QuantLearn_DailyGitSyncEvening
+timeout /t 15
+type output\daily_git_sync.log
+```
+
+**OpenClaw cron：** 保留/新建工作日 **20:00** 日报任务，提示词换成本文 **提示词 C**（可 1 条合并 PM+研发+理财，也可多条但每条必须落盘）。
+
+**验收：**
+
+| 项 | 过关标准 |
+|----|----------|
+| schtasks | `DailyGitSync` Ready@18:45 + `DailyGitSyncEvening` Ready@20:30 |
+| cron | 有 20:00 日报（提示词含 `daily_reports/` + 写完可 `/run Evening`） |
+| 白名单 | `daily_reports/`、`output/reviews/`、`docs/reviews/`、`output/pm_daily_report_*.md` 可被 sync |
+| 下一交易日 21:00 | `git ls-tree origin/master` 能看到当日 `daily_reports/*-report.md` |
 
 ## 步骤 6 — 整理 OpenClaw Cron（LLM 限量 + 提示词全文）
 
@@ -321,8 +362,9 @@ openclaw cron list
 | **全部删/停** | 任何交易扫描、波段扫描、每 N 分钟盯盘的 **LLM agentTurn** |
 | **停用（建议）** | 每日多轮「研发修复」LLM（09/18/21） |
 | **必留 1 条** | **工作日 19:15 守夜** — 用下面「提示词 B」整段贴进 cron |
-| **最多再留 1 条** | **工作日 18:15 治理落盘** — 用下面「提示词 A」（可与理财合并） |
-| **不要** | schtasks 已跑的脚本再在 OpenClaw 挂一份（双推）；不要只写「落盘即可」却不看远程 |
+| **必留 ≥1 条** | **工作日 20:00 各类日报落盘** — 用下面「提示词 C」（PM/研发/理财可合并成 1 条） |
+| **最多再留 1 条** | **工作日 18:15 治理落盘** — 用下面「提示词 A」 |
+| **不要** | schtasks 已跑的脚本再在 OpenClaw 挂一份（双推）；不要只写「落盘即可」却不看远程；**不要假设 18:45 会推走 20:00 才写的文件** |
 
 可选：若不用 schtasks，交易脚本可用 OpenClaw **`systemEvent`（非 LLM）** 调 bat/python——仍算「脚本调度」，不占 LLM 名额。优先 schtasks。
 
@@ -336,8 +378,8 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 先读 docs/DEPLOYMENT.md（本文权威），再执行。
 
 禁止：改交易核心代码；force push；提交密钥/config.local/*.db。
-禁止假设「别人会推 git」——你只负责落盘；推送由 18:45 schtasks 做，
-但 19:15 守夜会验收（见 DEPLOYMENT 提示词 B）。
+禁止假设「别人会推 git」——你只负责落盘；台账由 18:45 DailyGitSync 推，
+LLM 日报由 20:30 DailyGitSyncEvening 推；19:15 守夜验台账（提示词 B）。
 
 今日必须落盘（没有就创建）：
 1) 确认本地已有（没有则立刻 schtasks /run）：
@@ -349,7 +391,7 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 4) PM：写完整 pm/cursor_queue/今天.md（P0+P1+P2 全量）。
 5) 企微短摘要：P0x/P1x/P2x + Cursor 话术提醒。
 
-不要自己 git push（交给 18:45 DailyGitSync）。
+不要自己 git push（交给 18:45 / 20:30 schtasks）。
 回复列出：本地新建/更新了哪些路径；三项 schtasks 产物是否存在。
 ```
 
@@ -403,6 +445,42 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 回复主人三行：SLO=OK/FAIL；补跑了哪些任务；远程最新 commit。
 ```
 
+### 提示词 C — ★20:00 各类日报落盘（必开，可合并成 1 条）
+
+> **缺这条 = 企微有日报、Git 永远没有。** 只推企微不算完成；必须写文件。  
+> 现有 `pm-agent-daily-report` / `理财师-每日复盘汇报` 等 20:00 cron：**提示词改成本段**（或多条各自落盘，路径统一）。
+
+把下面 **整段** 贴进 OpenClaw `agentTurn`（工作日 **20:00**）：
+
+```text
+你是 OpenClaw 日报 Agent。工作目录：
+C:\Users\Administrator\.openclaw\workspace\quant-learn
+时区 Asia/Shanghai。今天=本地日期 YYYY-MM-DD。权威：docs/DEPLOYMENT.md。
+
+目标：把今日各类 LLM 日报写入仓库白名单路径，让 20:30 DailyGitSyncEvening 能推进 origin/master。
+禁止：force push；改交易核心；提交 *.db / config.local；只发企微不写文件。
+
+必须落盘（UTF-8 markdown，覆盖写今日文件即可）：
+1) daily_reports/今天-rd-report.md
+   — 研发/PM 视角：代码变更摘要、PM 队列 P0/P1/testing、阻塞项、模拟盘快照、明日优先
+2) daily_reports/今天-finance-report.md
+   — 理财师视角：#1+#3 盈亏、持仓风险、止损/挂单建议（若本 cron 不做理财，可省略本文件，但须在回复写明「理财 cron 另写」）
+可选兼容路径（旧脚本）：output/reviews/今天.md 、 docs/reviews/今天.md 、 output/pm_daily_report_今天.md
+（白名单已含；优先仍用 daily_reports/）
+
+写完立刻：
+  schtasks /run /tn QuantLearn_DailyGitSyncEvening
+  （若任务不存在 → schtasks /run /tn QuantLearn_DailyGitSync）
+等 20s：type output\daily_git_sync.log（看尾部）
+再：
+  git fetch origin
+  git ls-tree -r --name-only origin/master | findstr daily_reports\今天
+若远程仍没有今日 daily_reports → 再跑一次 sync；仍失败写 pm/ops/今天-report-sync-fail.md 并企微【量化失职-日报未入库】。
+
+企微可发精简版，但文件必须先写好。
+回复主人：写了哪些路径；Evening sync 是否跑；远程是否可见。
+```
+
 ## 步骤 7 — 交付报告
 
 写入 `pm/ops/YYYY-MM-DD-deploy.md`，必须包含：
@@ -410,11 +488,12 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 1. `git log -1 --oneline`  
 2. 冒烟 A～E 结果  
 3. **【Windows schtasks】** `findstr QuantLearn` 原文 + Pulse 是否已在 GUI 设 10 分重复  
-4. **`QuantLearn_DailyGitSync` 是否 Ready**（历史漏挂过，必写 Last Run）  
-5. **【OpenClaw cron】** 最终 list 原文（应几乎无交易 LLM；**必须有 19:15 守夜**）  
+4. **`QuantLearn_DailyGitSync`(18:45) + `QuantLearn_DailyGitSyncEvening`(20:30) 是否 Ready**（历史漏挂过，必写 Last Run）  
+5. **【OpenClaw cron】** 最终 list 原文（应几乎无交易 LLM；**必须有 19:15 守夜 + 20:00 日报/提示词 C**）  
 6. 已停用的重复/LLM 任务名  
 7. 企微是否真推测过（是/否）  
 8. 守夜试跑：故意 `dir` 检查今日台账路径；`schtasks /run /tn QuantLearn_DailyGitSync` 后 `git fetch` 看远程  
+9. 日报链路：`dir daily_reports`；试跑 `DailyGitSyncEvening`；确认白名单含 `daily_reports/`  
 
 报告里 **必须分开两节**写 schtasks 与 openclaw cron，禁止混在一堆。
 
@@ -431,11 +510,13 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 16:05            SwingDaily 波段赚亏+挂单建议
 16:15            TradeJournal 台账
 16:20            DailyClose 双账户摘要
-18:45            DailyGitSync 台账/PM/QA/Ops → push master   ★上传主职
+18:45            DailyGitSync 台账/PM/QA/Ops → push master   ★上传主班
+20:30            DailyGitSyncEvening 同 bat → 推 LLM 日报   ★上传晚班
 
 【OpenClaw LLM】
 18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
 19:15            ★守夜验收：远程有今日台账？没有 → 补跑 + 企微【量化失职】
+20:00            ★各类日报落盘 daily_reports/（提示词 C）→ 企微精简版
 ```
 详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
 
@@ -490,17 +571,19 @@ notify:
 
 ---
 
-# 日常运维（OpenClaw 心跳 / 19:15 守夜必须做）
+# 日常运维（OpenClaw 心跳 / 19:15 守夜 / 20:30 Evening 必须做）
 
-交易日抽查（完整动作 = 本文步骤 6「提示词 B」）：
+交易日抽查（完整动作 = 本文步骤 6「提示词 B」+「提示词 C」）：
 
 ```bat
 schtasks /query /tn QuantLearn_QuantPulse /v /fo LIST
 schtasks /query /tn QuantLearn_TradeJournal /v /fo LIST
 schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
+schtasks /query /tn QuantLearn_DailyGitSyncEvening /v /fo LIST
 dir pm\trade_journal
 dir output\daily_close_*.md
 dir output\swing_daily
+dir daily_reports
 type output\daily_git_sync.log
 git fetch origin
 git log -1 --oneline origin/master
@@ -515,6 +598,7 @@ git log -1 --oneline origin/master
 | 现象 | 处理 |
 |------|------|
 | **git 里没有昨天/今天台账** | **先查这张表**：①产机是否睡眠 ②`TradeJournal`/`DailyClose` Last Run ③`DailyGitSync` Last Result ④`type output\daily_git_sync.log` ⑤立刻 `/run` 补推；OpenClaw 守夜本应已告警 |
+| **git 里没有 LLM 日报（daily_reports）** | ①20:00 cron 是否写了文件 `dir daily_reports` ②是否挂了 `DailyGitSyncEvening`@20:30 ③提示词是否仍只推企微不落盘 → 重贴本文提示词 C ④立刻 `/run DailyGitSyncEvening` |
 | 企微没消息 | key / `delivery.mode` / `NOTIFIER_DRY_RUN` |
 | 早盘扫超时 | 正常走 `scanner_with_fallback` → lite；查网络/Zscaler |
 | bat Result:1 | `cmd /k` 手动跑 bat；看对应 `output\*.log` |
@@ -522,7 +606,7 @@ git log -1 --oneline origin/master
 | 盘中完全没提醒 | 查 `QuantLearn_QuantPulse` 是否启用+重复间隔；日志 `quant_pulse.log`；持续时间是否到 **14:50**（误设 4h 会在 13:35 掐断） |
 | 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
-| Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜**，重贴本文步骤 6「提示词 B」 |
+| Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜 + 20:30 Evening**；重贴提示词 B/C |
 
 ---
 
@@ -532,8 +616,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7 交付报告。
-重点：DailyGitSync(18:45) + 19:15 守夜（本文步骤 6 提示词 B）+ 波段池软上限50/立刻@all同步。
-缺 7/23、7/24 台账就立刻补跑 TradeJournal/DailyClose/DailyGitSync。
+重点：新建 QuantLearn_DailyGitSyncEvening(20:30)；20:00 日报 cron 改贴步骤 6 提示词 C（必须写 daily_reports/）；保留 18:45 DailyGitSync + 19:15 守夜。
 做完写 pm/ops/今天-deploy.md。
 ```
 

@@ -78,6 +78,8 @@ BUG:  open → in_progress → fixed → verified → deployed
 | **18:15** | **PM** | 写 **完整** `pm/cursor_queue/今天.md` + commit 或等 18:45 统一同步 |
 | 18:30 | PM | 企微：今日队列条数（P0/P1/P2 计数）+ Cursor 一键话术 |
 | **18:45** | **schtasks** | **`QuantLearn_DailyGitSync`**：台账/PM/QA/Ops 白名单 `commit + push master` |
+| **20:00** | OpenClaw | LLM 各类日报落盘 `daily_reports/`（DEPLOYMENT 提示词 C） |
+| **20:30** | **schtasks** | **`QuantLearn_DailyGitSyncEvening`**：同 bat，推 LLM 日报 |
 | **晚上** | **你+Cursor** | **按队列从上到下尽量做完**，每项单独 commit；代码改动你自己 push |
 | 次日盘前 | PM/QA | 对昨夜 commit 改状态 |
 
@@ -177,15 +179,19 @@ BUG:  open → in_progress → fixed → verified → deployed
 2. 没有 → 补跑 TradeJournal/DailyClose/DailyGitSync  
 3. 仍没有 → 企微【量化失职】+ 写 `pm/ops/今天-nightwatch.md`
 
-### 晚间统一推 master（18:45，推荐 schtasks，不占 LLM）
+### 晚间统一推 master（18:45 + 20:30，schtasks，不占 LLM）
 
-产机任务名：`QuantLearn_DailyGitSync` → `scripts/daily_git_sync_runner.bat`
+产机任务名：
+- `QuantLearn_DailyGitSync` → 18:45（台账主班）
+- `QuantLearn_DailyGitSyncEvening` → 20:30（承接 20:00 LLM 日报）  
+同一 bat：`scripts/daily_git_sync_runner.bat`
 
-只提交白名单：`pm/trade_journal`、`pm/cursor_queue`、`pm/requirements|bugs|dev|test_reports|ops`、`output/swing_daily|swing_pool`、日报 md。  
+只提交白名单：`pm/trade_journal`、`pm/cursor_queue`、`pm/requirements|bugs|dev|test_reports|ops`、`output/swing_daily|swing_pool|reviews`、`daily_reports/`、`docs/reviews/`、`output/pm_daily_report_*.md`、`output/daily_close_*.md`。  
 **不推**：`scripts/` 交易代码、`*.db`、`config.local.yaml`。
 
 ```bat
 schtasks /create /f /tn "QuantLearn_DailyGitSync" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
+schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
 ```
 
 手动试跑：
@@ -195,6 +201,14 @@ cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 .venv\Scripts\python.exe -u scripts\daily_git_sync.py --dry-run
 .venv\Scripts\python.exe -u scripts\daily_git_sync.py
 ```
+
+### 20:00 LLM 各类日报（必开）
+
+完整提示词见 [DEPLOYMENT.md](./DEPLOYMENT.md) 步骤 6 **提示词 C**。摘要：
+
+1. 写 `daily_reports/今天-rd-report.md`（+ 可选 finance）  
+2. `schtasks /run /tn QuantLearn_DailyGitSyncEvening`  
+3. `git fetch` 确认远程可见；只推企微不算完成
 
 ### 理财复盘（16:30）
 

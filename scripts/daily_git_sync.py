@@ -2,10 +2,11 @@
 """每日治理产物同步到 origin/master（交易脚本产物 + PM/QA/Ops 落盘）。
 
 设计原则（对齐 docs/DEPLOYMENT.md / REVIEW_LOOP.md）：
-- 只提交白名单路径：台账、cursor_queue、REQ/BUG、PLAN、测试报告、ops、波段日报
+- 只提交白名单路径：台账、cursor_queue、REQ/BUG、PLAN、测试报告、ops、波段日报、LLM 各类日报
 - 禁止提交：交易核心代码、config.local、*.db、.venv、密钥
 - 无变更则静默退出 0；有变更则 commit + push
 - 不做 force push；不改 git config
+- 建议 schtasks：18:45（台账主班）+ 20:30（承接 20:00 LLM 日报）
 
 用法（产机）：
   .venv\\Scripts\\python.exe -u scripts\\daily_git_sync.py
@@ -34,7 +35,9 @@ ALLOW_PREFIXES = (
     "output/swing_daily/",
     "output/swing_pool/",
     "output/reviews/",
+    "output/finance_manager/",
     "daily_reports/",
+    "docs/reviews/",  # 理财师脚本历史路径；新日报优先 daily_reports/
 )
 
 ALLOW_EXACT = {
@@ -86,8 +89,10 @@ def _is_allowed(path: str) -> bool:
         return True
     if any(p.startswith(pref) for pref in ALLOW_PREFIXES):
         return True
-    # dated daily close sitting in output/
+    # dated daily close / PM 日报 sitting in output/
     if p.startswith("output/daily_close_") and p.endswith(".md"):
+        return True
+    if p.startswith("output/pm_daily_report_") and p.endswith(".md"):
         return True
     return False
 
@@ -150,7 +155,19 @@ def main() -> int:
         return 0
 
     day = datetime.now().strftime("%Y-%m-%d")
-    msg = f"chore(daily): {day} 交易台账/PM队列/测试与运维落盘"
+    has_llm_report = any(
+        p.startswith("daily_reports/")
+        or p.startswith("docs/reviews/")
+        or p.startswith("output/reviews/")
+        or p.startswith("output/finance_manager/")
+        or p.startswith("output/pm_daily_report_")
+        for p in paths
+    )
+    msg = (
+        f"chore(daily): {day} 台账/LLM日报/PM 落盘"
+        if has_llm_report
+        else f"chore(daily): {day} 交易台账/PM队列/测试与运维落盘"
+    )
     # HEREDOC-style via -m is fine for non-interactive
     _run(["git", "commit", "-m", msg], check=True)
     print(f"[daily_git_sync] committed: {msg}")

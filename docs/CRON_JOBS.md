@@ -3,7 +3,7 @@
 > **权威跑法**：[DEPLOYMENT.md](./DEPLOYMENT.md) ★ 章节  
 > **实时层**：[REALTIME.md](./REALTIME.md) · **复盘**：[REVIEW_LOOP.md](./REVIEW_LOOP.md)  
 > 产机：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
-> 更新：2026-07-24（补 18:45 DailyGitSync 必开 + 19:15 OpenClaw 守夜）
+> 更新：2026-07-25（补 20:30 DailyGitSyncEvening + 20:00 LLM 日报进 Git）
 
 ---
 
@@ -31,6 +31,8 @@ flowchart TD
   F --> G["16:30-18:15 OpenClaw 复盘入库 + Cursor队列"]
   G --> H["18:45 DailyGitSync push master"]
   H --> I["19:15 OpenClaw 守夜验货"]
+  I --> J["20:00 LLM 各类日报写 daily_reports"]
+  J --> K["20:30 DailyGitSyncEvening 推日报"]
 ```
 
 | 时刻 | 任务 | **定时器在哪** | 入口 | 说明 |
@@ -46,9 +48,11 @@ flowchart TD
 | **17:00** | 需求入库 | **可与 18:15 合并成 1 条** OpenClaw | 短提示词 | 写 `pm/` |
 | **18:15** | Cursor 队列 | **OpenClaw cron 1 条够** | 短提示词 | 写 `cursor_queue` |
 | **18:45** | 治理产物推 master | **Windows schtasks** | `daily_git_sync_runner.bat` | 台账/PM/QA/Ops 白名单 push |
-| **19:15** | ★守夜验货 | **OpenClaw cron（必留）** | OPENCLAW_DAILY_RUN §3 任务 B | 远程无今日台账 → 补跑 + 企微告警 |
+| **19:15** | ★守夜验货 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 B | 远程无今日台账 → 补跑 + 企微告警 |
+| **20:00** | ★LLM 各类日报 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 C | 必须写 `daily_reports/`，禁止只推企微 |
+| **20:30** | LLM 日报推 master | **Windows schtasks** | 同 `daily_git_sync_runner.bat` | `QuantLearn_DailyGitSyncEvening` |
 
-**OpenClaw 侧**：交易类 **0** 条 LLM；文案 **≤2** 条；**守夜 1 条必留**。晚间 **push 用 schtasks**；守夜只负责验收/补跑脚本，别让 LLM 乱 `git add scripts/`。
+**OpenClaw 侧**：交易类 **0** 条 LLM；文案 **≤3** 条（18:15 可选 + 19:15 守夜 + 20:00 日报）；**守夜与日报必留**。晚间 **push 用 schtasks（18:45+20:30）**；别让 LLM 乱 `git add scripts/`。
 
 ### 必开 vs 可选（别纠结）
 
@@ -59,8 +63,10 @@ flowchart TD
 | **必开** | `QuantLearn_SwingDaily` | 收盘波段结论 |
 | **必开** | `QuantLearn_TradeJournal` | 每日交易记录 |
 | **必开** | `QuantLearn_DailyClose` | 收盘双账户摘要 |
-| **必开** | `QuantLearn_DailyGitSync` | **18:45 推 master**（上传主职；漏挂=主人永远拉不到） |
-| **必开** | OpenClaw **19:15 守夜** | 验货+补跑；提示词见 OPENCLAW_DAILY_RUN |
+| **必开** | `QuantLearn_DailyGitSync` | **18:45 推 master**（台账主班） |
+| **必开** | `QuantLearn_DailyGitSyncEvening` | **20:30 推 master**（承接 20:00 LLM 日报） |
+| **必开** | OpenClaw **19:15 守夜** | 验货+补跑；提示词见 DEPLOYMENT B |
+| **必开** | OpenClaw **20:00 日报** | 落盘 `daily_reports/`；提示词见 DEPLOYMENT C |
 | **建议开** | `QuantLearn_MorningScan` | 盘前宽基 |
 | **消息多再关** | `QuantLearn_IntradayScanner` | 异动扫；吵就关 |
 | **勿双开** | `SwingIntraday` / `PortfolioAlert` | 已被 Pulse 覆盖时请关，防重复推送 |
@@ -103,6 +109,7 @@ schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intrada
 schtasks /create /f /tn "QuantLearn_SwingDaily"     /tr "%ROOT%\scripts\swing_daily_report_runner.bat"  /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 schtasks /create /f /tn "QuantLearn_TradeJournal"   /tr "%ROOT%\scripts\trade_journal_runner.bat"       /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
 schtasks /create /f /tn "QuantLearn_DailyGitSync"   /tr "%ROOT%\scripts\daily_git_sync_runner.bat"      /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
+schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
 
 schtasks /query /fo LIST | findstr QuantLearn
 ```
@@ -122,7 +129,8 @@ schtasks /query /fo LIST | findstr QuantLearn
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 建议开 / 吵则关 |
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | **必开** |
 | QuantLearn_TradeJournal | `trade_journal_runner.bat` | **必开** |
-| QuantLearn_DailyGitSync | `daily_git_sync_runner.bat` | **必开**（18:45 台账/PM/QA 推 master） |
+| QuantLearn_DailyGitSync | `daily_git_sync_runner.bat` | **必开**（18:45 台账推 master） |
+| QuantLearn_DailyGitSyncEvening | `daily_git_sync_runner.bat` | **必开**（20:30 LLM 日报推 master） |
 | QuantLearn_SwingIntraday | `swing_intraday_watch_runner.bat` | Pulse 已开则关 |
 | QuantLearn_PortfolioAlert | `portfolio_alert_runner.bat` | Pulse 已开则关 |
 | QuantLearn_StopLossWatch | `stop_loss_watch_runner.bat` | 学习仓用，可选 |
@@ -156,8 +164,10 @@ swing_daily_report.py
 | 时间 | 历史名 | 建议 |
 |:----:|--------|------|
 | 16:00 | 短线波段扫描 LLM | **停** → SwingDaily |
-| 16:30 | （新建）交易复盘备注 | agentTurn 短任务，见 REVIEW_LOOP §12 |
-| 18:15 | （新建）PM 写 Cursor 队列 | agentTurn，见 REVIEW_LOOP §11 |
+| 16:30 | （新建）交易复盘备注 | agentTurn 短任务，见 REVIEW_LOOP |
+| 18:15 | （新建）PM 写 Cursor 队列 | agentTurn，见 DEPLOYMENT 提示词 A |
+| **19:15** | ★守夜验货 | **必留**，DEPLOYMENT 提示词 B |
+| **20:00** | pm-agent / 理财师日报 | **必留**，改贴 DEPLOYMENT 提示词 C；必须写 `daily_reports/` |
 | 09/18/21 | 研发修码 | **停** |
 | 19:00 | ops-agent LLM | 改 `ops_daily_check_runner.bat` |
 
@@ -206,6 +216,8 @@ systemEvent 示例（若不用 schtasks）：
 |------|------|
 | 波段结论 | `output/swing_daily/YYYY-MM-DD.md` |
 | 交易台账 | `pm/trade_journal/YYYY-MM-DD.md` |
+| LLM 研发/PM 日报 | `daily_reports/YYYY-MM-DD-rd-report.md` |
+| LLM 理财日报 | `daily_reports/YYYY-MM-DD-finance-report.md` |
 | Pulse 日志 | `output/quant_pulse.log` |
 | 成交 | DB `sim_trades` |
 | 净值 | DB `sim_daily_nav` |

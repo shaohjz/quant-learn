@@ -81,6 +81,7 @@ BUG:  open → in_progress → fixed → verified → deployed
 | **20:00** | OpenClaw | LLM 各类日报落盘 `daily_reports/`（DEPLOYMENT 提示词 C） |
 | **20:30** | **schtasks** | **`QuantLearn_DailyGitSyncEvening`**：同 bat，推 LLM 日报 |
 | **晚上** | **你+Cursor** | **按队列从上到下尽量做完**，每项单独 commit；代码改动你自己 push |
+| **19:30**（可选） | **本机 cron** | `scripts/cursor_queue_auto_runner.sh` 无头消费队列 → 只推 feature 分支；你验收 MR（见 DEPLOYMENT「本机 Cursor 队列自动消费」） |
 | 次日盘前 | PM/QA | 对昨夜 commit 改状态 |
 
 ---
@@ -129,6 +130,15 @@ BUG:  open → in_progress → fixed → verified → deployed
 全部能做的做完后 git push（除非我另说）。
 不碰「不要动」与「本周不做」。
 ```
+
+### 本机自动消费（可选）
+
+不想每晚手动画话术时，可在本机挂 Linux cron 跑 `scripts/cursor_queue_auto_runner.sh`（方案 A）：
+
+- 仍读同一份 `pm/cursor_queue/今天.md`
+- 默认 `CURSOR_AUTO_MAX_ITEMS=1`，开 `feat/cursor-auto-*`，**只推 feature 分支**
+- 人工开/验收 MR；**绝不**自动推 master
+- 详见 [DEPLOYMENT.md](./DEPLOYMENT.md)「本机 Cursor 队列自动消费」与 [CRON_JOBS.md](./CRON_JOBS.md)
 
 ---
 
@@ -235,6 +245,7 @@ cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 | 交易 | Pulse / 扫盘 / 波段 / 台账 / 收盘 | schtasks |
 | 上传 | 白名单 push master | schtasks `DailyGitSync` |
 | 治理 | 入库 / 队列 / 复盘备注 | OpenClaw 18:15 |
+| 修码（可选自动） | 本机 CLI 消费队列 → feature 分支 | `cursor_queue_auto_runner.sh`（人工 MR） |
 | 守夜 | 验货远程有今日产物；失败补跑+告警 | OpenClaw 19:15 **必开** |
 
 ---
@@ -259,5 +270,6 @@ cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 | `pm/cursor_queue/` | 每晚完整修复菜单 |
 | `pm/requirements/` / `pm/bugs/` | 需求与缺陷正文 |
 | `pm/dev/` | 方案草稿 |
+| `scripts/cursor_queue_auto_runner.sh` | 本机可选：CLI 自动消费队列（只推 feature） |
 | `scripts/pm_cli.py` | 状态 |
 | `docs/DEPLOYMENT.md` | 交易怎么跑 |

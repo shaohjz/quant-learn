@@ -3,7 +3,7 @@
 > **权威跑法**：[DEPLOYMENT.md](./DEPLOYMENT.md) ★ 章节  
 > **实时层**：[REALTIME.md](./REALTIME.md) · **复盘**：[REVIEW_LOOP.md](./REVIEW_LOOP.md)  
 > 产机：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
-> 更新：2026-07-25（补 20:30 DailyGitSyncEvening + 20:00 LLM 日报进 Git）
+> 更新：2026-07-25（补本机 Cursor 队列自动消费 crontab 示例；产机 schtasks 不变）
 
 ---
 
@@ -51,8 +51,22 @@ flowchart TD
 | **19:15** | ★守夜验货 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 B | 远程无今日台账 → 补跑 + 企微告警 |
 | **20:00** | ★LLM 各类日报 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 C | 必须写 `daily_reports/`，禁止只推企微 |
 | **20:30** | LLM 日报推 master | **Windows schtasks** | 同 `daily_git_sync_runner.bat` | `QuantLearn_DailyGitSyncEvening` |
+| **19:30**（可选） | 本机消费 Cursor 队列 | **本机 Linux cron**（非产机） | `scripts/cursor_queue_auto_runner.sh` | 只推 `feat/cursor-auto-*`；见 DEPLOYMENT「本机 Cursor 队列自动消费」 |
 
 **OpenClaw 侧**：交易类 **0** 条 LLM；文案 **≤3** 条（18:15 可选 + 19:15 守夜 + 20:00 日报）；**守夜与日报必留**。晚间 **push 用 schtasks（18:45+20:30）**；别让 LLM 乱 `git add scripts/`。
+
+### 本机 Linux cron（可选 · 方案 A）
+
+> 跑在开发机，**不是**产机 Windows。等 18:45 DailyGitSync 把 `pm/cursor_queue` 推进 master 后再消费。
+
+```cron
+30 19 * * 1-5  cd /data/shaohjz/quant-learn && \
+  CURSOR_API_KEY=*** ./scripts/cursor_queue_auto_runner.sh >> output/cursor_queue_auto.log 2>&1
+```
+
+- 安装 CLI：`curl https://cursor.com/install -fsS | bash`
+- 演练：`CURSOR_AUTO_DRY_RUN=1 ./scripts/cursor_queue_auto_runner.sh`
+- **绝不**自动推 master；MR 人工验收。细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
 
 ### 必开 vs 可选（别纠结）
 

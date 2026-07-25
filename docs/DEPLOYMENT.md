@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-25（20:30 DailyGitSyncEvening 承接 20:00 LLM 各类日报进 Git）  
+> **更新**：2026-07-25（本机 Cursor CLI 队列自动消费 / 方案 A；产机职责不变）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -517,10 +517,71 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 18:15 左右        需求入库 + 写 pm/cursor_queue（可合并成一条）
 19:15            ★守夜验收：远程有今日台账？没有 → 补跑 + 企微【量化失职】
 20:00            ★各类日报落盘 daily_reports/（提示词 C）→ 企微精简版
+
+【本机 Linux 可选 · 非产机】
+19:30 左右        cursor_queue_auto_runner.sh 消费队列 → 只推 feature 分支（人工 MR）
 ```
-详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
+详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · 下文「本机 Cursor 队列自动消费」
 
 **本系统默认：提醒 + 模拟；挂单由主人在券商软件自己下。**
+
+---
+
+# 本机 Cursor 队列自动消费（可选增强 · 方案 A）
+
+> **与产机 OpenClaw 职责分开。** 产机继续：18:15 写 `pm/cursor_queue` → 18:45 DailyGitSync 推 master。  
+> **本机**（开发 Linux）可选：用 Cursor Agent CLI 无头消费队列，**只推 feature 分支**，人工验收 MR。  
+> **默认绝不自动推 master。** 未装 CLI / 无 `CURSOR_API_KEY` 时脚本优雅退出并提示，不影响产机。
+
+## 谁跑 / 谁不跑
+
+| 角色 | 做什么 |
+|------|--------|
+| 产机 OpenClaw + schtasks | 写队列、推白名单到 master、守夜 — **不变** |
+| 本机 `scripts/cursor_queue_auto_runner.sh` | 拉 master → 开 `feat/cursor-auto-YYYYMMDD` → `agent -p --force` → push **feature** → 可选建 MR |
+| 主人 | 验收 MR / 合并；也可继续手动画「Cursor 一键话术」 |
+
+## 安装 Cursor Agent CLI（本机）
+
+```bash
+curl https://cursor.com/install -fsS | bash
+export PATH="$HOME/.local/bin:$PATH"
+agent --version
+# 认证二选一：
+export CURSOR_API_KEY=你的key    # 或
+agent login
+```
+
+文档：https://cursor.com/docs/cli/installation
+
+## 冒烟
+
+```bash
+cd /path/to/quant-learn
+# 演练（不调 agent、不 push）
+CURSOR_AUTO_DRY_RUN=1 ./scripts/cursor_queue_auto_runner.sh
+# 真跑（默认最多 1 项）
+export CURSOR_API_KEY=...
+CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
+# 日志：output/cursor_queue_auto.log（gitignore）
+# 摘要：pm/ops/今天-cursor-auto.md（DailyGitSync 白名单已含 pm/ops/）
+```
+
+## 示例 crontab（本机 Linux，不是产机 schtasks）
+
+```cron
+# 交易日 19:30：等 18:45 DailyGitSync 把 cursor_queue 推进 master 后再消费
+30 19 * * 1-5  cd /data/shaohjz/quant-learn && \
+  CURSOR_API_KEY=*** ./scripts/cursor_queue_auto_runner.sh >> output/cursor_queue_auto.log 2>&1
+```
+
+## 安全红线
+
+1. **只** `git push -u origin HEAD` 到 `feat/cursor-auto-*`；脚本若检测到当前在 `master`/`main` 会拒绝 push。  
+2. 禁止 force push；禁止改 `config.local*` / `*.db` / 密钥。  
+3. `CURSOR_AUTO_MAX_ITEMS` 默认 `1`，防一次改爆。  
+4. 无 `glab` / 工蜂 token 时只 push 分支，ops 日志写「请人工开 MR」。  
+5. **产机无需新建 schtasks**；知晓即可，`git pull` 后文档同步。
 
 ---
 
@@ -615,8 +676,8 @@ git log -1 --oneline origin/master
 主人 **只发下面这一句**（细节全在本文，不要另贴长提示）：
 
 ```text
-读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7 交付报告。
-重点：新建 QuantLearn_DailyGitSyncEvening(20:30)；20:00 日报 cron 改贴步骤 6 提示词 C（必须写 daily_reports/）；保留 18:45 DailyGitSync + 19:15 守夜。
+读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
+重点：本次主要是本机 Cursor CLI 队列消费（方案 A），产机 git pull 即可；无需新建 schtasks。
 做完写 pm/ops/今天-deploy.md。
 ```
 

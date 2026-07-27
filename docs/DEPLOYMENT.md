@@ -351,6 +351,18 @@ type output\daily_git_sync.log
 | 白名单 | `daily_reports/`、`output/reviews/`、`docs/reviews/`、`output/pm_daily_report_*.md` 可被 sync |
 | 下一交易日 21:00 | `git ls-tree origin/master` 能看到当日 `daily_reports/*-report.md` |
 
+**DailyGitSync 行为要点（`scripts/daily_git_sync.py`）：**
+
+- 成功 / 失败会推企微 markdown 摘要（文件分类统计）；**无变更「跳过」默认不推**（防 18:45+20:30 双空刷屏）。需要跳过也通知时加 `--notify-skip`。
+- `--no-notify` 关闭企微；`--dry-run` 不推也不拿锁。
+- 跨平台排他锁：`output/.daily_git_sync.lock`（mkdir），防双班重叠；超时约 120s 退出码 3。
+- 白名单含 `daily_reports/`、`output/finance_manager/`、`docs/reviews/`、`output/pm_daily_report_*.md` 等。
+
+```bat
+.venv\Scripts\python.exe -u scripts\daily_git_sync.py --dry-run
+.venv\Scripts\python.exe -u scripts\daily_git_sync.py --no-notify
+```
+
 ## 步骤 6 — 整理 OpenClaw Cron（LLM 限量 + 提示词全文）
 
 ```bat
@@ -538,7 +550,7 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 | 角色 | 做什么 |
 |------|--------|
 | 产机 OpenClaw + schtasks | 写队列、推白名单到 master、守夜 — **不变** |
-| 本机 `scripts/cursor_queue_auto_runner.sh` | 拉 master → 开 `feat/cursor-auto-YYYYMMDD` → `agent -p --force` → push **feature** → 可选建 MR |
+| 本机 `scripts/cursor_queue_auto_runner.sh` | 拉 master → 开 `feat/cursor-auto-YYYYMMDD` → `agent -p --force` → **有新 commit 才** push **feature** → 可选建 MR → 切回 master |
 | 主人 | 验收 MR / 合并；也可继续手动画「Cursor 一键话术」 |
 
 ## 安装 Cursor Agent CLI（本机）
@@ -581,7 +593,10 @@ CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
 2. 禁止 force push；禁止改 `config.local*` / `*.db` / 密钥。  
 3. `CURSOR_AUTO_MAX_ITEMS` 默认 `1`，防一次改爆。  
 4. 无 `glab` / 工蜂 token 时只 push 分支，ops 日志写「请人工开 MR」。  
-5. **产机无需新建 schtasks**；知晓即可，`git pull` 后文档同步。
+5. **产机无需新建 schtasks**；知晓即可，`git pull` 后文档同步。  
+6. **无产出不 push**：相对 master 无新 commit 且工作区干净 → 记 ops 后 exit 0，不 push 空分支。  
+7. **并发锁**：`output/.cursor_queue_auto.lock`（mkdir）；另一实例在跑则跳过。  
+8. 成功/空跑后尽量 `checkout master` + `pull --ff-only`（失败只告警）。
 
 ---
 
@@ -677,7 +692,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：本次主要是本机 Cursor CLI 队列消费（方案 A），产机 git pull 即可；无需新建 schtasks。
+重点：DailyGitSync 补企微摘要+双班锁；本机 runner 无产出不 push。产机 git pull 即可，确认 DailyGitSyncEvening 仍在；无需新建 schtasks。
 做完写 pm/ops/今天-deploy.md。
 ```
 

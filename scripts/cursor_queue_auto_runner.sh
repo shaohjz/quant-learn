@@ -2,7 +2,8 @@
 # cursor_queue_auto_runner.sh — 本机 Linux 消费 pm/cursor_queue（方案 A）
 #
 # 职责：cron 定时拉最新 master → 开 feature 分支 → 调 Cursor Agent CLI 无头修码
-#       → push feature 分支（绝不 push master）→ 可选建 MR → 写 ops 日志。
+#       → 有新 commit 才 push feature 分支（绝不 push master）→ 可选建 MR → 写 ops 日志。
+#       无产出不 push；跑完尽量切回 master。
 #
 # 安装 Cursor Agent CLI（若本机没有 agent）：
 #   curl https://cursor.com/install -fsS | bash
@@ -38,6 +39,7 @@ TODAY_COMPACT="$(date +%Y%m%d)"
 TS="$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="${ROOT}/output/cursor_queue_auto.log"
 OPS_FILE="${ROOT}/pm/ops/${TODAY}-cursor-auto.md"
+LOCK_DIR="${ROOT}/output/.cursor_queue_auto.lock"
 
 mkdir -p "${ROOT}/output" "${ROOT}/pm/ops"
 
@@ -64,6 +66,44 @@ die() {
   log "ERROR: $*"
   ops_append "- **失败** (${TS}): $*"
   exit 1
+}
+
+release_lock() {
+  if [[ -d "$LOCK_DIR" ]]; then
+    rm -rf "$LOCK_DIR" 2>/dev/null || true
+  fi
+}
+
+# --- 0a. 排他锁（防 cron 重叠）---
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  log "另一实例仍在跑（锁 ${LOCK_DIR}），退出 0"
+  ops_append "- ${TS}: 锁占用，跳过"
+  exit 0
+fi
+echo "$$" >"${LOCK_DIR}/pid"
+trap release_lock EXIT
+
+checkout_master_quiet() {
+  # 收尾切回 master；失败只告警
+  if git show-ref --verify --quiet refs/heads/master; then
+    if git checkout master >/dev/null 2>&1; then
+      if [[ "$SKIP_PULL" != "1" ]]; then
+        git pull --ff-only origin master >/dev/null 2>&1 || log "警告：收尾 pull --ff-only master 失败（可忽略）"
+      fi
+      log "已切回 master"
+      return 0
+    fi
+  elif git show-ref --verify --quiet refs/heads/main; then
+    if git checkout main >/dev/null 2>&1; then
+      if [[ "$SKIP_PULL" != "1" ]]; then
+        git pull --ff-only origin main >/dev/null 2>&1 || log "警告：收尾 pull --ff-only main 失败（可忽略）"
+      fi
+      log "已切回 main"
+      return 0
+    fi
+  fi
+  log "警告：无法切回 master/main"
+  return 1
 }
 
 # --- 0. 找 Cursor Agent CLI ---
@@ -231,9 +271,29 @@ if [[ "$AGENT_RC" -ne 0 ]]; then
 fi
 
 # --- 6. 若有改动未提交，兜底提示（不自动乱 commit；agent 应已 commit）---
-if [[ -n "$(git status --porcelain)" ]]; then
+DIRTY="$(git status --porcelain || true)"
+if [[ -n "$DIRTY" ]]; then
   log "警告：工作区仍有未提交改动；请人工检查。不自动 commit。"
   ops_append "- ${TS}: 警告 — agent 后仍有未提交改动"
+fi
+
+# --- 6b. 无新 commit 且工作区干净 → 不 push ---
+BASE_REF="master"
+if ! git show-ref --verify --quiet refs/heads/master; then
+  BASE_REF="main"
+fi
+AHEAD_COUNT="$(git rev-list --count "${BASE_REF}..HEAD" 2>/dev/null || echo 0)"
+if [[ "${AHEAD_COUNT}" -eq 0 && -z "$DIRTY" ]]; then
+  log "无新 commit（相对 ${BASE_REF}），跳过 push"
+  ops_append "- ${TS}: 无产出，不 push"
+  checkout_master_quiet || true
+  log "完成（空跑）。日志 ${LOG_FILE}；ops ${OPS_FILE}"
+  exit 0
+fi
+if [[ "${AHEAD_COUNT}" -eq 0 && -n "$DIRTY" ]]; then
+  log "无新 commit 但工作区脏，拒绝 push；请人工处理"
+  ops_append "- ${TS}: 无 commit 且工作区脏，不 push"
+  exit 1
 fi
 
 # --- 7. push feature 分支（绝不 push master）---
@@ -246,11 +306,11 @@ if [[ "$CURRENT" != "$BRANCH" ]]; then
   BRANCH="$CURRENT"
 fi
 
-log "git push -u origin HEAD (${BRANCH})"
+log "git push -u origin HEAD (${BRANCH})，ahead=${AHEAD_COUNT}"
 if ! git push -u origin HEAD; then
   die "push feature 分支失败"
 fi
-ops_append "- ${TS}: 已 push \`origin/${BRANCH}\`（非 master）"
+ops_append "- ${TS}: 已 push \`origin/${BRANCH}\`（非 master，ahead=${AHEAD_COUNT}）"
 
 # --- 8. 可选开 MR ---
 MR_OK=0
@@ -288,6 +348,8 @@ if [[ "$MR_OK" -eq 0 ]]; then
   log "无 glab/token 或建 MR 失败 → 请人工开 MR：origin/${BRANCH} → master"
   ops_append "- ${TS}: **请人工开 MR**：\`${BRANCH}\` → \`master\`"
 fi
+
+checkout_master_quiet || true
 
 log "完成。分支 origin/${BRANCH}；日志 ${LOG_FILE}；ops ${OPS_FILE}"
 exit 0

@@ -84,6 +84,8 @@ output/news_signals_*.json
 output/reports/
 output/reviews_weekly/
 output/.armed_flags/
+output/.daily_git_sync.lock/
+output/.cursor_queue_auto.lock/
 output/*.log
 output/trade_journal/
 output/freshness_report.json

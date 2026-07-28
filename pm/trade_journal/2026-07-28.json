@@ -1,6 +1,6 @@
 {
   "trade_date": "2026-07-28",
-  "generated_at": "2026-07-28 21:08:11",
+  "generated_at": "2026-07-28 23:29:37",
   "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
   "totals": {
     "accounts": 3,
@@ -148,7 +148,7 @@
         "daily_return": -0.03974082,
         "cumulative_return": -0.0589098,
         "max_drawdown": -0.08661301,
-        "created_at": "2026-07-28 12:56:21",
+        "created_at": "2026-07-28 13:08:23",
         "cash_jump_detected": 0,
         "cash_jump_reason": null
       }
@@ -228,7 +228,7 @@
         "daily_return": 0.00036002160129600114,
         "cumulative_return": 0.00029999999999996696,
         "max_drawdown": -0.00584784,
-        "created_at": "2026-07-28 12:56:21",
+        "created_at": "2026-07-28 13:08:23",
         "cash_jump_detected": 0,
         "cash_jump_reason": null
       }

@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-25（本机 Cursor CLI 队列自动消费 / 方案 A；产机职责不变）  
+> **更新**：2026-07-28（REQ-105 buy_zone 脏阈值拦截 + 止损一次清仓 + DailyGitSync autostash/utf-8）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -357,12 +357,20 @@ type output\daily_git_sync.log
 - `--no-notify` 关闭企微；`--dry-run` 不推也不拿锁。
 - 跨平台排他锁：`output/.daily_git_sync.lock`（mkdir），防双班重叠；超时约 120s 退出码 3。
 - 白名单含 `daily_reports/`、`output/finance_manager/`、`docs/reviews/`、`output/pm_daily_report_*.md` 等。
+- **2026-07-28**：`git pull --rebase --autostash`（产机 scripts/ 脏区不再卡死 push）；子进程统一 `encoding=utf-8, errors=replace`；push 失败日志打印 `PUSH FAILED`；pull 仍失败时会兜底尝试 push。
 
 ```bat
 .venv\Scripts\python.exe -u scripts\daily_git_sync.py --dry-run
 .venv\Scripts\python.exe -u scripts\daily_git_sync.py --no-notify
 ```
 
+### 2026-07-28 交易修复（git pull 后立刻生效，无需新建 schtasks）
+
+| 修复 | 文件 | 产机动作 |
+|------|------|----------|
+| **REQ-105 buy_zone 脏阈值** | `daily_recalibrate.py` 展开嵌套 `user_manual`/`auto_discovered`；`sim_executor` 按 trigger vs 实时 MA10 拦截过期信号 | **必跑一次**：`.venv\Scripts\python.exe -u scripts\daily_recalibrate.py`（刷新冻结的 buy_zone.trigger，如天赐 47.66） |
+| **REQ-099/101 止损残留** | `sim_executor` confirmed 止损 → `SELL_ALL`；半仓不足一手升级清仓 | pull 后下一轮 Pulse/portfolio_alert 即一次清仓（汤臣/网宿/京东方残留） |
+| **DailyGitSync 脏区** | 见上 autostash | pull 后下次 18:45 自动 push；产机脏 `scripts/` 仍建议审阅后提交或丢弃 |
 ## 步骤 6 — 整理 OpenClaw Cron（LLM 限量 + 提示词全文）
 
 ```bat
@@ -692,7 +700,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：DailyGitSync 补企微摘要+双班锁；本机 runner 无产出不 push。产机 git pull 即可，确认 DailyGitSyncEvening 仍在；无需新建 schtasks。
+重点：止损一次清仓+buy_zone脏阈值拦截；pull 后务必跑一次 daily_recalibrate.py；DailyGitSync 已 autostash。
 做完写 pm/ops/今天-deploy.md。
 ```
 

@@ -543,12 +543,12 @@ def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position:
     is_late = _is_late_session()
     
     if vol_ratio is not None and vol_ratio >= _STOP_VOL_THRESH:
-        return 'confirmed', 'SELL_HALF', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，减半{trailing_reason}'
+        return 'confirmed', 'SELL_ALL', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，清仓{trailing_reason}'
     
     # 量能不足 — 软止损
     vol_desc = f'量比{vol_ratio:.2f}×' if vol_ratio is not None else '量能未知'
     if is_late:
-        return 'confirmed', 'SELL_HALF', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天减半{trailing_reason}'
+        return 'confirmed', 'SELL_ALL', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天，清仓{trailing_reason}'
     # 盘中软止损
     return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
 
@@ -859,6 +859,9 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
 
             if action == 'SELL_HALF':
                 sell_qty = int(row[0] / 2 / LOT_SIZE) * LOT_SIZE
+                if sell_qty < LOT_SIZE:
+                    sell_qty = row[0]
+                    action = 'SELL_ALL'
             else:
                 sell_qty = row[0]
 

@@ -40,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 CONFIG_FILE = ROOT / "config.yaml"
+CONFIG_AUTO_FILE = ROOT / "config_auto.yaml"
 
 
 # ============================================================
@@ -293,6 +294,73 @@ def get_avg_cost_from_db(code: str) -> float | None:
         return None
 
 
+def collect_calibration_codes(
+    watchlist: dict,
+    portfolio_rules: dict | None = None,
+    auto_discovered: dict | None = None,
+) -> dict[str, dict]:
+    """收集待校准股票（REQ-105：展开嵌套 user_manual / auto_discovered）。
+
+    返回 {code: {type, name, body, config_file}}。
+    config_file: 'config' | 'auto'
+    """
+    all_codes: dict[str, dict] = {}
+    watchlist = watchlist or {}
+    portfolio_rules = portfolio_rules or {}
+    auto_discovered = auto_discovered or {}
+
+    is_nested = "user_manual" in watchlist or "auto_discovered" in watchlist
+    if is_nested:
+        for code, body in (watchlist.get("user_manual") or {}).items():
+            if isinstance(body, dict) and body.get("enabled", True):
+                all_codes[str(code)] = {
+                    "type": "watchlist",
+                    "name": body.get("name", ""),
+                    "body": body,
+                    "config_file": "config",
+                }
+        for code, body in auto_discovered.items():
+            if isinstance(body, dict) and body.get("enabled", True):
+                all_codes[str(code)] = {
+                    "type": "watchlist",
+                    "name": body.get("name", ""),
+                    "body": body,
+                    "config_file": "auto",
+                }
+        for code, body in (watchlist.get("auto_discovered") or {}).items():
+            if (
+                isinstance(body, dict)
+                and body.get("enabled", True)
+                and str(code) not in all_codes
+            ):
+                all_codes[str(code)] = {
+                    "type": "watchlist",
+                    "name": body.get("name", ""),
+                    "body": body,
+                    "config_file": "config",
+                }
+    else:
+        for code, body in watchlist.items():
+            if isinstance(body, dict) and body.get("enabled", True):
+                all_codes[str(code)] = {
+                    "type": "watchlist",
+                    "name": body.get("name", ""),
+                    "body": body,
+                    "config_file": "config",
+                }
+
+    for code, body in portfolio_rules.items():
+        if not isinstance(body, dict):
+            continue
+        all_codes[str(code)] = {
+            "type": "portfolio",
+            "name": body.get("name", ""),
+            "body": body,
+            "config_file": "config",
+        }
+    return all_codes
+
+
 def main():
     print("=" * 60)
     print("📊 每日盘前阈值自动校准 (BaoStock)")
@@ -313,13 +381,17 @@ def main():
         watchlist = cfg.get("watchlist", {}) or {}
         portfolio_rules = cfg.get("real_portfolio_rules", {}) or {}
 
-        # 收集所有需要处理的代码
-        all_codes = {}
-        for code, body in watchlist.items():
-            if body.get("enabled", True):
-                all_codes[code] = {"type": "watchlist", "name": body.get("name", ""), "body": body}
-        for code, body in portfolio_rules.items():
-            all_codes[code] = {"type": "portfolio", "name": body.get("name", ""), "body": body}
+        auto_text = ""
+        auto_cfg: dict = {}
+        if CONFIG_AUTO_FILE.exists():
+            auto_text = CONFIG_AUTO_FILE.read_text(encoding="utf-8")
+            auto_cfg = yaml.safe_load(auto_text) or {}
+
+        all_codes = collect_calibration_codes(
+            watchlist,
+            portfolio_rules,
+            auto_discovered=auto_cfg.get("auto_discovered") or {},
+        )
 
         print(f"共 {len(all_codes)} 只股票需要校准\n")
 
@@ -327,9 +399,23 @@ def main():
         changes = []
         skipped = []
 
+        def _apply_replace(target: str, code: str, rule_name: str,
+                           old_val: float, new_val: float, new_msg: str) -> None:
+            """按股票所在文件写回 trigger。"""
+            nonlocal config_text, auto_text
+            if target == "auto":
+                auto_text = replace_trigger_in_text(
+                    auto_text, code, rule_name, old_val, new_val, new_msg
+                )
+            else:
+                config_text = replace_trigger_in_text(
+                    config_text, code, rule_name, old_val, new_val, new_msg
+                )
+
         for code, info in all_codes.items():
             name = info["name"]
             stype = info["type"]
+            cfg_target = info.get("config_file", "config")
             print(f"  📈 {code} {name} ({stype})...", end=" ")
 
             # 拉取日线
@@ -349,6 +435,10 @@ def main():
             print(f"MA10={ind['ma10']} MA20={ind['ma20']} ATR={ind['atr14']}")
 
             rules = info["body"].get("rules", {})
+            if not isinstance(rules, dict):
+                print("⚠️ rules 非 dict, 跳过")
+                skipped.append(f"{code} {name}")
+                continue
 
             if stype == "watchlist":
                 new_thresh = calc_watchlist_thresholds(ind)
@@ -359,9 +449,7 @@ def main():
                     new_val = new_thresh["buy_zone"]
                     if old_val != new_val:
                         new_msg = f"💰 {name} BuyZone 阈值 {new_val}（{ind['trade_date']} MA10={ind['ma10']}），试探建仓"
-                        config_text = replace_trigger_in_text(
-                            config_text, code, "buy_zone", old_val, new_val, new_msg
-                        )
+                        _apply_replace(cfg_target, code, "buy_zone", old_val, new_val, new_msg)
                         changes.append(f"  {code} {name} buy_zone: {old_val} → {new_val}")
 
                 # 更新 buy_strong
@@ -370,9 +458,7 @@ def main():
                     new_val = new_thresh["buy_strong"]
                     if old_val != new_val:
                         new_msg = f"💰💰 {name} BuyStrong 阈值 {new_val}（{ind['trade_date']} MA20={ind['ma20']}），优质建仓区"
-                        config_text = replace_trigger_in_text(
-                            config_text, code, "buy_strong", old_val, new_val, new_msg
-                        )
+                        _apply_replace(cfg_target, code, "buy_strong", old_val, new_val, new_msg)
                         changes.append(f"  {code} {name} buy_strong: {old_val} → {new_val}")
 
                 # 更新 trend_break
@@ -381,9 +467,7 @@ def main():
                     new_val = new_thresh["trend_break"]
                     if old_val != new_val:
                         new_msg = f"⚠️ {name}破 {new_val}！跌破 MA20-1.5ATR，趋势可能反转"
-                        config_text = replace_trigger_in_text(
-                            config_text, code, "trend_break", old_val, new_val, new_msg
-                        )
+                        _apply_replace(cfg_target, code, "trend_break", old_val, new_val, new_msg)
                         changes.append(f"  {code} {name} trend_break: {old_val} → {new_val}")
 
             elif stype == "portfolio":
@@ -396,9 +480,7 @@ def main():
                     new_val = new_thresh["stop_loss"]
                     if old_val != new_val:
                         new_msg = f"🚨 {name}跌破 MA20×0.97 ({new_val})！止损线"
-                        config_text = replace_trigger_in_text(
-                            config_text, code, "stop_loss", old_val, new_val, new_msg
-                        )
+                        _apply_replace(cfg_target, code, "stop_loss", old_val, new_val, new_msg)
                         changes.append(f"  {code} {name} stop_loss: {old_val} → {new_val}")
 
                 # 更新 stop_loss_tight (如果有)
@@ -407,9 +489,7 @@ def main():
                     new_val = round(ind["ma20"] * 0.98, 2)  # tighter: MA20 × 0.98
                     if old_val != new_val:
                         new_msg = f"⚠️ {name}跌破 MA20×0.98 ({new_val})！接近止损线"
-                        config_text = replace_trigger_in_text(
-                            config_text, code, "stop_loss_tight", old_val, new_val, new_msg
-                        )
+                        _apply_replace(cfg_target, code, "stop_loss_tight", old_val, new_val, new_msg)
                         changes.append(f"  {code} {name} stop_loss_tight: {old_val} → {new_val}")
 
                 # 更新 take_profit
@@ -419,13 +499,13 @@ def main():
                     if old_val != new_val:
                         cost_str = f"(成本×1.15 或 MA20+2ATR)" if avg_cost else "(MA20+2ATR)"
                         new_msg = f"🎉 {name}涨至 {new_val}！{cost_str}，建议止盈"
-                        config_text = replace_trigger_in_text(
-                            config_text, code, "take_profit", old_val, new_val, new_msg
-                        )
+                        _apply_replace(cfg_target, code, "take_profit", old_val, new_val, new_msg)
                         changes.append(f"  {code} {name} take_profit: {old_val} → {new_val}")
 
-        # 写回 config.yaml
+        # 写回 config.yaml / config_auto.yaml
         CONFIG_FILE.write_text(config_text, encoding="utf-8")
+        if auto_text:
+            CONFIG_AUTO_FILE.write_text(auto_text, encoding="utf-8")
 
         # 打印对比表
         print("\n" + "=" * 60)
@@ -445,6 +525,8 @@ def main():
                 print(f"  {s}")
 
         print("\n✅ config.yaml 已更新完毕")
+        if auto_text:
+            print("✅ config_auto.yaml 已更新完毕")
         
         # ============================================================
         # 5/27 新增：阈值校准后紧接着重算 trend_filter（MA60 + MACD 趋势闸）

@@ -81,10 +81,13 @@ DENY_PREFIXES = (
 
 
 def _run(cmd: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
+    # Windows 产机默认 GBK；git/python 常吐 UTF-8 → 统一 utf-8 + replace，避免 Thread _readerthread 崩
     return subprocess.run(
         cmd,
         cwd=ROOT,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         check=check,
     )
@@ -405,25 +408,48 @@ def main() -> int:
         )
         return 0
 
-    # pull --rebase first to reduce non-ff failures on shared master
-    pull = _run(["git", "pull", "--rebase", args.remote, args.branch], check=False)
+    # pull --rebase --autostash：产机常有非白名单脏文件（scripts/ 等），
+    # 无 autostash 时 rebase 直接失败 → commit 成功却不 push（BUG-dailygitsync-rebase）
+    pull = _run(
+        ["git", "pull", "--rebase", "--autostash", args.remote, args.branch],
+        check=False,
+    )
     if pull.returncode != 0:
         print(pull.stdout)
         print(pull.stderr, file=sys.stderr)
-        print("[daily_git_sync] pull --rebase 失败，未 push", file=sys.stderr)
+        print(
+            "[daily_git_sync] pull --rebase --autostash 失败，仍尝试 push（本地白名单提交可能已领先）",
+            file=sys.stderr,
+        )
+        push = _run(["git", "push", args.remote, f"HEAD:{args.branch}"], check=False)
+        print(push.stdout)
+        if push.returncode != 0:
+            print(push.stderr, file=sys.stderr)
+            print("[daily_git_sync] PUSH FAILED", file=sys.stderr)
+            notify(
+                "上报失败",
+                paths,
+                detail="`git pull --rebase --autostash` 失败且 `git push` 失败",
+                commit=commit,
+            )
+            return push.returncode or pull.returncode
+        commit = _head_sha() or commit
+        print(f"[daily_git_sync] pushed（pull 失败后兜底）→ {args.remote}/{args.branch}")
         notify(
-            "上报失败",
+            "上报成功",
             paths,
-            detail="`git pull --rebase` 失败，未 push",
+            detail=(
+                f"pull rebase 失败后兜底 push 成功 → `{args.remote}/{args.branch}`"
+            ),
             commit=commit,
         )
-        return pull.returncode
+        return 0
 
     push = _run(["git", "push", args.remote, f"HEAD:{args.branch}"], check=False)
     print(push.stdout)
     if push.returncode != 0:
         print(push.stderr, file=sys.stderr)
-        print("[daily_git_sync] push 失败", file=sys.stderr)
+        print("[daily_git_sync] PUSH FAILED", file=sys.stderr)
         notify("上报失败", paths, detail="`git push` 失败", commit=commit)
         return push.returncode
 

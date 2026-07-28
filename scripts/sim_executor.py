@@ -1581,17 +1581,19 @@ def _check_stop_loss_severity(code: str, rule: dict, cur_price: float, position:
     vol_ratio = _get_today_vol_ratio(code)
     is_late = _is_late_session()
     
+    # REQ-099/101/068: confirmed 止损一律 SELL_ALL。
+    # 旧 SELL_HALF 会 900→400→200→100，剩 100 股半仓取整为 0 →「计算卖出数量失败」卡死。
     if vol_ratio is not None and vol_ratio >= _STOP_VOL_THRESH:
-        return 'confirmed', 'SELL_HALF', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，减半{trailing_reason}'
+        return 'confirmed', 'SELL_ALL', f'{severity_prefix}📉 跌破¥{stop:.2f} 且量比{vol_ratio:.2f}× (≥{_STOP_VOL_THRESH}) — 放量下跌主力出货，清仓{trailing_reason}'
     
     # 量能不足 — 软止损；但价格已跌破止损位超过 1% 时升级为 confirmed
     vol_desc = f'量比{vol_ratio:.2f}×' if vol_ratio is not None else '量能未知'
     if is_late:
-        return 'confirmed', 'SELL_HALF', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天减半{trailing_reason}'
+        return 'confirmed', 'SELL_ALL', f'{severity_prefix}⏰ 近收盘仍跌破¥{stop:.2f} ({vol_desc})，避免拖到明天，清仓{trailing_reason}'
     # 盘中：价格跌破 stop 但未放量 → 若跌破幅度>1% 则升级为 confirmed（不无限 defer）
     break_pct = (cur_price - stop) / stop * 100
     if break_pct < -1.0:
-        return 'confirmed', 'SELL_HALF', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 达 {abs(break_pct):.1f}% 且 {vol_desc} 未放量，升级为减半（不无限等待）{trailing_reason}'
+        return 'confirmed', 'SELL_ALL', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 达 {abs(break_pct):.1f}% 且 {vol_desc} 未放量，升级清仓（不无限等待）{trailing_reason}'
     # 刚跌破不久（<1%）且量能不足 → 仍可等待尾盘
     return 'soft', 'DEFER', f'{severity_prefix}⚠️ 跌破¥{stop:.2f} 但 {vol_desc} 未放量，软预警 — 等尾盘检查是否反包{trailing_reason}'
 
@@ -1833,35 +1835,31 @@ def _check_ma20_deviation(code: str, rule: dict, cur_price: float) -> tuple[bool
 
 
 def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tuple[bool, str]:
-    """TASK-20260709-2004-001: buy_zone 信号执行前检测 MA10 与当前价格偏离。
-    
-    从 rule['trigger'] 取信号生成时的 MA10 阈值，重新获取当前 MA10，
-    若偏离超过 _BUY_ZONE_MA10_MAX_DEVIATION_PCT% 则拒绝执行（与 buy_strong 的 _check_ma20_deviation 对齐）。
-    
-    修复说明（2026-07-10）：
-    - v1 仅告警不拦截 + 正则 message 提取参考价 → 无效（fix_buyzone_signal_text.py 把 message 改为成交价，偏差恒为0%）
-    - v2 改为拦截函数 + 从 rule['trigger'] 取 MA10 阈值（trigger 固定为 MA10 值，不受文案改写影响）
-    - v3 (TASK-20260710-2006-001): 确认拦截链路完整性；若 trigger 为过时MA10值(如57.33)而现价远低于它(如43.94)，偏差>5%会正确拦截；同时 signal_reason 写入时附实际成交价防串价
-    已验证: 07-10 实际案例002709 trigger=57.33, price=43.94, 偏差=23.4%>5%→应拦截
-    
-    Returns:
-        (ok, reason): ok=True 表示 MA10 新鲜可执行，False 表示偏离过大需跳过
+    """TASK-20260709 / REQ-105: buy_zone 执行前校验信号阈值新鲜度。
+
+    daily_recalibrate 写 buy_zone.trigger = MA10。若校准漏扫观察池，trigger 会冻结
+    （如天赐 47.66、莲花 11.75），而现价已贴合实时 MA10 → 旧逻辑「现价≈实时MA10 放行」
+    会让脏 trigger 成交，台账表现为「触发阈值串价」。
+
+    v4（2026-07-28）：
+    - 先比 trigger vs 实时 MA10（阈值新鲜度），过期则拦截
+    - 再比现价 vs 实时 MA10（是否真在买区）
+    - 删掉「已过期但当前合理」旁路
+    - 行情拉取失败时：|现价-trigger|/trigger > 15% 硬拦（fail-closed），否则放行
     """
     import time
-    
-    # 从 rule['trigger'] 取信号生成时的 MA10 阈值
-    # daily_recalibrate.py: buy_zone trigger = round(ma10, 2)
+
     ref_ma10 = float(rule.get('trigger', 0) or 0)
     if ref_ma10 <= 0:
-        # trigger 无效，跳过检查
         return True, 'buy_zone trigger无效，跳过MA10偏离检查'
-    
-    # 检查当前价格与信号 MA10 的偏离
-    deviation_pct = abs(cur_price - ref_ma10) / ref_ma10 * 100
-    if deviation_pct <= _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
-        return True, f'MA10偏离{deviation_pct:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%，价格与信号MA10一致'
-    
-    # 偏离较大：重新获取当前 MA10 确认
+
+    price_vs_trigger = abs(cur_price - ref_ma10) / ref_ma10 * 100
+    if price_vs_trigger <= _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
+        return True, (
+            f'MA10偏离{price_vs_trigger:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%，'
+            f'价格与信号MA10一致'
+        )
+
     now_ts = time.time()
     cached = _MA10_CACHE.get(code)
     if cached and (now_ts - cached[0]) < _MA10_CACHE_TTL_SEC:
@@ -1885,25 +1883,53 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
             finally:
                 bs.logout()
             if len(rows) < 10:
-                logger.warning(f'REQ-060(buy_zone) [{code}] K线数据不足10日，无法验证MA10，放行')
+                if price_vs_trigger > 15.0:
+                    reason = (
+                        f'REQ-105(buy_zone) K线不足且现价相对脏trigger偏离{price_vs_trigger:.1f}% '
+                        f'(trigger={ref_ma10:.2f}, price={cur_price:.2f})，拦截'
+                    )
+                    logger.warning(f'🚫 [{code}] {reason}')
+                    return False, reason
+                logger.warning(f'REQ-105(buy_zone) [{code}] K线不足，偏离{price_vs_trigger:.1f}%≤15%，放行')
                 return True, 'K线数据不足无法验证MA10，放行'
             closes = [float(r[1]) for r in rows]
             current_ma10 = sum(closes[-10:]) / 10
             _MA10_CACHE[code] = (now_ts, current_ma10)
         except Exception as e:
-            logger.warning(f'REQ-060(buy_zone) [{code}] 获取MA10失败: {e}，放行')
+            if price_vs_trigger > 15.0:
+                reason = (
+                    f'REQ-105(buy_zone) MA10获取失败且现价相对脏trigger偏离{price_vs_trigger:.1f}% '
+                    f'(trigger={ref_ma10:.2f}, price={cur_price:.2f}): {e}，拦截'
+                )
+                logger.warning(f'🚫 [{code}] {reason}')
+                return False, reason
+            logger.warning(f'REQ-105(buy_zone) [{code}] 获取MA10失败: {e}，偏离≤15%，放行')
             return True, f'MA10获取失败({e})，放行'
-    
-    # 检查当前价格与实时 MA10 的偏离
-    real_deviation = abs(cur_price - current_ma10) / current_ma10 * 100
-    if real_deviation <= _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
-        return True, f'实时MA10偏离{real_deviation:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%（信号MA10={ref_ma10}已过期但当前合理）'
-    
-    # 偏离过大，拒绝
-    reason = (f'REQ-060(buy_zone) MA10严重偏离: 信号MA10={ref_ma10:.2f}, 实时MA10={current_ma10:.2f}, '
-              f'现价={cur_price}, 偏离={real_deviation:.1f}% > {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%')
-    logger.warning(f'🚫 [{code}] {reason}')
-    return False, reason
+
+    # 关键：信号阈值相对实时 MA10 是否过期（脏 trigger 根因拦截）
+    trigger_vs_ma = abs(ref_ma10 - current_ma10) / current_ma10 * 100
+    if trigger_vs_ma > _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
+        reason = (
+            f'REQ-105(buy_zone) 信号MA10过期: trigger={ref_ma10:.2f} vs 实时MA10={current_ma10:.2f} '
+            f'({trigger_vs_ma:.1f}% > {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%)，拦截'
+        )
+        logger.warning(f'🚫 [{code}] {reason}')
+        return False, reason
+
+    # 次要：现价是否贴近实时 MA10（真正 buy_zone）
+    price_vs_ma = abs(cur_price - current_ma10) / current_ma10 * 100
+    if price_vs_ma > _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
+        reason = (
+            f'REQ-105(buy_zone) 现价偏离实时MA10: price={cur_price:.2f}, MA10={current_ma10:.2f}, '
+            f'偏离={price_vs_ma:.1f}% > {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%'
+        )
+        logger.warning(f'🚫 [{code}] {reason}')
+        return False, reason
+
+    return True, (
+        f'实时MA10新鲜(trigger={ref_ma10:.2f}≈{current_ma10:.2f})，'
+        f'现价偏离{price_vs_ma:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%'
+    )
 
 
 def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
@@ -2384,10 +2410,10 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 'severity': severity, 'severity_label': severity_label}
 
     if action == 'DEFER':
-        # REQ-046 修复：近收盘时软止损升级为 SELL_HALF（不拖到明天）
+        # REQ-046/099: 近收盘软止损升级为 SELL_ALL（不拖到明天；避免半仓残留）
         if _is_late_session():
-            logger.info(f"🔥 [{code}] 软止损近收盘升级为 SELL_HALF: {severity_msg}")
-            action = 'SELL_HALF'
+            logger.info(f"🔥 [{code}] 软止损近收盘升级为 SELL_ALL: {severity_msg}")
+            action = 'SELL_ALL'
         else:
             return {'action': action, 'success': True, 'message': f'软止损预警（不自动卖): {severity_msg}',
                     'trade': None, 'severity': severity, 'severity_label': severity_label}
@@ -2577,6 +2603,11 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
 
             if action == 'SELL_HALF':
                 sell_qty = int(row[0] / 2 / LOT_SIZE) * LOT_SIZE
+                # 对齐 take_profit：不足一手半仓 → 清仓（防止损残留 100 股卡死）
+                if sell_qty < LOT_SIZE:
+                    logger.info(f'⚠️ [{code}] SELL_HALF 不足一手（qty={row[0]}），升级清仓')
+                    sell_qty = row[0]
+                    action = 'SELL_ALL'
             else:
                 sell_qty = row[0]
 

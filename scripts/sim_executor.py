@@ -1702,6 +1702,23 @@ def update_position_trailing(account_id: int, code: str, current_price: float) -
         conn.close()
 
 
+def _recalc_account_total(conn: sqlite3.Connection, account_id: int) -> float:
+    """REQ-069: total_value = cash + Σ market_value（quantity>0）。返回新 total。"""
+    acct = conn.execute("SELECT cash FROM sim_account WHERE id=?", (account_id,)).fetchone()
+    if not acct:
+        return 0.0
+    mv = conn.execute(
+        "SELECT COALESCE(SUM(market_value),0) FROM sim_positions WHERE account_id=? AND quantity > 0",
+        (account_id,),
+    ).fetchone()[0] or 0.0
+    total = quantize_amount(float(acct[0] or 0) + float(mv))
+    conn.execute(
+        "UPDATE sim_account SET total_value=? WHERE id=?",
+        (total, account_id),
+    )
+    return total
+
+
 def update_all_positions_market_value(price_dict: dict, account_id: int | None = None) -> int:
     """批量更新持仓现价/市值，并同步 REQ-041 跟踪止损。
 
@@ -1747,16 +1764,7 @@ def update_all_positions_market_value(price_dict: dict, account_id: int | None =
                 ),
             )
             updated += 1
-        acct = conn.execute("SELECT cash FROM sim_account WHERE id=?", (account_id,)).fetchone()
-        if acct:
-            mv = conn.execute(
-                "SELECT COALESCE(SUM(market_value),0) FROM sim_positions WHERE account_id=? AND quantity > 0",
-                (account_id,),
-            ).fetchone()[0] or 0.0
-            conn.execute(
-                "UPDATE sim_account SET total_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (quantize_amount(float(acct[0] or 0) + float(mv)), account_id),
-            )
+        _recalc_account_total(conn, account_id)
         conn.commit()
         return updated
     finally:
@@ -2499,9 +2507,10 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 return {'action': 'NO_ACTION', 'success': True, 'message': reason, 'trade': None,
                         'severity': severity, 'severity_label': severity_label}
 
+            # REQ-069: 只扣现金；总资产稍后按 cash+Σmv 重算（勿把 total_value 当现金扣）
             conn.execute(
-                "UPDATE sim_account SET cash=cash-?, total_value=total_value-? WHERE id=?",
-                (amount, amount, _ACCOUNT_ID)
+                "UPDATE sim_account SET cash=cash-? WHERE id=?",
+                (amount, _ACCOUNT_ID)
             )
             # 更新或插入仓位
             existing = conn.execute(
@@ -2528,6 +2537,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                     (_ACCOUNT_ID, code, name, qty, cur_price, cur_price, quantize_amount(qty * cur_price),
                      0.0, 0.0, cur_price, _init_trailing_stop)
                 )
+            _recalc_account_total(conn, _ACCOUNT_ID)
             # 写入成交记录
             trade_date = datetime.now().strftime('%Y-%m-%d')
             trade_time = datetime.now().strftime('%H:%M:%S')
@@ -2619,9 +2629,10 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             stamp_tax = quantize_amount(cur_price * sell_qty * STAMP_TAX_RATE)
             amount = quantize_amount(cur_price * sell_qty - commission - stamp_tax)
 
+            # REQ-069: 只加现金；总资产按 cash+Σmv 重算
             conn.execute(
-                "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
-                (amount, amount, _ACCOUNT_ID)
+                "UPDATE sim_account SET cash=cash+? WHERE id=?",
+                (amount, _ACCOUNT_ID)
             )
             new_qty = row[0] - sell_qty
             if new_qty > 0:
@@ -2656,6 +2667,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                     "DELETE FROM sim_positions WHERE account_id=? AND stock_code=?",
                     (_ACCOUNT_ID, code)
                 )
+            _recalc_account_total(conn, _ACCOUNT_ID)
             # 写入成交记录
             trade_date = datetime.now().strftime('%Y-%m-%d')
             trade_time = datetime.now().strftime('%H:%M:%S')

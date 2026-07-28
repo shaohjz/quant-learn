@@ -15,7 +15,7 @@ if exist output\vqlearn_live.log (
 )
 
 REM 5h40m = 20400s; runs 09:25 -> 15:05 inclusive
-REM --auto-trade: 阈值触发 → 写入 sim_live_mirror.db
-".venv\Scripts\python.exe" -u -m vqlearn.runners.run_paper_with_strategy --timeout 20400 --auto-trade >> output\vqlearn_live.log 2>&1
+REM REQ-100: 只跑观察+shadow，不加 --auto-trade（避免与 Pulse/#3 双线吵）
+".venv\Scripts\python.exe" -u -m vqlearn.runners.run_paper_with_strategy --timeout 20400 >> output\vqlearn_live.log 2>&1
 
 exit /b %ERRORLEVEL%

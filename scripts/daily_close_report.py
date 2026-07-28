@@ -132,9 +132,15 @@ def compute_account_snapshot(conn: sqlite3.Connection, account_id: int) -> dict:
     cash = _f(acct[0])
     initial = _f(acct[2])
 
+    # REQ-069: market_value 列脏/0 时回退 qty*price/cost
     mv_row = conn.execute(
-        "SELECT SUM(market_value) FROM sim_positions "
-        "WHERE account_id=? AND quantity > 0",
+        "SELECT COALESCE(SUM("
+        "  CASE "
+        "    WHEN COALESCE(market_value, 0) > 0 THEN market_value "
+        "    ELSE quantity * COALESCE(NULLIF(current_price, 0), NULLIF(avg_cost, 0), 0) "
+        "  END"
+        "), 0) "
+        "FROM sim_positions WHERE account_id=? AND quantity > 0",
         (account_id,),
     ).fetchone()
     market_value = _f(mv_row[0]) if mv_row else 0.0
@@ -205,6 +211,11 @@ def write_account_nav(conn: sqlite3.Connection, account_id: int, trade_date: str
     snap["daily_return"] = daily_return
     snap["cumulative_return"] = cumulative_return
     snap["max_drawdown"] = max_drawdown
+    # REQ-069: 同步矫正 sim_account.total_value（防买入时误扣 total 导致盘中口径塌）
+    conn.execute(
+        "UPDATE sim_account SET total_value=? WHERE id=?",
+        (round(snap["total"], 2), account_id),
+    )
     print(f"  ✅ 账户 {account_id} NAV 已回写: total=¥{snap['total']:,.2f} "
           f"cash=¥{snap['cash']:,.2f} mv=¥{snap['market_value']:,.2f} "
           f"daily_ret={daily_return*100:+.3f}%")

@@ -795,13 +795,23 @@ def main() -> int:
         baseline = prev
 
     if args.skip_scan:
+        # REQ-100: 先刷持仓价，扫池失败也不影响盯市
+        marked = refresh_and_mark(load_positions())
         scan_rows = load_scan_results(today)
         if not scan_rows:
-            scan_rows = _norm(run_scan())
+            try:
+                scan_rows = _norm(run_scan())
+            except Exception as e:
+                log.warning("run_scan 失败（已刷价）: %s", e)
+                scan_rows = []
     else:
-        scan_rows = _norm(run_scan())
+        marked = refresh_and_mark(load_positions())
+        try:
+            scan_rows = _norm(run_scan())
+        except Exception as e:
+            log.warning("run_scan 失败（已刷价）: %s", e)
+            scan_rows = []
 
-    marked = refresh_and_mark(load_positions())
     scan_buys = pick_buys(scan_rows, marked)
     # 盘中已提醒但未成交的 BUY 要补漏（避免「10:05提醒买、16:05说空仓」）
     already = today_bought_codes(today) | {

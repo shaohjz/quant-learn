@@ -237,10 +237,13 @@ schtasks /create /f /tn "QuantLearn_DailyGitSync" /tr "%ROOT%\scripts\daily_git_
 REM ⑧ 20:30 再推一次 —— 承接 20:00 LLM 各类日报（同 bat，必开）
 schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
 
+REM ⑨ REQ-100：影子信号（无 --auto-trade，只观察+shadow，不与 Pulse 双线下单）
+schtasks /create /f /tn "QuantLearn_VqlearnLive" /tr "%ROOT%\scripts\vqlearn_live_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 09:25
+
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)**
+**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)** · **VqlearnLive(09:25，shadow 专用，无 auto-trade)**
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
 
@@ -364,13 +367,23 @@ type output\daily_git_sync.log
 .venv\Scripts\python.exe -u scripts\daily_git_sync.py --no-notify
 ```
 
-### 2026-07-28 交易修复（git pull 后立刻生效，无需新建 schtasks）
+### 2026-07-28 交易修复（git pull 后立刻生效）
 
 | 修复 | 文件 | 产机动作 |
 |------|------|----------|
-| **REQ-105 buy_zone 脏阈值** | `daily_recalibrate.py` 展开嵌套 `user_manual`/`auto_discovered`；`sim_executor` 按 trigger vs 实时 MA10 拦截过期信号 | **必跑一次**：`.venv\Scripts\python.exe -u scripts\daily_recalibrate.py`（刷新冻结的 buy_zone.trigger，如天赐 47.66） |
-| **REQ-099/101 止损残留** | `sim_executor` confirmed 止损 → `SELL_ALL`；半仓不足一手升级清仓 | pull 后下一轮 Pulse/portfolio_alert 即一次清仓（汤臣/网宿/京东方残留） |
-| **DailyGitSync 脏区** | 见上 autostash | pull 后下次 18:45 自动 push；产机脏 `scripts/` 仍建议审阅后提交或丢弃 |
+| **REQ-105 buy_zone 脏阈值** | `daily_recalibrate.py` 展开嵌套观察池；`sim_executor` trigger vs 实时 MA10 拦截 | **必跑**：`.venv\Scripts\python.exe -u scripts\daily_recalibrate.py` |
+| **REQ-099/101 止损残留** | confirmed 止损 → `SELL_ALL`；半仓不足一手升级清仓 | 下一轮 Pulse 自动清；或立刻：`.venv\Scripts\python.exe -u scripts\force_clear_breached_stops.py --dry-run` 再去掉 `--dry-run` |
+| **REQ-069/071 NAV** | 买入只扣 cash，`total=cash+Σmv`；收盘快照矫正 `sim_account` | pull 后次日收盘即可；盘中可跑 `daily_close_report.py --no-push` |
+| **REQ-048 残留假 executed** | `portfolio_alert` armed 路径改看 `trade is not None` | pull 即可 |
+| **REQ-100 影子/刷价** | 重建 `QuantLearn_VqlearnLive`（无 auto-trade）；`swing_daily` 先刷价再扫池 | **必建** schtasks ⑨；见上 |
+| **DailyGitSync 脏区** | `--autostash` + utf-8 | pull 后下次 18:45 自动 push |
+
+残留止血（明日开盘前可先 dry-run）：
+
+```bat
+.venv\Scripts\python.exe -u scripts\force_clear_breached_stops.py --dry-run
+.venv\Scripts\python.exe -u scripts\force_clear_breached_stops.py --codes 000725,300017,300146
+```
 ## 步骤 6 — 整理 OpenClaw Cron（LLM 限量 + 提示词全文）
 
 ```bat
@@ -700,7 +713,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：止损一次清仓+buy_zone脏阈值拦截；pull 后务必跑一次 daily_recalibrate.py；DailyGitSync 已 autostash。
+重点：重建 QuantLearn_VqlearnLive(无auto-trade)；跑 daily_recalibrate + force_clear_breached_stops 清残留；NAV/假executed/刷价已修。
 做完写 pm/ops/今天-deploy.md。
 ```
 

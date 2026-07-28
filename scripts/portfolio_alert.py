@@ -435,7 +435,8 @@ def process_armed_signals(now: datetime):
                 logger.info(f"  执行 armed 信号: [{stock_code}] {stock_name} {rule_name} @ {cur_price:.2f}")
                 result = execute_trade(rule, cur_price)
                 
-                if result.get('success'):
+                # REQ-048/057: 以 trade 非空判成交；success=True+trade=None 是 NO_ACTION，不得标 executed
+                if result.get('trade') is not None:
                     conn.execute("""
                         UPDATE threshold_state
                         SET status = 'executed',
@@ -450,6 +451,9 @@ def process_armed_signals(now: datetime):
                     msg = f"✅ 执行 armed 信号: [{stock_code}] {stock_name} {rule_name} → {result.get('message', '')}"
                     logger.info(msg)
                     messages.append(msg)
+                elif result.get('success') and result.get('action') in ('NO_ACTION', 'DEFER'):
+                    reason = result.get('message', 'NO_ACTION')
+                    logger.info(f"  armed 未成交（{result.get('action')}）[{stock_code}] {rule_name}: {reason}")
                 else:
                     reason = result.get('message', 'unknown')
                     logger.warning(f"  armed 执行失败 [{stock_code}] {rule_name}: {reason}")
@@ -778,14 +782,16 @@ def main():
                 sev_label = trade_result.get('severity_label') or ''
                 if sev_label:
                     msg += f"\n{sev_label}"
-                if trade_result['success'] and trade_result['action'] != 'NO_ACTION':
+                if trade_result.get('trade') is not None:
                     msg += f"\n✅ 已记录模拟交易: {trade_result['message']}"
                     logger.warning(f"✅ 已记录模拟交易: {rule_id} → {trade_result['message']}")
-                elif trade_result['success'] and trade_result['action'] == 'NO_ACTION' and sev == 'soft':
+                elif trade_result.get('success') and trade_result.get('action') == 'NO_ACTION' and sev == 'soft':
                     # 软止损(盘中)- 不下单只预警
                     msg += f"\n⏸️ 软止损:盘中暂不卖,等尾盘再判断({trade_result['message']})"
                     logger.warning(f"⚠️ 软止损推迟: {rule_id} → {trade_result['message']}")
-                elif not trade_result['success']:
+                elif trade_result.get('success') and trade_result.get('action') in ('NO_ACTION', 'DEFER'):
+                    logger.info(f"模拟交易未成交: {rule_id} → {trade_result.get('message')}")
+                elif not trade_result.get('success'):
                     # 对卖出类提醒:下单失败通常说明已无模拟持仓,别再把"建议卖/失败"推给用户。
                     sell_levels = {'take_profit', 'take_profit_half', 'trend_break', 'trend_break_warn', 'stop_loss', 'stop_loss_tight', 'hard_stop', 'trailing_stop'}
                     if rule['source'] == 'real' and rule['level'] in sell_levels:

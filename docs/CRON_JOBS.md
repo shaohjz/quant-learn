@@ -149,7 +149,7 @@ schtasks /query /fo LIST | findstr QuantLearn
 | QuantLearn_SwingIntraday | `swing_intraday_watch_runner.bat` | Pulse 已开则关 |
 | QuantLearn_PortfolioAlert | `portfolio_alert_runner.bat` | Pulse 已开则关 |
 | QuantLearn_StopLossWatch | `stop_loss_watch_runner.bat` | 学习仓用，可选 |
-| QuantLearn_VqlearnLive | `vqlearn_live_runner.bat` | 按需（与 #3 双线会吵） |
+| QuantLearn_VqlearnLive | `vqlearn_live_runner.bat` | **必开**（09:25 shadow；**无** `--auto-trade`，避免与 Pulse 双线） |
 | QuantLearn_DailyReview | `daily_review_runner.bat` | 可选（台账已覆盖大半） |
 | QuantLearn_OpsDailyCheck | `ops_daily_check_runner.bat` | 可选 |
 | QuantLearn_WeeklyReview | `weekly_review_runner.bat` | 周五可选 |

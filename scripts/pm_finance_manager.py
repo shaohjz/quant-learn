@@ -41,8 +41,9 @@ REVIEWS_DIR = ROOT / 'docs' / 'reviews'
 
 # ── 仓位健康度阈值 ───────────────────────────────────────────────
 MAX_TOTAL_POSITION_PCT = 90   # 总仓位上限 %
-MAX_SINGLE_POSITION_PCT = 15  # 单票仓位上限 %
+MAX_SINGLE_POSITION_PCT = 15  # 单票仓位上限 %（与 config.risk.max_position_pct=0.15 对齐）
 MIN_CASH_PCT = 10              # 最低现金保留 %
+SWING_ACCOUNT_ID = 3           # 波段模拟账户
 
 
 def get_conn(db_path: Path = SIM_DB):
@@ -283,18 +284,35 @@ def generate_daily_report(target_date: date) -> str:
     sell_n = len(trades) - buy_n
     today_pnl = sum((t.get('pnl') or 0) for t in trades if t['direction'] == 'SELL')
 
-    # ── 组装日报 ──────────────────────────────────────────────────
+    # ── 组装日报（赚钱优先视角）──────────────────────────────────
     lines = []
-    lines.append(f"📊 理财经理日报 · {target_date.year}/{target_date.month}/{target_date.day}")
+    lines.append(f"📊 理财经理日报 · {target_date.isoformat()}（目标：赚钱）")
+    lines.append('')
+
+    # 0. 盈亏结论（先看钱）
+    lines.append('### 💰 盈亏结论')
+    today_nav = nav_history[0] if nav_history else None
+    if today_nav:
+        dret = float(today_nav.get('daily_return') or 0)
+        cret = float(today_nav.get('cumulative_return') or 0)
+        verdict = '亏钱日' if dret < -0.5 else ('赚钱日' if dret > 0.5 else '平淡日')
+        lines.append(f"- #1 学习账户：当日 {dret:+.2f}% / 累计 {cret:+.2f}% → **{verdict}**")
+    else:
+        lines.append('- #1 学习账户：无当日 NAV')
+    swing_acct = fetch_account(SWING_ACCOUNT_ID)
+    swing_pos = fetch_positions(SWING_ACCOUNT_ID)
+    if swing_acct:
+        swing_mv = sum(p.get('market_value') or 0 for p in swing_pos)
+        lines.append(
+            f"- #3 波段账户：现金¥{swing_acct.get('cash', 0):,.0f} / "
+            f"持仓市值¥{swing_mv:,.0f} / 总值¥{swing_acct.get('total_value', 0):,.0f}"
+        )
+    lines.append(f"- 今日已实现卖出盈亏合计：¥{today_pnl:+,.0f}（买{buy_n}/卖{sell_n}）")
     lines.append('')
 
     # 1. 今日操作复盘
     lines.append('### 📈 今日操作复盘')
     lines.append(f"- 模拟盘：买入 {buy_n} 笔 / 卖出 {sell_n} 笔")
-    if account and nav_history:
-        today_nav = nav_history[0] if nav_history else None
-        if today_nav:
-            lines.append(f"- 模拟盘当日收益：{today_nav['daily_return']:+.2f}%（累计 {today_nav.get('cumulative_return', 0):+.2f}%）")
     if real_holdings:
         lines.append(f"- 实盘持仓：{len(real_holdings)} 只")
     else:
@@ -317,14 +335,32 @@ def generate_daily_report(target_date: date) -> str:
             lines.append(f'- {w}')
     lines.append('')
 
+    # 2b. 亏钱票清单（行动）
+    lines.append('### 🧯 减亏行动清单')
+    losers = sorted(
+        [p for p in positions if float(p.get('pnl_pct') or 0) < -5],
+        key=lambda p: float(p.get('pnl_pct') or 0),
+    )
+    if losers:
+        for p in losers[:8]:
+            lines.append(
+                f"- {p.get('stock_name')}({p.get('stock_code')}) "
+                f"浮亏 {float(p.get('pnl_pct') or 0):.1f}% / ¥{float(p.get('pnl') or 0):+,.0f}"
+                f" → 盯止损/勿加仓"
+            )
+    else:
+        lines.append('- 无浮亏超 -5% 持仓')
+    lines.append('')
+
     # 3. 策略诊断
     lines.append('### 🔍 策略诊断')
     # 检查 strategy_shadow_signals 表是否存在
     c = get_conn()
     try:
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='strategy_shadow_signals'")
-        table_exists = c.fetchone() is not None
-        
+        table_exists = c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='strategy_shadow_signals'"
+        ).fetchone() is not None
+
         if table_exists:
             triggered = c.execute(
                 '''SELECT COUNT(*) as cnt FROM strategy_shadow_signals 
@@ -338,7 +374,7 @@ def generate_daily_report(target_date: date) -> str:
         logger.warning(f'查询 strategy_shadow_signals 失败: {e}')
         lines.append('- 今日触发买入信号：N/A（查询失败）')
     
-    lines.append(f"- 实际执行买入：{buy_n} 笔")
+    lines.append(f"- 实际执行买入：{buy_n} 笔（少买劣质信号 > 提高执行率）")
     if stop_loss_stocks:
         lines.append(f"- 近期连续卖出 ≥ 2 次：{', '.join(stop_loss_stocks)}（建议重新评估）")
     else:
@@ -386,35 +422,18 @@ def create_improvement_tasks(target_date: date, dry_run: bool = False) -> list[s
     positions = fetch_positions(1)
     account = fetch_account(1)
 
-    # 规则 1：执行率过低 → 建需求
-    c = get_conn()
-    try:
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='strategy_shadow_signals'")
-        table_exists = c.fetchone() is not None
-        
-        if table_exists:
-            triggered = c.execute(
-                '''SELECT COUNT(*) as cnt FROM strategy_shadow_signals 
-                   WHERE shadow_date=? AND signal_action IN ("BUY", "BUY_STRONG", "buy", "buy_strong")''',
-                (target_date.isoformat(),)
-            ).fetchone()
-            triggered_cnt = triggered['cnt'] if triggered else 0
-        else:
-            logger.warning('strategy_shadow_signals 表不存在，跳过执行率分析')
-            triggered_cnt = None
-    except Exception as e:
-        logger.warning(f'查询 strategy_shadow_signals 失败: {e}')
-        triggered_cnt = None
-    c.close()
-
+    # 规则 1（赚钱优先）：弱市/高止损日 → 建议收紧，不再催「提高买入执行率」
+    sell_n = sum(1 for t in trades if t['direction'] == 'SELL')
     buy_n = sum(1 for t in trades if t['direction'] == 'BUY')
-    exec_rate = buy_n / triggered_cnt * 100 if triggered_cnt and triggered_cnt > 0 else None
-
-    if exec_rate is not None and exec_rate < 30 and triggered_cnt >= 3:
-        title = f"提升买入信号执行率（当前 {exec_rate:.0f}%）"
+    stopish = sum(
+        1 for t in trades
+        if t['direction'] == 'SELL' and float(t.get('pnl') or 0) < 0
+    )
+    if buy_n >= 2 and stopish >= 2 and len(created) < 2:
+        title = f"弱执行质量：今日买{buy_n}卖亏{stopish} → 检查买入闸"
         desc = (
-            f"今日触发 {triggered_cnt} 个买入信号，执行 {buy_n} 笔，执行率 {exec_rate:.1f}%。\n"
-            f"建议排查 sim_executor 的过滤条件是否过严（量比阈值、趋势过滤等）。"
+            f"今日买入 {buy_n}、亏损卖出 {stopish}。赚钱优先：勿再提高执行率；\n"
+            f"检查弱势日禁买/单票仓位/buy_zone 脏阈值是否生效。"
         )
         task_id = _create_story(title, desc, priority='P1', dry_run=dry_run)
         if task_id:
@@ -533,12 +552,18 @@ def main():
                 inserted = True
         report = '\n'.join(new_lines)
 
-    # 保存本地
+    # 保存本地（双写：兼容旧路径 + Git 白名单 daily_reports）
     out_dir = ROOT / 'output' / 'finance_manager'
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f'{target_date.isoformat()}.md'
     out_file.write_text(report, encoding='utf-8')
     logger.info(f'✓ 日报已保存: {out_file}')
+
+    daily_dir = ROOT / 'daily_reports'
+    daily_dir.mkdir(parents=True, exist_ok=True)
+    daily_file = daily_dir / f'{target_date.isoformat()}-finance-report.md'
+    daily_file.write_text(report, encoding='utf-8')
+    logger.info(f'✓ 日报已落盘 Git 路径: {daily_file}')
 
     # 推送企微
     push_report(report)

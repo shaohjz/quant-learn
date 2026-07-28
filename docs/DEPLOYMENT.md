@@ -286,6 +286,46 @@ dir %ROOT%\daily_reports
 | 持仓 | 账户 #3 持仓强制保留在池内 |
 | 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
 
+### ★ 本次变更怎么部署（赚钱闸 + 理财师日报落盘）
+
+> **唯一目标：赚钱。** 把已有但未接入的风控接进 `sim_executor`，收紧日新建仓，理财师报告改脚本落盘（不再依赖 OpenClaw Write）。
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM 1) 确认赚钱闸配置
+findstr /C:"max_daily_new_positions" /C:"max_position_pct" /C:"market_panic_enabled" config.yaml
+
+REM 2) 冒烟：单票仓位裁剪 + 弱势熔断单元测（可选）
+.venv\Scripts\python.exe -m pytest tests\test_money_gates_position_cap.py -q
+
+REM 3) 校准观察池 buy_zone（防脏 trigger）
+.venv\Scripts\python.exe -u scripts\daily_recalibrate.py
+
+REM 4) 清已破止损残留（有则清）
+.venv\Scripts\python.exe -u scripts\force_clear_breached_stops.py
+
+REM 5) 挂/重建理财师 schtasks（15:35，脚本写 daily_reports/*-finance-report.md）
+set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
+schtasks /create /f /tn "QuantLearn_FinanceManager" /tr "%ROOT%\scripts\finance_manager_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 15:35
+schtasks /run /tn QuantLearn_FinanceManager
+timeout /t 20
+dir daily_reports\*-finance-report.md
+```
+
+**验收：**
+
+| 项 | 过关标准 |
+|----|----------|
+| 配置 | `max_daily_new_positions=1`，`max_position_pct=0.15`，`market_panic_enabled=true` |
+| 执行器 | 日志可见 `弱势日禁买` / `单票仓位` / `浮亏不加仓` 拦截字样（有信号时） |
+| 理财师 | `daily_reports/今天-finance-report.md` 存在；`QuantLearn_FinanceManager` Ready@15:35 |
+| 旧残留 | 破止损持仓已清或记录在 ops |
+
+**不用做：** 不必为理财师再贴 OpenClaw 长提示词写文件；脚本已双写 `daily_reports/` + `output/finance_manager/`。
+
 ### ★ 本次变更怎么部署（波段池扩容 + 立刻同步实盘）
 
 产机只做下面几步即可（**不用重建全部 schtasks**，旧任务名照旧）：
@@ -547,6 +587,7 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 16:05            SwingDaily 波段赚亏+挂单建议
 16:15            TradeJournal 台账
 16:20            DailyClose 双账户摘要
+15:35            FinanceManager 理财师日报→daily_reports/*-finance-report.md
 18:45            DailyGitSync 台账/PM/QA/Ops → push master   ★上传主班
 20:30            DailyGitSyncEvening 同 bat → 推 LLM 日报   ★上传晚班
 
@@ -717,7 +758,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：PM 任务已改 markdown（勿再写 pm.db）；确认 pm/BACKLOG.md；交易修复+DailyGitSync 照常。
+重点：赚钱闸（弱势日禁买/单票15%/日新建1）+ 挂 QuantLearn_FinanceManager@15:35 落盘 finance-report。
 做完写 pm/ops/今天-deploy.md。
 ```
 

@@ -123,15 +123,22 @@ risk:
   cash_ratio_warn: 0.05
   liquidity_release_loss_threshold: 0.08
   max_daily_build_amount_pct: 0.3
-  max_daily_new_positions: 3
+  # 赚钱闸：日新建仓从 3→1，少追弱市连买（#1 近周 -5.9% 主因之一）
+  max_daily_new_positions: 1
   max_daily_trades: 10
   max_cross_industry_count: 3
   max_industry_pct: 0.3
-  max_position_pct: 0.2
+  # 单票上限 15%（原 20% 未接入执行器导致京东方堆仓）；sim_executor 现强制执行
+  max_position_pct: 0.15
   max_sector_pct: 0.35
-  max_total_positions: 6
+  max_total_positions: 5
   stop_loss_pct: -0.08
   take_profit_pct: 0.15
+  # 弱势日禁买：任一宽基指数跌幅 ≤ 该值则拒绝 buy_zone/buy_strong
+  market_panic_enabled: true
+  market_panic_index_drop_pct: -1.0
+  # 浮亏加仓禁：持仓浮亏超过该比例（负值）时禁止加仓
+  block_add_to_loser_pct: -3.0
   # Pause buy_strong until paper sample is large enough; buy_zone remains active.
   buy_strong_enabled: false
   # Same-day reverse guard still blocks fluff exits, but hard -8% cost breach may sell.

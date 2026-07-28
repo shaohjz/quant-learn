@@ -590,6 +590,77 @@ def _load_stop_exit_controls() -> tuple[float, bool, bool]:
 STOP_LOSS_PCT, HARD_STOP_BYPASSES_SAME_DAY, BUY_STRONG_ENABLED = _load_stop_exit_controls()
 
 
+def _load_money_gates() -> tuple[float, bool, float, float]:
+    """赚钱闸参数：单票仓位 / 大盘熔断 / 浮亏禁加仓。
+
+    Returns:
+        max_position_pct, market_panic_enabled, index_drop_pct, block_add_to_loser_pct
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        max_pos = float(risk.get('max_position_pct', 0.15))
+        panic_on = bool(risk.get('market_panic_enabled', True))
+        drop_pct = float(risk.get('market_panic_index_drop_pct', -1.0))
+        loser_pct = float(risk.get('block_add_to_loser_pct', -3.0))
+        return max_pos, panic_on, drop_pct, loser_pct
+    except Exception:
+        return 0.15, True, -1.0, -3.0
+
+
+MAX_POSITION_PCT, MARKET_PANIC_ENABLED, MARKET_PANIC_DROP_PCT, BLOCK_ADD_TO_LOSER_PCT = (
+    _load_money_gates()
+)
+
+
+def _planned_buy_shares(cash: float, cur_price: float) -> int:
+    """按默认预算估算计划买入股数（100 股整数倍）。"""
+    if cur_price <= 0:
+        return 0
+    budget = min(DEFAULT_BUY_BUDGET, cash * 0.95)
+    qty = int(budget / cur_price / LOT_SIZE) * LOT_SIZE
+    if qty < LOT_SIZE:
+        qty = int(cash * 0.95 / cur_price / LOT_SIZE) * LOT_SIZE
+    return max(qty, 0)
+
+
+def _cap_budget_by_position_pct(
+    conn: sqlite3.Connection,
+    account_id: int,
+    code: str,
+    cur_price: float,
+    budget: float,
+) -> tuple[float, str]:
+    """用单票仓位上限裁剪买入预算。返回 (裁剪后预算, 说明)。"""
+    if cur_price <= 0 or MAX_POSITION_PCT <= 0:
+        return budget, '仓位上限跳过'
+    acct = conn.execute(
+        "SELECT total_value FROM sim_account WHERE id=?", (account_id,)
+    ).fetchone()
+    total_value = float(acct[0]) if acct else 0.0
+    if total_value <= 0:
+        return budget, '账户总值无效，跳过仓位裁剪'
+    row = conn.execute(
+        "SELECT quantity FROM sim_positions WHERE account_id=? AND stock_code=? AND quantity > 0",
+        (account_id, code),
+    ).fetchone()
+    existing_qty = int(row[0]) if row else 0
+    existing_mv = existing_qty * cur_price
+    max_mv = total_value * MAX_POSITION_PCT
+    room = max_mv - existing_mv
+    if room < cur_price * LOT_SIZE:
+        return 0.0, (
+            f'单票仓位已满：现有¥{existing_mv:.0f} + 一手 > 上限'
+            f'{MAX_POSITION_PCT:.0%}×¥{total_value:.0f}=¥{max_mv:.0f}'
+        )
+    capped = min(budget, room)
+    return capped, (
+        f'单票仓位裁剪：预算¥{budget:.0f}→¥{capped:.0f}'
+        f'（上限{MAX_POSITION_PCT:.0%}，剩余空间¥{room:.0f}）'
+    )
+
+
 def _load_scale_out_and_trailing() -> dict:
     """Load half take-profit + ATR trailing knobs from config.yaml."""
     defaults = {
@@ -1853,9 +1924,11 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
     - 先比 trigger vs 实时 MA10（阈值新鲜度），过期则拦截
     - 再比现价 vs 实时 MA10（是否真在买区）
     - 删掉「已过期但当前合理」旁路
-    - 行情拉取失败时：|现价-trigger|/trigger > 15% 硬拦（fail-closed），否则放行
+    - 行情拉取失败时：|现价-trigger|/trigger > 8% 硬拦（fail-closed），否则放行
     """
     import time
+
+    _FAIL_CLOSED_TRIGGER_PCT = 8.0  # 赚钱闸：脏 trigger 数据缺失时更严（原 15%）
 
     ref_ma10 = float(rule.get('trigger', 0) or 0)
     if ref_ma10 <= 0:
@@ -1891,27 +1964,33 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
             finally:
                 bs.logout()
             if len(rows) < 10:
-                if price_vs_trigger > 15.0:
+                if price_vs_trigger > _FAIL_CLOSED_TRIGGER_PCT:
                     reason = (
                         f'REQ-105(buy_zone) K线不足且现价相对脏trigger偏离{price_vs_trigger:.1f}% '
                         f'(trigger={ref_ma10:.2f}, price={cur_price:.2f})，拦截'
                     )
                     logger.warning(f'🚫 [{code}] {reason}')
                     return False, reason
-                logger.warning(f'REQ-105(buy_zone) [{code}] K线不足，偏离{price_vs_trigger:.1f}%≤15%，放行')
+                logger.warning(
+                    f'REQ-105(buy_zone) [{code}] K线不足，偏离{price_vs_trigger:.1f}%'
+                    f'≤{_FAIL_CLOSED_TRIGGER_PCT}%，放行'
+                )
                 return True, 'K线数据不足无法验证MA10，放行'
             closes = [float(r[1]) for r in rows]
             current_ma10 = sum(closes[-10:]) / 10
             _MA10_CACHE[code] = (now_ts, current_ma10)
         except Exception as e:
-            if price_vs_trigger > 15.0:
+            if price_vs_trigger > _FAIL_CLOSED_TRIGGER_PCT:
                 reason = (
                     f'REQ-105(buy_zone) MA10获取失败且现价相对脏trigger偏离{price_vs_trigger:.1f}% '
                     f'(trigger={ref_ma10:.2f}, price={cur_price:.2f}): {e}，拦截'
                 )
                 logger.warning(f'🚫 [{code}] {reason}')
                 return False, reason
-            logger.warning(f'REQ-105(buy_zone) [{code}] 获取MA10失败: {e}，偏离≤15%，放行')
+            logger.warning(
+                f'REQ-105(buy_zone) [{code}] 获取MA10失败: {e}，'
+                f'偏离≤{_FAIL_CLOSED_TRIGGER_PCT}%，放行'
+            )
             return True, f'MA10获取失败({e})，放行'
 
     # 关键：信号阈值相对实时 MA10 是否过期（脏 trigger 根因拦截）
@@ -2043,6 +2122,39 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
                 return 'NO_ACTION'
             logger.info(f'✅ [{code}] {level} MA10检查通过: {ma_reason}')
 
+        # ── 赚钱闸：弱势日禁买（REQ-028 大盘熔断，此前未接入 sim_executor）──
+        if MARKET_PANIC_ENABLED:
+            try:
+                from vqlearn.services.buy_risk_guard import get_market_panic_decision
+                panic = get_market_panic_decision()
+                if panic.blocked:
+                    logger.info(f'🚫 [{code}] 弱势日禁买: {panic.reason}')
+                    _write_review_decision(
+                        _ACCOUNT_ID, code, 'market_panic_blocked', 0, panic.reason
+                    )
+                    return 'NO_ACTION'
+            except Exception as e:
+                logger.warning(f'[{code}] 大盘熔断检查异常（放行）: {e}')
+
+        # ── 赚钱闸：浮亏不加仓 ──
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            loser_row = conn.execute(
+                "SELECT quantity, pnl_pct FROM sim_positions "
+                "WHERE account_id=? AND stock_code=? AND quantity > 0",
+                (_ACCOUNT_ID, code),
+            ).fetchone()
+            if loser_row and float(loser_row[1] or 0) <= BLOCK_ADD_TO_LOSER_PCT:
+                reason = (
+                    f'浮亏不加仓：{code} 浮亏{float(loser_row[1]):.1f}% '
+                    f'≤ {BLOCK_ADD_TO_LOSER_PCT:.1f}%'
+                )
+                logger.info(f'🚫 [{code}] {reason}')
+                _write_review_decision(_ACCOUNT_ID, code, 'add_to_loser_blocked', 0, reason)
+                return 'NO_ACTION'
+        finally:
+            conn.close()
+
         # 检查账户现金是否足够
         # REQ-049 修复：现金不足默认预算时，允许用全部现金买入（只要够买100股）
         conn = sqlite3.connect(_DB_PATH)
@@ -2065,6 +2177,16 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
                 else:
                     logger.info(f'⚠️ [{code}] {level} 现金不足默认预算，改用全部现金买 {max_qty}股')
                     budget = cash * 0.95
+
+            # ── 赚钱闸：单票仓位上限裁剪（config.max_position_pct，此前未执行）──
+            budget, cap_reason = _cap_budget_by_position_pct(
+                conn, _ACCOUNT_ID, code, cur_price, budget
+            )
+            if budget < cur_price * LOT_SIZE:
+                logger.info(f'🚫 [{code}] {cap_reason}')
+                _write_review_decision(_ACCOUNT_ID, code, 'max_position_pct_blocked', 0, cap_reason)
+                return 'NO_ACTION'
+            logger.info(f'✅ [{code}] {cap_reason}')
         finally:
             conn.close()
 
@@ -2440,6 +2562,15 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
             if budget < cur_price * LOT_SIZE:
                 # 现金不够默认预算，改用全部现金
                 budget = cash2 * 0.95
+            # 赚钱闸：执行侧再次裁剪单票仓位（防 decide 与 execute 竞态）
+            budget, cap_reason = _cap_budget_by_position_pct(
+                conn2, _ACCOUNT_ID, code, cur_price, budget
+            )
+            if budget < cur_price * LOT_SIZE:
+                return {
+                    'action': 'NO_ACTION', 'success': True,
+                    'message': cap_reason, 'trade': None,
+                }
         finally:
             conn2.close()
         qty = int(budget / cur_price / LOT_SIZE) * LOT_SIZE

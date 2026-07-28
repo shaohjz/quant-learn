@@ -1,24 +1,24 @@
 {
   "trade_date": "2026-07-28",
-  "generated_at": "2026-07-28 16:15:00",
+  "generated_at": "2026-07-28 20:56:20",
   "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
   "totals": {
     "accounts": 3,
-    "trades": 4,
-    "open_positions": 8
+    "trades": 7,
+    "open_positions": 5
   },
   "accounts": [
     {
       "account_id": 1,
       "label": "learn",
-      "cash": 52995.480000000025,
+      "cash": 73601.02000000002,
       "total_value": 94124.48,
       "day_pnl": -3879.290000000008,
       "day_pct": -3.9583069100301014,
       "buy_amount": 9825.46,
-      "sell_amount": 37087.17,
-      "commission": 11.73,
-      "trade_count": 4,
+      "sell_amount": 57692.71,
+      "commission": 16.89,
+      "trade_count": 7,
       "trades": [
         {
           "id": 121,
@@ -71,21 +71,48 @@
           "amount": 17842.61,
           "commission": 4.46,
           "signal_reason": "stop_loss|自动止损 (跟踪止损 ¥5.62, 浮盈亏 -7.12%)"
+        },
+        {
+          "id": 125,
+          "account_id": 1,
+          "trade_time": "20:52:43",
+          "stock_code": "000725",
+          "stock_name": "京东方A",
+          "direction": "SELL",
+          "price": 5.56,
+          "quantity": 3300,
+          "amount": 18334.24,
+          "commission": 4.59,
+          "signal_reason": "hard_stop|force_clear_breached_stops 清仓（止损¥5.71）"
+        },
+        {
+          "id": 126,
+          "account_id": 1,
+          "trade_time": "20:52:44",
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "direction": "SELL",
+          "price": 9.84,
+          "quantity": 100,
+          "amount": 983.26,
+          "commission": 0.25,
+          "signal_reason": "hard_stop|force_clear_breached_stops 清仓（止损¥10.15）"
+        },
+        {
+          "id": 127,
+          "account_id": 1,
+          "trade_time": "20:52:44",
+          "stock_code": "300017",
+          "stock_name": "网宿科技",
+          "direction": "SELL",
+          "price": 12.89,
+          "quantity": 100,
+          "amount": 1288.04,
+          "commission": 0.32,
+          "signal_reason": "hard_stop|force_clear_breached_stops 清仓（止损¥13.73）"
         }
       ],
       "positions": [
-        {
-          "account_id": 1,
-          "stock_code": "000725",
-          "stock_name": "京东方A",
-          "quantity": 3300,
-          "avg_cost": 6.008,
-          "current_price": 5.56,
-          "market_value": 18348.0,
-          "pnl": -1478.4,
-          "pnl_pct": -7.456724367509994,
-          "trailing_stop_price": 5.62
-        },
         {
           "account_id": 1,
           "stock_code": "002709",
@@ -100,30 +127,6 @@
         },
         {
           "account_id": 1,
-          "stock_code": "300017",
-          "stock_name": "网宿科技",
-          "quantity": 100,
-          "avg_cost": 14.455,
-          "current_price": 12.89,
-          "market_value": 1289.0,
-          "pnl": -156.5,
-          "pnl_pct": -10.826703562781042,
-          "trailing_stop_price": 13.32
-        },
-        {
-          "account_id": 1,
-          "stock_code": "300146",
-          "stock_name": "汤臣倍健",
-          "quantity": 100,
-          "avg_cost": 10.05,
-          "current_price": 9.84,
-          "market_value": 984.0,
-          "pnl": -21.0,
-          "pnl_pct": -2.0895522388059784,
-          "trailing_stop_price": 10.15
-        },
-        {
-          "account_id": 1,
           "stock_code": "600186",
           "stock_name": "莲花控股",
           "quantity": 1100,
@@ -135,7 +138,20 @@
           "trailing_stop_price": 8.22
         }
       ],
-      "nav_today": null
+      "nav_today": {
+        "id": 230,
+        "account_id": 1,
+        "trade_date": "2026-07-28",
+        "total_value": 94124.48,
+        "cash": 52995.48,
+        "market_value": 41129.0,
+        "daily_return": -0.03958307,
+        "cumulative_return": -0.0587552,
+        "max_drawdown": -0.08646296,
+        "created_at": "2026-07-28 12:45:13",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
     },
     {
       "account_id": 2,
@@ -209,10 +225,10 @@
         "total_value": 50015.0,
         "cash": 23422.0,
         "market_value": 26593.0,
-        "daily_return": 0.00036002160129600114,
-        "cumulative_return": 0.00029999999999996696,
-        "max_drawdown": null,
-        "created_at": "2026-07-28 08:05:45",
+        "daily_return": 0.00036002,
+        "cumulative_return": 0.0003,
+        "max_drawdown": -0.00584784,
+        "created_at": "2026-07-28 12:45:13",
         "cash_jump_detected": 0,
         "cash_jump_reason": null
       }

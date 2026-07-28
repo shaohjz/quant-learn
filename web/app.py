@@ -727,46 +727,28 @@ def api_equity_curve():
 # ====================================================================
 #  API: PM 快捷操作
 # ====================================================================
-PM_ALLOWED_TYPES = {"story", "bug"}
-PM_ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3", "S0", "S1", "S2", "S3"}
-PM_ALLOWED_STATUSES = {"pending", "open", "in_progress", "testing", "fixed", "done", "verified", "reopened", "closed"}
+PM_ALLOWED_TYPES = {"story", "bug", "task", "risk"}
+PM_ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3", "S0", "S1", "S2", "S3", "high", "medium", "low"}
+PM_ALLOWED_STATUSES = {"pending", "open", "in_progress", "testing", "fixed", "done", "verified", "reopened", "closed", "deployed"}
 
 
-def pm_db_path():
-    """Return PM DB path; overridable in tests via app.config['PM_DB_PATH']."""
-    return Path(app.config.get("PM_DB_PATH", ROOT / "data" / "pm.db"))
+def _pm_store():
+    """Lazy import markdown PM store; tests can override ROOT via app.config['PM_ROOT']."""
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    import pm_store
 
-
-def pm_columns(conn):
-    return {row[1] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
-
-
-def ensure_pm_schema(conn):
-    """Create the minimal PM schema if missing; keep compatibility with extended schemas."""
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS tasks (
-            id TEXT PRIMARY KEY,
-            type TEXT NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT NOT NULL,
-            priority TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        )
-    """)
-
-
-def next_pm_id(cursor, task_type):
-    prefix = "REQ-" if task_type == "story" else "BUG-"
-    cursor.execute("SELECT id FROM tasks WHERE id LIKE ?", (prefix + "%",))
-    max_num = 0
-    for row in cursor.fetchall():
-        try:
-            max_num = max(max_num, int(str(row[0]).split("-", 1)[1]))
-        except Exception:
-            continue
-    return f"{prefix}{max_num + 1:03d}"
+    pm_root = app.config.get("PM_ROOT")
+    if pm_root:
+        base = Path(pm_root)
+        pm_store.ROOT = base
+        pm_store.REQ_DIR = base / "pm" / "requirements"
+        pm_store.BUG_DIR = base / "pm" / "bugs"
+        pm_store.ARCHIVE_DIR = base / "pm" / "archive"
+        pm_store.BACKLOG_PATH = base / "pm" / "BACKLOG.md"
+        pm_store.ensure_dirs()
+    return pm_store
 
 
 def append_work_note(existing, note):
@@ -780,7 +762,7 @@ def append_work_note(existing, note):
 
 @app.route('/api/pm/tasks', methods=['POST'])
 def api_pm_create_task():
-    """Quick-create a PM task from the dashboard action panel."""
+    """Quick-create a PM task (markdown) from the dashboard action panel."""
     payload = request.get_json(silent=True) or {}
     task_type = str(payload.get('type', 'story')).strip()
     title = str(payload.get('title', '')).strip()
@@ -788,77 +770,56 @@ def api_pm_create_task():
     priority = str(payload.get('priority', 'P1')).strip().upper()
 
     if task_type not in PM_ALLOWED_TYPES:
-        return jsonify({'status': 'error', 'msg': 'type must be story or bug'}), 400
+        return jsonify({'status': 'error', 'msg': 'type must be story/bug/task/risk'}), 400
     if not title:
         return jsonify({'status': 'error', 'msg': 'title is required'}), 400
     if priority not in PM_ALLOWED_PRIORITIES:
         return jsonify({'status': 'error', 'msg': 'invalid priority'}), 400
 
     initial_status = 'pending' if task_type == 'story' else 'open'
-    db_path = pm_db_path()
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db_path) as conn:
-        ensure_pm_schema(conn)
-        cols = pm_columns(conn)
-        cur = conn.cursor()
-        task_id = next_pm_id(cur, task_type)
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        values = {
-            'id': task_id,
+    store = _pm_store()
+    task = store.upsert_task(
+        type=task_type,
+        title=title,
+        description=description,
+        status=initial_status,
+        priority=priority,
+        work_notes=append_work_note('', 'created from PM quick action panel'),
+    )
+    return jsonify({
+        'status': 'ok',
+        'task': {
+            'id': task['id'],
             'type': task_type,
             'title': title,
-            'description': description,
             'status': initial_status,
             'priority': priority,
-            'created_at': now,
-            'updated_at': now,
-            'work_notes': append_work_note('', 'created from PM quick action panel'),
-        }
-        use_cols = [c for c in values.keys() if c in cols]
-        placeholders = ','.join(['?'] * len(use_cols))
-        cur.execute(
-            f"INSERT INTO tasks ({','.join(use_cols)}) VALUES ({placeholders})",
-            [values[c] for c in use_cols],
-        )
-        conn.commit()
-
-    return jsonify({'status': 'ok', 'task': {'id': task_id, 'type': task_type, 'title': title, 'status': initial_status, 'priority': priority}})
+            'path': task.get('path'),
+        },
+    })
 
 
 @app.route('/api/pm/tasks/<task_id>/status', methods=['POST'])
 def api_pm_update_task_status(task_id):
-    """Quick transition a PM task status from the dashboard action panel."""
+    """Quick transition a PM task status (markdown frontmatter)."""
     payload = request.get_json(silent=True) or {}
     new_status = str(payload.get('status', '')).strip()
     note = str(payload.get('note', '')).strip()
     if new_status not in PM_ALLOWED_STATUSES:
         return jsonify({'status': 'error', 'msg': 'invalid status'}), 400
 
-    db_path = pm_db_path()
-    with sqlite3.connect(db_path) as conn:
-        ensure_pm_schema(conn)
-        conn.row_factory = sqlite3.Row
-        cols = pm_columns(conn)
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM tasks WHERE id=?", (task_id,))
-        row = cur.fetchone()
-        if not row:
-            return jsonify({'status': 'error', 'msg': f'{task_id} not found'}), 404
+    store = _pm_store()
+    existing = store.get_task(task_id)
+    if not existing:
+        return jsonify({'status': 'error', 'msg': f'{task_id} not found'}), 404
 
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        updates = ['status=?', 'updated_at=?']
-        params = [new_status, now]
-        if 'work_notes' in cols:
-            updates.append('work_notes=?')
-            params.append(append_work_note(row['work_notes'] if 'work_notes' in row.keys() else '', note or f'status -> {new_status} from PM quick action panel'))
-        if 'result_notes' in cols and new_status in {'done', 'fixed', 'verified'} and note:
-            updates.append('result_notes=?')
-            params.append(note)
-        params.append(task_id)
-        cur.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id=?", params)
-        conn.commit()
-
-    return jsonify({'status': 'ok', 'task': {'id': task_id, 'status': new_status, 'updated_at': now}})
+    fields = {'status': new_status}
+    if note and new_status in {'done', 'fixed', 'verified', 'closed'}:
+        fields['result_notes'] = note
+    task = store.update_task(task_id, **fields)
+    store.append_work_note(task_id, note or f'status -> {new_status} from PM quick action panel')
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return jsonify({'status': 'ok', 'task': {'id': task_id, 'status': new_status, 'updated_at': now, 'path': (task or {}).get('path')}})
 
 # ====================================================================
 #  页面
@@ -869,15 +830,15 @@ def index():
 
 @app.route('/api/pm_tasks')
 def api_pm_tasks():
-    pm_db = pm_db_path()
     try:
-        with sqlite3.connect(pm_db) as conn:
-            ensure_pm_schema(conn)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM tasks ORDER BY priority ASC, updated_at DESC")
-            tasks = [dict(r) for r in cursor.fetchall()]
-            return jsonify({'status': 'ok', 'tasks': tasks})
+        store = _pm_store()
+        tasks = store.list_tasks()
+        # drop heavy body for list API
+        slim = []
+        for t in tasks:
+            row = {k: v for k, v in t.items() if k != 'body'}
+            slim.append(row)
+        return jsonify({'status': 'ok', 'tasks': slim, 'source': 'markdown'})
     except Exception as e:
         return jsonify({'status': 'error', 'msg': str(e)}), 500
 

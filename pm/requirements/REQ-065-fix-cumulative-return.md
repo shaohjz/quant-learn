@@ -1,3 +1,32 @@
+---
+id: REQ-065
+type: bug
+title: 新账户 swing_trade 建仓 600809 山西汾酒未初始化移动止损(trailing_stop=NULL)
+status: verified
+priority: P1
+created_at: '2026-07-14 20:05:51'
+updated_at: '2026-07-16 21:06:00'
+assigned_to: quant-finance
+work_notes: 2026-07-14 20:03 复盘自动发现并录入
+description: '复盘2026-07-14发现：swing_trade账户(账户3)于07-13建仓山西汾酒(600809,100股,建仓价109.56,现价110.5)，但sim_positions.trailing_stop_price=NULL、highest_price=NULL，未启用移动止损保护。
+
+
+  问题：
+
+  1. 新账户建仓流程未级联初始化trailing_stop阈值(对比learn账户各持仓均有trailing_stop)
+
+  2. 该持仓当前无止损保护，若回撤将裸奔，风险敞口未知
+
+
+  建议措施：
+
+  1. 立即为600809补设移动止损(按建仓价/最高价规则初始化trailing_stop_price与highest_price)
+
+  2. 排查swing_trade账户建仓链路是否遗漏止损初始化步骤
+
+  3. 增加巡检：新建持仓 trailing_stop_price IS NULL 自动告警'
+---
+
 # REQ-065: 修复 account_id=1 累计收益率异常
 
 ## 基本信息

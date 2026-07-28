@@ -1,3 +1,38 @@
+---
+id: REQ-061
+type: bug
+title: 龙旗科技(603341)移动止损已破位但未执行卖出，持仓悬挂
+status: verified
+priority: P0
+created_at: '2026-07-13 20:06:34'
+updated_at: '2026-07-14 09:23:51'
+assigned_to: quant-dev
+work_notes: 2026-07-13 20:04 复盘自动发现并录入
+description: '复盘2026-07-13持仓发现：龙旗科技(603341)建仓价39.55，最高价43.69，
+
+  移动止损价40.34（按最高价回撤7.67%计算），当前价40.27已跌破止损价40.34，
+
+  但sim_trades中该标的今日无任何SELL记录，sim_positions仍持有200股且显示浮盈+144。
+
+
+  问题：
+
+  1. 止损监控/执行链路未对该标的触发卖出（trailing_stop已破位却未成交）
+
+  2. 与REQ-048(止损执行链路Bug)同类问题复发，可能threshold_state无对应armed记录或巡检未覆盖
+
+  3. 当前快照仍显示虚假浮盈，会误导复盘与风险敞口判断
+
+
+  建议措施：
+
+  1. 立即人工核查龙旗科技是否应止损，如需执行则补单
+
+  2. 排查trailing_stop破位检测逻辑：是否依赖threshold_state记录存在，缺失则漏检
+
+  3. 增加每日巡检：current_price < trailing_stop_price 且 quantity>0 的未止损持仓自动告警'
+---
+
 # REQ-061: sim_daily_nav 中 account_id=1 的 daily_return 持续为 NULL
 
 ## 基本信息

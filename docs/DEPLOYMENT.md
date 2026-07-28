@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-28（REQ-105 buy_zone 脏阈值拦截 + 止损一次清仓 + DailyGitSync autostash/utf-8）  
+> **更新**：2026-07-28（PM 任务迁 markdown；止损/buy_zone/NAV 等交易修复）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -411,6 +411,9 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 先读 docs/DEPLOYMENT.md（本文权威），再执行。
 
 禁止：改交易核心代码；force push；提交密钥/config.local/*.db。
+禁止写 data/pm.db 任务（已废除）。新需求用：
+  .venv\Scripts\python.exe scripts\pm_cli.py create bug "标题" --priority P0
+或直接在 pm/requirements|bugs 新建带 YAML frontmatter 的 md。
 禁止假设「别人会推 git」——你只负责落盘；台账由 18:45 DailyGitSync 推，
 LLM 日报由 20:30 DailyGitSyncEvening 推；19:15 守夜验台账（提示词 B）。
 
@@ -491,7 +494,8 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 时区 Asia/Shanghai。今天=本地日期 YYYY-MM-DD。权威：docs/DEPLOYMENT.md。
 
 目标：把今日各类 LLM 日报写入仓库白名单路径，让 20:30 DailyGitSyncEvening 能推进 origin/master。
-禁止：force push；改交易核心；提交 *.db / config.local；只发企微不写文件。
+禁止：force push；改交易核心；提交 *.db / config.local；只发企微不写文件；**禁止写 pm.db 任务**。
+任务状态改 pm/requirements|bugs 的 md frontmatter，或 `pm_cli.py update`。
 
 必须落盘（UTF-8 markdown，覆盖写今日文件即可）：
 1) daily_reports/今天-rd-report.md
@@ -713,7 +717,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：重建 QuantLearn_VqlearnLive(无auto-trade)；跑 daily_recalibrate + force_clear_breached_stops 清残留；NAV/假executed/刷价已修。
+重点：PM 任务已改 markdown（勿再写 pm.db）；确认 pm/BACKLOG.md；交易修复+DailyGitSync 照常。
 做完写 pm/ops/今天-deploy.md。
 ```
 

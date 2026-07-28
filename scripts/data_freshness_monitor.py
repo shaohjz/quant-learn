@@ -13,7 +13,7 @@ scripts/data_freshness_monitor.py — 数据新鲜度监控 (REQ-067)
 
 告警输出：
   - 控制台日志（结构化的 freshness report）
-  - PM alerts 表（pm.db 中的 freshness_alerts 表）
+  - PM alerts 表（data/ops_runtime.db 中的 freshness_alerts；与需求 markdown 分离）
   - 可选企微通知（集成 notify 模块）
 
 配置：
@@ -45,7 +45,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 SIM_DB_PATH = ROOT / "data" / "sim_live_mirror.db"
-PM_DB_PATH = ROOT / "data" / "pm.db"
+PM_DB_PATH = ROOT / "data" / "ops_runtime.db"  # 运行态告警；需求已迁 markdown
+OPS_RUNTIME_DB = PM_DB_PATH
 OUTPUT_DIR = ROOT / "output"
 REPORT_PATH = OUTPUT_DIR / "freshness_report.json"
 
@@ -336,7 +337,7 @@ def check_watchlist_history(
 # ══════════════════════════════════════════════════════════════════════
 
 def ensure_alerts_table(db_path: Path) -> None:
-    """确保 pm.db 中有 freshness_alerts 表。"""
+    """确保 ops_runtime.db 中有 freshness_alerts 表。"""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
     cur = conn.cursor()
@@ -514,7 +515,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--save-alerts", action="store_true",
-        help="将结果保存到 PM alerts 表 (pm.db)"
+        help="将结果保存到 freshness_alerts 表 (data/ops_runtime.db)"
     )
     parser.add_argument(
         "--db", type=str, default=None,
@@ -522,7 +523,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--pm-db", type=str, default=None,
-        help=f"PM 数据库路径（默认: {PM_DB_PATH}）"
+        help=f"运行态告警库路径（默认: {PM_DB_PATH}；已不再使用 pm.db）"
     )
     parser.add_argument(
         "--threshold", type=int, default=DEFAULT_FRESHNESS_HOURS,

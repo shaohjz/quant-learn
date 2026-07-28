@@ -1,25 +1,35 @@
-import sqlite3
+#!/usr/bin/env python3
+"""PM 状态一览（markdown 真源）。"""
+from __future__ import annotations
+
+import sys
 from collections import Counter
+from pathlib import Path
 
-DB = "data/pm.db"
-conn = sqlite3.connect(DB)
-cur = conn.cursor()
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from pm_store import list_tasks  # noqa: E402
 
-# Active tasks only (exclude archived)
-cur.execute("SELECT id, type, title, status, priority, assigned_to, updated_at, result_notes, root_cause, work_notes FROM tasks ORDER BY priority, id")
-rows = cur.fetchall()
 
-print("=== ACTIVE TASK COUNT:", len(rows), "===")
-status_counter = Counter(r[3] for r in rows)
-print("STATUS BREAKDOWN:", dict(status_counter))
-prio_counter = Counter(r[4] for r in rows)
-print("PRIORITY BREAKDOWN:", dict(prio_counter))
+def main() -> None:
+    rows = list_tasks()
+    print("=== ACTIVE TASK COUNT:", len(rows), "===")
+    print("STATUS BREAKDOWN:", dict(Counter(r.get("status") for r in rows)))
+    print("PRIORITY BREAKDOWN:", dict(Counter(r.get("priority") for r in rows)))
+    print("\n=== DETAIL ===")
+    for r in rows:
+        print(f"\n[{r['id']}] {r.get('title')}")
+        print(
+            f"  status={r.get('status')} | priority={r.get('priority')} | "
+            f"owner={r.get('assigned_to')} | updated={r.get('updated_at')}"
+        )
+        if r.get("result_notes"):
+            print(f"  result_notes: {str(r['result_notes'])[:200]}")
+        if r.get("root_cause"):
+            print(f"  root_cause: {str(r['root_cause'])[:200]}")
+        if r.get("work_notes"):
+            print(f"  work_notes: {str(r['work_notes'])[-300:]}")
 
-print("\n=== DETAIL ===")
-for r in rows:
-    tid, ttype, title, status, prio, owner, updated, notes, root, work = r
-    print(f"\n[{tid}] {title}")
-    print(f"  status={status} | priority={prio} | owner={owner} | updated={updated}")
-    if notes: print(f"  result_notes: {notes[:200]}")
-    if root: print(f"  root_cause: {root[:200]}")
-    if work: print(f"  work_notes: {work[-300:]}")
+
+if __name__ == "__main__":
+    main()

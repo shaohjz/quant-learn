@@ -1,8 +1,8 @@
 # 量化学习项目路线图
 
 > 项目路径：`C:\Users\Administrator\.openclaw\workspace\quant-learn`
-> 模拟盘DB：`data/sim_live_mirror.db` | PM DB：`data/pm.db`
-> 最后更新：2026-07-14（审计修订）
+> 模拟盘DB：`data/sim_live_mirror.db` | PM 任务：`pm/requirements` + `pm/bugs`（markdown）  
+> 最后更新：2026-07-28（PM 迁出 pm.db）
 
 ---
 
@@ -25,7 +25,7 @@
 - `scripts/stop_loss_watch_runner.bat`：盘中止损直跑
 - 根目录 junk → `legacy/root_junk/`；旧报告 → `docs/archive/`；假 Windows 嵌套目录搬走
 
-**产机还要你做**：`openclaw cron list` + `schtasks` 对账；挂上止损 bat；跑全量 pytest；QA 把 pm.db 标 verified。
+**产机还要你做**：`openclaw cron list` + `schtasks` 对账；挂上止损 bat；跑全量 pytest；QA 在对应 `pm/requirements|bugs/*.md` frontmatter 标 `status: verified`。
 
 
 ### 仓库乱（非立即爆，但一直拖后腿）
@@ -58,7 +58,7 @@
 - **量化核心库**（`quant_core/`）
 - **数据获取**（akshare、腾讯行情、baostock 等多数据源）
 - **通知推送**（企微 webhook）
-- **研发管理**（pm.db 任务追踪）
+- **研发管理**（`pm/requirements|bugs` markdown + `pm_cli`）
 - **短线波段扫描**（`scripts/swing_auto.py`）
 - **定时任务**（OpenClaw cron + Windows schtasks，见 CRON_JOBS）
 
@@ -101,7 +101,7 @@
 - [x] 月度/周度回顾（`scripts/monthly_review.py`、`weekly_review.py`）
 
 ### 研发管理
-- [x] `pm.db` 任务追踪系统（`scripts/pm_cli.py`）
+- [x] PM 任务追踪（`scripts/pm_cli.py` + markdown；原 `pm.db` 已退役）
 - [x] 每日研发闭环工作流（`pm/daily/`）
 - [x] Bug 追踪（`pm/bugs/`）
 - [x] 测试报告（`tests/` + `pm/test_reports/`）
@@ -125,7 +125,7 @@
 
 ## 三、进行中 🔄
 
-> 状态以 `pm.db` 为准（2026-07-14 查询）。`verified` ≠ 生产已稳，只表示有人标过验。
+> 状态以 `pm/requirements|bugs` frontmatter 为准。`verified` ≠ 生产已稳，只表示有人标过验。
 
 ### P0 紧急（真金白银逻辑）
 | ID | 标题 | 状态 | 说明 |
@@ -135,7 +135,7 @@
 | REQ-061 | 龙旗科技移动止损破位未卖 | verified | 结合 cleanup_orphaned 复测 |
 | TASK-20260709-2004-001 | buy_zone 参考价/MA10 串价 | code-fixed* | 见 REQ-062 文案修复 |
 
-\* `code-fixed` = 本仓库代码已修，**pm.db 未自动改状态**（等你/QA 验收后标 fixed→verified）。
+\* `code-fixed` = 本仓库代码已修，**md 状态未自动改**（等你/QA 验收后标 fixed→verified）。
 
 
 ### P1 待修复 / 复发风险
@@ -211,7 +211,7 @@
 |------|------|
 | 语言 | Python 3.11+（`pyproject.toml`：`>=3.11,<3.14`；vnpy 建议 Win 上 3.11） |
 | 数据获取 | akshare、baostock、腾讯行情、mootdx |
-| 数据库 | SQLite（`sim_live_mirror.db` + `pm.db`） |
+| 数据库 | SQLite（`sim_live_mirror.db`）；PM 任务为 markdown |
 | 通知 | 企微 webhook（注意默认 dry-run） |
 | 定时任务 | OpenClaw Cron（LLM）+ Windows schtasks（`.bat`） |
 | 策略/执行 | `quant_core` + `vqlearn` + vnpy/QMT（并行未统一） |

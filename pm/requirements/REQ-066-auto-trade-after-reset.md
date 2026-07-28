@@ -1,3 +1,18 @@
+---
+id: REQ-066
+type: bug
+title: sim_daily_nav 日表再次缺失 learn 账户(acc1) 07-14/07-15 记录，每日收益无法精确核算
+status: verified
+priority: P1
+created_at: '2026-07-15 20:05:48'
+updated_at: '2026-07-16 21:06:05'
+description: 复盘发现 sim_daily_nav 表 account_id=1 最后一条记录为 2026-07-13 (total_value=217678.52)，但
+  sim_account 快照已更新至 2026-07-15 (total_value=219479.43)。即 07-14 与 07-15 连续两天无 NAV
+  日记录，与 REQ-063(2026-07-13 已 verified) 修复后出现同类复发。影响：无法精确核算 learn 账户每日收益/回撤，日报 daily_return
+  字段断裂。建议：1) 检查 NAV 写入定时任务是否在 07-13 后中断；2) 增加 NAV 缺失的 stale 告警；3) 手动回填 07-14/07-15
+  记录。
+---
+
 # REQ-066: 清仓重置后策略全自动运行 — 信号实时执行
 
 ## 基本信息

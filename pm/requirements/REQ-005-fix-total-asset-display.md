@@ -1,3 +1,18 @@
+---
+id: REQ-005
+type: story
+title: 'REQ-005: 观察列表K线缩略图'
+status: testing
+priority: P2
+created_at: '2026-05-26 01:38:22'
+updated_at: '2026-06-10 04:12:42'
+assigned_to: PM-Agent-dev-3
+work_notes: '[2026-06-01 10:14:25] claimed by PM-Agent-dev-3
+
+  [2026-06-10 04:12:42] REQ-005 修复完成：/api/portfolio 支持 account_id 参数，总资产计算修正为 cash+实时持仓市值，前端添加账户切换器，支持学习/真实账户切换。请验证仪表盘显示是否正确。'
+description: Migrated from REQ-005.md
+---
+
 # REQ-005: 总资产显示修复
 
 ## 基本信息

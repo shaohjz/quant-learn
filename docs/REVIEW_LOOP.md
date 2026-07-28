@@ -2,22 +2,22 @@
 
 > **问题**：OpenClaw 模型弱 → 不能乱改仓。  
 > **解法**：**OpenClaw 把问题/需求全部写进仓库 `pm/`**；**晚上 Cursor 按队列尽量多修**（不限只做 P0）。  
-> 更新：2026-07-15
+> 更新：2026-07-28（PM 真源改为 markdown，废除 pm.db tasks）
 
-配套：`pm/agents/*`、`scripts/pm_cli.py`。旧「Dev Agent 自动改代码」**作废**，以本文为准。
+配套：`pm/agents/*`、`scripts/pm_cli.py`、`scripts/pm_store.py`。旧「Dev Agent 自动改代码」**作废**，以本文为准。
 
 ---
 
 ## 1. 目标一句话
 
 ```
-OpenClaw 全量写 REQ/BUG → pm/requirements + pm/bugs + pm.db
+OpenClaw 全量写 REQ/BUG → pm/requirements/*.md + pm/bugs/*.md（YAML frontmatter）
      → 每晚生成「给 Cursor 的完整修复队列」
      → 你在 Cursor 说「按队列从顶往下做」→ 能修多少修多少 → commit → push
 ```
 
-OpenClaw **不藏需求在聊天里**；没写进项目 = 没存在过。  
-Cursor **不卡死在「只做 3 条 P0」**；有空就扫完整队列。
+**禁止**再写 `data/pm.db` 任务表。Cursor 直接改 md 状态即可。  
+索引：`pm/BACKLOG.md`（`pm_cli list --write-backlog` 生成）。
 
 ---
 
@@ -43,10 +43,13 @@ BUG:  open → in_progress → fixed → verified → deployed
 ```
 
 ```bat
-.venv\Scripts\python.exe scripts\pm_cli.py create --type story --title "..." --priority P1
+.venv\Scripts\python.exe scripts\pm_cli.py create story "..." --priority P1
 .venv\Scripts\python.exe scripts\pm_cli.py update REQ-048 --status testing
 .venv\Scripts\python.exe scripts\pm_cli.py list --status pending
+.venv\Scripts\python.exe scripts\pm_cli.py list --write-backlog
 ```
+
+任务文件带 YAML frontmatter（`id/status/priority/...`），正文自由写。真源在 git，不进 `pm.db`。
 
 | 类型 | 路径 | 规则 |
 |------|------|------|

@@ -1,3 +1,16 @@
+---
+id: REQ-064
+type: story
+title: '评估 #2 real_portfolio 长期空仓策略有效性'
+status: verified
+priority: P2
+created_at: '2026-07-14 18:57:59'
+updated_at: '2026-07-16 21:06:00'
+description: account_id=2 (real_portfolio) 自 2026-07-06 起持续空仓，无任何交易。该账户已空转超过1周，需评估：1.
+  策略是否仍有效？是否因信号条件过于严格导致无买入信号？2. 是否需要调整策略参数或切换策略？3. 是否应暂时关闭该账户的自动交易以节省资源？参考：trade_journal
+  2026-07-14 复盘备注已标记此问题。
+---
+
 # REQ-064: real_portfolio(account_id=2) 持仓价格 stale，updated_at 停留在 2026-05-22
 
 ## 基本信息

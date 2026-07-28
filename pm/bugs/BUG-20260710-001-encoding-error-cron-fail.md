@@ -1,3 +1,16 @@
+---
+id: BUG-20260710
+type: bug
+title: daily_review / generate_next_watchlist 在 Windows 下因 GBK 编码崩溃
+status: verified
+priority: P1
+created_at: '2026-07-14 18:47:46'
+updated_at: '2026-07-16 21:05:55'
+description: daily_review.py 和 generate_next_watchlist.py 的 print() 输出 emoji/Unicode
+  字符（如 💰、✅），在 Windows GBK 终端下触发 UnicodeEncodeError，导致 cron 任务静默失败。影响：每日复盘报告和次日关注列表生成中断。修复方向：print()
+  改为 logger.info() 或设置 PYTHONIOENCODING=utf-8。
+---
+
 # BUG-20260710-001: 每日复盘/watchlist 脚本因 GBK 编码错误崩溃
 
 **发现日期**: 2026-07-14

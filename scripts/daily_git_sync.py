@@ -40,6 +40,7 @@ ALLOW_PREFIXES = (
     "pm/cursor_queue/",
     "pm/requirements/",
     "pm/bugs/",
+    "pm/archive/",
     "pm/dev/",
     "pm/test_reports/",
     "pm/ops/",
@@ -57,6 +58,7 @@ ALLOW_EXACT = {
     "docs/CRON_JOBS.md",
     "docs/REVIEW_LOOP.md",
     "CRON_JOBS.md",
+    "pm/BACKLOG.md",
 }
 
 # 绝对禁止（即使误出现在 status 里也不加）

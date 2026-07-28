@@ -1,60 +1,55 @@
-"""REQ-006 快捷操作面板 API tests."""
+"""REQ-006 快捷操作面板 API tests（markdown PM 真源）。"""
 from __future__ import annotations
 
-import sqlite3
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
 
 
-def _init_pm_db(path: Path):
-    with sqlite3.connect(path) as conn:
-        conn.execute(
-            """
-            CREATE TABLE tasks (
-                id TEXT PRIMARY KEY,
-                type TEXT NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT,
-                status TEXT NOT NULL,
-                priority TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                assigned_to TEXT,
-                result_notes TEXT,
-                root_cause TEXT,
-                fix_commit TEXT,
-                work_notes TEXT
-            )
-            """
-        )
-        conn.execute(
-            """
-            INSERT INTO tasks (id,type,title,description,status,priority,created_at,updated_at)
-            VALUES ('REQ-006','story','REQ-006: 快捷操作面板','', 'in_progress','P2','2026-06-01 10:00:00','2026-06-01 10:00:00')
-            """
-        )
-        conn.commit()
+def _seed(tmp_path: Path):
+    import pm_store as store
+
+    store.ROOT = tmp_path
+    store.REQ_DIR = tmp_path / "pm" / "requirements"
+    store.BUG_DIR = tmp_path / "pm" / "bugs"
+    store.ARCHIVE_DIR = tmp_path / "pm" / "archive"
+    store.ensure_dirs()
+    store.upsert_task(
+        id="REQ-006",
+        type="story",
+        title="REQ-006: 快捷操作面板",
+        status="in_progress",
+        priority="P2",
+    )
 
 
 def test_quick_create_and_status_update(tmp_path):
+    pytest.importorskip("flask")
     from web.app import app
 
-    db_path = tmp_path / "pm.db"
-    _init_pm_db(db_path)
+    _seed(tmp_path)
     app.config["TESTING"] = True
-    app.config["PM_DB_PATH"] = str(db_path)
+    app.config["PM_ROOT"] = str(tmp_path)
 
     with app.test_client() as client:
         res = client.post(
             "/api/pm/tasks",
-            json={"type": "story", "title": "新增快捷创建入口", "description": "从面板创建", "priority": "P2"},
+            json={
+                "type": "story",
+                "title": "新增快捷创建入口",
+                "description": "从面板创建",
+                "priority": "P2",
+            },
         )
         assert res.status_code == 200, res.get_data(as_text=True)
         body = res.get_json()
         assert body["status"] == "ok"
+        # next after REQ-006
         assert body["task"]["id"] == "REQ-007"
         assert body["task"]["status"] == "pending"
 
@@ -73,12 +68,12 @@ def test_quick_create_and_status_update(tmp_path):
 
 
 def test_quick_action_validation(tmp_path):
+    pytest.importorskip("flask")
     from web.app import app
 
-    db_path = tmp_path / "pm.db"
-    _init_pm_db(db_path)
+    _seed(tmp_path)
     app.config["TESTING"] = True
-    app.config["PM_DB_PATH"] = str(db_path)
+    app.config["PM_ROOT"] = str(tmp_path)
 
     with app.test_client() as client:
         assert client.post("/api/pm/tasks", json={"type": "story", "title": ""}).status_code == 400

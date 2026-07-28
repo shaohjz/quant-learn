@@ -3,7 +3,7 @@
 ## 项目概况
 - **项目路径**: C:\Users\Administrator\.openclaw\workspace\quant-learn
 - **模拟盘DB**: data/sim_live_mirror.db
-- **PM DB**: data/pm.db
+- **PM 任务**: pm/requirements + pm/bugs（markdown；原 pm.db 已退役）
 - **企微Webhook**: scripts/wecom_webhook.py
 
 ## 2026-07-05 复盘记录

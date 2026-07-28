@@ -21,6 +21,8 @@ def test_allow_trade_journal_and_daily_close():
     assert mod._is_allowed("daily_reports/2026-07-20-rd-report.md")
     assert mod._is_allowed("output/finance_manager/x.md")
     assert mod._is_allowed("output/pm_daily_report_2026-07-20.md")
+    assert mod._is_allowed("pm/archive/REQ-001.md")
+    assert mod._is_allowed("pm/BACKLOG.md")
     assert not mod._is_allowed("scripts/trade_journal.py")
     assert not mod._is_allowed("data/sim_live_mirror.db")
     assert not mod._is_allowed("config.local.yaml")

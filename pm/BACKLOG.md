@@ -1,6 +1,6 @@
 # PM Backlog
 
-> 自动生成于 2026-07-28 20:48:11（`pm_cli list --write-backlog`）。真源为各 REQ/BUG markdown。
+> 自动生成于 2026-07-29 20:09:39（`pm_cli list --write-backlog`）。真源为各 REQ/BUG markdown。
 
 | ID | 类型 | 状态 | 优先级 | 标题 |
 |----|------|------|--------|------|

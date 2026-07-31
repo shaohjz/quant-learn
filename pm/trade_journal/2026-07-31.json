@@ -1,0 +1,172 @@
+{
+  "trade_date": "2026-07-31",
+  "generated_at": "2026-07-31 17:05:59",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 2,
+    "open_positions": 5
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 74107.29000000001,
+      "total_value": 92837.29,
+      "day_pnl": 188.67999999999302,
+      "day_pct": 0.20365119347175636,
+      "buy_amount": 7743.94,
+      "sell_amount": 5832.62,
+      "commission": 3.4,
+      "trade_count": 2,
+      "trades": [
+        {
+          "id": 132,
+          "account_id": 1,
+          "trade_time": "09:35:44",
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "direction": "BUY",
+          "price": 38.71,
+          "quantity": 200,
+          "amount": 7743.94,
+          "commission": 1.94,
+          "signal_reason": "buy_zone|建仓价=38.71|触发阈值=39.31|中国人寿 buy_zone 试探建仓"
+        },
+        {
+          "id": 133,
+          "account_id": 1,
+          "trade_time": "11:15:04",
+          "stock_code": "002475",
+          "stock_name": "立讯精密",
+          "direction": "SELL",
+          "price": 58.37,
+          "quantity": 100,
+          "amount": 5832.62,
+          "commission": 1.46,
+          "signal_reason": "trend_break|⚠️ 立讯精密破 58.91！跌破 MA20-1.5ATR，趋势可能反转"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "002709",
+          "stock_name": "天赐材料",
+          "quantity": 300,
+          "avg_cost": 37.73,
+          "current_price": 36.08,
+          "market_value": 10824.0,
+          "pnl": -495.0,
+          "pnl_pct": -4.373177842565594,
+          "trailing_stop_price": 35.12
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "quantity": 200,
+          "avg_cost": 38.71,
+          "current_price": 39.53,
+          "market_value": 7906.0,
+          "pnl": 164.0,
+          "pnl_pct": 2.1183156807026613,
+          "trailing_stop_price": 35.61
+        }
+      ],
+      "nav_today": {
+        "id": 254,
+        "account_id": 1,
+        "trade_date": "2026-07-31",
+        "total_value": 92837.29,
+        "cash": 74107.29,
+        "market_value": 18730.0,
+        "daily_return": 0.00203651,
+        "cumulative_return": -0.0716271,
+        "max_drawdown": -0.1007872,
+        "created_at": "2026-07-31 08:20:00",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 23422.0,
+      "total_value": 50247.0,
+      "day_pnl": -306.0,
+      "day_pct": -0.605305323126224,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "002594",
+          "stock_name": "比亚迪",
+          "quantity": 100,
+          "avg_cost": 92.11,
+          "current_price": 95.77,
+          "market_value": 9577.0,
+          "pnl": 365.99999999999966,
+          "pnl_pct": 3.9735099337748325,
+          "trailing_stop_price": 87.5
+        },
+        {
+          "account_id": 3,
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "quantity": 400,
+          "avg_cost": 20.08,
+          "current_price": 20.17,
+          "market_value": 8068.000000000001,
+          "pnl": 36.000000000001364,
+          "pnl_pct": 0.44820717131475174,
+          "trailing_stop_price": 19.08
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601211",
+          "stock_name": "国泰海通",
+          "quantity": 500,
+          "avg_cost": 18.64,
+          "current_price": 18.36,
+          "market_value": 9180.0,
+          "pnl": -140.00000000000057,
+          "pnl_pct": -1.5021459227467893,
+          "trailing_stop_price": 17.71
+        }
+      ],
+      "nav_today": {
+        "id": 253,
+        "account_id": 3,
+        "trade_date": "2026-07-31",
+        "total_value": 50247.0,
+        "cash": 23422.0,
+        "market_value": 26825.0,
+        "daily_return": -0.006053053231262262,
+        "cumulative_return": 0.0049399999999999444,
+        "max_drawdown": -0.00605305,
+        "created_at": "2026-07-31 08:20:00",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

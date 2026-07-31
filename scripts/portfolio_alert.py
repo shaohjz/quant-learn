@@ -35,8 +35,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from sim.realtime_price import get_latest_prices
+from sim.config_resolver import resolve_artifact_root, resolve_db_path
 
-OUTPUT_DIR = ROOT / "output"
+OUTPUT_DIR = resolve_artifact_root()
 STATE_FILE = OUTPUT_DIR / "alert_state.json"
 LOG_FILE = OUTPUT_DIR / "portfolio_alert.log"
 INTRADAY_LOG = OUTPUT_DIR / "intraday_log.jsonl"
@@ -351,7 +352,7 @@ def process_armed_signals(now: datetime):
         from sim_executor import execute_trade
         import sqlite3
         
-        DB_PATH = Path(__file__).resolve().parents[1] / 'data' / 'sim_live_mirror.db'
+        DB_PATH = resolve_db_path()
         if not DB_PATH.exists():
             logger.warning("process_armed_signals: 数据库不存在")
             return 0, []
@@ -559,7 +560,7 @@ def main():
     try:
         from sim_executor import update_position_trailing
         import sqlite3
-        sim_db = ROOT / 'data' / 'sim_live_mirror.db'
+        sim_db = resolve_db_path()
         if sim_db.exists():
             conn = sqlite3.connect(sim_db)
             held_codes = [(row[0], row[1]) for row in conn.execute(
@@ -584,7 +585,7 @@ def main():
     try:
         import sqlite3
         from pathlib import Path
-        DB_PATH = Path(__file__).resolve().parents[1] / 'data' / 'sim_live_mirror.db'
+        DB_PATH = resolve_db_path()
 
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row

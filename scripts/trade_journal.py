@@ -29,9 +29,10 @@ sys.path.insert(0, str(ROOT))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("trade_journal")
 
-DB_PATH = ROOT / "data" / "sim_live_mirror.db"
-PM_OUT = ROOT / "pm" / "trade_journal"
-OUT_MIRROR = ROOT / "output" / "trade_journal"
+from sim.config_resolver import resolve_db_path, resolve_journal_dirs  # noqa: E402
+
+DB_PATH = resolve_db_path()
+PM_OUT, OUT_MIRROR = resolve_journal_dirs()
 
 ACCOUNT_LABELS = {
     1: "learn",

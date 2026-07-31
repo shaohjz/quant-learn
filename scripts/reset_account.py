@@ -22,7 +22,10 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-SIM_DB = str(ROOT / "data" / "sim_live_mirror.db")
+sys.path.insert(0, str(ROOT))
+from sim.config_resolver import resolve_db_path
+
+SIM_DB = str(resolve_db_path())
 TODAY = date.today().strftime("%Y-%m-%d")
 NOW = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

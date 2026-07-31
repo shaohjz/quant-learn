@@ -32,13 +32,14 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from swing_auto import STOCK_POOL, get_kline, get_quote  # noqa: E402
+from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_pool")
 
-OUT_DIR = ROOT / "output" / "swing_pool"
+OUT_DIR = resolve_artifact_root() / "swing_pool"
 UNIVERSE_CACHE = ROOT / "data" / "universe_cache.json"
-DB_PATH = ROOT / "data" / "sim_live_mirror.db"
+DB_PATH = resolve_db_path()
 SWING_ACCOUNT_ID = 3
 
 DEFAULT_MAX_POOL = 50  # 软上限：Pulse 每 10 分要扫完，别涨到 300+

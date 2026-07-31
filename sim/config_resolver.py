@@ -76,6 +76,37 @@ def resolve_db_path(override: Optional[str | Path] = None) -> Path:
     return default_db
 
 
+def resolve_artifact_root() -> Path:
+    """产物根目录。
+
+    QUANT_ARTIFACT_ROOT 存在时用它（本机长期模拟隔离用 output/linux_sim），
+    否则默认项目 output/。
+    """
+    env = (os.environ.get("QUANT_ARTIFACT_ROOT") or "").strip()
+    if env:
+        p = Path(env)
+        if not p.is_absolute():
+            p = _PROJECT_ROOT / p
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+    return _PROJECT_ROOT / "output"
+
+
+def resolve_journal_dirs() -> tuple[Path, Path]:
+    """台账落盘目录 (主路径, 镜像路径)。
+
+    设了 QUANT_ARTIFACT_ROOT 时两者都落到 artifact/trade_journal，
+    避免本机覆盖产机 pm/trade_journal。
+    """
+    if (os.environ.get("QUANT_ARTIFACT_ROOT") or "").strip():
+        d = resolve_artifact_root() / "trade_journal"
+        d.mkdir(parents=True, exist_ok=True)
+        return d, d
+    pm = _PROJECT_ROOT / "pm" / "trade_journal"
+    mirror = _PROJECT_ROOT / "output" / "trade_journal"
+    return pm, mirror
+
+
 def resolve_wecom_webhook() -> Optional[str]:
     """统一企微 webhook URL 解析。
 

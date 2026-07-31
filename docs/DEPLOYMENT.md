@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-28（PM 任务迁 markdown；止损/buy_zone/NAV 等交易修复）  
+> **更新**：2026-07-31（本机 Linux 长期模拟：`sim_local.db` + `linux_sim_runner.sh` + cron）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -597,11 +597,89 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 20:00            ★各类日报落盘 daily_reports/（提示词 C）→ 企微精简版
 
 【本机 Linux 可选 · 非产机】
+08:35~16:20      linux_sim_runner.sh 长期模拟（独立 DB，默认不推企微）见下文
 19:30 左右        cursor_queue_auto_runner.sh 消费队列 → 只推 feature 分支（人工 MR）
 ```
-详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · 下文「本机 Cursor 队列自动消费」
+详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · 下文「本机 Linux 长期模拟」/「本机 Cursor 队列自动消费」
 
 **本系统默认：提醒 + 模拟；挂单由主人在券商软件自己下。**
+
+---
+
+# 本机 Linux 长期模拟（开发机旁路 · 非产机）
+
+> **与产机 Windows 职责切开。** 产机继续：schtasks + 企微正式推送 + DailyGitSync。  
+> **本机**：独立 `data/sim_local.db`，产物只写 `output/linux_sim/`，**默认不推企微**，**不**跑 DailyGitSync。  
+> 入口：[`scripts/linux_sim_runner.sh`](../scripts/linux_sim_runner.sh)
+
+## 边界
+
+| 项 | 产机 Windows | 本机 Linux |
+|----|--------------|------------|
+| DB | `data/sim_live_mirror.db` | `data/sim_local.db`（`QUANT_DB_PATH`） |
+| 产物 | `output/swing_daily`、`pm/trade_journal`… | `output/linux_sim/**`（gitignore） |
+| 企微 | 正式推送 | 默认 `--no-push`；`LINUX_SIM_PUSH=1` 时标题带【本机Linux】 |
+| Git 上传 | DailyGitSync 推 master | **不做** |
+
+账户：`#1 learn`（Pulse→portfolio_alert 模拟成交）+ `#3 swing`（池/扫描/盯盘/收盘）。
+
+关键脚本已认 `QUANT_DB_PATH` / `QUANT_ARTIFACT_ROOT`（`sim.config_resolver.resolve_db_path` / `resolve_artifact_root`）。
+
+## 一次初始化
+
+```bash
+cd /data/shaohjz/quant-learn
+# 已有 .venv 可跳过
+python3 -m venv .venv && . .venv/bin/activate && pip install -e '.[research,dev]'
+./scripts/linux_sim_runner.sh init
+./scripts/linux_sim_runner.sh day_close   # 冒烟：写 linux_sim 日报/台账/收盘
+```
+
+## crontab（Asia/Shanghai · 交易日）
+
+```cron
+35 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh recalibrate >> output/linux_sim/logs/cron.log 2>&1
+40 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pool >> output/linux_sim/logs/cron.log 2>&1
+*/10 9-14 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pulse >> output/linux_sim/logs/cron.log 2>&1
+5 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh swing_daily >> output/linux_sim/logs/cron.log 2>&1
+15 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh journal >> output/linux_sim/logs/cron.log 2>&1
+20 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh close >> output/linux_sim/logs/cron.log 2>&1
+```
+
+`pulse` 在 runner 内过滤：仅 09:35–11:30、13:00–14:50 真正跑；其余整点触发直接 exit 0。
+
+## 子命令
+
+| 命令 | 做什么 |
+|------|--------|
+| `init` | `init_tables` + `reset_account`（#1 10万 / #3 5万） |
+| `recalibrate` | `daily_recalibrate.py` |
+| `pool` | `swing_pool_builder` + `swing_auto` |
+| `pulse` | `quant_pulse.py --force`（默认 no-push） |
+| `swing_daily` / `journal` / `close` | 收盘三件套 |
+| `day_close` | 上述三件串联 |
+
+可选推企微：`LINUX_SIM_PUSH=1 ./scripts/linux_sim_runner.sh pool`（仍建议换测试群，勿与产机双刷）。
+
+## 验收
+
+- `data/sim_local.db` 有 account 1/3  
+- `output/linux_sim/swing_daily/`、`trade_journal/`、`daily_close_*.md` 有当日文件  
+- **没有**误写 `pm/trade_journal/今天.md`（除非未设 `QUANT_ARTIFACT_ROOT`）  
+- `crontab -l` 可见上表；日志在 `output/linux_sim/logs/`
+
+### ★ 本次变更怎么部署（本机 Linux 长期模拟）
+
+> **产机 Windows：只需 `git pull`，schtasks 不变。**  
+> **本机 Linux（要旁路模拟时）：**
+
+1. `git pull`  
+2. `.venv` 就绪后：`./scripts/linux_sim_runner.sh init`（仅首次或要重置）  
+3. 挂上文本「crontab」六行（或确认已挂）  
+4. 冒烟：`./scripts/linux_sim_runner.sh day_close` → 看 `output/linux_sim/`  
+5. 写 `pm/ops/今天-deploy.md`（注明本机 cron 已挂 / 产机未改 schtasks）
+
+**不用做：** 不用重建 Windows schtasks；不用把 `sim_local.db` / `config.local.yaml` 提交 git。
 
 ---
 
@@ -758,7 +836,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：赚钱闸（弱势日禁买/单票15%/日新建1）+ 挂 QuantLearn_FinanceManager@15:35 落盘 finance-report。
+重点：本机 Linux 长期模拟（sim_local.db + linux_sim_runner cron）；产机 schtasks 不变。
 做完写 pm/ops/今天-deploy.md。
 ```
 

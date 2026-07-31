@@ -22,8 +22,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-OUTPUT_DIR = ROOT / "output"
-DB_PATH = ROOT / "data" / "sim_live_mirror.db"
+from sim.config_resolver import resolve_artifact_root, resolve_db_path
+
+OUTPUT_DIR = resolve_artifact_root()
+DB_PATH = resolve_db_path()
 
 logger = logging.getLogger("daily_close")
 
@@ -395,7 +397,7 @@ def account_block(
 
 
 def load_swing_snippet(trade_date: str, max_chars: int = 600) -> str | None:
-    path = ROOT / "output" / "swing_daily" / f"{trade_date}.md"
+    path = OUTPUT_DIR / "swing_daily" / f"{trade_date}.md"
     if not path.exists():
         return None
     text = path.read_text(encoding="utf-8")
@@ -514,9 +516,9 @@ def build_report(trade_date: str | None = None, db_path: Path | None = None) -> 
         lines.append(swing)
     else:
         lines.append(
-            "- ⚠️ 未找到 `output/swing_daily/" + trade_date + ".md`。"
-            "若现在还没到 16:05，属正常；到点后应有 `QuantLearn_SwingDaily` 推送。"
-            "一直没有 → 检查 schtasks / `git pull` 是否部署。"
+            f"- ⚠️ 未找到 `{OUTPUT_DIR / 'swing_daily' / (trade_date + '.md')}`。"
+            "若现在还没到 16:05，属正常；到点后应有 SwingDaily。"
+            "一直没有 → 检查本机 cron / 产机 schtasks。"
         )
     lines.append("")
     lines.append("_本报告由量化系统自动生成（当日盈亏=相对昨日净值）_")

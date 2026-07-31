@@ -24,8 +24,9 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'scripts'))
 
 from wecom_webhook import push_markdown
+from sim.config_resolver import resolve_artifact_root, resolve_db_path
 
-DB_PATH = ROOT / 'data' / 'sim_live_mirror.db'
+DB_PATH = resolve_db_path()
 
 # ========== 交易费用 ==========
 COMMISSION_RATE = 0.00025   # 佣金万2.5
@@ -69,7 +70,8 @@ STOCK_POOL = [
     ("sh600585", "海螺水泥"), ("sh600019", "宝钢股份"),
 ]
 
-SWING_POOL_LATEST = ROOT / "output" / "swing_pool" / "latest.json"
+def _swing_pool_latest() -> Path:
+    return resolve_artifact_root() / "swing_pool" / "latest.json"
 
 
 def get_stock_pool(allow_stale: bool = True) -> list[tuple[str, str]]:
@@ -77,10 +79,11 @@ def get_stock_pool(allow_stale: bool = True) -> list[tuple[str, str]]:
 
     allow_stale=True：日期不是今天也用（盘中别因 builder 挂了就空扫）。
     """
-    if not SWING_POOL_LATEST.exists():
+    latest = _swing_pool_latest()
+    if not latest.exists():
         return list(STOCK_POOL)
     try:
-        data = json.loads(SWING_POOL_LATEST.read_text(encoding="utf-8"))
+        data = json.loads(latest.read_text(encoding="utf-8"))
     except Exception:
         return list(STOCK_POOL)
     if not allow_stale and data.get("date") != date.today().isoformat():

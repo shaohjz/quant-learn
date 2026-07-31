@@ -37,8 +37,10 @@ from swing_auto import get_stock_pool, scan_stock  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_intraday")
 
-DB_PATH = ROOT / "data" / "sim_live_mirror.db"
-OUT_DIR = ROOT / "output"
+from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
+
+DB_PATH = resolve_db_path()
+OUT_DIR = resolve_artifact_root()
 STATE_FILE = OUT_DIR / "swing_intraday_state.json"
 LOG_DIR = OUT_DIR / "swing_intraday"
 SWING_ACCOUNT_ID = 3

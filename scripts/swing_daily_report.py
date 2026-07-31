@@ -44,8 +44,10 @@ from swing_auto import (  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_daily")
 
-DB_PATH = ROOT / "data" / "sim_live_mirror.db"
-OUT_DIR = ROOT / "output" / "swing_daily"
+from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
+
+DB_PATH = resolve_db_path()
+OUT_DIR = resolve_artifact_root() / "swing_daily"
 SWING_ACCOUNT_ID = 3
 SWING_ACCOUNT_NAME = "swing_trade"
 # 资金真源：config.yaml accounts.swing.initial_cash（缺失时兜底 5 万）

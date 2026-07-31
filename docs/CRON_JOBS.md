@@ -51,23 +51,37 @@ flowchart TD
 | **19:15** | ★守夜验货 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 B | 远程无今日台账 → 补跑 + 企微告警 |
 | **20:00** | ★LLM 各类日报 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 C | 必须写 `daily_reports/`，禁止只推企微 |
 | **20:30** | LLM 日报推 master | **Windows schtasks** | 同 `daily_git_sync_runner.bat` | `QuantLearn_DailyGitSyncEvening` |
-| **19:30**（可选） | 本机消费 Cursor 队列 | **本机 Linux cron**（非产机） | `scripts/cursor_queue_auto_runner.sh` | 只推 `feat/cursor-auto-*`；见 DEPLOYMENT「本机 Cursor 队列自动消费」 |
+| **19:30**（可选） | 本机消费 Cursor 队列 | **本机 Linux cron**（非产机） | `scripts/cursor_queue_auto_runner.sh` | 只推 `feat/cursor-auto-*`；见 DEPLOYMENT |
+| **08:35~16:20**（可选） | 本机长期模拟 | **本机 Linux cron**（非产机） | `scripts/linux_sim_runner.sh` | 独立 `sim_local.db`；见 DEPLOYMENT「本机 Linux 长期模拟」 |
 
 **OpenClaw 侧**：交易类 **0** 条 LLM；文案 **≤3** 条（18:15 可选 + 19:15 守夜 + 20:00 日报）；**守夜与日报必留**。晚间 **push 用 schtasks（18:45+20:30）**；别让 LLM 乱 `git add scripts/`。
 
-### 本机 Linux cron（可选 · 方案 A）
+### 本机 Linux cron（可选 · 方案 A 队列 + 长期模拟）
 
-> 跑在开发机，**不是**产机 Windows。等 18:45 DailyGitSync 把 `pm/cursor_queue` 推进 master 后再消费。
+> 跑在开发机，**不是**产机 Windows。
+
+**长期模拟**（独立 `data/sim_local.db`，产物 `output/linux_sim/`，默认不推企微）：
+
+```cron
+35 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh recalibrate >> output/linux_sim/logs/cron.log 2>&1
+40 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pool >> output/linux_sim/logs/cron.log 2>&1
+*/10 9-14 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pulse >> output/linux_sim/logs/cron.log 2>&1
+5 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh swing_daily >> output/linux_sim/logs/cron.log 2>&1
+15 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh journal >> output/linux_sim/logs/cron.log 2>&1
+20 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh close >> output/linux_sim/logs/cron.log 2>&1
+```
+
+**Cursor 队列消费**（等 18:45 DailyGitSync 把 `pm/cursor_queue` 推进 master 后再消费）：
 
 ```cron
 30 19 * * 1-5  cd /data/shaohjz/quant-learn && \
   CURSOR_API_KEY=*** ./scripts/cursor_queue_auto_runner.sh >> output/cursor_queue_auto.log 2>&1
 ```
 
-- 安装 CLI：`curl https://cursor.com/install -fsS | bash`
-- 演练：`CURSOR_AUTO_DRY_RUN=1 ./scripts/cursor_queue_auto_runner.sh`
-- **绝不**自动推 master；**无新 commit 不 push**；MR 人工验收。细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
-- DailyGitSync：成功/失败推企微摘要；跳过默认不推；`output/.daily_git_sync.lock` 防 18:45/20:30 重叠。
+- 模拟入口：`scripts/linux_sim_runner.sh`；细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)「本机 Linux 长期模拟」
+- 队列：安装 CLI `curl https://cursor.com/install -fsS | bash`；演练 `CURSOR_AUTO_DRY_RUN=1 ./scripts/cursor_queue_auto_runner.sh`
+- **绝不**自动推 master；**无新 commit 不 push**；MR 人工验收
+- DailyGitSync：成功/失败推企微摘要；跳过默认不推；`output/.daily_git_sync.lock` 防 18:45/20:30 重叠
 
 ### 必开 vs 可选（别纠结）
 

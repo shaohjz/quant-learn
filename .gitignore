@@ -40,6 +40,9 @@ __pycache__/
 
 config.local.yaml
 
+# 本机 Linux 长期模拟产物（与产机隔离，不入库）
+output/linux_sim/
+
 # 一次性调试 / 临时脚本（不入库）
 _*.py
 scripts/_*.py

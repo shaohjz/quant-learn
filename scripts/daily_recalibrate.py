@@ -277,10 +277,11 @@ def replace_trigger_in_text(text: str, section_code: str, rule_name: str,
 # ============================================================
 
 def get_avg_cost_from_db(code: str) -> float | None:
-    """从 sim_live_mirror.db 获取真实账户的买入均价"""
+    """从模拟盘 DB 获取真实账户(account_id=2)的买入均价"""
     try:
         import sqlite3
-        db_path = ROOT / "data" / "sim_live_mirror.db"
+        from sim.config_resolver import resolve_db_path
+        db_path = resolve_db_path()
         if not db_path.exists():
             return None
         conn = sqlite3.connect(str(db_path))

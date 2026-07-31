@@ -3,6 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 import pytest
+
+pytestmark = pytest.mark.qmt
+pytest.importorskip("vnpy", reason="vnpy tests require the optional Windows trading environment")
+
 from vnpy.trader.constant import Status, Direction, Offset, Exchange, OrderType
 from vnpy.trader.object import OrderData, TradeData
 

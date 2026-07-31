@@ -683,6 +683,49 @@ python3 -m venv .venv && . .venv/bin/activate && pip install -e '.[research,dev]
 
 ---
 
+# 双账户策略研究闭环（2026-07-31 · 手工运行，不挂调度）
+
+本次新增账户 `#1 learn` 与 `#3 swing_trade` 的统一研究入口。它们只读 CSV / SQLite、只写
+`output/strategy_research` 与 `output/promotion`，**不会改配置、不会写交易库、不会下单**。
+
+## 改了什么
+
+- `run_dual_strategy_backtest.py`：共享现金、T 日信号最早 T+1 open、统一费用与滑点。
+- `compare_strategy_shadow.py`：现行参数与候选参数只读对照。
+- `weekly_strategy_evidence.py`：Paper FIFO 归因 + OOS/2×成本 + PromotionGate。
+- #1 只实验 MA10 回踩距离、趋势确认、盈亏比；#3 只实验 A/B 回踩带宽、缩量、评分与盈亏比，未新增指标。
+
+## 产机怎么拉 / 要不要重建 schtasks
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+.venv\Scripts\python.exe -m pip install -e ".[research,dev]"
+```
+
+**不用重建 schtasks。** 当前 Pulse、SwingPool、SwingDaily、台账与收盘任务均不变；候选参数不会自动切换生产模拟盘。
+
+## 冒烟命令
+
+仓库旧 CSV 没有 raw/复权元数据，只能显式作为研究数据运行，产物会带 `research_only=true`：
+
+```bat
+.venv\Scripts\python.exe scripts\run_dual_strategy_backtest.py data --mode baseline --start 2024-07-01 --end 2026-05-20 --allow-adjusted-research --output output\strategy_research\baseline.json
+.venv\Scripts\python.exe scripts\run_dual_strategy_backtest.py data --mode optimize --start 2024-07-01 --end 2026-05-20 --holdout 2026-02-01 --allow-adjusted-research --output output\strategy_research\optimize.json
+.venv\Scripts\python.exe scripts\compare_strategy_shadow.py data --start 2025-01-01 --end 2026-05-20 --optimize-json output\strategy_research\optimize.json --allow-adjusted-research --output output\strategy_research\shadow.json
+.venv\Scripts\python.exe scripts\weekly_strategy_evidence.py --db data\sim_live_mirror.db --optimization-report output\strategy_research\optimize.json --output output\promotion
+```
+
+## 验收标准
+
+1. `baseline.json`：`audit.same_bar_allowed=false`（账户子报告内）、成交 `trade_date > signal_date`。
+2. `optimize.json`：两个账户都有全量 `windows`，且 `selection_policy.oos_used_for_selection=false`。
+3. `shadow.json`：顶层 `read_only=true`、`changes_production=false`。
+4. `output\promotion\今天.json`：两个账户都有 Paper 与 `backtest_evidence`；证据不足应明确阻断，不能误报晋级。
+5. 运行前后 `config.yaml` 与 `sim_live_mirror.db` 均无变化。
+
+---
+
 # 本机 Cursor 队列自动消费（可选增强 · 方案 A）
 
 > **与产机 OpenClaw 职责分开。** 产机继续：18:15 写 `pm/cursor_queue` → 18:45 DailyGitSync 推 master。  

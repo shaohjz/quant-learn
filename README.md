@@ -129,25 +129,42 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  D[日线 CSV / BaoStock<br/>前复权] --> E[引擎]
-  E --> R[收益 · 回撤 · 夏普 · 胜率]
-  E -.->|注意| X[同 bar 收盘可见再成交<br/>偏乐观]
+  D[时点化日线<br/>执行价必须 raw] --> E[双账户组合回测]
+  E --> T[T 日收盘信号<br/>T+1 open 成交]
+  T --> W[嵌套 Walk-forward]
+  W --> R[净期望 · 回撤 · 成本压力]
+  R --> P[Paper 证据与晋级门禁]
 ```
 
 | 代际 | 入口 | 数据 | 用途 |
 |------|------|------|------|
+| **当前可信入口** | `scripts/run_dual_strategy_backtest.py` | 显式 `adjustment_type=raw` 的多股 CSV | #1 阈值 + #3 波段，共享现金、T+1、统一费用 |
+| **Shadow 对照** | `scripts/compare_strategy_shadow.py` | 同上 | 比较现行参数与候选参数，不改生产 |
+| **Paper 证据** | `scripts/weekly_strategy_evidence.py` | 只读 SQLite + optimize JSON | FIFO 归因、2×成本与晋级阻断原因 |
 | 老 Backtrader | `backtest.py` | AKShare / BaoStock CSV | 均线·MACD·布林·复合 |
-| vqlearn v2 | `vqlearn/runners/run_backtest_v2.py` | baostock | 阈值 / 基线对比 |
+| vqlearn v2（legacy） | `vqlearn/runners/run_backtest_v2.py` | baostock | 同 bar close，结果只作历史参考 |
 | 冒烟 | `vqlearn/runners/run_backtest.py` | 新浪→akshare | 短窗自检 |
 
-**费用模型（常见）**：佣金万 2.5 量级 · 印花税卖出 0.05% · 100 股一手 ·（细节以各脚本为准）
+当前入口默认：T 日信号最早 T+1 open 成交；所有股票共享现金；佣金、印花税和过户费统一走 `quant_core.fees.FeeModel`。
 
 ```bash
-# 例：老链路
-python3 backtest.py --stock 000967 --strategy sma_cross
+# 严格模式：CSV 必须显式声明 adjustment_type=raw
+python scripts/run_dual_strategy_backtest.py data \
+  --mode baseline --start 2024-07-01 --end 2026-05-20 \
+  --output output/strategy_research/baseline.json
 
-# 例：vqlearn
-python -m vqlearn.runners.run_backtest_v2 --start 2024-01-01 --end 2026-05-20
+# 仓库旧 CSV 缺 raw 元数据时，只允许显式研究模式；报告会标记不得用于生产
+python scripts/run_dual_strategy_backtest.py data \
+  --mode optimize --start 2024-07-01 --end 2026-05-20 \
+  --holdout 2026-02-01 --allow-adjusted-research \
+  --output output/strategy_research/optimize.json
+
+# 现行参数 vs 候选参数，只读 shadow
+python scripts/compare_strategy_shadow.py data \
+  --start 2025-01-01 --end 2026-05-20 \
+  --optimize-json output/strategy_research/optimize.json \
+  --allow-adjusted-research \
+  --output output/strategy_research/shadow.json
 ```
 
 ---
@@ -173,7 +190,7 @@ python -m vqlearn.runners.run_backtest_v2 --start 2024-01-01 --end 2026-05-20
 
 > \* 极高夏普多来自**短样本 + 乐观撮合**，**不能**当实盘预期。  
 > 阈值策略在基线上常 **0 成交** 或个别票大亏（参数窗没对齐）→ 看 `output/baseline_backtest.csv`。  
-> **波段 A/B 策略正式历史回测：尚未做完**（见 ROADMAP）。
+> 波段 A/B 已完成首轮共享现金 + T+1 + Walk-forward 研究；因旧 CSV 缺 raw 元数据且 OOS 未通过，**仍不可晋级生产参数**。
 
 ---
 
@@ -226,7 +243,8 @@ cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 | [CRON_JOBS.md](docs/CRON_JOBS.md) | 定时器是否合理、必开清单 |
 | [REALTIME.md](docs/REALTIME.md) | 盘中监控全景 |
 | [REVIEW_LOOP.md](docs/REVIEW_LOOP.md) | 复盘 / 需求 / Cursor 队列 |
-| [ROADMAP.md](docs/ROADMAP.md) | 需求与缺口（含「波段回测未做」） |
+| [ROADMAP.md](docs/ROADMAP.md) | 需求与缺口（含波段回测研究版状态） |
+| [STRATEGY_RESEARCH_2026-07-31.md](docs/STRATEGY_RESEARCH_2026-07-31.md) | #1/#3 首轮可信回测、OOS 与晋级结论 |
 
 ---
 

@@ -20,7 +20,8 @@ scripts/_archive_*/
 data/_archive/
 output/intraday_*.json
 output/portfolio_*.json
-research/
+research/__pycache__/
+research/output/
 memory/
 docs/logs/
 
@@ -32,6 +33,7 @@ docs/logs/
 venv/
 venv_qmt/
 env/
+*.egg-info/
 
 # IDE
 .vscode/
@@ -68,6 +70,8 @@ output/wecom_notification.txt
 output/pm_*.json
 output/pm_*.txt
 output/finance_manager/
+output/strategy_research/
+output/promotion/
 
 # 运行产物（日报、信号、日志等）
 docs/reviews/

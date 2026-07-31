@@ -8,8 +8,6 @@ sim/realtime_price.py
 import os
 import re
 import requests
-import baostock as bs
-import pandas as pd
 from datetime import datetime, timedelta
 
 
@@ -95,6 +93,12 @@ def fetch_baostock_latest(codes: list, days_back: int = 5) -> dict:
     用 baostock 获取最近几天日线，取最后一条作为最新价。
     返回与 fetch_sina_realtime 相同格式。
     """
+    try:
+        import baostock as bs
+    except ImportError:
+        _log("  ⚠ baostock 未安装，跳过非实时后退")
+        return {}
+
     end_date = datetime.now().strftime("%Y-%m-%d")
     start_date = (datetime.now() - timedelta(days=days_back + 10)).strftime("%Y-%m-%d")
 

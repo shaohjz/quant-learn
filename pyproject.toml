@@ -71,6 +71,8 @@ include = [
     "pm*",
     "decision*",
     "ml*",
+    "quant_core*",
+    "research*",
 ]
 exclude = ["tests*", "data*", "output*", "logs*", "docs*"]
 

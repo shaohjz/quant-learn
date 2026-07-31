@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-31（本机 Linux 长期模拟：`sim_local.db` + `linux_sim_runner.sh` + cron）  
+> **更新**：2026-07-31（收盘通知精简：今日盈亏置顶，明确区分累计盈亏）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -286,7 +286,34 @@ dir %ROOT%\daily_reports
 | 持仓 | 账户 #3 持仓强制保留在池内 |
 | 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
 
-### ★ 本次变更怎么部署（赚钱闸 + 理财师日报落盘）
+### ★ 本次变更怎么部署（收盘通知精简、防盈亏误读）
+
+> **改了什么：** `daily_close_report.py` 不再重复整段波段日报；每个账户先显示“今日盈亏”，总资产旁明确写“较昨日变化”，累计盈亏降为同一行辅助信息。成交、持仓改成短行；仅保留真实挂单明细。若波段“今日盈亏”与“累计盈亏”正负相反，会额外显示“别混淆”提示。
+
+产机执行：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM 冒烟：只生成文件，不推企微
+.venv\Scripts\python.exe -m pytest tests\test_daily_close_report.py -q
+.venv\Scripts\python.exe -u scripts\daily_close_report.py --no-push
+type output\daily_close_今天日期.md
+```
+
+**不用重建 schtasks。** `QuantLearn_DailyClose` 任务名、时间和 runner 均未变化，拉代码后下一次 16:20 自动使用新通知。
+
+**验收标准：**
+
+1. 标题为“量化收盘简报”，#1/#3 都先显示加粗“今日”盈亏。
+2. 总资产后显示“较昨日 ±金额”，金额应与今日盈亏一致。
+3. 今日亏、累计赚（或相反）时，出现“别混淆”提示。
+4. 不再出现“可用现金”“今日建仓归因”和重复的“波段结论”；“波段操作”下只有真实挂单，没建议则明确写“今日无挂单建议”。
+5. pytest 全绿，`--no-push` 退出码为 0；正式任务无需改 webhook。
+
+### 历史变更：赚钱闸 + 理财师日报落盘
 
 > **唯一目标：赚钱。** 把已有但未接入的风控接进 `sim_executor`，收紧日新建仓，理财师报告改脚本落盘（不再依赖 OpenClaw Write）。
 
@@ -879,7 +906,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：本机 Linux 长期模拟（sim_local.db + linux_sim_runner cron）；产机 schtasks 不变。
+重点：收盘通知已精简并明确区分今日/累计盈亏；产机 schtasks 不变。
 做完写 pm/ops/今天-deploy.md。
 ```
 

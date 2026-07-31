@@ -3,7 +3,7 @@
 import sqlite3
 from pathlib import Path
 
-from scripts.daily_close_report import account_block, build_report
+from scripts.daily_close_report import account_block, build_report, load_swing_snippet
 
 
 def _db(tmp: Path) -> Path:
@@ -59,11 +59,59 @@ def test_report_mentions_both_accounts(tmp_path, monkeypatch):
 
     db = _db(tmp_path)
     monkeypatch.setattr(mod, "DB_PATH", db)
-    monkeypatch.setattr(mod, "ROOT", tmp_path)
+    monkeypatch.setattr(mod, "OUTPUT_DIR", tmp_path / "output")
     (tmp_path / "output" / "swing_daily").mkdir(parents=True)
     md = build_report("2026-07-15", db_path=db)
     assert "模拟学习仓" in md
     assert "波段" in md
-    assert "相对昨日净值" in md
+    assert "**今日 +119.43（+0.05%）**" in md
+    assert "总资产 219,479.43（较昨日 +119.43）" in md
     assert "+119,479" not in md
-    assert "波段结论" in md
+    assert "波段操作" in md
+    assert "今日=相对昨日净值；累计=相对期初资金" in md
+    assert "可用现金" not in md
+    assert "建仓归因" not in md
+
+
+def test_report_warns_when_swing_day_and_cumulative_have_opposite_signs(
+    tmp_path, monkeypatch
+):
+    import scripts.daily_close_report as mod
+
+    db = _db(tmp_path)
+    conn = sqlite3.connect(db)
+    conn.execute(
+        "UPDATE sim_account SET cash=50247,total_value=50247,initial_cash=50000 "
+        "WHERE id=3"
+    )
+    conn.execute("UPDATE sim_daily_nav SET total_value=50553 WHERE account_id=3")
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(mod, "OUTPUT_DIR", tmp_path / "output")
+    (tmp_path / "output" / "swing_daily").mkdir(parents=True)
+    md = build_report("2026-07-15", db_path=db)
+    assert "**今日 -306.00（-0.61%）**" in md
+    assert "总资产 50,247.00（较昨日 -306.00）" in md
+    assert "别混淆：波段今天亏 ¥306.00；累计仍赚 ¥247.00" in md
+
+
+def test_swing_snippet_keeps_only_real_advice(tmp_path, monkeypatch):
+    import scripts.daily_close_report as mod
+
+    monkeypatch.setattr(mod, "OUTPUT_DIR", tmp_path)
+    out = tmp_path / "swing_daily"
+    out.mkdir()
+    (out / "2026-07-15.md").write_text(
+        "# 波段结论\n"
+        "## 🟢 波段模拟今日赚 ¥221\n"
+        "## 给你挂单建议（实盘参考）\n"
+        "- **WATCH_BUY 海康威视(002415)** @ 35.41\n"
+        "## 波段模拟持仓\n"
+        "- 东方财富 +1%\n",
+        encoding="utf-8",
+    )
+    snippet = load_swing_snippet("2026-07-15")
+    assert snippet == "- **WATCH_BUY 海康威视(002415)** @ 35.41"
+    assert "波段模拟今日赚" not in snippet
+    assert "东方财富" not in snippet

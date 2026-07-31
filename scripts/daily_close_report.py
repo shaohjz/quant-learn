@@ -401,90 +401,76 @@ def load_swing_snippet(trade_date: str, max_chars: int = 600) -> str | None:
     if not path.exists():
         return None
     text = path.read_text(encoding="utf-8")
-    # 取结论几行
-    keep = []
+    # 日报前面已有波段盈亏，只取真正的挂单明细，避免重复结论和空标题。
+    keep: list[str] = []
+    in_advice = False
     for line in text.splitlines():
-        if any(k in line for k in ("波段结论", "赚", "亏", "挂单建议", "今日", "建议")):
+        stripped = line.strip()
+        if stripped.startswith("## 给你挂单建议"):
+            in_advice = True
+            continue
+        if in_advice and stripped.startswith("## "):
+            break
+        if in_advice and stripped.startswith(("-", ">")):
             keep.append(line)
-        if len(keep) >= 12:
+        if len(keep) >= 3:
             break
     if not keep:
-        keep = text.splitlines()[:8]
+        return "今日无挂单建议"
     snippet = "\n".join(keep)
     return snippet[:max_chars]
 
 
 def render_account_md(block: dict) -> list[str]:
-    lines = [f"**{block['label']}** `#{block['id']}`"]
+    lines = [f"**#{block['id']} {block['label']}**"]
     if not block["exists"]:
         lines.append("- （账户不存在，波段仓请先跑 swing_daily_report）")
         lines.append("")
         return lines
 
-    lines.append(f"- 总资产：¥{block['total']:,.2f}")
-    lines.append(f"- 可用现金：¥{block['cash']:,.2f}")
-
     if block["day_pnl"] is not None:
+        day_emoji = "🟢" if block["day_pnl"] > 0 else "🔴" if block["day_pnl"] < 0 else "⚪"
+        cumulative = ""
+        if block["cum_pnl"] is not None:
+            cumulative = (
+                f"｜累计 {block['cum_pnl']:+,.2f}（{block['cum_pct']:+.2f}%）"
+            )
         lines.append(
-            f"- 当日盈亏：¥{block['day_pnl']:+,.2f}（{block['day_pct']:+.2f}%）← 相对昨日净值"
+            f"- {day_emoji} **今日 {block['day_pnl']:+,.2f}（{block['day_pct']:+.2f}%）**"
+            f"｜总资产 {block['total']:,.2f}（较昨日 {block['day_pnl']:+,.2f}）"
+            f"{cumulative}"
         )
     else:
-        lines.append("- 当日盈亏：—（无昨日净值，无法算日收益）")
-
-    if block["cum_pnl"] is not None:
         lines.append(
-            f"- 累计盈亏：¥{block['cum_pnl']:+,.2f}（{block['cum_pct']:+.2f}%）← 相对期初 ¥{block['initial']:,.0f}"
+            f"- ⚪ **今日 —（缺昨日净值）**｜总资产 {block['total']:,.2f}"
+            f"｜累计 {block['cum_pnl']:+,.2f}（{block['cum_pct']:+.2f}%）"
         )
-    lines.append("")
 
     trades = block["trades"]
     if trades:
-        lines.append(f"**今日交易（{len(trades)}笔）**")
+        trade_parts = []
         for t in trades:
-            emoji = "🟢" if str(t["direction"]).upper() == "BUY" else "🔴"
-            lines.append(
-                f"- {emoji} {t['trade_time'] or '-'} {t['stock_name']}（{t['stock_code']}）"
-                f"{t['direction']} {int(_f(t['quantity']))}股 @ ¥{_f(t['price']):.2f}，"
-                f"金额¥{_f(t['amount']):.0f}"
+            is_buy = str(t["direction"]).upper() == "BUY"
+            trade_parts.append(
+                f"{'买' if is_buy else '卖'} {t['stock_name']} "
+                f"{int(_f(t['quantity']))}股@{_f(t['price']):.2f}"
             )
-            if t.get("signal_reason"):
-                lines.append(f"  └ 原因：{t['signal_reason']}")
-        lines.append("")
+        lines.append(f"- 成交 {len(trades)}笔：" + "；".join(trade_parts))
     else:
-        lines.append("**今日交易：无**")
-        lines.append("")
-
-    # REQ-071: 建仓归因
-    build_positions = block.get("build_positions", [])
-    if build_positions:
-        lines.append(f"**🆕 今日建仓归因（{len(build_positions)}只）**")
-        total_build_pnl = 0.0
-        for bp in build_positions:
-            pnl_val = _f(bp["pnl"])
-            total_build_pnl += pnl_val
-            emoji = "🟢" if pnl_val >= 0 else "🔴"
-            lines.append(
-                f"- {emoji} {bp['stock_name']}（{bp['stock_code']}）："
-                f"建仓价 ¥{_f(bp['avg_cost']):.2f} → 现价 ¥{_f(bp['current_price']):.2f}，"
-                f"建仓贡献 {pnl_val:+,.2f}（{_f(bp['pnl_pct']):+.2f}%）| {bp['kind']}"
-            )
-        lines.append(f"  └ 建仓合计贡献：¥{total_build_pnl:+,.2f}")
-        lines.append("")
+        lines.append("- 成交：无")
 
     positions = block["positions"]
     if positions:
-        lines.append(f"**当前持仓（{len(positions)}只）**")
+        position_parts = []
         for p in positions:
             pnl_val = _f(p["pnl"])
-            emoji = "🟢" if pnl_val >= 0 else "🔴"
-            lines.append(
-                f"- {emoji} {p['stock_name']}（{p['stock_code']}）：{int(_f(p['quantity']))}股，"
-                f"成本¥{_f(p['avg_cost']):.2f}，现价¥{_f(p['current_price']):.2f}，"
-                f"盈亏{pnl_val:+,.2f}（{_f(p['pnl_pct']):+.2f}%）"
+            position_parts.append(
+                f"{p['stock_name']} {pnl_val:+,.0f}（{_f(p['pnl_pct']):+.2f}%）"
             )
+        lines.append(f"- 持仓 {len(positions)}只：" + "；".join(position_parts))
         lines.append("")
     else:
-        lines.append("**当前持仓：空仓**")
+        lines.append("- 持仓：空仓")
         lines.append("")
 
     return lines
@@ -502,16 +488,30 @@ def build_report(trade_date: str | None = None, db_path: Path | None = None) -> 
         conn.close()
 
     lines = [
-        f"📊 **量化交易日报 — {trade_date}**",
-        "",
-        "> 账户约定：**#1 模拟学习** + **#3 波段**（#2 真仓镜像可选，默认不推）",
+        f"📊 **量化收盘简报 — {trade_date}**",
         "",
     ]
     for b in blocks:
         lines.extend(render_account_md(b))
 
+    swing_block = next((b for b in blocks if b["id"] == 3 and b["exists"]), None)
+    if (
+        swing_block
+        and swing_block["day_pnl"] is not None
+        and swing_block["cum_pnl"] is not None
+        and swing_block["day_pnl"] * swing_block["cum_pnl"] < 0
+    ):
+        day_word = "赚" if swing_block["day_pnl"] > 0 else "亏"
+        cum_word = "赚" if swing_block["cum_pnl"] > 0 else "亏"
+        lines.append(
+            f"> ⚠️ **别混淆：波段今天{day_word} "
+            f"¥{abs(swing_block['day_pnl']):,.2f}；累计仍{cum_word} "
+            f"¥{abs(swing_block['cum_pnl']):,.2f}。**"
+        )
+        lines.append("")
+
     swing = load_swing_snippet(trade_date)
-    lines.append("**波段结论 / 挂单建议**")
+    lines.append("**波段操作**")
     if swing:
         lines.append(swing)
     else:
@@ -521,7 +521,7 @@ def build_report(trade_date: str | None = None, db_path: Path | None = None) -> 
             "一直没有 → 检查本机 cron / 产机 schtasks。"
         )
     lines.append("")
-    lines.append("_本报告由量化系统自动生成（当日盈亏=相对昨日净值）_")
+    lines.append("_今日=相对昨日净值；累计=相对期初资金。_")
     return "\n".join(lines)
 
 

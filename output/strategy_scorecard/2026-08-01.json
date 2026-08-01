@@ -1,0 +1,42 @@
+{
+  "as_of": "2026-08-01",
+  "read_only": true,
+  "total_signals": 0,
+  "windows": {
+    "20d": {
+      "signal_days": 0,
+      "signals": 0,
+      "groups": [],
+      "overall": {
+        "signals": 0,
+        "matured": 0,
+        "executed": 0,
+        "mean_fwd_5d": null,
+        "win_rate": null,
+        "executed_mean_fwd_5d": null
+      }
+    },
+    "60d": {
+      "signal_days": 0,
+      "signals": 0,
+      "groups": [],
+      "overall": {
+        "signals": 0,
+        "matured": 0,
+        "executed": 0,
+        "mean_fwd_5d": null,
+        "win_rate": null,
+        "executed_mean_fwd_5d": null
+      }
+    }
+  },
+  "alarms": [
+    {
+      "level": "critical",
+      "code": "ledger_empty",
+      "message": "信号台账为空：还没有任何信号被记录，反馈闭环没有数据来源",
+      "context": {}
+    }
+  ],
+  "verdict": "异常：信号台账为空：还没有任何信号被记录，反馈闭环没有数据来源"
+}

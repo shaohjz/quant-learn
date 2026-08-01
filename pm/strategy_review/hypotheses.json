@@ -1,0 +1,40 @@
+[
+  {
+    "id": "H-001",
+    "created": "2026-08-01",
+    "title": "#3 波段仓 3仓×1万撑不满5万本金，提到5仓",
+    "layer": "execution",
+    "param": "swing.max_positions",
+    "before": "3",
+    "after": "5",
+    "expect": "满仓拦截天数从近15日的5天降到0；资金利用率上限由60%到100%；月成交笔数从1笔回到5笔以上",
+    "metric": "funnel.blocked_days / funnel.total_fills",
+    "baseline": null,
+    "target": null,
+    "review_after": "2026-08-22",
+    "min_samples": 10,
+    "status": "open",
+    "outcome": "",
+    "closed": "",
+    "source_finding": ""
+  },
+  {
+    "id": "H-002",
+    "created": "2026-08-01",
+    "title": "#1 学习仓 5仓×1万撑不满10万本金，提到8仓",
+    "layer": "execution",
+    "param": "learn.max_total_positions",
+    "before": "5",
+    "after": "8",
+    "expect": "资金利用率上限由50%到80%；不因此提高单票集中度（单笔预算仍1万，低于15%上限）",
+    "metric": "capital_cap_pct",
+    "baseline": null,
+    "target": null,
+    "review_after": "2026-08-22",
+    "min_samples": 10,
+    "status": "open",
+    "outcome": "",
+    "closed": "",
+    "source_finding": ""
+  }
+]

@@ -44,6 +44,7 @@ from swing_auto import (  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_daily")
 
+from quant_core.swing_params import load_swing_params  # noqa: E402
 from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
 
 DB_PATH = resolve_db_path()
@@ -56,12 +57,16 @@ try:
     SWING_INITIAL_CASH = _account_initial_cash(SWING_ACCOUNT_ID)
 except Exception:
     SWING_INITIAL_CASH = 50_000.0
-STOP_LOSS_PCT = 0.05
-TAKE_PROFIT_PCT = 0.08
-MAX_POSITIONS = 3
-MIN_SCORE_BUY = 5
-EXECUTABLE_TYPES = {"A", "B"}
-SINGLE_BUDGET = 10_000.0
+# 执行参数真源：quant_core/swing_params.py（默认值与迁移前常量相同）。
+# 保留这些模块级名字是为了不动下面几十处引用；值统一从参数层取，避免
+# 本文件与 swing_auto / swing_intraday_watch 之间出现「改了一个忘了另一个」。
+PARAMS = load_swing_params()
+STOP_LOSS_PCT = PARAMS.stop_loss_pct
+TAKE_PROFIT_PCT = PARAMS.take_profit_pct
+MAX_POSITIONS = PARAMS.max_positions
+MIN_SCORE_BUY = PARAMS.min_score_buy
+EXECUTABLE_TYPES = set(PARAMS.executable_types)
+SINGLE_BUDGET = PARAMS.single_budget
 LOT = 100
 
 

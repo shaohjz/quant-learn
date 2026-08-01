@@ -223,14 +223,16 @@ flowchart LR
 | 优先级 | 看哪 | 得到什么 |
 |:------:|------|----------|
 | 1 | 企微 Pulse / 波段日报 | 到价提醒、今天赚亏、挂什么价 |
-| 2 | `pm/trade_journal/` | 成交明细复盘 |
-| 3 | `pm/cursor_queue/` | 晚上 Cursor **尽量多修**（不限 P0） |
+| 2 | **`output/strategy_review/今天.md`** | **策略哪里不对、今天该改什么** |
+| 3 | `pm/trade_journal/` | 成交明细复盘 |
+| 4 | `pm/cursor_queue/` | 晚上 Cursor **尽量多修**（不限 P0） |
 
 ```powershell
 cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 .venv\Scripts\python.exe -u scripts\quant_pulse.py --force --no-push
 .venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
 .venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
+.venv\Scripts\python.exe -u scripts\strategy_review.py --no-push --write-spec
 ```
 
 ---
@@ -239,6 +241,8 @@ cd C:\Users\Administrator\.openclaw\workspace\quant-learn
 
 | 文档 | 一句话 |
 |------|--------|
+| **[METHODOLOGY.md](docs/METHODOLOGY.md)** | **每天复盘该改什么、不该改什么（先读这个）** |
+| **[STRATEGY_SPEC.md](docs/STRATEGY_SPEC.md)** | **当前策略全部参数（自动生成，勿手改）** |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | OpenClaw 怎么把系统跑起来 |
 | [CRON_JOBS.md](docs/CRON_JOBS.md) | 定时器是否合理、必开清单 |
 | [REALTIME.md](docs/REALTIME.md) | 盘中监控全景 |

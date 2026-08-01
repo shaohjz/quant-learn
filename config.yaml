@@ -38,7 +38,13 @@ fees:
 # 账户 #3 波段策略参数。此处只放「人工声明的覆盖」，留空即用
 # quant_core/swing_params.py 的 DEFAULTS（与 2026-07-31 迁移前的硬编码常量逐个相同）。
 # 机器自动采纳的覆盖写在 config.strategy_params.yaml，优先级高于本段。
-swing_strategy: {}
+swing_strategy:
+  execution:
+    # 2026-08-01 假设 H-001：3 仓 × 1 万预算 = 3 万，撑不满 5 万本金，
+    # 4 成资金结构性闲置；且近 15 日有 5 天出了买点因持仓已 3/3 被挡。
+    # 提到 5 仓后 5×1万=5万 与本金对齐，单票集中度反而由 33% 降到 20%。
+    # 复核日 2026-08-22，不达预期回退为 3。
+    max_positions: 5
 # 策略反馈闭环（信号台账 → 记分卡 → 周度复盘 → 参数提案）
 strategy_feedback:
   enabled: true

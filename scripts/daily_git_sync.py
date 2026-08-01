@@ -50,7 +50,8 @@ ALLOW_PREFIXES = (
     "output/reviews/",
     "output/finance_manager/",
     "output/strategy_scorecard/",  # 每日策略记分卡（策略好坏的时间序列，必须进 git）
-    "pm/strategy_review/",         # 周度复盘 + 参数采纳记录
+    "output/strategy_review/",     # 每日策略复盘报告
+    "pm/strategy_review/",         # 周度复盘/参数采纳 + 假设台账与参数快照
     "daily_reports/",
     "docs/reviews/",  # 理财师脚本历史路径；新日报优先 daily_reports/
 )
@@ -59,6 +60,7 @@ ALLOW_EXACT = {
     "docs/ROADMAP.md",
     "docs/CRON_JOBS.md",
     "docs/REVIEW_LOOP.md",
+    "docs/STRATEGY_SPEC.md",  # 自动生成的策略说明书
     "CRON_JOBS.md",
     "pm/BACKLOG.md",
 }

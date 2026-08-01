@@ -28,7 +28,8 @@ flowchart TD
   B --> D["16:05 SwingDaily 波段结论"]
   D --> E["16:15 TradeJournal 台账"]
   E --> F["16:20 daily_close 双账户摘要"]
-  F --> G["16:30-18:15 OpenClaw 复盘入库 + Cursor队列"]
+  F --> F2["16:35 StrategyReview 策略诊断"]
+  F2 --> G["16:30-18:15 OpenClaw 复盘入库 + Cursor队列"]
   G --> H["18:45 DailyGitSync push master"]
   H --> I["19:15 OpenClaw 守夜验货"]
   I --> J["20:00 LLM 各类日报写 daily_reports"]
@@ -44,6 +45,7 @@ flowchart TD
 | **16:05** | 波段日报 | **Windows schtasks** | `swing_daily_report_runner.bat` | #3 赚亏+挂单建议 |
 | **16:15** | 交易台账 | **Windows schtasks** | `trade_journal_runner.bat` | `pm/trade_journal/` |
 | **16:20** | 双账户摘要 | **Windows schtasks** | `daily_close_report_runner.bat` | #1+#3 |
+| **16:35** | **策略复盘诊断** | **Windows schtasks** | `strategy_review_runner.bat` | 诊断策略本身（不是播报盈亏）；出 P0 清单 + 刷新 `docs/STRATEGY_SPEC.md` |
 | **16:30** | 复盘备注 | **OpenClaw cron（agentTurn）最多 1 条** | 短提示词 | 只写 md |
 | **17:00** | 需求入库 | **可与 18:15 合并成 1 条** OpenClaw | 短提示词 | 写 `pm/` |
 | **18:15** | Cursor 队列 | **OpenClaw cron 1 条够** | 短提示词 | 写 `cursor_queue` |
@@ -92,6 +94,7 @@ flowchart TD
 | **必开** | `QuantLearn_SwingDaily` | 收盘波段结论 |
 | **必开** | `QuantLearn_TradeJournal` | 每日交易记录 |
 | **必开** | `QuantLearn_DailyClose` | 收盘双账户摘要 |
+| **必开** | `QuantLearn_StrategyReview` | **16:35 策略诊断**；P0 清单 + 参数漂移检测，见 `docs/METHODOLOGY.md` |
 | **必开** | `QuantLearn_DailyGitSync` | **18:45 推 master**（台账主班） |
 | **必开** | `QuantLearn_DailyGitSyncEvening` | **20:30 推 master**（承接 20:00 LLM 日报） |
 | **必开** | OpenClaw **19:15 守夜** | 验货+补跑；提示词见 DEPLOYMENT B |
@@ -137,8 +140,10 @@ schtasks /create /f /tn "QuantLearn_QuantPulse"     /tr "%ROOT%\scripts\quant_pu
 schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intraday_scanner_runner.bat"   /sc weekly /d MON,TUE,WED,THU,FRI /st 10:00
 schtasks /create /f /tn "QuantLearn_SwingDaily"     /tr "%ROOT%\scripts\swing_daily_report_runner.bat"  /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 schtasks /create /f /tn "QuantLearn_TradeJournal"   /tr "%ROOT%\scripts\trade_journal_runner.bat"       /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
+schtasks /create /f /tn "QuantLearn_DailyClose"     /tr "%ROOT%\scripts\daily_close_report_runner.bat"  /sc weekly /d MON,TUE,WED,THU,FRI /st 16:20
 schtasks /create /f /tn "QuantLearn_SignalLedger"   /tr "%ROOT%\scripts\signal_ledger_runner.bat"       /sc weekly /d MON,TUE,WED,THU,FRI /st 16:25
 schtasks /create /f /tn "QuantLearn_StrategyScorecard" /tr "%ROOT%\scripts\strategy_scorecard_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:30
+schtasks /create /f /tn "QuantLearn_StrategyReview" /tr "%ROOT%\scripts\strategy_review_runner.bat"     /sc weekly /d MON,TUE,WED,THU,FRI /st 16:35
 schtasks /create /f /tn "QuantLearn_DailyGitSync"   /tr "%ROOT%\scripts\daily_git_sync_runner.bat"      /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
 schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
 schtasks /create /f /tn "QuantLearn_WeeklyStrategyReview" /tr "%ROOT%\scripts\weekly_strategy_review_runner.bat" /sc weekly /d FRI /st 17:00
@@ -161,8 +166,10 @@ schtasks /query /fo LIST | findstr QuantLearn
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 建议开 / 吵则关 |
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | **必开** |
 | QuantLearn_TradeJournal | `trade_journal_runner.bat` | **必开** |
+| QuantLearn_DailyClose | `daily_close_report_runner.bat` | **必开**（16:20 双账户摘要） |
 | QuantLearn_SignalLedger | `signal_ledger_runner.bat` | **必开**（16:25 记信号+回填前瞻收益；反馈闭环的数据来源，断了后面全空） |
 | QuantLearn_StrategyScorecard | `strategy_scorecard_runner.bat` | **必开**（16:30 记分卡+漂移告警；须在 SignalLedger 之后） |
+| QuantLearn_StrategyReview | `strategy_review_runner.bat` | **必开**（16:35 策略诊断） |
 | QuantLearn_WeeklyStrategyReview | `weekly_strategy_review_runner.bat` | 建议开（周五 17:00 出参数提案；默认不自动改参） |
 | QuantLearn_DailyGitSync | `daily_git_sync_runner.bat` | **必开**（18:45 台账推 master） |
 | QuantLearn_DailyGitSyncEvening | `daily_git_sync_runner.bat` | **必开**（20:30 LLM 日报推 master） |

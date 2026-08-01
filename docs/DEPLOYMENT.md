@@ -183,6 +183,9 @@ REM D 双账户收盘摘要（当日盈亏必须「相对昨日净值」，禁�
 
 REM E 盘前大盘扫（≈800，失败会 fallback lite）
 .venv\Scripts\python.exe -u scripts\scanner_with_fallback.py
+
+REM F 每日策略复盘（诊断策略本身，不是播报盈亏）
+.venv\Scripts\python.exe -u scripts\strategy_review.py --no-push --write-spec --quiet
 ```
 
 **成功标准：**
@@ -196,6 +199,7 @@ REM E 盘前大盘扫（≈800，失败会 fallback lite）
 | C | `pm\trade_journal\今天.md` 存在 |
 | D | 文案含「相对昨日净值」；**不能**再出现离谱日涨跌幅（如 +119%） |
 | E | Top 或 fallback 成功 |
+| F | `output\strategy_review\今天.md` 存在且含「今日发现」；`docs\STRATEGY_SPEC.md` 被刷新；`pm\strategy_review\spec_snapshots.json` 有今天一条 |
 | DB | 有 account_id=1 与 3（B 可自动建 #3） |
 
 任一步失败 → **先修再挂 schtasks**，把错误写进 deploy 报告。
@@ -231,6 +235,9 @@ schtasks /create /f /tn "QuantLearn_TradeJournal" /tr "%ROOT%\scripts\trade_jour
 REM ⑥ 16:20 双账户收盘摘要
 schtasks /create /f /tn "QuantLearn_DailyClose" /tr "%ROOT%\scripts\daily_close_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:20
 
+REM ⑥b 16:35 每日策略复盘（诊断策略本身；依赖 ⑤⑥ 已写完台账与净值）
+schtasks /create /f /tn "QuantLearn_StrategyReview" /tr "%ROOT%\scripts\strategy_review_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:35
+
 REM ⑦ 18:45 台账/PM/QA/Ops 白名单推 master（不占 LLM）
 schtasks /create /f /tn "QuantLearn_DailyGitSync" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
 
@@ -243,7 +250,7 @@ schtasks /create /f /tn "QuantLearn_VqlearnLive" /tr "%ROOT%\scripts\vqlearn_liv
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)** · **VqlearnLive(09:25，shadow 专用，无 auto-trade)**
+**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **StrategyReview(16:35)** · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)** · **VqlearnLive(09:25，shadow 专用，无 auto-trade)**
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
 
@@ -257,16 +264,19 @@ schtasks /run /tn QuantLearn_QuantPulse
 schtasks /run /tn QuantLearn_SwingDaily
 schtasks /run /tn QuantLearn_TradeJournal
 schtasks /run /tn QuantLearn_DailyClose
+schtasks /run /tn QuantLearn_StrategyReview
 schtasks /run /tn QuantLearn_DailyGitSync
 schtasks /run /tn QuantLearn_DailyGitSyncEvening
 type %ROOT%\output\swing_pool_builder.log
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
 type %ROOT%\output\trade_journal.log
+type %ROOT%\output\strategy_review.log
 type %ROOT%\output\daily_git_sync.log
 dir %ROOT%\output\swing_pool
 dir %ROOT%\pm\trade_journal
 dir %ROOT%\output\swing_daily
+dir %ROOT%\output\strategy_review
 dir %ROOT%\daily_reports
 ```
 
@@ -376,6 +386,82 @@ schtasks /query /fo LIST | findstr QuantLearn
 4. 周度复盘产出 `pm/strategy_review/今天-review.md`，且在 `enabled=false` 下
    明确写「只出提案不写参数」，`config.strategy_params.yaml` **不存在**。
 5. 18:45 DailyGitSync 能把 `output/strategy_scorecard/` 与 `pm/strategy_review/` 推上去。
+
+### ★ 同期变更（每日策略复盘闭环 · `review/` 包 —— **代码尚未提交，先别照做**）
+
+> **状态：** `review/`、`scripts/strategy_review.py`、`docs/METHODOLOGY.md` 目前只在开发机工作区，
+> **没有进 git**。产机 `git pull` 拉不到，下面的命令会报「找不到文件」。等这部分提交后再执行本节。
+
+> **它做什么：** 不播报盈亏（那是 DailyClose 的活），而是**诊断策略本身**：
+> 策略说明书从代码自动抽取、绩效带小样本置信区间、信号漏斗定位为什么不成交、
+> 参数漂移检测、假设台账。方法论见 `docs/METHODOLOGY.md`。
+
+首轮跑出来的 P0（属于**既有问题被暴露**，不是那次改动引入）：
+
+| 问题 | 事实 | 现状 |
+|------|------|------|
+| 两账户资金结构性闲置 | #3：3 仓 × 1 万 = 3 万，本金 5 万 → 上限 60%；#1：5 仓 × 1 万 = 5 万，本金 10 万 → 上限 50% | **本次已修**（见下表） |
+| 满仓拦截 | #3 近 15 日有 5 天出了买点却因持仓已 3/3 未成交，现金 23,422 元闲置 | **本次已修** |
+| 参数迁移做了一半 | `swing_daily_report.py`、`swing_intraday_watch.py` 仍用本地常量 → 改 YAML 不生效 | **已解决**（已全部迁到 `swing_params`） |
+
+#### ⚠️ 仓位上限调整（本次唯一的交易行为变更，git pull 即生效）
+
+上面两条 P0 是**算术矛盾**而非行情问题：满仓状态下仍有大量现金取不出来干活，
+收益天花板被参数自己压掉四到五成。已按 `docs/METHODOLOGY.md` 的流程先立假设再改：
+
+| 账户 | 参数 | 改前 | 改后 | 资金利用率上限 |
+|------|------|-----:|-----:|---------------|
+| #3 波段 | `config.yaml` → `swing_strategy.execution.max_positions` | 3 | **5** | 60% → **100%** |
+| #1 学习 | `config.yaml` → `risk.max_total_positions` | 5 | **8** | 50% → **80%** |
+
+- **单笔预算未动**（仍 1 万）。#3 单票集中度由 33% 降到 20%，#1 维持 10%（低于 `max_position_pct` 15%）。
+- 已登记假设 **H-001 / H-002**（`pm/strategy_review/hypotheses.json`），复核日 **2026-08-22**。
+- 回退：改回 `config.yaml` 这两处，再跑
+  `strategy_review.py --close-hypothesis H-001 --status rejected --outcome "..."`。
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+
+REM 1) 确认仓位参数已生效（#3 应为 5）
+.venv\Scripts\python.exe -u scripts\apply_strategy_params.py --show | findstr max_positions
+
+REM 2) 波段链路仍正常（按 5 仓执行）
+.venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
+
+REM 3) 冒烟复盘（不推企微）
+.venv\Scripts\python.exe -u scripts\strategy_review.py --no-push --write-spec --quiet
+type output\strategy_review\%date:~0,4%-%date:~5,2%-%date:~8,2%.md
+
+REM 4) 建任务（16:35，在 TradeJournal/DailyClose 之后）
+set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
+schtasks /create /f /tn "QuantLearn_StrategyReview" /tr "%ROOT%\scripts\strategy_review_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:35
+schtasks /run /tn QuantLearn_StrategyReview
+type output\strategy_review.log
+```
+
+**验收标准：**
+
+| 检查 | 期望 |
+|------|------|
+| **仓位参数生效** | `apply_strategy_params.py --show` 里 `swing_strategy.execution.max_positions = 5` |
+| **波段链路** | `swing_daily_report.py` 正常出报告，持仓上限按 **5 只**执行 |
+| 报告落盘 | `output\strategy_review\今天.md` + `.json` 存在 |
+| 说明书刷新 | `docs\STRATEGY_SPEC.md` 的「最大持仓数」= **5**，含 `spec_hash` |
+| **P0 清零** | 报告里 **不应再有** `capital_cap_contradiction`；#3 资金利用率上限显示 **100%** |
+| 假设台账 | `pm\strategy_review\hypotheses.json` 含 **H-001 / H-002**，状态 `open` |
+| 快照落盘 | `pm\strategy_review\spec_snapshots.json` 有今天一条（漂移检测基准，**必须进 git**） |
+| 报告内容 | 含「今日发现」「绩效与可信度」「信号漏斗」「假设台账」四节 |
+| Git 同步 | 18:45 DailyGitSync 后，远程能看到 `output/strategy_review/`、`pm/strategy_review/`、`docs/STRATEGY_SPEC.md` |
+
+**改策略参数的新规矩（对人和 OpenClaw 一视同仁）：** 动手前先登记假设，否则次日复盘会报 P0「无记录的参数变更」。
+`scripts/apply_strategy_params.py` 自动采纳时会自己开假设，不用手动登记。
+
+```bat
+.venv\Scripts\python.exe -u scripts\strategy_review.py --open-hypothesis ^
+  --param swing.max_positions --before 3 --after 5 ^
+  --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
+```
 
 ### ★ 上一次变更怎么部署（收盘通知精简、防盈亏误读）
 
@@ -1000,7 +1086,8 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：新增策略反馈闭环，必须新建 3 条 schtasks（SignalLedger 16:25 / StrategyScorecard 16:30 / WeeklyStrategyReview 周五17:00）；自动改参默认关闭。
+重点：策略反馈闭环 + 每日策略复盘，共新建 4 条 schtasks（SignalLedger 16:25 / StrategyScorecard 16:30 / StrategyReview 16:35 / WeeklyStrategyReview 周五17:00）；
+本次含交易行为变更：#3 持仓上限 3→5、#1 5→8（单笔预算不变），验收时确认 max_positions=5 且复盘报告不再有 capital_cap_contradiction；自动改参仍默认关闭。
 做完写 pm/ops/今天-deploy.md。
 ```
 

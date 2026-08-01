@@ -37,6 +37,7 @@ from swing_auto import get_stock_pool, scan_stock  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_intraday")
 
+from quant_core.swing_params import load_swing_params  # noqa: E402
 from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
 
 DB_PATH = resolve_db_path()
@@ -44,10 +45,13 @@ OUT_DIR = resolve_artifact_root()
 STATE_FILE = OUT_DIR / "swing_intraday_state.json"
 LOG_DIR = OUT_DIR / "swing_intraday"
 SWING_ACCOUNT_ID = 3
-STOP_LOSS_PCT = 0.05
-TAKE_PROFIT_PCT = 0.08
-DEFAULT_MIN_SCORE = 5
-EXECUTABLE = {"A", "B"}
+# 执行参数真源：quant_core/swing_params.py。盘中与收盘必须用同一套值，
+# 否则会出现「盘中喊买、收盘按另一套阈值不认」的错位。
+PARAMS = load_swing_params()
+STOP_LOSS_PCT = PARAMS.stop_loss_pct
+TAKE_PROFIT_PCT = PARAMS.take_profit_pct
+DEFAULT_MIN_SCORE = PARAMS.min_score_buy
+EXECUTABLE = set(PARAMS.executable_types)
 
 
 def is_trading_now() -> bool:

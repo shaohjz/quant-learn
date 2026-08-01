@@ -49,6 +49,8 @@ ALLOW_PREFIXES = (
     "output/swing_pool/",
     "output/reviews/",
     "output/finance_manager/",
+    "output/strategy_scorecard/",  # 每日策略记分卡（策略好坏的时间序列，必须进 git）
+    "pm/strategy_review/",         # 周度复盘 + 参数采纳记录
     "daily_reports/",
     "docs/reviews/",  # 理财师脚本历史路径；新日报优先 daily_reports/
 )

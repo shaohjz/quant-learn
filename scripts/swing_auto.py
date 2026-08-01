@@ -24,9 +24,16 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'scripts'))
 
 from wecom_webhook import push_markdown
+from quant_core.swing_params import load_swing_params
 from sim.config_resolver import resolve_artifact_root, resolve_db_path
 
 DB_PATH = resolve_db_path()
+
+# 信号阈值/筛选/执行参数的唯一真源见 quant_core/swing_params.py。
+# 默认值与迁移前的硬编码常量逐个相同，由 tests/test_swing_params.py 钉住。
+# review/spec.py 会比对本模块与 swing_daily_report / swing_intraday_watch 的取值，
+# 迁移不完整（那两处仍用本地常量）时报 partial_migration。
+PARAMS = load_swing_params()
 
 # ========== 交易费用 ==========
 COMMISSION_RATE = 0.00025   # 佣金万2.5
@@ -247,26 +254,28 @@ def scan_stock(code, name):
     signal_type = None
     
     # 信号1: 缩量回踩MA20支撑（最可靠）
-    if price <= ma20 * 1.015 and price >= ma20 * 0.985:
-        if today_vol_ratio < 0.8:
+    a_tol = PARAMS.a_ma20_tolerance
+    if price <= ma20 * (1 + a_tol) and price >= ma20 * (1 - a_tol):
+        if today_vol_ratio < PARAMS.max_volume_ratio:
             signals.append(("缩量回踩MA20", 4))
             signal_type = 'A'
     
     # 信号2: 缩量回踩MA10支撑
-    if price <= ma10 * 1.01 and price >= ma10 * 0.99:
-        if today_vol_ratio < 0.8:
+    b_tol = PARAMS.b_ma10_tolerance
+    if price <= ma10 * (1 + b_tol) and price >= ma10 * (1 - b_tol):
+        if today_vol_ratio < PARAMS.max_volume_ratio:
             signals.append(("缩量回踩MA10", 3))
             if not signal_type:
                 signal_type = 'B'
     
     # 信号3: 布林下轨附近
-    if boll_lower and price <= boll_lower * 1.01:
+    if boll_lower and price <= boll_lower * (1 + PARAMS.boll_lower_tolerance):
         signals.append(("布林下轨附近", 3))
         if not signal_type:
             signal_type = 'C'
     
     # 信号4: RSI超卖
-    if rsi < 35:
+    if rsi < PARAMS.rsi_oversold:
         signals.append((f"RSI超卖({rsi:.0f})", 3))
         if not signal_type:
             signal_type = 'D'
@@ -275,13 +284,13 @@ def scan_stock(code, name):
     if len(closes) >= 5:
         last_3 = closes[-3:]
         if all(last_3[i] < last_3[i-1] for i in range(1, 3)):
-            if today_vol_ratio < 0.7 and change_pct >= -1.5:
+            if today_vol_ratio < PARAMS.quiet_volume_ratio and change_pct >= PARAMS.e_min_change_pct:
                 signals.append(("三连阴缩量企稳", 4))
                 if not signal_type:
                     signal_type = 'E'
     
     # 信号6: 回调缩量（单日大跌缩量）
-    if change_pct < -2.0 and today_vol_ratio < 0.7:
+    if change_pct < PARAMS.f_max_change_pct and today_vol_ratio < PARAMS.quiet_volume_ratio:
         signals.append((f"大跌缩量({change_pct:.1f}%)", 2))
         if not signal_type:
             signal_type = 'F'
@@ -340,11 +349,11 @@ def scan_stock(code, name):
     net_rr = net_upside / net_downside if net_downside > 0 else 0
     
     # 最终筛选
-    if net_rr < 1.2:  # 净盈亏比至少1.2
+    if net_rr < PARAMS.min_net_rr:
         return None
-    if upside < 0.005:  # 预期涨幅至少0.5%
+    if upside < PARAMS.min_upside_pct:
         return None
-    if avg_amp < 1.0:  # 日均振幅至少1%
+    if avg_amp < PARAMS.min_avg_amp:
         return None
     
     # 建议仓位

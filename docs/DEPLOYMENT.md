@@ -286,7 +286,98 @@ dir %ROOT%\daily_reports
 | 持仓 | 账户 #3 持仓强制保留在池内 |
 | 兜底 | latest 缺失 → 旧 `STOCK_POOL` 种子 |
 
-### ★ 本次变更怎么部署（收盘通知精简、防盈亏误读）
+### ★ 本次变更怎么部署（策略反馈闭环：信号台账 + 记分卡 + 周度复盘）
+
+> **解决什么问题：** 此前每天在跑的是**记账**（台账/收盘/日报），不是**学习**。
+> 信号发了没人记结果、研究脚本没挂调度、#3 参数是 Python 常量改不动，
+> 所以「每天自我优化」实际不成立。本次补上测量与提案链路。
+
+**改了什么：**
+
+| 新增 | 作用 |
+|------|------|
+| `sim/signal_ledger.py` + `scripts/signal_ledger.py` | `signal_outcomes` 表：每条信号记 T+1/3/5/10 前瞻收益、5日内先触止损还是止盈。**含 C/D/E/F 等只观察不买的信号**（反事实样本） |
+| `research/strategy_scorecard.py` + `scripts/strategy_scorecard.py` | 每日记分卡：滚动 20/60 日分信号类型胜率与净期望 + 漂移告警，落 `output/strategy_scorecard/` |
+| `quant_core/swing_params.py` | #3 波段参数唯一真源。**默认值与迁移前硬编码常量逐个相同**（`tests/test_swing_params.py` 钉住） |
+| `research/param_guard.py` + `scripts/apply_strategy_params.py` | 自动改参护栏：白名单/硬边界/单次限幅/冷却期/硬禁区，写入即备份+审计+开假设 |
+| `scripts/weekly_strategy_review.py` | 周五串起 optimize→shadow→evidence→参数提案→护栏采纳 |
+
+**行为不变声明：** `swing_auto.py` / `swing_daily_report.py` / `swing_intraday_watch.py`
+只把硬编码常量换成参数层读取，**数值完全一致**（止损 5% / 止盈 8% / 最多 3 仓 /
+min_score 5 / A±1.5% / B±1% / 量比 0.8 / 净盈亏比 1.2）。
+
+产机执行：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM 1) 确认参数层加载出来的值和迁移前一致（这步不过就别往下走）
+.venv\Scripts\python.exe -m pytest tests\test_swing_params.py -q
+.venv\Scripts\python.exe -u scripts\apply_strategy_params.py --show
+
+REM 2) 单测
+.venv\Scripts\python.exe -m pytest tests\test_signal_ledger.py tests\test_strategy_scorecard.py ^
+  tests\test_param_guard.py tests\test_apply_strategy_params.py tests\test_weekly_strategy_review.py -q
+
+REM 3) 冒烟：记今天的信号 + 回填 + 记分卡（不推企微）
+.venv\Scripts\python.exe -u scripts\signal_ledger.py
+.venv\Scripts\python.exe -u scripts\strategy_scorecard.py --no-push
+type output\strategy_scorecard\%date:~0,4%-%date:~5,2%-%date:~8,2%.md
+
+REM 4) 周度复盘干跑（复用已有 JSON，不重跑一小时回测）
+.venv\Scripts\python.exe -u scripts\weekly_strategy_review.py --skip-backtest --dry-run
+```
+
+**★必须新建 3 条 schtasks：**
+
+```bat
+set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
+
+REM ⑩ 16:25 信号台账（必须在 16:20 DailyClose 之后）
+schtasks /create /f /tn "QuantLearn_SignalLedger" /tr "%ROOT%\scripts\signal_ledger_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:25
+
+REM ⑪ 16:30 策略记分卡（必须在 16:25 台账之后）
+schtasks /create /f /tn "QuantLearn_StrategyScorecard" /tr "%ROOT%\scripts\strategy_scorecard_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:30
+
+REM ⑫ 周五 17:00 每周策略复盘（默认只出提案，不改参数）
+schtasks /create /f /tn "QuantLearn_WeeklyStrategyReview" /tr "%ROOT%\scripts\weekly_strategy_review_runner.bat" /sc weekly /d FRI /st 17:00
+
+schtasks /query /fo LIST | findstr QuantLearn
+```
+
+**自动改参当前是关的。** `config.yaml` → `strategy_feedback.auto_apply.enabled: false`。
+现在样本量（14 个交易日 / 57 笔成交）远不够自动调参，周度复盘只产出提案。
+要打开，先看记分卡连续几周稳定、闭环交易过百，再改这一个开关。打开后仍受护栏约束：
+
+| 护栏 | 值 |
+|------|-----|
+| 必须门禁通过 | `require_promotion_gate: true` |
+| `research_only` 数据 | **永远阻断**（与门禁无关，独立红线） |
+| 单参数单次变动 | ≤ 20% |
+| 一次最多改 | 3 个参数 |
+| 冷却期 | 14 天 |
+| 硬禁区（永不可改） | `accounts.*` / `notify.*` / `risk.*` / `fees.*` / `broker.*` |
+| 退化回滚 | 观察 10 天，跌破基线 50% 自动回滚 |
+
+出事回滚：
+
+```bat
+.venv\Scripts\python.exe -u scripts\apply_strategy_params.py --rollback
+```
+
+**验收标准：**
+
+1. `apply_strategy_params.py --show` 打出的值与本节「行为不变声明」逐个相同。
+2. 跑完 `signal_ledger.py` 后，DB 里 `signal_outcomes` 有当日行；隔几个交易日再跑，
+   `fwd_5d` / `outcome_status` 从 `pending` 变 `partial` 再变 `complete`。
+3. `output/strategy_scorecard/今天.md` 存在，含分信号类型表格与「结论」一行。
+4. 周度复盘产出 `pm/strategy_review/今天-review.md`，且在 `enabled=false` 下
+   明确写「只出提案不写参数」，`config.strategy_params.yaml` **不存在**。
+5. 18:45 DailyGitSync 能把 `output/strategy_scorecard/` 与 `pm/strategy_review/` 推上去。
+
+### ★ 上一次变更怎么部署（收盘通知精简、防盈亏误读）
 
 > **改了什么：** `daily_close_report.py` 不再重复整段波段日报；每个账户先显示“今日盈亏”，总资产旁明确写“较昨日变化”，累计盈亏降为同一行辅助信息。成交、持仓改成短行；仅保留真实挂单明细。若波段“今日盈亏”与“累计盈亏”正负相反，会额外显示“别混淆”提示。
 
@@ -614,6 +705,9 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 16:05            SwingDaily 波段赚亏+挂单建议
 16:15            TradeJournal 台账
 16:20            DailyClose 双账户摘要
+16:25            SignalLedger 信号台账（记当日信号 + 回填前瞻收益）
+16:30            StrategyScorecard 策略记分卡（策略在变好还是变坏 + 漂移告警）
+周五 17:00       WeeklyStrategyReview 研究链→参数提案（默认不自动改参）
 15:35            FinanceManager 理财师日报→daily_reports/*-finance-report.md
 18:45            DailyGitSync 台账/PM/QA/Ops → push master   ★上传主班
 20:30            DailyGitSyncEvening 同 bat → 推 LLM 日报   ★上传晚班
@@ -906,7 +1000,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：收盘通知已精简并明确区分今日/累计盈亏；产机 schtasks 不变。
+重点：新增策略反馈闭环，必须新建 3 条 schtasks（SignalLedger 16:25 / StrategyScorecard 16:30 / WeeklyStrategyReview 周五17:00）；自动改参默认关闭。
 做完写 pm/ops/今天-deploy.md。
 ```
 

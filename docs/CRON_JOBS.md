@@ -137,8 +137,11 @@ schtasks /create /f /tn "QuantLearn_QuantPulse"     /tr "%ROOT%\scripts\quant_pu
 schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intraday_scanner_runner.bat"   /sc weekly /d MON,TUE,WED,THU,FRI /st 10:00
 schtasks /create /f /tn "QuantLearn_SwingDaily"     /tr "%ROOT%\scripts\swing_daily_report_runner.bat"  /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
 schtasks /create /f /tn "QuantLearn_TradeJournal"   /tr "%ROOT%\scripts\trade_journal_runner.bat"       /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
+schtasks /create /f /tn "QuantLearn_SignalLedger"   /tr "%ROOT%\scripts\signal_ledger_runner.bat"       /sc weekly /d MON,TUE,WED,THU,FRI /st 16:25
+schtasks /create /f /tn "QuantLearn_StrategyScorecard" /tr "%ROOT%\scripts\strategy_scorecard_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:30
 schtasks /create /f /tn "QuantLearn_DailyGitSync"   /tr "%ROOT%\scripts\daily_git_sync_runner.bat"      /sc weekly /d MON,TUE,WED,THU,FRI /st 18:45
 schtasks /create /f /tn "QuantLearn_DailyGitSyncEvening" /tr "%ROOT%\scripts\daily_git_sync_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 20:30
+schtasks /create /f /tn "QuantLearn_WeeklyStrategyReview" /tr "%ROOT%\scripts\weekly_strategy_review_runner.bat" /sc weekly /d FRI /st 17:00
 
 schtasks /query /fo LIST | findstr QuantLearn
 ```
@@ -158,6 +161,9 @@ schtasks /query /fo LIST | findstr QuantLearn
 | QuantLearn_IntradayScanner | `intraday_scanner_runner.bat` | 建议开 / 吵则关 |
 | QuantLearn_SwingDaily | `swing_daily_report_runner.bat` | **必开** |
 | QuantLearn_TradeJournal | `trade_journal_runner.bat` | **必开** |
+| QuantLearn_SignalLedger | `signal_ledger_runner.bat` | **必开**（16:25 记信号+回填前瞻收益；反馈闭环的数据来源，断了后面全空） |
+| QuantLearn_StrategyScorecard | `strategy_scorecard_runner.bat` | **必开**（16:30 记分卡+漂移告警；须在 SignalLedger 之后） |
+| QuantLearn_WeeklyStrategyReview | `weekly_strategy_review_runner.bat` | 建议开（周五 17:00 出参数提案；默认不自动改参） |
 | QuantLearn_DailyGitSync | `daily_git_sync_runner.bat` | **必开**（18:45 台账推 master） |
 | QuantLearn_DailyGitSyncEvening | `daily_git_sync_runner.bat` | **必开**（20:30 LLM 日报推 master） |
 | QuantLearn_SwingIntraday | `swing_intraday_watch_runner.bat` | Pulse 已开则关 |

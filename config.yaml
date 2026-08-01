@@ -35,6 +35,53 @@ fees:
   min_commission: 5.0
   stamp_tax_rate: 0.0005
   unit_size: 100
+# 账户 #3 波段策略参数。此处只放「人工声明的覆盖」，留空即用
+# quant_core/swing_params.py 的 DEFAULTS（与 2026-07-31 迁移前的硬编码常量逐个相同）。
+# 机器自动采纳的覆盖写在 config.strategy_params.yaml，优先级高于本段。
+swing_strategy:
+  execution:
+    # 2026-08-01 假设 H-001：3 仓 × 1 万预算 = 3 万，撑不满 5 万本金，
+    # 4 成资金结构性闲置；且近 15 日有 5 天出了买点因持仓已 3/3 被挡。
+    # 提到 5 仓后 5×1万=5万 与本金对齐，单票集中度反而由 33% 降到 20%。
+    # 复核日 2026-08-22，不达预期回退为 3。
+    max_positions: 5
+# 策略反馈闭环（信号台账 → 记分卡 → 周度复盘 → 参数提案）
+strategy_feedback:
+  enabled: true
+  scorecard:
+    windows: [20, 60]
+    # 少于这么多成熟样本不出漂移告警：A股日频信号噪声大，小样本翻正负是常态
+    min_samples_for_alarm: 20
+  auto_apply:
+    # 总开关。当前样本量（14 个交易日 / 57 笔成交）远不足以自动调参，
+    # 先只产出提案由人批；等闭环交易攒够、记分卡稳定后再开。
+    enabled: false
+    require_promotion_gate: true
+    cooldown_days: 14
+    # 单个参数一次最多相对变动 20%，防止一次证据误判把止损摆到离谱位置
+    max_relative_step: 0.20
+    max_keys_per_apply: 3
+    allowlist:
+      - swing_strategy.execution.min_score_buy
+      - swing_strategy.execution.stop_loss_pct
+      - swing_strategy.execution.take_profit_pct
+      - swing_strategy.filters.min_net_rr
+      - swing_strategy.signals.a_ma20_tolerance
+      - swing_strategy.signals.b_ma10_tolerance
+      - swing_strategy.signals.max_volume_ratio
+    # 硬边界：提案越界直接拒绝（越界说明上游算错了，截断会掩盖 bug）
+    bounds:
+      swing_strategy.execution.min_score_buy: [4, 8]
+      swing_strategy.execution.stop_loss_pct: [0.03, 0.08]
+      swing_strategy.execution.take_profit_pct: [0.05, 0.15]
+      swing_strategy.filters.min_net_rr: [1.0, 2.0]
+      swing_strategy.signals.a_ma20_tolerance: [0.01, 0.025]
+      swing_strategy.signals.b_ma10_tolerance: [0.008, 0.02]
+      swing_strategy.signals.max_volume_ratio: [0.6, 0.95]
+    rollback:
+      enabled: true
+      watch_days: 10
+      degrade_pct: 0.5
 legacy_watch:
   '002342':
     enabled: false
@@ -131,7 +178,11 @@ risk:
   # 单票上限 15%（原 20% 未接入执行器导致京东方堆仓）；sim_executor 现强制执行
   max_position_pct: 0.15
   max_sector_pct: 0.35
-  max_total_positions: 5
+  # 2026-08-01 假设 H-002：5 仓 × 1 万预算 = 5 万，撑不满 10 万本金，
+  # 一半资金结构性闲置。提到 8 仓后上限 8 万（80%），仍留 2 万现金缓冲；
+  # 单笔预算不动（1 万 = 10%，低于 max_position_pct 15%），不抬高集中度。
+  # 每日新开仓上限 1 笔，建满需 8 天。复核日 2026-08-22，不达预期回退为 5。
+  max_total_positions: 8
   stop_loss_pct: -0.08
   take_profit_pct: 0.15
   # 弱势日禁买：任一宽基指数跌幅 ≤ 该值则拒绝 buy_zone/buy_strong

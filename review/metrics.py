@@ -214,6 +214,7 @@ class AccountPerformance:
     by_signal: list[dict] = field(default_factory=list)
     evidence: dict = field(default_factory=lambda: evidence_level(0))
     closed_trades: list[dict] = field(default_factory=list)
+    positions: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -247,6 +248,19 @@ def _conn_factory(db_path: Path | str) -> Callable[[], sqlite3.Connection]:
         return conn
 
     return factory
+
+
+def fetch_positions(db_path: Path | str, account_id: int) -> list[dict]:
+    """读当前持仓。表不存在或字段缺失时返回空，不抛异常。"""
+    factory = _conn_factory(db_path)
+    conn = factory()
+    try:
+        rows = conn.execute("SELECT * FROM sim_positions WHERE account_id=?", (account_id,)).fetchall()
+        return [dict(r) for r in rows]
+    except sqlite3.Error:
+        return []
+    finally:
+        conn.close()
 
 
 def fetch_nav_rows(db_path: Path | str, account_id: int, as_of: date | None = None) -> list[dict]:
@@ -310,6 +324,7 @@ def analyze_account(
     """
     perf = AccountPerformance(account_id=account_id, name=name)
     perf.nav = nav_stats(fetch_nav_rows(db_path, account_id, as_of))
+    perf.positions = fetch_positions(db_path, account_id)
 
     try:
         from sim.closed_trades import analyze_closed_trades

@@ -300,4 +300,8 @@ def _read_json(path: Path, default: Any) -> Any:
 
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # 固定 LF：台账要在 Windows 产机和开发机之间来回提交，行尾漂移会把
+    # 「参数改了什么」淹没在整文件 diff 里
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )

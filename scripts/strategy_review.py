@@ -320,6 +320,12 @@ def _n(v) -> str:
     return "—" if v is None else str(v)
 
 
+def _write(path: Path, text: str) -> None:
+    """统一 LF 落盘，保证产机（Windows）与开发机产出逐字节一致。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
 def render_wecom(result: dict) -> str:
     """企微只放判断和动作，明细留在报告里。"""
     s = summarize(result)
@@ -416,14 +422,14 @@ def main(argv: list[str] | None = None) -> int:
 
     out_dir = Path(args.out_dir) if args.out_dir else artifact_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"{args.date}.md").write_text(md, encoding="utf-8")
-    (out_dir / f"{args.date}.json").write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    # 固定 LF：产机是 Windows，text 模式默认写 CRLF，和开发机交替跑会让
+    # 每份产物每天整文件 diff 一次，真正改了哪个参数反而看不出来。
+    _write(out_dir / f"{args.date}.md", md)
+    _write(out_dir / f"{args.date}.json", json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 
     if args.write_spec:
         spec_doc = ROOT / "docs" / "STRATEGY_SPEC.md"
-        spec_doc.write_text(render_spec_markdown(result["specs"]), encoding="utf-8")
+        _write(spec_doc, render_spec_markdown(result["specs"]))
         print(f"已刷新 {spec_doc.relative_to(ROOT)}")
 
     if args.json:

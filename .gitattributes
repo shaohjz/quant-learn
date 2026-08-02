@@ -1,0 +1,5 @@
+# 复盘产物在 Windows 产机和开发机之间来回提交。不固定行尾的话，
+# 每天会多出一份整文件 diff，把「今天到底改了哪个参数」淹掉。
+docs/STRATEGY_SPEC.md      text eol=lf
+output/strategy_review/**  text eol=lf
+pm/strategy_review/**      text eol=lf

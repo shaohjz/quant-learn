@@ -366,6 +366,82 @@ def test_edge_check_requires_minimum_samples():
     assert found[0].layer == "parameter"  # 参数层，不许当天改
 
 
+def _perf_with_positions(positions: list[dict]):
+    from review.metrics import AccountPerformance
+
+    p = AccountPerformance(account_id=1, name="#1 学习仓")
+    p.positions = positions
+    return p
+
+
+def test_stop_loss_breach_is_caught_same_day():
+    """回放 2026-07-17 晶方科技：现价 31.33 < 移动止损 31.56 却仍持有 200 股。
+
+    当时靠人工复盘发现、开工单，工单在 backlog 里挂了半个月还在被日报重报。
+    这条规则要能在当天就报 P0。
+    """
+    perf = _perf_with_positions([
+        {"stock_code": "603005", "stock_name": "晶方科技", "quantity": 200, "avg_cost": 34.30,
+         "current_price": 31.33, "pnl_pct": -8.6589, "trailing_stop_price": 31.56},
+    ])
+    found = diagnostics.check_stop_loss_execution(perf, hard_stop_pct=-0.08)
+    breach = [f for f in found if f.rule_id == "stop_loss_not_executed"]
+    assert len(breach) == 1
+    assert breach[0].severity == "P0"
+    assert breach[0].layer == "execution"
+    assert "603005" in breach[0].evidence[0]
+
+
+def test_hard_stop_breach_without_trailing_stop():
+    """没启动跟踪止损时，硬止损线是唯一兜底，也要查。"""
+    perf = _perf_with_positions([
+        {"stock_code": "000001", "stock_name": "甲", "quantity": 100, "avg_cost": 10.0,
+         "current_price": 8.5, "pnl_pct": -15.0, "trailing_stop_price": None},
+    ])
+    found = {f.rule_id for f in diagnostics.check_stop_loss_execution(perf, hard_stop_pct=-0.08)}
+    assert "hard_stop_not_executed" in found
+
+
+def test_zero_qty_residual_is_caught():
+    perf = _perf_with_positions([
+        {"stock_code": "603341", "stock_name": "龙旗科技", "quantity": 0, "avg_cost": 39.55,
+         "current_price": 40.27, "pnl_pct": 0, "trailing_stop_price": None},
+    ])
+    found = [f for f in diagnostics.check_stop_loss_execution(perf, hard_stop_pct=-0.08)
+             if f.rule_id == "zero_qty_position_residual"]
+    assert len(found) == 1
+    assert found[0].severity == "P1"
+
+
+def test_healthy_positions_do_not_alarm():
+    """当前 5 条真实持仓全部健康，一条告警都不该出 —— 误报会让告警失去意义。"""
+    perf = _perf_with_positions([
+        {"stock_code": "002709", "quantity": 300, "avg_cost": 37.73,
+         "current_price": 36.08, "pnl_pct": -4.37, "trailing_stop_price": 35.12},
+        {"stock_code": "601628", "quantity": 200, "avg_cost": 38.71,
+         "current_price": 39.53, "pnl_pct": 2.12, "trailing_stop_price": 35.61},
+        {"stock_code": "002594", "quantity": 100, "avg_cost": 92.11,
+         "current_price": 95.77, "pnl_pct": 3.97, "trailing_stop_price": 87.50},
+    ])
+    assert diagnostics.check_stop_loss_execution(perf, hard_stop_pct=-0.08) == []
+
+
+def test_hard_stop_sign_is_normalized():
+    """config 存 -0.08、波段存 0.05，两种写法都表示「跌 8%/5% 就止损」。"""
+    assert diagnostics._hard_stop_of(_spec_with(stop_loss_pct=-0.08)) == pytest.approx(-0.08)
+    assert diagnostics._hard_stop_of(_spec_with(stop_loss_pct=0.05)) == pytest.approx(-0.05)
+    assert diagnostics._hard_stop_of(_spec_with(other=1)) is None
+
+
+def test_stop_loss_check_tolerates_dirty_rows():
+    perf = _perf_with_positions([
+        {"stock_code": "X", "quantity": None, "current_price": None, "trailing_stop_price": "abc"},
+        {"stock_code": "Y", "quantity": 100, "current_price": 0, "trailing_stop_price": 5.0},
+        {},
+    ])
+    assert diagnostics.check_stop_loss_execution(perf, hard_stop_pct=-0.08) == []
+
+
 def test_rule_error_is_contained():
     """单条规则炸了不能拖垮整份复盘。"""
     class Boom:
@@ -575,6 +651,27 @@ def test_cli_reports_findings_with_layers(tmp_path):
         assert f["title"] and f["evidence"], f"发现必须带证据: {f['rule_id']}"
         assert f["horizon"], f"发现必须标注可动手时机: {f['rule_id']}"
     assert payload["summary"]["by_layer"].keys() >= {"execution", "signal", "parameter"}
+
+
+def test_artifacts_are_written_with_lf_endings(tmp_path):
+    """产物必须固定 LF。
+
+    产机是 Windows，Python text 模式默认写 CRLF；和开发机交替跑会让
+    STRATEGY_SPEC.md 每天整文件 diff 一次，真正改了哪个参数反而看不出来。
+    """
+    import scripts.strategy_review as sr
+
+    db = tmp_path / "e.db"
+    sqlite3.connect(str(db)).close()
+    out = tmp_path / "out"
+    led = tmp_path / "led"
+    sr.main(["--date", "2026-07-31", "--db", str(db), "--no-push", "--quiet",
+             "--ledger-dir", str(led), "--out-dir", str(out)])
+
+    for path in (out / "2026-07-31.md", out / "2026-07-31.json", led / "spec_snapshots.json"):
+        raw = path.read_bytes()
+        assert b"\r\n" not in raw, f"{path.name} 含 CRLF"
+        assert b"\n" in raw
 
 
 def test_cli_open_and_close_hypothesis(tmp_path, capsys):

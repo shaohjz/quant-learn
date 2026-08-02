@@ -276,6 +276,96 @@ def check_funnel(funnel: Any, spec: Any, min_streak: int = 3, min_blocked: int =
     return out
 
 
+def check_stop_loss_execution(perf: Any, hard_stop_pct: float | None = None) -> list[Finding]:
+    """持仓已跌破止损却还挂着 —— 止损链路断了的直接证据。
+
+    2026-07 晶方科技就是这个症状：现价 31.33 < 移动止损 31.56，浮亏 -8.66%，
+    持仓照旧。当时靠人复盘发现、开工单、再靠人记得去查，工单在 backlog 里
+    挂了半个月，标的随账户重置消失后工单还在每天被日报当成「真实交易风险」重报。
+
+    这类问题不需要样本量，看一眼数据就能判定，本来就该每天自动查。
+    """
+    out: list[Finding] = []
+    breached: list[str] = []
+    hard_breached: list[str] = []
+    residual: list[str] = []
+
+    for p in perf.positions or []:
+        code = str(p.get("stock_code") or "")
+        name = str(p.get("stock_name") or code)
+        # 缺字段和「确实是 0」不是一回事：前者是脏行，报成清仓残留就是误报
+        qty_raw = p.get("quantity")
+        if qty_raw is None or not code:
+            continue
+        qty = _num(qty_raw)
+        price = _num(p.get("current_price"))
+        stop = _num(p.get("trailing_stop_price"))
+        pnl_pct = _num(p.get("pnl_pct"))
+
+        if qty == 0:
+            residual.append(f"{name}({code}) qty=0，成本 {_num(p.get('avg_cost')):.2f}")
+            continue
+        if qty <= 0 or price <= 0:
+            continue
+
+        if stop > 0 and price < stop:
+            gap = (stop - price) / stop * 100.0
+            breached.append(f"{name}({code}) {qty:.0f} 股：现价 {price:.2f} < 止损 {stop:.2f}"
+                            f"（低 {gap:.1f}%），浮亏 {pnl_pct:.2f}%")
+        elif hard_stop_pct is not None and pnl_pct < hard_stop_pct * 100.0:
+            hard_breached.append(f"{name}({code}) {qty:.0f} 股：浮亏 {pnl_pct:.2f}% "
+                                 f"已超硬止损线 {hard_stop_pct * 100:.0f}%")
+
+    if breached:
+        out.append(Finding(
+            rule_id="stop_loss_not_executed",
+            subject=f"account{perf.account_id}",
+            severity="P0",
+            layer="execution",
+            title=f"{perf.name} 有 {len(breached)} 只持仓跌破止损仍未卖出",
+            evidence=breached,
+            why="止损是风控的最后一道闸。触发了不执行，等于没有止损，亏损没有上界。",
+            action="立刻查盘中扫描是否覆盖 trailing_stop_price、卖单是否真的下到执行器"
+                   "（历史同类：REQ-048 / REQ-061 / TASK-20260717-2004-001）。",
+            data={"positions": breached},
+        ))
+
+    if hard_breached:
+        out.append(Finding(
+            rule_id="hard_stop_not_executed",
+            subject=f"account{perf.account_id}",
+            severity="P0",
+            layer="execution",
+            title=f"{perf.name} 有 {len(hard_breached)} 只持仓浮亏超硬止损线仍未卖出",
+            evidence=hard_breached,
+            why="未启动跟踪止损时，硬止损线是唯一兜底；它也不执行就完全没有止损了。",
+            action="查 risk.stop_loss_pct 是否接入执行器，以及是否被同日限制/冷却期挡住。",
+            data={"positions": hard_breached},
+        ))
+
+    if residual:
+        out.append(Finding(
+            rule_id="zero_qty_position_residual",
+            subject=f"account{perf.account_id}",
+            severity="P1",
+            layer="execution",
+            title=f"{perf.name} 有 {len(residual)} 条 qty=0 的清仓残留",
+            evidence=residual,
+            why="残留行会混进持仓市值统计和止损扫描，让风控扫到不存在的仓位。",
+            action="跑 scripts/cleanup_zero_quantity_positions.py；并查平仓流程为何没删行。",
+            data={"positions": residual},
+        ))
+
+    return out
+
+
+def _num(value: Any) -> float:
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def check_nav_freshness(perf: Any, as_of_iso: str, max_stale_days: int = 5) -> list[Finding]:
     """净值断更通常意味着收盘任务挂了，而不是市场休市。"""
     if perf.nav.days == 0:
@@ -405,6 +495,8 @@ def run_all(
     """跑全部规则。任一规则抛错都不该拖垮整份复盘。"""
     funnels = funnels or {}
     out: list[Finding] = []
+    # 硬止损线按账户取：#3 波段用自己的 stop_loss_pct，#1 用 config 的 risk.stop_loss_pct
+    hard_stops = {s.account_id: _hard_stop_of(s) for s in specs}
 
     for spec in specs:
         for fn in (check_spec_health, check_capital_structure):
@@ -414,6 +506,7 @@ def run_all(
             out.extend(_safe(check_funnel, fu, spec))
 
     for perf in performances:
+        out.extend(_safe(check_stop_loss_execution, perf, hard_stops.get(perf.account_id)))
         out.extend(_safe(check_signal_quality, perf))
         out.extend(_safe(check_edge, perf))
         out.extend(_safe(check_drawdown, perf))
@@ -421,6 +514,18 @@ def run_all(
             out.extend(_safe(check_nav_freshness, perf, as_of_iso))
 
     return _sort(out)
+
+
+def _hard_stop_of(spec: Any) -> float | None:
+    """止损线统一成负小数：config 存 -0.08，波段存 0.05（正数表示跌幅）。"""
+    raw = spec.value("stop_loss_pct")
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return val if val < 0 else -val
 
 
 def _safe(fn, *args) -> list[Finding]:

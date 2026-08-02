@@ -442,8 +442,26 @@ type output\strategy_review.log
 
 **验收标准：**
 
+#### 止损执行每日自动巡检（2026-08-02 新增）
+
+复盘会直接读 `sim_positions` 逐条比对，**不再依赖人工开盘前复核**：
+
+| 规则 | 触发条件 | 级别 |
+|------|---------|------|
+| `stop_loss_not_executed` | 持仓 `current_price < trailing_stop_price` 却还挂着 | **P0** |
+| `hard_stop_not_executed` | 未启动跟踪止损时，浮亏已超 `risk.stop_loss_pct` | **P0** |
+| `zero_qty_position_residual` | `quantity=0` 的清仓残留行 | P1 |
+
+用 2026-07-17 晶方科技(603005) 的真实数据回放验证过：现价 31.33 < 移动止损 31.56、
+浮亏 -8.66% 仍持有 200 股，规则**当天就报 P0**。当时这个问题靠人工复盘发现、
+开工单 TASK-20260717-2004-001，工单在 backlog 挂了半个月，标的随 07-19 账户重置消失后
+仍被每日 PM 日报当成「真实交易风险」重报。**以后这类问题当天见分晓，不靠工单状态。**
+
+**验收标准：**
+
 | 检查 | 期望 |
 |------|------|
+| **止损巡检** | 报告「今日发现」里无 `stop_loss_not_executed` / `hard_stop_not_executed`；有则**立即人工介入** |
 | **仓位参数生效** | `apply_strategy_params.py --show` 里 `swing_strategy.execution.max_positions = 5` |
 | **波段链路** | `swing_daily_report.py` 正常出报告，持仓上限按 **5 只**执行 |
 | 报告落盘 | `output\strategy_review\今天.md` + `.json` 存在 |
@@ -1085,9 +1103,10 @@ git log -1 --oneline origin/master
 主人 **只发下面这一句**（细节全在本文，不要另贴长提示）：
 
 ```text
-读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：策略反馈闭环 + 每日策略复盘，共新建 4 条 schtasks（SignalLedger 16:25 / StrategyScorecard 16:30 / StrategyReview 16:35 / WeeklyStrategyReview 周五17:00）；
-本次含交易行为变更：#3 持仓上限 3→5、#1 5→8（单笔预算不变），验收时确认 max_positions=5 且复盘报告不再有 capital_cap_contradiction；自动改参仍默认关闭。
+读 docs/DEPLOYMENT.md，git pull 后按 ★ 段验收（4 条 schtasks 8/1 已建好，本次无需重建）。
+重点：复盘新增止损执行每日自动巡检——跌破止损未卖出 / 硬止损未执行 / qty=0 残留，命中即 P0；
+跑 strategy_review.py --no-push --write-spec 确认今日无 stop_loss_not_executed，
+以后不再需要「开盘前人工复核持仓表」，PM 日报里基于旧工单状态的止损告警以本报告为准。
 做完写 pm/ops/今天-deploy.md。
 ```
 

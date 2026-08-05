@@ -76,7 +76,10 @@
 ```bat
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 git status
-git pull
+REM 必须带 --autostash：产机每天被 daily_recalibrate 重写 config.yaml，
+REM 只要工作区有一点残留，裸 git pull 就报 "cannot pull with rebase:
+REM You have unstaged changes" 直接拉不到新代码，后面所有步骤都跑在旧版上。
+git pull --rebase --autostash
 git log -1 --oneline
 ```
 
@@ -455,7 +458,7 @@ type output\strategy_review.log
 | 守夜不查复盘产物 | 守夜提示词（本文提示词 B 第 5 步）新增 `output/strategy_review/今天.md` 核查 + 补跑 |
 | 断更无人知 | 新增 `review_gap` 规则：恢复后第一次跑就报出断了哪几天，≥3 天升 P0 |
 | **成交笔数统计错误** | 漏斗原先读 `swing_daily` 的 `fills`，**漏掉盘中成交**。08-03 #3 实际买入中国太保、三一重工 2 笔，却被统计成 0，进而报出「连续 13 天 0 成交」这个**反向结论**。改为以台账/`sim_trades` 当日全量为准 |
-| `config.yaml` 行尾漂移 | 产机写 CRLF、开发机写 LF，工作区长期显示脏，`git pull --rebase` 被 "unstaged changes" 直接挡住。`.gitattributes` 扩展覆盖 config 与台账产物，并已 `--renormalize`（101 文件、2 万行，**忽略行尾后内容差异为 0**） |
+| `config.yaml` 行尾漂移 | 产机写 CRLF、开发机写 LF，工作区长期显示脏，`git pull --rebase` 被 "unstaged changes" 直接挡住。三处一起改：①`.gitattributes` 覆盖 config 与台账产物并 `--renormalize`（101 文件、2 万行，**忽略行尾后内容差异为 0**）；②`daily_recalibrate.py` / `generate_next_watchlist.py` 写回时固定 `newline="\n"`；③**步骤 0 的 `git pull` 一律改成 `git pull --rebase --autostash`**（前两条只能减少变脏，这条才保证拉得动） |
 | `daily_git_sync` push 偶发失败 | 08-05 守夜遇到 `Host key verification failed` 需人工介入。脚本内固化 `GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes`（accept-new 而非 no，密钥变更仍拒绝） |
 
 **口径修正后的真实数据**（近 15 个交易日）：累计成交 **4 笔**（原报 1 笔），

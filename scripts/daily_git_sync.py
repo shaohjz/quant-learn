@@ -86,6 +86,19 @@ DENY_PREFIXES = (
 )
 
 
+def _git_env() -> dict:
+    """schtasks 跑的是非交互会话，SSH 无法弹出 host key 确认，会直接
+    "Host key verification failed" 让 push 失败（2026-08-05 守夜就是这样，
+    要人工设了同一个变量才推上去）。
+
+    用 accept-new 而不是 no：首次自动记录密钥，之后仍然校验，
+    密钥变了照样拒绝，不放弃中间人防护。已设置的值优先，不覆盖运维配置。
+    """
+    env = dict(os.environ)
+    env.setdefault("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes")
+    return env
+
+
 def _run(cmd: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
     # Windows 产机默认 GBK；git/python 常吐 UTF-8 → 统一 utf-8 + replace，避免 Thread _readerthread 崩
     return subprocess.run(
@@ -96,6 +109,7 @@ def _run(cmd: list[str], *, check: bool = True) -> subprocess.CompletedProcess[s
         errors="replace",
         capture_output=True,
         check=check,
+        env=_git_env(),
     )
 
 

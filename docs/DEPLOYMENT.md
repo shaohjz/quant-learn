@@ -442,6 +442,39 @@ type output\strategy_review.log
 
 **验收标准：**
 
+#### 2026-08-06 修复：复盘链静默断更 + 成交口径错误
+
+**事故：** 08-03~08-05 三个交易日一份复盘报告都没有，台账/收盘/波段日报全部正常。
+守夜只校验台账和收盘，覆盖不到复盘，于是「用来发现问题的东西」自己挂了三天没人知道。
+
+**根因与修复：**
+
+| 问题 | 修复 |
+|------|------|
+| bat 把失败吞进日志，schtasks 看不到 | `strategy_review_runner.bat` 加 `errorlevel` 判断，失败 `exit /b 1` |
+| 守夜不查复盘产物 | 守夜提示词（本文提示词 B 第 5 步）新增 `output/strategy_review/今天.md` 核查 + 补跑 |
+| 断更无人知 | 新增 `review_gap` 规则：恢复后第一次跑就报出断了哪几天，≥3 天升 P0 |
+| **成交笔数统计错误** | 漏斗原先读 `swing_daily` 的 `fills`，**漏掉盘中成交**。08-03 #3 实际买入中国太保、三一重工 2 笔，却被统计成 0，进而报出「连续 13 天 0 成交」这个**反向结论**。改为以台账/`sim_trades` 当日全量为准 |
+| `config.yaml` 行尾漂移 | 产机写 CRLF、开发机写 LF，工作区长期显示脏，`git pull --rebase` 被 "unstaged changes" 直接挡住。`.gitattributes` 扩展覆盖 config 与台账产物，并已 `--renormalize`（101 文件、2 万行，**忽略行尾后内容差异为 0**） |
+| `daily_git_sync` push 偶发失败 | 08-05 守夜遇到 `Host key verification failed` 需人工介入。脚本内固化 `GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes`（accept-new 而非 no，密钥变更仍拒绝） |
+
+**口径修正后的真实数据**（近 15 个交易日）：累计成交 **4 笔**（原报 1 笔），
+连续 0 成交 **2 天**（原报 13 天）。#3 在 08-03 确实用上了新增的 2 个仓位（3→5），
+但 08-04/05 又满仓，每天 5 个买点全被挡 —— 假设 H-001 的效果要在 08-22 复核时重新评估。
+
+**产机验收：**
+
+```bat
+git pull
+.venv\Scripts\python.exe -u scripts\strategy_review.py --no-push --write-spec --quiet
+type output\strategy_review\%date:~0,4%-%date:~5,2%-%date:~8,2%.md
+REM 断更已补齐后，review_gap 应消失；成交笔数应与台账一致
+schtasks /run /tn QuantLearn_StrategyReview
+schtasks /query /tn QuantLearn_StrategyReview /v /fo LIST | findstr /C:"Last Result"
+```
+
+`Last Result` 必须为 0。非 0 时看 `output\strategy_review.log` 尾部。
+
 #### 止损执行每日自动巡检（2026-08-02 新增）
 
 复盘会直接读 `sim_positions` 逐条比对，**不再依赖人工开盘前复核**：
@@ -731,9 +764,19 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
    正文含：schtasks Last Run 原文、daily_git_sync.log 尾 30 行、git status -sb
    并写 pm/ops/今天-nightwatch.md + pm/bugs/BUG-上传失败-日期.md
 
-5) 额外健康抽查（失败只记 ops，不阻断）：
+5) 策略复盘产物核查（不阻断主 SLO，但必须记录）：
+   git ls-tree -r --name-only origin/master | findstr /C:"output/strategy_review/今天"
+   没有 → schtasks /run /tn QuantLearn_StrategyReview，等 60s 后
+          dir output\strategy_review\今天.md
+          type output\strategy_review.log（尾部 20 行）
+   仍没有 → 写进 pm/ops/今天-nightwatch.md 并企微提一句「策略复盘缺报 N 天」
+          （不必标【失职】，但不许略过不写）
+   ※ 2026-08-03~05 这条链静默断了三天，就是因为守夜只校验台账和收盘。
+
+6) 额外健康抽查（失败只记 ops，不阻断）：
    schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
    schtasks /query /tn QuantLearn_TradeJournal /v /fo LIST
+   schtasks /query /tn QuantLearn_StrategyReview /v /fo LIST
    （看 Last Run Time / Last Result；Result≠0 记入 ops）
 
 允许：为达成 SLO，执行
@@ -1103,10 +1146,10 @@ git log -1 --oneline origin/master
 主人 **只发下面这一句**（细节全在本文，不要另贴长提示）：
 
 ```text
-读 docs/DEPLOYMENT.md，git pull 后按 ★ 段验收（4 条 schtasks 8/1 已建好，本次无需重建）。
-重点：复盘新增止损执行每日自动巡检——跌破止损未卖出 / 硬止损未执行 / qty=0 残留，命中即 P0；
-跑 strategy_review.py --no-push --write-spec 确认今日无 stop_loss_not_executed，
-以后不再需要「开盘前人工复核持仓表」，PM 日报里基于旧工单状态的止损告警以本报告为准。
+读 docs/DEPLOYMENT.md，git pull 后按「2026-08-06 修复」段验收（schtasks 无需重建）。
+重点：复盘链 08-03~05 静默断更三天已修——bat 失败不再吞退出码、守夜新增复盘产物核查、
+新增 review_gap 断更自检；同时修正成交口径（原先漏统计盘中成交，把 4 笔报成 1 笔）。
+跑 strategy_review.py 确认 Last Result=0 且成交笔数与台账一致，git pull 不再被脏工作区挡。
 做完写 pm/ops/今天-deploy.md。
 ```
 

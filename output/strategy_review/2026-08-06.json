@@ -1,6 +1,6 @@
 {
-  "date": "2026-08-01",
-  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "date": "2026-08-06",
+  "db_path": "/data/shaohjz/quant-learn/data/sim_live_mirror.db",
   "specs": [
     {
       "strategy_id": "swing",
@@ -839,15 +839,15 @@
       "account_id": 3,
       "name": "#3 波段仓",
       "nav": {
-        "days": 11,
-        "first_date": "2026-07-20",
-        "last_date": "2026-08-01",
-        "total_value": 50247.0,
-        "cumulative_return_pct": 0.0049,
-        "max_drawdown_pct": 0.6053,
-        "current_drawdown_pct": 0.6053,
-        "best_day_pct": 0.0063,
-        "worst_day_pct": -0.0061,
+        "days": 2,
+        "first_date": "2026-07-19",
+        "last_date": "2026-07-29",
+        "total_value": 50000.0,
+        "cumulative_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "current_drawdown_pct": 0.0,
+        "best_day_pct": 0.0,
+        "worst_day_pct": 0.0,
         "losing_streak": 0
       },
       "closed_count": 0,
@@ -896,201 +896,74 @@
       "account_id": 1,
       "name": "#1 学习仓",
       "nav": {
-        "days": 11,
-        "first_date": "2026-07-20",
-        "last_date": "2026-08-01",
-        "total_value": 92837.29,
-        "cumulative_return_pct": -0.0716,
-        "max_drawdown_pct": 10.0787,
-        "current_drawdown_pct": 9.8956,
-        "best_day_pct": 0.0164,
-        "worst_day_pct": -0.0636,
+        "days": 1,
+        "first_date": "2026-07-19",
+        "last_date": "2026-07-19",
+        "total_value": 100000.0,
+        "cumulative_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "current_drawdown_pct": 0.0,
+        "best_day_pct": 0.0,
+        "worst_day_pct": 0.0,
         "losing_streak": 0
       },
-      "closed_count": 19,
-      "win_count": 2,
-      "win_rate_pct": 10.53,
+      "closed_count": 0,
+      "win_count": 0,
+      "win_rate_pct": 0.0,
       "win_rate_ci_pct": [
-        2.94,
-        31.39
+        0.0,
+        100.0
       ],
-      "payoff_ratio": 0.258,
-      "profit_factor": 0.03,
-      "net_pnl": -6762.81,
-      "avg_holding_days": 3.58,
-      "breakeven_win_rate_pct": 79.48,
-      "edge_gap_pct": -68.95,
+      "payoff_ratio": null,
+      "profit_factor": null,
+      "net_pnl": 0.0,
+      "avg_holding_days": null,
+      "breakeven_win_rate_pct": null,
+      "edge_gap_pct": null,
       "samples_to_prove": null,
       "expectancy": {
-        "n": 19,
-        "mean_pct": -4.8808,
-        "std_pct": 4.2226,
-        "stderr_pct": 0.9687,
-        "t_stat": -5.038,
-        "ci_low_pct": -6.7795,
-        "ci_high_pct": -2.9821,
-        "significant": true
+        "n": 0,
+        "mean_pct": 0.0,
+        "std_pct": 0.0,
+        "stderr_pct": 0.0,
+        "t_stat": null,
+        "ci_low_pct": null,
+        "ci_high_pct": null,
+        "significant": false
       },
       "recent_expectancy": {
-        "n": 19,
-        "mean_pct": -4.8808,
-        "std_pct": 4.2226,
-        "stderr_pct": 0.9687,
-        "t_stat": -5.038,
-        "ci_low_pct": -6.7795,
-        "ci_high_pct": -2.9821,
-        "significant": true
+        "n": 0,
+        "mean_pct": 0.0,
+        "std_pct": 0.0,
+        "stderr_pct": 0.0,
+        "t_stat": null,
+        "ci_low_pct": null,
+        "ci_high_pct": null,
+        "significant": false
       },
-      "by_signal": [
-        {
-          "signal": "buy_zone",
-          "n": 19,
-          "win_count": 2,
-          "win_rate_pct": 10.53,
-          "net_pnl": -6762.81,
-          "avg_pnl_pct": -4.881,
-          "expectancy": {
-            "n": 19,
-            "mean_pct": -4.8808,
-            "std_pct": 4.2226,
-            "stderr_pct": 0.9687,
-            "t_stat": -5.038,
-            "ci_low_pct": -6.7795,
-            "ci_high_pct": -2.9821,
-            "significant": true
-          },
-          "evidence": {
-            "n": 19,
-            "level": "weak",
-            "label": "弱",
-            "can_do": "能看方向，不足以改参数"
-          }
-        }
-      ],
+      "by_signal": [],
       "evidence": {
-        "n": 19,
-        "level": "weak",
-        "label": "弱",
-        "can_do": "能看方向，不足以改参数"
+        "n": 0,
+        "level": "none",
+        "label": "无数据",
+        "can_do": "只能检查链路是否在跑"
       }
     }
   ],
   "funnels": {
     "swing": {
       "lookback": 15,
-      "zero_fill_streak": 10,
-      "blocked_days": 0,
+      "zero_fill_streak": 2,
+      "blocked_days": 2,
       "advice_not_filled_days": 12,
-      "days_with_advice": 13,
-      "total_fills": 1,
+      "days_with_advice": 15,
+      "total_fills": 4,
       "capital_cap_pct": 100.0,
-      "idle_cash_pct": 46.61,
+      "idle_cash_pct": 11.62,
       "instrumentation_gaps": [
         "池内扫描层无埋点：不知道入池 N 只里有几只出信号、几只因 A/B 类型或分数线被拒。swing_daily_report 落 scanned/signaled/executable 三个计数即可补上。"
       ],
       "days": [
-        {
-          "day": "2026-07-17",
-          "stages": [
-            {
-              "key": "universe",
-              "label": "宽基扫描",
-              "count": 800,
-              "note": ""
-            },
-            {
-              "key": "candidates",
-              "label": "过硬过滤",
-              "count": 372,
-              "note": "价格/成交额/ATR/振幅"
-            },
-            {
-              "key": "above_min_score",
-              "label": "过稳定分线",
-              "count": null,
-              "note": "该版本未记录此层"
-            },
-            {
-              "key": "pool",
-              "label": "入池",
-              "count": 20,
-              "note": "按稳定分截断到池子上限"
-            },
-            {
-              "key": "advice",
-              "label": "产生买点建议",
-              "count": 1,
-              "note": ""
-            },
-            {
-              "key": "fills",
-              "label": "模拟成交",
-              "count": 0,
-              "note": ""
-            }
-          ],
-          "positions": 0,
-          "max_positions": 5,
-          "cash": 50943.042499999996,
-          "total_value": 50943.042499999996,
-          "fills": 0,
-          "advice": 1,
-          "advice_hints": [
-            "空仓观望，今天动态稳定池无强买点。"
-          ],
-          "data_mode": "hist",
-          "advice_not_filled": true,
-          "blocked_by_position_cap": false,
-          "pool_fallback": false,
-          "legacy_schema": true
-        },
-        {
-          "day": "2026-07-18",
-          "stages": [
-            {
-              "key": "universe",
-              "label": "宽基扫描",
-              "count": 800,
-              "note": ""
-            },
-            {
-              "key": "candidates",
-              "label": "过硬过滤",
-              "count": 371,
-              "note": "价格/成交额/ATR/振幅"
-            },
-            {
-              "key": "above_min_score",
-              "label": "过稳定分线",
-              "count": null,
-              "note": "该版本未记录此层"
-            },
-            {
-              "key": "pool",
-              "label": "入池",
-              "count": 20,
-              "note": "按稳定分截断到池子上限"
-            },
-            {
-              "key": "fills",
-              "label": "模拟成交",
-              "count": null,
-              "note": "当日无波段日报"
-            }
-          ],
-          "positions": null,
-          "max_positions": null,
-          "cash": null,
-          "total_value": null,
-          "fills": 0,
-          "advice": 0,
-          "advice_hints": [],
-          "data_mode": "hist",
-          "advice_not_filled": false,
-          "blocked_by_position_cap": false,
-          "pool_fallback": false,
-          "legacy_schema": true
-        },
         {
           "day": "2026-07-19",
           "stages": [
@@ -1182,7 +1055,7 @@
             {
               "key": "fills",
               "label": "模拟成交",
-              "count": 1,
+              "count": 0,
               "note": ""
             }
           ],
@@ -1190,13 +1063,13 @@
           "max_positions": 5,
           "cash": 41963.0,
           "total_value": 50035.0,
-          "fills": 1,
+          "fills": 0,
           "advice": 1,
           "advice_hints": [
             "回踩可买，限价建议 19.98~20.08；止损 19.08 / 目标 21.69"
           ],
           "data_mode": "hist",
-          "advice_not_filled": false,
+          "advice_not_filled": true,
           "blocked_by_position_cap": false,
           "pool_fallback": false,
           "legacy_schema": true
@@ -1237,7 +1110,7 @@
             {
               "key": "fills",
               "label": "模拟成交",
-              "count": 0,
+              "count": 1,
               "note": ""
             }
           ],
@@ -1245,13 +1118,13 @@
           "max_positions": 5,
           "cash": 32638.0,
           "total_value": 50164.0,
-          "fills": 0,
+          "fills": 1,
           "advice": 1,
           "advice_hints": [
             "无新挂单。持仓继续拿，不破止损不乱卖。"
           ],
           "data_mode": "live",
-          "advice_not_filled": true,
+          "advice_not_filled": false,
           "blocked_by_position_cap": false,
           "pool_fallback": false,
           "legacy_schema": true
@@ -1402,7 +1275,7 @@
             {
               "key": "fills",
               "label": "模拟成交",
-              "count": 0,
+              "count": 1,
               "note": ""
             }
           ],
@@ -1410,14 +1283,14 @@
           "max_positions": 5,
           "cash": 23422.0,
           "total_value": 49981.0,
-          "fills": 0,
+          "fills": 1,
           "advice": 2,
           "advice_hints": [
             "仓位满或未模拟成交：可挂观察单 148.50~149.77",
             "仓位满或未模拟成交：可挂观察单 63.62~63.67"
           ],
           "data_mode": "hist",
-          "advice_not_filled": true,
+          "advice_not_filled": false,
           "blocked_by_position_cap": false,
           "pool_fallback": false,
           "legacy_schema": false
@@ -1759,6 +1632,180 @@
           "blocked_by_position_cap": false,
           "pool_fallback": false,
           "legacy_schema": false
+        },
+        {
+          "day": "2026-08-03",
+          "stages": [
+            {
+              "key": "universe",
+              "label": "宽基扫描",
+              "count": 800,
+              "note": ""
+            },
+            {
+              "key": "candidates",
+              "label": "过硬过滤",
+              "count": 485,
+              "note": "价格/成交额/ATR/振幅"
+            },
+            {
+              "key": "above_min_score",
+              "label": "过稳定分线",
+              "count": 352,
+              "note": ""
+            },
+            {
+              "key": "pool",
+              "label": "入池",
+              "count": 50,
+              "note": "按稳定分截断到池子上限"
+            },
+            {
+              "key": "advice",
+              "label": "产生买点建议",
+              "count": 2,
+              "note": ""
+            },
+            {
+              "key": "fills",
+              "label": "模拟成交",
+              "count": 2,
+              "note": ""
+            }
+          ],
+          "positions": 5,
+          "max_positions": 5,
+          "cash": 5741.0,
+          "total_value": 50314.0,
+          "fills": 2,
+          "advice": 2,
+          "advice_hints": [
+            "仓位满或未模拟成交：可挂观察单 39.33~39.38",
+            "仓位满或未模拟成交：可挂观察单 43.99~44.29"
+          ],
+          "data_mode": "live",
+          "advice_not_filled": false,
+          "blocked_by_position_cap": false,
+          "pool_fallback": false,
+          "legacy_schema": false
+        },
+        {
+          "day": "2026-08-04",
+          "stages": [
+            {
+              "key": "universe",
+              "label": "宽基扫描",
+              "count": 800,
+              "note": ""
+            },
+            {
+              "key": "candidates",
+              "label": "过硬过滤",
+              "count": 489,
+              "note": "价格/成交额/ATR/振幅"
+            },
+            {
+              "key": "above_min_score",
+              "label": "过稳定分线",
+              "count": 352,
+              "note": ""
+            },
+            {
+              "key": "pool",
+              "label": "入池",
+              "count": 50,
+              "note": "按稳定分截断到池子上限"
+            },
+            {
+              "key": "advice",
+              "label": "产生买点建议",
+              "count": 5,
+              "note": ""
+            },
+            {
+              "key": "fills",
+              "label": "模拟成交",
+              "count": 0,
+              "note": ""
+            }
+          ],
+          "positions": 5,
+          "max_positions": 5,
+          "cash": 5741.0,
+          "total_value": 49202.0,
+          "fills": 0,
+          "advice": 5,
+          "advice_hints": [
+            "仓位满或未模拟成交：可挂观察单 40.62~40.64",
+            "仓位满或未模拟成交：可挂观察单 54.04~54.14",
+            "仓位满或未模拟成交：可挂观察单 57.31~57.38",
+            "仓位满或未模拟成交：可挂观察单 153.59~155.13",
+            "仓位满或未模拟成交：可挂观察单 84.51~84.85"
+          ],
+          "data_mode": "live",
+          "advice_not_filled": true,
+          "blocked_by_position_cap": true,
+          "pool_fallback": false,
+          "legacy_schema": false
+        },
+        {
+          "day": "2026-08-05",
+          "stages": [
+            {
+              "key": "universe",
+              "label": "宽基扫描",
+              "count": 800,
+              "note": ""
+            },
+            {
+              "key": "candidates",
+              "label": "过硬过滤",
+              "count": 497,
+              "note": "价格/成交额/ATR/振幅"
+            },
+            {
+              "key": "above_min_score",
+              "label": "过稳定分线",
+              "count": 373,
+              "note": ""
+            },
+            {
+              "key": "pool",
+              "label": "入池",
+              "count": 50,
+              "note": "按稳定分截断到池子上限"
+            },
+            {
+              "key": "advice",
+              "label": "产生买点建议",
+              "count": 5,
+              "note": ""
+            },
+            {
+              "key": "fills",
+              "label": "模拟成交",
+              "count": 0,
+              "note": ""
+            }
+          ],
+          "positions": 5,
+          "max_positions": 5,
+          "cash": 5741.0,
+          "total_value": 49421.0,
+          "fills": 0,
+          "advice": 5,
+          "advice_hints": [
+            "仓位满或未模拟成交：可挂观察单 34.22~34.25",
+            "仓位满或未模拟成交：可挂观察单 28.03~28.05",
+            "仓位满或未模拟成交：可挂观察单 10.59~10.60",
+            "仓位满或未模拟成交：可挂观察单 53.15~53.35",
+            "仓位满或未模拟成交：可挂观察单 72.63~73.05"
+          ],
+          "data_mode": "live",
+          "advice_not_filled": true,
+          "blocked_by_position_cap": true,
+          "pool_fallback": false,
+          "legacy_schema": false
         }
       ]
     }
@@ -1804,81 +1851,94 @@
         "source_finding": ""
       }
     ],
-    "drifts": [
-      {
-        "strategy_id": "swing",
-        "param": "max_positions",
-        "before": 3,
-        "after": 5,
-        "matched_hypothesis": "H-001"
-      },
-      {
-        "strategy_id": "learn",
-        "param": "max_total_positions",
-        "before": 5,
-        "after": 8,
-        "matched_hypothesis": "H-002"
-      }
-    ],
+    "drifts": [],
     "snapshot_written": false,
-    "previous_snapshot_date": "2026-07-31"
+    "previous_snapshot_date": "2026-08-02"
   },
   "findings": [
     {
-      "finding_id": "advice_not_filled:swing",
-      "rule_id": "advice_not_filled",
+      "finding_id": "position_cap_blocking:swing",
+      "rule_id": "position_cap_blocking",
       "subject": "swing",
-      "severity": "P1",
+      "severity": "P0",
       "layer": "execution",
       "layer_label": "执行层",
       "horizon": "今天就能改",
-      "title": "#3 波段仓 近 15 日有 12 天出了买点但没成交",
+      "title": "#3 波段仓 近 15 日有 2 天出了买点却因满仓没成交",
       "evidence": [
-        "2026-07-17：买点 1 个，成交 0，持仓 0/5",
-        "2026-07-19：买点 1 个，成交 0，持仓 0/5",
-        "2026-07-21：买点 1 个，成交 0，持仓 2/5",
-        "2026-07-22：买点 1 个，成交 0，持仓 2/5",
-        "2026-07-23：买点 1 个，成交 0，持仓 2/5",
-        "2026-07-24：买点 2 个，成交 0，持仓 3/5",
-        "2026-07-27：买点 3 个，成交 0，持仓 3/5",
-        "2026-07-28：买点 3 个，成交 0，持仓 3/5"
+        "2026-08-04：买点 5 个，持仓 5/5，成交 0，现金 5,741 元",
+        "2026-08-05：买点 5 个，持仓 5/5，成交 0，现金 5,741 元"
       ],
-      "why": "按当前仓位上限已不算满仓拦截，所以要另找原因：现金不足、信号在盘中才触发、或收盘补漏没跑到。",
-      "action": "核对 swing_daily_report 的 sim_buy 分支为何跳过；确认现金与整手数是否够一笔。",
+      "why": "策略不是没找到机会，是找到了也吃不下。此时再怎么优化选股逻辑都不会改变结果。",
+      "action": "先解决仓位/预算口径（见 capital_cap_contradiction），再谈信号质量。",
       "data": {
+        "blocked_days": 2,
         "days": [
-          "2026-07-17",
-          "2026-07-19",
-          "2026-07-21",
-          "2026-07-22",
-          "2026-07-23",
-          "2026-07-24",
-          "2026-07-27",
-          "2026-07-28",
-          "2026-07-29",
-          "2026-07-30",
-          "2026-07-31",
-          "2026-08-01"
+          "2026-08-04",
+          "2026-08-05"
         ]
       }
     },
     {
-      "finding_id": "zero_fill_streak:swing",
-      "rule_id": "zero_fill_streak",
-      "subject": "swing",
+      "finding_id": "review_gap:strategy_review",
+      "rule_id": "review_gap",
+      "subject": "strategy_review",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "策略复盘自身断更 3 个交易日",
+      "evidence": [
+        "缺报告的日期：2026-08-03、2026-08-04、2026-08-05",
+        "已有报告 4 份，最早 2026-07-31，最新 2026-08-06"
+      ],
+      "why": "复盘断更期间所有问题都没人看，等于风控盲飞；而守夜只校验台账和收盘，覆盖不到这里，上次因此空了三天才被发现。",
+      "action": "查产机 QuantLearn_StrategyReview（16:35）的 Last Result 与 output/strategy_review.log；确认 bat 能跑通后补跑缺失日期。",
+      "data": {
+        "missing": [
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05"
+        ],
+        "have_count": 4
+      }
+    },
+    {
+      "finding_id": "nav_stale:account3",
+      "rule_id": "nav_stale",
+      "subject": "account3",
       "severity": "P1",
       "layer": "execution",
       "layer_label": "执行层",
       "horizon": "今天就能改",
-      "title": "#3 波段仓 连续 10 个交易日 0 成交",
+      "title": "#3 波段仓 净值已 8 天未更新",
       "evidence": [
-        "回看 15 日累计成交 1 笔，其中 13 天有买点建议"
+        "最后一条净值 2026-07-29，复盘日 2026-08-06"
       ],
-      "why": "长期不成交等于没有反馈信号：策略好坏无从判断，样本永远攒不起来。",
-      "action": "确认是被仓位挡住还是信号阈值过严；两者都不是才考虑「行情确实没机会」。",
+      "why": "收盘链路可能已经断了，后续所有绩效数字都在用过期快照。",
+      "action": "检查 DailyClose / TradeJournal 任务与 DB 写入。",
       "data": {
-        "streak": 10,
-        "total_fills": 1
+        "last_nav_date": "2026-07-29",
+        "gap_days": 8
+      }
+    },
+    {
+      "finding_id": "nav_stale:account1",
+      "rule_id": "nav_stale",
+      "subject": "account1",
+      "severity": "P1",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "#1 学习仓 净值已 18 天未更新",
+      "evidence": [
+        "最后一条净值 2026-07-19，复盘日 2026-08-06"
+      ],
+      "why": "收盘链路可能已经断了，后续所有绩效数字都在用过期快照。",
+      "action": "检查 DailyClose / TradeJournal 任务与 DB 写入。",
+      "data": {
+        "last_nav_date": "2026-07-19",
+        "gap_days": 18
       }
     },
     {
@@ -1889,16 +1949,14 @@
       "layer": "execution",
       "layer_label": "执行层",
       "horizon": "今天就能改",
-      "title": "#3 波段仓 有 7 天的池子产物缺「过稳定分线」字段",
+      "title": "#3 波段仓 有 5 天的池子产物缺「过稳定分线」字段",
       "evidence": [
-        "缺字段的日期：2026-07-17、2026-07-18、2026-07-19、2026-07-20、2026-07-21、2026-07-22、2026-07-23"
+        "缺字段的日期：2026-07-19、2026-07-20、2026-07-21、2026-07-22、2026-07-23"
       ],
       "why": "那几天的漏斗少一层，不能和新版数据直接比较；也不能据此判断池子是否走了兜底。",
       "action": "仅影响历史回看，无需修代码；对比漏斗时把这些日期排除。",
       "data": {
         "days": [
-          "2026-07-17",
-          "2026-07-18",
           "2026-07-19",
           "2026-07-20",
           "2026-07-21",
@@ -1924,92 +1982,23 @@
       "data": {
         "gap": "池内扫描层无埋点：不知道入池 N 只里有几只出信号、几只因 A/B 类型或分数线被拒。swing_daily_report 落 scanned/signaled/executable 三个计数即可补上。"
       }
-    },
-    {
-      "finding_id": "signal_negative_expectancy:account1.buy_zone",
-      "rule_id": "signal_negative_expectancy",
-      "subject": "account1.buy_zone",
-      "severity": "P2",
-      "layer": "signal",
-      "layer_label": "信号层",
-      "horizon": "攒够样本再判",
-      "title": "#1 学习仓 信号「buy_zone」累计亏损 6,763 元",
-      "evidence": [
-        "19 笔，胜率 11%，单笔平均 -4.88%",
-        "证据等级：弱（能看方向，不足以改参数）",
-        "期望 95% 区间 [-6.7795, -2.9821]%"
-      ],
-      "why": "单一信号长期负期望，可能是入场条件不成立，也可能只是样本太小的运气。",
-      "action": "继续观察，攒到 20 笔再判（还差 1 笔）。",
-      "data": {
-        "signal": "buy_zone",
-        "n": 19,
-        "win_count": 2,
-        "win_rate_pct": 10.53,
-        "net_pnl": -6762.81,
-        "avg_pnl_pct": -4.881,
-        "expectancy": {
-          "n": 19,
-          "mean_pct": -4.8808,
-          "std_pct": 4.2226,
-          "stderr_pct": 0.9687,
-          "t_stat": -5.038,
-          "ci_low_pct": -6.7795,
-          "ci_high_pct": -2.9821,
-          "significant": true
-        },
-        "evidence": {
-          "n": 19,
-          "level": "weak",
-          "label": "弱",
-          "can_do": "能看方向，不足以改参数"
-        }
-      }
-    },
-    {
-      "finding_id": "drawdown_breach:account1",
-      "rule_id": "drawdown_breach",
-      "subject": "account1",
-      "severity": "P2",
-      "layer": "parameter",
-      "layer_label": "参数层",
-      "horizon": "需回测+影子验证",
-      "title": "#1 学习仓 最大回撤 10.1%",
-      "evidence": [
-        "当前回撤 9.9%，累计收益 -0.07%",
-        "最差单日 -0.06%，当前连亏 0 天"
-      ],
-      "why": "回撤超过风险预算时，先确认是止损没执行还是仓位过重，再谈参数。",
-      "action": "核对止损是否按规则触发；确认后再评估是否收缩单笔预算。",
-      "data": {
-        "days": 11,
-        "first_date": "2026-07-20",
-        "last_date": "2026-08-01",
-        "total_value": 92837.29,
-        "cumulative_return_pct": -0.0716,
-        "max_drawdown_pct": 10.0787,
-        "current_drawdown_pct": 9.8956,
-        "best_day_pct": 0.0164,
-        "worst_day_pct": -0.0636,
-        "losing_streak": 0
-      }
     }
   ],
   "summary": {
     "findings_total": 6,
     "by_severity": {
-      "P0": 0,
+      "P0": 2,
       "P1": 2,
-      "P2": 4
+      "P2": 2
     },
     "by_layer": {
-      "execution": 4,
-      "signal": 1,
-      "parameter": 1
+      "execution": 6,
+      "signal": 0,
+      "parameter": 0
     },
-    "actionable_today": 4,
+    "actionable_today": 6,
     "open_hypotheses": 2,
     "due_hypotheses": 0,
-    "headline": "无 P0；2 个 P1 待处理，最紧要：#3 波段仓 近 15 日有 12 天出了买点但没成交"
+    "headline": "2 个 P0 待修，最紧要：#3 波段仓 近 15 日有 2 天出了买点却因满仓没成交"
   }
 }

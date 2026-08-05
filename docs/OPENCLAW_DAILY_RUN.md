@@ -172,9 +172,19 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
    正文含：schtasks Last Run 原文、daily_git_sync.log 尾 30 行、git status -sb
    并写 pm/ops/今天-nightwatch.md + pm/bugs/BUG-上传失败-日期.md
 
-5) 额外健康抽查（失败只记 ops，不阻断）：
+5) 策略复盘产物核查（不阻断主 SLO，但必须记录）：
+   git ls-tree -r --name-only origin/master | findstr /C:"output/strategy_review/今天"
+   没有 → schtasks /run /tn QuantLearn_StrategyReview，等 60s，
+          dir output\strategy_review\今天.md
+          type output\strategy_review.log（看尾部 20 行）
+   仍没有 → 记 pm/ops/今天-nightwatch.md 并企微提一句
+          「策略复盘缺报 N 天」（不必标【失职】，但不许略过不写）
+   ※ 2026-08-03~05 这条链静默断了三天，因为守夜只校验台账和收盘。
+
+6) 额外健康抽查（失败只记 ops，不阻断）：
    schtasks /query /tn QuantLearn_DailyGitSync /v /fo LIST
    schtasks /query /tn QuantLearn_TradeJournal /v /fo LIST
+   schtasks /query /tn QuantLearn_StrategyReview /v /fo LIST
    （看 Last Run Time / Last Result；Result≠0 记入 ops）
 
 允许：为达成 SLO，对白名单路径执行

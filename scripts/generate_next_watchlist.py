@@ -275,9 +275,7 @@ def _load_config_auto(path: Path = CONFIG_AUTO_PATH) -> dict[str, Any]:
 
 
 def _save_config_auto(cfg: dict[str, Any], path: Path = CONFIG_AUTO_PATH) -> None:
-    # 固定 LF，否则产机（Windows）每写一次就让整个文件在 git 里变「已修改」，
-    # 挡住 git pull --rebase
-    path.write_text(yaml.dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8", newline="\n")
+    path.write_text(yaml.dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
 def _rules_for_candidate(c: Candidate) -> dict[str, dict[str, Any]]:

@@ -366,55 +366,6 @@ def test_edge_check_requires_minimum_samples():
     assert found[0].layer == "parameter"  # 参数层，不许当天改
 
 
-def _mk_reports(root: Path, days: list[str]) -> Path:
-    d = root / "strategy_review"
-    d.mkdir(parents=True, exist_ok=True)
-    for day in days:
-        (d / f"{day}.md").write_text("# x", encoding="utf-8")
-    return d
-
-
-def test_review_gap_detects_real_outage(tmp_path):
-    """回放 2026-08-03~05：台账/收盘照常，只有复盘断了三天，没有任何告警。"""
-    d = _mk_reports(tmp_path, ["2026-07-31", "2026-08-01", "2026-08-02"])
-    found = diagnostics.check_review_continuity(d, "2026-08-06")
-    assert len(found) == 1
-    assert found[0].rule_id == "review_gap"
-    assert found[0].severity == "P0"  # 断 3 天及以上升级为 P0
-    assert found[0].data["missing"] == ["2026-08-03", "2026-08-04", "2026-08-05"]
-
-
-def test_review_gap_ignores_weekends_and_today(tmp_path):
-    # 2026-08-01 周六、08-02 周日；08-06 是当天，报告正在生成不算缺
-    d = _mk_reports(tmp_path, ["2026-07-31"])
-    found = diagnostics.check_review_continuity(d, "2026-08-06")
-    missing = found[0].data["missing"] if found else []
-    assert "2026-08-01" not in missing
-    assert "2026-08-02" not in missing
-    assert "2026-08-06" not in missing
-    assert missing == ["2026-08-03", "2026-08-04", "2026-08-05"]
-
-
-def test_review_gap_silent_when_continuous(tmp_path):
-    d = _mk_reports(tmp_path, ["2026-08-03", "2026-08-04", "2026-08-05"])
-    assert diagnostics.check_review_continuity(d, "2026-08-06") == []
-
-
-def test_review_gap_silent_on_first_ever_run(tmp_path):
-    """从没跑过不是断档，别在首次部署时刷一条 P0。"""
-    empty = tmp_path / "strategy_review"
-    empty.mkdir()
-    assert diagnostics.check_review_continuity(empty, "2026-08-06") == []
-    assert diagnostics.check_review_continuity(tmp_path / "nope", "2026-08-06") == []
-
-
-def test_review_gap_single_day_is_p1(tmp_path):
-    d = _mk_reports(tmp_path, ["2026-08-04", "2026-08-06"])
-    found = diagnostics.check_review_continuity(d, "2026-08-07")
-    assert found[0].severity == "P1"
-    assert found[0].data["missing"] == ["2026-08-05"]
-
-
 def _perf_with_positions(positions: list[dict]):
     from review.metrics import AccountPerformance
 
@@ -555,65 +506,6 @@ def test_raising_position_cap_does_not_erase_history(tmp_path):
     rules = {f.rule_id for f in diagnostics.check_funnel(after, spec)}
     assert "advice_not_filled" in rules
     assert "position_cap_blocking" not in rules
-
-
-def test_funnel_counts_intraday_fills_not_just_closing(tmp_path):
-    """成交要按台账/DB 的当日全量算，不能只看 swing_daily 的 fills。
-
-    2026-08-03 #3 盘中买了中国太保和三一重工两笔，swing_daily 的 fills 却是 0
-    （那字段只记 swing_daily_report 本次撮合的单），漏斗据此报了
-    「连续 13 天 0 成交」，结论完全反了。
-    """
-    _write_funnel_day(
-        tmp_path, "2026-08-03",
-        {"universe_scanned": 800, "candidates": 485, "above_min_score": 352, "top": 50},
-        {"advice": [{"hint": "x"}, {"hint": "y"}], "fills": [],
-         "positions": [1, 2, 3, 4, 5], "cash": 6000.0, "total": 50000.0},
-    )
-
-    stale = build_swing_funnel(root=tmp_path, lookback=5, max_positions=5)
-    assert stale.total_fills == 0  # 只看 swing_daily 会得出这个错误结论
-
-    fixed = build_swing_funnel(root=tmp_path, lookback=5, max_positions=5,
-                               fill_counts={"2026-08-03": 2})
-    assert fixed.total_fills == 2
-    assert fixed.zero_fill_streak == 0
-    assert not fixed.days[0].advice_not_filled
-
-
-def test_load_fill_counts_prefers_db_then_journal(tmp_path):
-    from review.funnel import load_fill_counts
-
-    journal = tmp_path / "pm" / "trade_journal"
-    journal.mkdir(parents=True)
-    (journal / "2026-08-03.json").write_text(json.dumps({
-        "date": "2026-08-03",
-        "accounts": [{"account_id": 3, "trades": [{"direction": "BUY"}, {"direction": "BUY"}]},
-                     {"account_id": 1, "trades": [{"direction": "SELL"}]}],
-    }, ensure_ascii=False), encoding="utf-8")
-
-    # 无 DB → 回退台账
-    assert load_fill_counts(tmp_path, 3) == {"2026-08-03": 2}
-    assert load_fill_counts(tmp_path, 1) == {"2026-08-03": 1}
-
-    # 有 DB 且有数据 → 以 DB 为准
-    db = tmp_path / "sim.db"
-    conn = sqlite3.connect(str(db))
-    conn.execute("CREATE TABLE sim_trades (account_id INTEGER, trade_date DATE)")
-    conn.executemany("INSERT INTO sim_trades VALUES (?,?)",
-                     [(3, "2026-08-04"), (3, "2026-08-04"), (3, "2026-08-04")])
-    conn.commit()
-    conn.close()
-    assert load_fill_counts(tmp_path, 3, db) == {"2026-08-04": 3}
-
-    # DB 存在但该账户无数据 → 仍回退台账，不能把「查不到」当成「0 笔」
-    assert load_fill_counts(tmp_path, 1, db) == {"2026-08-03": 1}
-
-
-def test_load_fill_counts_survives_bad_db(tmp_path):
-    from review.funnel import load_fill_counts
-
-    assert load_fill_counts(tmp_path, 3, tmp_path / "nope.db") == {}
 
 
 def test_funnel_does_not_confuse_missing_field_with_fallback(tmp_path):

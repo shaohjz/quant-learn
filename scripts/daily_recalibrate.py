@@ -504,12 +504,9 @@ def main():
                         changes.append(f"  {code} {name} take_profit: {old_val} → {new_val}")
 
         # 写回 config.yaml / config_auto.yaml
-        # 固定 LF：产机是 Windows，text 模式默认写 CRLF，而仓库存的是 LF。
-        # 每天重算一次阈值就把整个 config 变成「已修改」，git pull --rebase 会被
-        # "unstaged changes" 直接挡住（.gitattributes 只能让 diff 干净，挡不住这个）。
-        CONFIG_FILE.write_text(config_text, encoding="utf-8", newline="\n")
+        CONFIG_FILE.write_text(config_text, encoding="utf-8")
         if auto_text:
-            CONFIG_AUTO_FILE.write_text(auto_text, encoding="utf-8", newline="\n")
+            CONFIG_AUTO_FILE.write_text(auto_text, encoding="utf-8")
 
         # 打印对比表
         print("\n" + "=" * 60)

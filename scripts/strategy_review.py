@@ -41,7 +41,7 @@ if sys.platform == "win32":
 
 from review import diagnostics  # noqa: E402
 from review import ledger as ledger_mod
-from review.funnel import build_swing_funnel, load_fill_counts  # noqa: E402
+from review.funnel import build_swing_funnel  # noqa: E402
 from review.metrics import analyze_account  # noqa: E402
 from review.spec import load_specs  # noqa: E402
 from review.spec import render_markdown as render_spec_markdown
@@ -72,8 +72,7 @@ def artifact_dir() -> Path:
     return d
 
 
-def collect(day: str, db_path: Path, lookback: int, ledger_dir: Path | None = None,
-            report_dir: Path | None = None) -> dict:
+def collect(day: str, db_path: Path, lookback: int, ledger_dir: Path | None = None) -> dict:
     """跑完整条复盘链，返回结构化结果。"""
     as_of = date.fromisoformat(day)
     specs = load_specs()
@@ -90,13 +89,12 @@ def collect(day: str, db_path: Path, lookback: int, ledger_dir: Path | None = No
             max_positions=swing.value("max_positions"),
             single_budget=swing.value("single_budget"),
             initial_cash=swing.value("initial_cash"),
-            fill_counts=load_fill_counts(ROOT, swing.account_id, db_path),
         )
 
     led = ledger_mod.Ledger(ledger_dir)
     state = led.build_state(specs, day)
 
-    findings = diagnostics.run_all(specs, performances, funnels, as_of_iso=day, report_dir=report_dir)
+    findings = diagnostics.run_all(specs, performances, funnels, as_of_iso=day)
     findings.extend(ledger_mod.check_ledger(state, day))
     findings = sorted(findings, key=lambda f: (diagnostics.SEVERITY_ORDER.get(f.severity, 9),
                                                LAYER_ORDER.index(f.layer) if f.layer in LAYER_ORDER else 9,
@@ -417,13 +415,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     db_path = resolve_db(args.db)
-    out_dir = Path(args.out_dir) if args.out_dir else artifact_dir()
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    result = collect(args.date, db_path, args.lookback, ledger_dir, report_dir=out_dir)
+    result = collect(args.date, db_path, args.lookback, ledger_dir)
 
     md = render_markdown(result)
     payload = to_json(result)
+
+    out_dir = Path(args.out_dir) if args.out_dir else artifact_dir()
+    out_dir.mkdir(parents=True, exist_ok=True)
     # 固定 LF：产机是 Windows，text 模式默认写 CRLF，和开发机交替跑会让
     # 每份产物每天整文件 diff 一次，真正改了哪个参数反而看不出来。
     _write(out_dir / f"{args.date}.md", md)

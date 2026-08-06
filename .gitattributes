@@ -1,24 +1,5 @@
-# 产机是 Windows、开发机是 Linux，同一批文件两边都会写。不固定行尾的话
-# 每天多出整文件 diff，把「今天到底改了什么」淹掉；更糟的是工作区长期显示脏，
-# git pull --rebase 会直接被 "unstaged changes" 挡住，任务链跟着断。
-#
-# 声明 text 后，git 存 LF、比较时先规范化：产机照旧写 CRLF 也不会被判为修改。
-
-# 每天被 daily_recalibrate / generate_next_watchlist 重写
-config.yaml                text eol=lf
-config_auto.yaml           text eol=lf
-config.strategy_params.yaml text eol=lf
-
-# 复盘与策略产物
+# 复盘产物在 Windows 产机和开发机之间来回提交。不固定行尾的话，
+# 每天会多出一份整文件 diff，把「今天到底改了哪个参数」淹掉。
 docs/STRATEGY_SPEC.md      text eol=lf
 output/strategy_review/**  text eol=lf
 pm/strategy_review/**      text eol=lf
-
-# 台账与日报（脚本每天生成，两边都可能跑）
-pm/trade_journal/**        text eol=lf
-output/swing_daily/**      text eol=lf
-output/swing_pool/**       text eol=lf
-daily_reports/**           text eol=lf
-
-# 运行时状态，行尾无意义
-output/quant_pulse_state.json text eol=lf

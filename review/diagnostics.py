@@ -276,67 +276,6 @@ def check_funnel(funnel: Any, spec: Any, min_streak: int = 3, min_blocked: int =
     return out
 
 
-def check_review_continuity(report_dir: Any, as_of_iso: str, max_report: int = 8) -> list[Finding]:
-    """复盘自己有没有断更。
-
-    2026-08-03 到 08-05 这三个交易日一份报告都没有，而台账、收盘、波段日报照常产出 ——
-    也就是说「用来发现问题的东西」自己挂了三天，没有任何告警。守夜只查台账和收盘，
-    覆盖不到这里。
-
-    脚本没跑时这条规则当然也不会跑，但恢复后第一次运行就会把断档报出来并留档，
-    不至于像这次一样要等人翻目录才发现。
-    """
-    from datetime import date as _date, timedelta
-
-    try:
-        from pathlib import Path as _Path
-
-        d = _Path(str(report_dir))
-        if not d.exists():
-            return []
-        have = {p.stem for p in d.glob("*.md") if p.stem[:1].isdigit()}
-        as_of = _date.fromisoformat(as_of_iso)
-    except (ValueError, OSError):
-        return []
-
-    if not have:
-        return []  # 从未跑过，不是断档
-
-    try:
-        earliest = _date.fromisoformat(min(have))
-    except ValueError:
-        return []
-
-    # 只看最早一份报告之后的工作日；今天的报告正在生成，不算缺
-    missing: list[str] = []
-    cur = earliest
-    while cur < as_of:
-        if cur.weekday() < 5 and cur.isoformat() not in have:
-            missing.append(cur.isoformat())
-        cur += timedelta(days=1)
-
-    if not missing:
-        return []
-
-    shown = missing[-max_report:]
-    return [Finding(
-        rule_id="review_gap",
-        subject="strategy_review",
-        severity="P1" if len(missing) < 3 else "P0",
-        layer="execution",
-        title=f"策略复盘自身断更 {len(missing)} 个交易日",
-        evidence=[
-            f"缺报告的日期：{'、'.join(shown)}" + ("（仅列最近几天）" if len(missing) > len(shown) else ""),
-            f"已有报告 {len(have)} 份，最早 {min(have)}，最新 {max(have)}",
-        ],
-        why="复盘断更期间所有问题都没人看，等于风控盲飞；而守夜只校验台账和收盘，"
-            "覆盖不到这里，上次因此空了三天才被发现。",
-        action="查产机 QuantLearn_StrategyReview（16:35）的 Last Result 与 "
-               "output/strategy_review.log；确认 bat 能跑通后补跑缺失日期。",
-        data={"missing": missing, "have_count": len(have)},
-    )]
-
-
 def check_stop_loss_execution(perf: Any, hard_stop_pct: float | None = None) -> list[Finding]:
     """持仓已跌破止损却还挂着 —— 止损链路断了的直接证据。
 
@@ -552,13 +491,10 @@ def run_all(
     performances: list[Any],
     funnels: dict[str, Any] | None = None,
     as_of_iso: str = "",
-    report_dir: Any = None,
 ) -> list[Finding]:
     """跑全部规则。任一规则抛错都不该拖垮整份复盘。"""
     funnels = funnels or {}
     out: list[Finding] = []
-    if report_dir is not None and as_of_iso:
-        out.extend(_safe(check_review_continuity, report_dir, as_of_iso))
     # 硬止损线按账户取：#3 波段用自己的 stop_loss_pct，#1 用 config 的 risk.stop_loss_pct
     hard_stops = {s.account_id: _hard_stop_of(s) for s in specs}
 

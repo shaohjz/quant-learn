@@ -104,54 +104,6 @@ def _read_json(path: Path) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
-def load_fill_counts(root: Path, account_id: int, db_path: Path | str | None = None) -> dict[str, int]:
-    """每个交易日的真实成交笔数。
-
-    不能用 swing_daily 的 ``fills``：那只是 swing_daily_report 本次执行撮合的单子，
-    盘中 swing_intraday_watch 成交的不在里面。2026-08-03 #3 明明买了中国太保和
-    三一重工两笔，swing_daily 的 fills 却是 0，漏斗据此报了「连续 13 天 0 成交」——
-    结论完全反了。
-
-    优先读 DB（权威），DB 里没有再回退台账 JSON（git 里跟着仓库走，开发机也能看）。
-    """
-    counts: dict[str, int] = {}
-
-    if db_path is not None:
-        try:
-            import sqlite3
-
-            conn = sqlite3.connect(str(db_path), timeout=30)
-            try:
-                rows = conn.execute(
-                    "SELECT trade_date, COUNT(*) FROM sim_trades WHERE account_id=? GROUP BY trade_date",
-                    (account_id,),
-                ).fetchall()
-                counts = {str(r[0])[:10]: int(r[1]) for r in rows if r[0]}
-            finally:
-                conn.close()
-        except Exception:
-            counts = {}
-
-    if counts:
-        return counts
-
-    journal = root / "pm" / "trade_journal"
-    if not journal.exists():
-        return {}
-    for path in journal.glob("*.json"):
-        data = _read_json(path)
-        if not data:
-            continue
-        accounts = data.get("accounts") or []
-        if isinstance(accounts, dict):
-            accounts = list(accounts.values())
-        for acct in accounts:
-            if not isinstance(acct, dict) or acct.get("account_id") != account_id:
-                continue
-            counts[path.stem] = len(acct.get("trades") or [])
-    return counts
-
-
 def _collect_days(pool_dir: Path, as_of: date | None, lookback: int) -> list[str]:
     days = sorted(p.stem for p in pool_dir.glob("*.json") if p.stem[:1].isdigit())
     if as_of is not None:
@@ -167,15 +119,11 @@ def build_swing_funnel(
     max_positions: int | None = None,
     single_budget: float | None = None,
     initial_cash: float | None = None,
-    fill_counts: dict[str, int] | None = None,
 ) -> FunnelReport:
     """重建 #3 波段链路的漏斗。
 
     max_positions / single_budget / initial_cash 由调用方从 review.spec 传入，
     这样「资金利用率上限」算的是策略真实参数，不是这里再抄一遍常量。
-
-    fill_counts 是当日真实成交笔数（见 load_fill_counts）；不传则退回
-    swing_daily 的 fills 字段，那个口径漏盘中成交，只适合没有台账时用。
     """
     root = root or PROJECT_ROOT
     pool_dir = root / "output" / "swing_pool"
@@ -218,8 +166,7 @@ def build_swing_funnel(
         fills = daily.get("fills") or []
         positions = daily.get("positions") or []
         df.advice = len(advice)
-        # 台账/DB 的当日成交才是全量；swing_daily 的 fills 漏盘中成交
-        df.fills = fill_counts.get(day, 0) if fill_counts is not None else len(fills)
+        df.fills = len(fills)
         df.positions = len(positions)
         df.max_positions = max_positions
         df.cash = daily.get("cash")

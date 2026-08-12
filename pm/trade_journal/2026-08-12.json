@@ -1,0 +1,219 @@
+{
+  "trade_date": "2026-08-12",
+  "generated_at": "2026-08-12 16:15:01",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 2,
+    "open_positions": 10
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 38296.39000000002,
+      "total_value": 94632.39,
+      "day_pnl": -303.75,
+      "day_pct": -0.31995191715188753,
+      "buy_amount": 3968.99,
+      "sell_amount": 13008.24,
+      "commission": 4.24,
+      "trade_count": 2,
+      "trades": [
+        {
+          "id": 149,
+          "account_id": 1,
+          "trade_time": "09:35:57",
+          "stock_code": "603341",
+          "stock_name": "龙旗科技",
+          "direction": "BUY",
+          "price": 39.68,
+          "quantity": 100,
+          "amount": 3968.99,
+          "commission": 0.99,
+          "signal_reason": "buy_zone|建仓价=39.68|触发阈值=41.27|龙旗科技 buy_zone 试探建仓"
+        },
+        {
+          "id": 150,
+          "account_id": 1,
+          "trade_time": "13:35:04",
+          "stock_code": "601138",
+          "stock_name": "工业富联",
+          "direction": "SELL",
+          "price": 65.09,
+          "quantity": 200,
+          "amount": 13008.24,
+          "commission": 3.25,
+          "signal_reason": "stop_loss|自动止损 (跟踪止损 ¥65.75, 浮盈亏 0.29%)"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "002709",
+          "stock_name": "天赐材料",
+          "quantity": 300,
+          "avg_cost": 37.73,
+          "current_price": 39.49,
+          "market_value": 11847.0,
+          "pnl": 528.0,
+          "pnl_pct": 4.664723032069984,
+          "trailing_stop_price": 38.11
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "quantity": 300,
+          "avg_cost": 38.877,
+          "current_price": 37.33,
+          "market_value": 11199.0,
+          "pnl": -464.1,
+          "pnl_pct": -3.979216503331029,
+          "trailing_stop_price": 35.61
+        },
+        {
+          "account_id": 1,
+          "stock_code": "603296",
+          "stock_name": "华勤技术",
+          "quantity": 100,
+          "avg_cost": 73.72,
+          "current_price": 79.08,
+          "market_value": 7908.0,
+          "pnl": 536.0,
+          "pnl_pct": 7.2707542051003795,
+          "trailing_stop_price": 77.65
+        },
+        {
+          "account_id": 1,
+          "stock_code": "603341",
+          "stock_name": "龙旗科技",
+          "quantity": 300,
+          "avg_cost": 39.293,
+          "current_price": 39.69,
+          "market_value": 11907.0,
+          "pnl": 119.1,
+          "pnl_pct": 1.0103580790471547,
+          "trailing_stop_price": 35.97
+        },
+        {
+          "account_id": 1,
+          "stock_code": "603693",
+          "stock_name": "江苏新能",
+          "quantity": 1100,
+          "avg_cost": 12.103,
+          "current_price": 12.25,
+          "market_value": 13475.0,
+          "pnl": 161.7,
+          "pnl_pct": 1.2145748987854272,
+          "trailing_stop_price": 11.13
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 6011.6155,
+      "total_value": 48336.6155,
+      "day_pnl": -103.00450000000274,
+      "day_pct": -0.21264514461509554,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "000858",
+          "stock_name": "五 粮 液",
+          "quantity": 100,
+          "avg_cost": 75.4,
+          "current_price": 75.28,
+          "market_value": 7528.0,
+          "pnl": -12.000000000000455,
+          "pnl_pct": -0.15915119363395513,
+          "trailing_stop_price": 71.63
+        },
+        {
+          "account_id": 3,
+          "stock_code": "002594",
+          "stock_name": "比亚迪",
+          "quantity": 100,
+          "avg_cost": 92.11,
+          "current_price": 90.41,
+          "market_value": 9041.0,
+          "pnl": -170.00000000000028,
+          "pnl_pct": -1.8456193681467892,
+          "trailing_stop_price": 87.5
+        },
+        {
+          "account_id": 3,
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "quantity": 400,
+          "avg_cost": 20.08,
+          "current_price": 19.83,
+          "market_value": 7931.999999999999,
+          "pnl": -100.0,
+          "pnl_pct": -1.245019920318724,
+          "trailing_stop_price": 19.08
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601088",
+          "stock_name": "中国神华",
+          "quantity": 200,
+          "avg_cost": 44.65,
+          "current_price": 44.07,
+          "market_value": 8814.0,
+          "pnl": -115.99999999999966,
+          "pnl_pct": -1.2989921612541977,
+          "trailing_stop_price": 42.42
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601211",
+          "stock_name": "国泰海通",
+          "quantity": 500,
+          "avg_cost": 18.64,
+          "current_price": 18.02,
+          "market_value": 9010.0,
+          "pnl": -310.0000000000005,
+          "pnl_pct": -3.3261802575107358,
+          "trailing_stop_price": 17.71
+        }
+      ],
+      "nav_today": {
+        "id": 286,
+        "account_id": 3,
+        "trade_date": "2026-08-12",
+        "total_value": 48336.6155,
+        "cash": 6011.6155,
+        "market_value": 42325.0,
+        "daily_return": -0.0021264514461509787,
+        "cumulative_return": -0.03326768999999996,
+        "max_drawdown": null,
+        "created_at": "2026-08-12 08:05:31",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

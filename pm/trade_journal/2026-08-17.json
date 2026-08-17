@@ -1,0 +1,194 @@
+{
+  "trade_date": "2026-08-17",
+  "generated_at": "2026-08-17 16:15:01",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 1,
+    "open_positions": 9
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 46843.82000000002,
+      "total_value": 94110.82,
+      "day_pnl": 642.5100000000093,
+      "day_pct": 0.6874094546055335,
+      "buy_amount": 9962.49,
+      "sell_amount": 0,
+      "commission": 2.49,
+      "trade_count": 1,
+      "trades": [
+        {
+          "id": 156,
+          "account_id": 1,
+          "trade_time": "09:35:53",
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "direction": "BUY",
+          "price": 9.96,
+          "quantity": 1000,
+          "amount": 9962.49,
+          "commission": 2.49,
+          "signal_reason": "buy_zone|建仓价=9.96|触发阈值=10.11|汤臣倍健 buy_zone 试探建仓"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "002709",
+          "stock_name": "天赐材料",
+          "quantity": 300,
+          "avg_cost": 37.73,
+          "current_price": 39.9,
+          "market_value": 11970.0,
+          "pnl": 651.0,
+          "pnl_pct": 5.751391465677185,
+          "trailing_stop_price": 38.11
+        },
+        {
+          "account_id": 1,
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "quantity": 1000,
+          "avg_cost": 9.96,
+          "current_price": 10.0,
+          "market_value": 10000.0,
+          "pnl": 40.0,
+          "pnl_pct": 0.40160642570280264,
+          "trailing_stop_price": 9.16
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600580",
+          "stock_name": "卧龙电驱",
+          "quantity": 400,
+          "avg_cost": 35.445,
+          "current_price": 35.05,
+          "market_value": 14020.0,
+          "pnl": -158.0,
+          "pnl_pct": -1.1144025955706112,
+          "trailing_stop_price": 32.91
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "quantity": 300,
+          "avg_cost": 38.877,
+          "current_price": 37.59,
+          "market_value": 11277.0,
+          "pnl": -386.1,
+          "pnl_pct": -3.3104406204182397,
+          "trailing_stop_price": 35.61
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 6011.6155,
+      "total_value": 48064.6155,
+      "day_pnl": 80.99549999999726,
+      "day_pct": 0.16879822739509287,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "000858",
+          "stock_name": "五 粮 液",
+          "quantity": 100,
+          "avg_cost": 75.4,
+          "current_price": 72.55,
+          "market_value": 7255.0,
+          "pnl": -285.00000000000085,
+          "pnl_pct": -3.7798408488063817,
+          "trailing_stop_price": 71.63
+        },
+        {
+          "account_id": 3,
+          "stock_code": "002594",
+          "stock_name": "比亚迪",
+          "quantity": 100,
+          "avg_cost": 92.11,
+          "current_price": 89.88,
+          "market_value": 8988.0,
+          "pnl": -223.0000000000004,
+          "pnl_pct": -2.4210183476278457,
+          "trailing_stop_price": 87.5
+        },
+        {
+          "account_id": 3,
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "quantity": 400,
+          "avg_cost": 20.08,
+          "current_price": 19.58,
+          "market_value": 7831.999999999999,
+          "pnl": -200.0,
+          "pnl_pct": -2.490039840637448,
+          "trailing_stop_price": 19.08
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601088",
+          "stock_name": "中国神华",
+          "quantity": 200,
+          "avg_cost": 44.65,
+          "current_price": 44.79,
+          "market_value": 8958.0,
+          "pnl": 28.000000000000114,
+          "pnl_pct": 0.3135498320268715,
+          "trailing_stop_price": 42.42
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601211",
+          "stock_name": "国泰海通",
+          "quantity": 500,
+          "avg_cost": 18.64,
+          "current_price": 18.04,
+          "market_value": 9020.0,
+          "pnl": -300.0000000000007,
+          "pnl_pct": -3.2188841201716833,
+          "trailing_stop_price": 17.71
+        }
+      ],
+      "nav_today": {
+        "id": 295,
+        "account_id": 3,
+        "trade_date": "2026-08-17",
+        "total_value": 48064.6155,
+        "cash": 6011.6155,
+        "market_value": 42053.0,
+        "daily_return": 0.0016879822739508388,
+        "cumulative_return": -0.03870768999999996,
+        "max_drawdown": null,
+        "created_at": "2026-08-17 08:05:32",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

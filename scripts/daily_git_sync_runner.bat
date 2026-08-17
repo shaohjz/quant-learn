@@ -7,6 +7,8 @@ REM 红线: 不推交易核心代码、不 force push、不碰 config.local
 
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
 set PYTHONIOENCODING=utf-8
+REM 修复: schtasks 服务账号下 HOME 为空会导致 SSH 找不到 known_hosts 而 push 失败(Host key verification failed)
+set HOME=C:\Users\Administrator
 
 if not exist output mkdir output
 

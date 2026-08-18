@@ -183,8 +183,8 @@ def sell_stock(account_id, position, price, reason):
                      (account_id, code, name, 'SELL', price, qty, net_amount, commission))
         conn.execute("INSERT INTO sim_trades (account_id, trade_date, stock_code, stock_name, direction, price, quantity, amount, commission, signal_reason, created_at, trade_time) VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))",
                      (account_id, datetime.date.today().isoformat(), code, name, 'SELL', price, qty, net_amount, commission, reason))
-        conn.execute("UPDATE sim_positions SET quantity=0, current_price=?, market_value=0, pnl=0, pnl_pct=0, updated_at=datetime('now','localtime') WHERE id=?",
-                     (price, position['id']))
+        # TASK-20260718-2003-001: 清仓后 DELETE 而非 UPDATE SET quantity=0，避免幽灵持仓残留。
+        conn.execute("DELETE FROM sim_positions WHERE id=?", (position['id'],))
         conn.commit()
         logger.info(f"✅ SELL {code} {name} {qty}股@{price:.2f} 净额{net_amount:.2f}")
         return {'success': True, 'message': f'卖出{qty}股@{price:.2f}', 'qty': qty, 'amount': net_amount}

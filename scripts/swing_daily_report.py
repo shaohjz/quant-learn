@@ -156,11 +156,12 @@ def sim_sell(pos: dict, price: float, reason: str) -> dict:
             "UPDATE sim_account SET cash=cash+?, total_value=total_value+? WHERE id=?",
             (net, net - float(pos.get("market_value") or amount), SWING_ACCOUNT_ID),
         )
-        # 更稳：卖后重算 total 由 snapshot 覆盖
+        # TASK-20260718-2003-001: 清仓后 DELETE 而非 UPDATE SET quantity=0，
+        # 避免残留记录污染 sim_positions 表导致市值/盈亏重复统计与幽灵持仓。
         conn.execute(
-            "UPDATE sim_positions SET quantity=0, current_price=?, market_value=0, pnl=0, pnl_pct=0 "
+            "DELETE FROM sim_positions "
             "WHERE account_id=? AND stock_code=? AND quantity>0",
-            (price, SWING_ACCOUNT_ID, code),
+            (SWING_ACCOUNT_ID, code),
         )
         today = date.today().isoformat()
         now_t = datetime.now().strftime("%H:%M:%S")

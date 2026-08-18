@@ -285,11 +285,8 @@ def execute_sell(account_id: int, position: dict, price: float, reason: str) -> 
             (account_id, datetime.date.today().isoformat(), code, name, 'SELL', price, qty, net_amount, commission, reason)
         )
         
-        # 清空持仓
-        conn.execute(
-            "UPDATE sim_positions SET quantity=0, current_price=?, market_value=0, pnl=0, pnl_pct=0, updated_at=datetime('now','localtime') WHERE id=?",
-            (price, position['id'])
-        )
+        # TASK-20260718-2003-001: 清仓后 DELETE 而非 UPDATE SET quantity=0，避免幽灵持仓残留。
+        conn.execute("DELETE FROM sim_positions WHERE id=?", (position['id'],))
         
         conn.commit()
         logger.info(f"✅ SELL {code} {name} {qty}股@{price:.2f} 净额{net_amount:.2f}")

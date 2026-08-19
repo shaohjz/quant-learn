@@ -1,0 +1,223 @@
+{
+  "trade_date": "2026-08-19",
+  "generated_at": "2026-08-19 16:15:01",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 3,
+    "trades": 5,
+    "open_positions": 7
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 68294.93000000002,
+      "total_value": 92881.93,
+      "day_pnl": -1654.4500000000116,
+      "day_pct": -1.7500670112394947,
+      "buy_amount": 0,
+      "sell_amount": 35230.55,
+      "commission": 8.82,
+      "trade_count": 3,
+      "trades": [
+        {
+          "id": 161,
+          "account_id": 1,
+          "trade_time": "09:35:18",
+          "stock_code": "000600",
+          "stock_name": "建投能源",
+          "direction": "SELL",
+          "price": 8.06,
+          "quantity": 1200,
+          "amount": 9664.74,
+          "commission": 2.42,
+          "signal_reason": "trend_break|⚠️ 建投能源破 8.54！跌破 MA20-1.5ATR，趋势可能反转"
+        },
+        {
+          "id": 162,
+          "account_id": 1,
+          "trade_time": "09:45:04",
+          "stock_code": "600580",
+          "stock_name": "卧龙电驱",
+          "direction": "SELL",
+          "price": 35.5,
+          "quantity": 400,
+          "amount": 14189.35,
+          "commission": 3.55,
+          "signal_reason": "stop_loss|自动止损 (跟踪止损 ¥35.80, 浮盈亏 0.16%)"
+        },
+        {
+          "id": 165,
+          "account_id": 1,
+          "trade_time": "14:45:05",
+          "stock_code": "002709",
+          "stock_name": "天赐材料",
+          "direction": "SELL",
+          "price": 37.95,
+          "quantity": 300,
+          "amount": 11376.46,
+          "commission": 2.85,
+          "signal_reason": "stop_loss|自动止损 (跟踪止损 ¥38.11, 浮盈亏 0.58%)"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "quantity": 1400,
+          "avg_cost": 9.977,
+          "current_price": 9.7,
+          "market_value": 13580.0,
+          "pnl": -387.8,
+          "pnl_pct": -2.7763856870802948,
+          "trailing_stop_price": 9.16
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "quantity": 300,
+          "avg_cost": 38.877,
+          "current_price": 36.69,
+          "market_value": 11007.0,
+          "pnl": -656.1,
+          "pnl_pct": -5.625434061270171,
+          "trailing_stop_price": 35.61
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 8891.3865,
+      "total_value": 47558.3865,
+      "day_pnl": -329.8035000000018,
+      "day_pct": -0.688694853574549,
+      "buy_amount": 5605.0,
+      "sell_amount": 7599.196,
+      "commission": 10.0,
+      "trade_count": 2,
+      "trades": [
+        {
+          "id": 163,
+          "account_id": 3,
+          "trade_time": "09:55:16",
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "direction": "SELL",
+          "price": 19.02,
+          "quantity": 400,
+          "amount": 7599.196,
+          "commission": 5.0,
+          "signal_reason": "波段模拟|盘中止损"
+        },
+        {
+          "id": 164,
+          "account_id": 3,
+          "trade_time": "09:55:17",
+          "stock_code": "300014",
+          "stock_name": "亿纬锂能",
+          "direction": "BUY",
+          "price": 56.0,
+          "quantity": 100,
+          "amount": 5605.0,
+          "commission": 5.0,
+          "signal_reason": "波段模拟|盘中提醒|A分11 rr=1.38"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "000858",
+          "stock_name": "五 粮 液",
+          "quantity": 100,
+          "avg_cost": 75.4,
+          "current_price": 71.89,
+          "market_value": 7189.0,
+          "pnl": -351.0000000000005,
+          "pnl_pct": -4.655172413793107,
+          "trailing_stop_price": 71.63
+        },
+        {
+          "account_id": 3,
+          "stock_code": "002594",
+          "stock_name": "比亚迪",
+          "quantity": 100,
+          "avg_cost": 92.11,
+          "current_price": 88.66,
+          "market_value": 8866.0,
+          "pnl": -345.0000000000003,
+          "pnl_pct": -3.7455216588861195,
+          "trailing_stop_price": 87.5
+        },
+        {
+          "account_id": 3,
+          "stock_code": "002714",
+          "stock_name": "牧原股份",
+          "quantity": 200,
+          "avg_cost": 39.75,
+          "current_price": 38.84,
+          "market_value": 7768.000000000001,
+          "pnl": -181.99999999999932,
+          "pnl_pct": -2.289308176100624,
+          "trailing_stop_price": 37.76
+        },
+        {
+          "account_id": 3,
+          "stock_code": "300014",
+          "stock_name": "亿纬锂能",
+          "quantity": 100,
+          "avg_cost": 56.0,
+          "current_price": 55.4,
+          "market_value": 5540.0,
+          "pnl": -60.00000000000014,
+          "pnl_pct": -1.0714285714285787,
+          "trailing_stop_price": 53.2
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601088",
+          "stock_name": "中国神华",
+          "quantity": 200,
+          "avg_cost": 44.65,
+          "current_price": 46.52,
+          "market_value": 9304.0,
+          "pnl": 374.0000000000009,
+          "pnl_pct": 4.188129899216131,
+          "trailing_stop_price": 42.42
+        }
+      ],
+      "nav_today": {
+        "id": 301,
+        "account_id": 3,
+        "trade_date": "2026-08-19",
+        "total_value": 47558.3865,
+        "cash": 8891.3865,
+        "market_value": 38667.0,
+        "daily_return": -0.006886948535745452,
+        "cumulative_return": -0.04883227000000002,
+        "max_drawdown": null,
+        "created_at": "2026-08-19 08:05:33",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

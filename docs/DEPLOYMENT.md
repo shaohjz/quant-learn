@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-07-31（收盘通知精简：今日盈亏置顶，明确区分累计盈亏）  
+> **更新**：2026-08-21（银行股专用波段：账户 #4 + 独立「银行波段结论」）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -131,13 +131,14 @@ set QUANT_DB_PATH=C:\Users\Administrator\.openclaw\workspace\quant-learn\data\si
 .venv\Scripts\python.exe -c "from sim.db import init_tables; init_tables()"
 ```
 
-账户约定（日常只盯两个）：
+账户约定（日常盯三个模拟）：
 
 | id | 名字 | 用途 | 初始资金 |
 |----|------|------|:--------:|
 | **1** | learn | **模拟学习仓** | **10 万** |
 | 2 | real_portfolio | 真仓镜像（可选，默认可不推） | 2.5 万（镜像，不在模拟 DB） |
-| **3** | swing_trade | **波段模拟**（挂单建议 / 波段赚亏） | **5 万** |
+| **3** | swing_trade | **通用波段模拟**（挂单建议 / 波段赚亏） | **5 万** |
+| **4** | bank_swing | **银行股专用波段**（独立结论，不被 #3 挤掉） | **3 万** |
 
 ### 资金真源（唯一入口）
 
@@ -174,6 +175,9 @@ REM A3 盘前波段机会文案（正式 bat 会推企微；冒烟用 --no-push�
 
 REM B 波段收盘链路（模拟成交 + 赚亏结论）
 .venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push
+
+REM B2 银行股专用波段（账户 #4，独立结论）
+.venv\Scripts\python.exe -u scripts\bank_swing_daily.py --no-push
 
 REM C 交易台账
 .venv\Scripts\python.exe -u scripts\trade_journal.py --no-push
@@ -226,8 +230,11 @@ REM ③ IntradayScanner：可选。同样用 Windows GUI 设重复 30 分钟到 
 REM    ※ 禁止做成 OpenClaw LLM 每 30 分一条
 schtasks /create /f /tn "QuantLearn_IntradayScanner" /tr "%ROOT%\scripts\intraday_scanner_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 10:00
 
-REM ④ 16:05 波段日报
+REM ④ 16:05 通用波段日报（账户 #3）
 schtasks /create /f /tn "QuantLearn_SwingDaily" /tr "%ROOT%\scripts\swing_daily_report_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:05
+
+REM ④b 16:08 银行股专用波段（账户 #4，独立结论）
+schtasks /create /f /tn "QuantLearn_BankSwingDaily" /tr "%ROOT%\scripts\bank_swing_daily_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:08
 
 REM ⑤ 16:15 交易台账
 schtasks /create /f /tn "QuantLearn_TradeJournal" /tr "%ROOT%\scripts\trade_journal_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:15
@@ -250,7 +257,7 @@ schtasks /create /f /tn "QuantLearn_VqlearnLive" /tr "%ROOT%\scripts\vqlearn_liv
 schtasks /query /fo LIST | findstr QuantLearn
 ```
 
-**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · TradeJournal · DailyClose · **StrategyReview(16:35)** · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)** · **VqlearnLive(09:25，shadow 专用，无 auto-trade)**
+**必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · **BankSwingDaily(16:08)** · TradeJournal · DailyClose · **StrategyReview(16:35)** · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)** · **VqlearnLive(09:25，shadow 专用，无 auto-trade)**
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
 
@@ -262,6 +269,7 @@ schtasks /query /fo LIST | findstr QuantLearn
 schtasks /run /tn QuantLearn_SwingPool
 schtasks /run /tn QuantLearn_QuantPulse
 schtasks /run /tn QuantLearn_SwingDaily
+schtasks /run /tn QuantLearn_BankSwingDaily
 schtasks /run /tn QuantLearn_TradeJournal
 schtasks /run /tn QuantLearn_DailyClose
 schtasks /run /tn QuantLearn_StrategyReview
@@ -270,12 +278,14 @@ schtasks /run /tn QuantLearn_DailyGitSyncEvening
 type %ROOT%\output\swing_pool_builder.log
 type %ROOT%\output\quant_pulse.log
 type %ROOT%\output\swing_daily_report.log
+type %ROOT%\output\bank_swing_daily_report.log
 type %ROOT%\output\trade_journal.log
 type %ROOT%\output\strategy_review.log
 type %ROOT%\output\daily_git_sync.log
 dir %ROOT%\output\swing_pool
 dir %ROOT%\pm\trade_journal
 dir %ROOT%\output\swing_daily
+dir %ROOT%\output\bank_swing_daily
 dir %ROOT%\output\strategy_review
 dir %ROOT%\daily_reports
 ```
@@ -481,7 +491,62 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
-### ★ 上一次变更怎么部署（收盘通知精简、防盈亏误读）
+### ★ 上一次变更怎么部署（银行股专用波段 #4）
+
+> **改了什么：** 新增账户 `#4 bank_swing`（初始 3 万）+ 固定银行池 + `scripts/bank_swing_daily.py`。每日 16:08 推独立企微结论标题「银行波段结论」，与 `#3` 通用波段隔离，避免满仓锂电/白酒时银行买点永远进不去。收盘摘要/台账纳入 #4；`daily_git_sync` 白名单增加 `output/bank_swing_daily/`。
+
+产机执行：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM 新建 schtasks（只需一次）
+set ROOT=C:\Users\Administrator\.openclaw\workspace\quant-learn
+schtasks /create /f /tn "QuantLearn_BankSwingDaily" /tr "%ROOT%\scripts\bank_swing_daily_runner.bat" /sc weekly /d MON,TUE,WED,THU,FRI /st 16:08
+
+REM 冒烟
+.venv\Scripts\python.exe -m pytest tests\test_bank_swing_daily.py -q
+.venv\Scripts\python.exe -u scripts\bank_swing_daily.py --no-push
+type output\bank_swing_daily\今天日期.md
+```
+
+**要新建 schtasks：** `QuantLearn_BankSwingDaily`（16:08）。其它任务名/时间不变。
+
+**验收标准：**
+
+1. DB 有 `sim_account.id=4` / `account_name=bank_swing`，初始现金约 3 万。
+2. `output/bank_swing_daily/今天.md` 标题为「银行波段结论」，持仓/成交只含银行池标的。
+3. 企微能收到银行结论（正式跑，不要 `--no-push`）；与通用「波段结论」分开两条。
+4. `tests/test_bank_swing_daily.py` 全绿。
+
+### 历史变更：REQ-058 清仓级联 + 收盘巡检
+
+> **改了什么：** 清仓路径（`sim/engine.py` / `stop_loss_auto` / swing 三处卖出）在 DELETE 持仓后级联把同标的 `threshold_state` 置为 expired/executed，避免 pending/armed/confirmed 悬挂（8/19 天赐清仓后仍留 pending 的复发根因）。`daily_close_report.py` 收盘时额外跑全账户 orphan 巡检；`patrol_orphan_thresholds.py` 不再写死 account_id=1。
+
+产机执行：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+git log -1 --oneline
+
+REM 冒烟
+.venv\Scripts\python.exe -m pytest tests\test_req058_expire_on_flat.py tests\test_swing_intraday_watch.py -q
+.venv\Scripts\python.exe -u scripts\patrol_orphan_thresholds.py
+.venv\Scripts\python.exe -u scripts\daily_close_report.py --no-push
+```
+
+**不用重建 schtasks。** `QuantLearn_DailyClose` 任务名/时间/runner 未变，拉代码后下次 16:20 自动带巡检。
+
+**验收标准：**
+
+1. 任意账户清仓后，同标的 `threshold_state` 活跃卖出规则不再保持 pending/armed/confirmed。
+2. `patrol_orphan_thresholds.py` 对无持仓悬挂记录输出 Cleaned / No orphan。
+3. `tests/test_req058_expire_on_flat.py` 全绿；`--no-push` 退出码 0。
+
+### 历史变更：收盘通知精简、防盈亏误读
 
 > **改了什么：** `daily_close_report.py` 不再重复整段波段日报；每个账户先显示“今日盈亏”，总资产旁明确写“较昨日变化”，累计盈亏降为同一行辅助信息。成交、持仓改成短行；仅保留真实挂单明细。若波段“今日盈亏”与“累计盈亏”正负相反，会额外显示“别混淆”提示。
 
@@ -1091,6 +1156,7 @@ git log -1 --oneline origin/master
 | 早盘扫超时 | 正常走 `scanner_with_fallback` → lite；查网络/Zscaler |
 | bat Result:1 | `cmd /k` 手动跑 bat；看对应 `output\*.log` |
 | 波段赚亏永远 0 | 看 `sim_trades` account_id=3；机会分是否从未成交 |
+| 银行波段没结论 | 查 `QuantLearn_BankSwingDaily`；`output\bank_swing_daily\今天.md`；日志 `bank_swing_daily_report.log` |
 | 盘中完全没提醒 | 查 `QuantLearn_QuantPulse` 是否启用+重复间隔；日志 `quant_pulse.log`；持续时间是否到 **14:50**（误设 4h 会在 13:35 掐断） |
 | 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
@@ -1103,10 +1169,8 @@ git log -1 --oneline origin/master
 主人 **只发下面这一句**（细节全在本文，不要另贴长提示）：
 
 ```text
-读 docs/DEPLOYMENT.md，git pull 后按 ★ 段验收（4 条 schtasks 8/1 已建好，本次无需重建）。
-重点：复盘新增止损执行每日自动巡检——跌破止损未卖出 / 硬止损未执行 / qty=0 残留，命中即 P0；
-跑 strategy_review.py --no-push --write-spec 确认今日无 stop_loss_not_executed，
-以后不再需要「开盘前人工复核持仓表」，PM 日报里基于旧工单状态的止损告警以本报告为准。
+读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
+重点：新建 QuantLearn_BankSwingDaily@16:08（银行股专用波段 #4）；冒烟 bank_swing_daily.py --no-push，确认 output/bank_swing_daily/今天.md 标题为「银行波段结论」。
 做完写 pm/ops/今天-deploy.md。
 ```
 

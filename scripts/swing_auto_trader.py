@@ -287,7 +287,15 @@ def execute_sell(account_id: int, position: dict, price: float, reason: str) -> 
         
         # TASK-20260718-2003-001: 清仓后 DELETE 而非 UPDATE SET quantity=0，避免幽灵持仓残留。
         conn.execute("DELETE FROM sim_positions WHERE id=?", (position['id'],))
-        
+        # REQ-058: 清仓后级联失效 threshold_state
+        try:
+            from sim.sell_signal_audit import expire_thresholds_on_flat
+            expire_thresholds_on_flat(
+                conn.cursor(), code, note=f"swing清仓|{reason}",
+            )
+        except Exception:
+            pass
+
         conn.commit()
         logger.info(f"✅ SELL {code} {name} {qty}股@{price:.2f} 净额{net_amount:.2f}")
         return {'success': True, 'message': f'卖出{qty}股@{price:.2f}', 'qty': qty, 'amount': net_amount}

@@ -492,6 +492,16 @@ class SimEngine:
                     "DELETE FROM sim_positions WHERE id = ?",
                     (pos["id"],),
                 )
+                # REQ-058: 清仓后级联失效 threshold_state，避免 pending/armed 悬挂。
+                try:
+                    from sim.sell_signal_audit import expire_thresholds_on_flat
+                    expire_thresholds_on_flat(
+                        cur,
+                        stock_code,
+                        note=f"engine清仓失效|{signal_reason or 'SELL'}",
+                    )
+                except Exception:
+                    pass
 
             # 3. 写交易记录：先幂等补齐旧库字段，确保 REQ-032 完整信号解释不会丢失
             import json as _json

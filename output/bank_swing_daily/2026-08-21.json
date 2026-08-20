@@ -1,0 +1,20 @@
+{
+  "date": "2026-08-21",
+  "verdict": "（仅建议未模拟成交）银行波段今日基本平（¥+0 / +0.00%）",
+  "day_pnl": 0.0,
+  "day_pct": 0.0,
+  "realized_pnl": 0,
+  "cum_pnl": 0.0,
+  "cum_pct": 0.0,
+  "total": 30000.0,
+  "cash": 30000.0,
+  "positions": [],
+  "fills": [],
+  "advice": [
+    {
+      "action": "IDLE",
+      "hint": "无挂单动作，空仓/持仓观望。"
+    }
+  ],
+  "fee_note": "佣金万2.5/最低5.0元，卖印花0.5‰"
+}

@@ -38,6 +38,7 @@ ACCOUNT_LABELS = {
     1: "learn",
     2: "real_portfolio",
     3: "swing_trade",
+    4: "bank_swing",
 }
 
 

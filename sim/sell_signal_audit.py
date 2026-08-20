@@ -24,12 +24,80 @@ from pathlib import Path
 from typing import Optional
 
 # threshold_state 中属于「卖出」语义的规则名
-SELL_RULES = ("trend_break", "take_profit", "stop_loss", "trailing_stop")
+SELL_RULES = ("trend_break", "take_profit", "take_profit_half", "stop_loss", "trailing_stop")
 
 # threshold_state 中可视为「已触发/待执行」的卖出状态（用于和成交对账）
 ARMED_STATUSES = ("armed", "confirmed", "executed")
 
-ACCOUNT_LABELS = {1: "sim", 2: "real"}
+# 清仓后仍可能悬挂、需级联失效的活跃状态（不含 executed）
+ACTIVE_ORPHAN_STATUSES = ("pending", "armed", "confirmed")
+
+ACCOUNT_LABELS = {1: "sim", 2: "real", 3: "swing"}
+
+
+def normalize_stock_code(stock_code: str) -> str:
+    """统一为 6 位数字代码（去掉交易所前缀）。"""
+    raw = str(stock_code or "").strip().upper()
+    for prefix in ("SH", "SZ", "BJ"):
+        if raw.startswith(prefix):
+            raw = raw[len(prefix) :]
+            break
+    digits = "".join(ch for ch in raw if ch.isdigit())
+    return digits.zfill(6)[-6:] if digits else ""
+
+
+def expire_thresholds_on_flat(
+    cur: sqlite3.Cursor,
+    stock_code: str,
+    *,
+    note: str = "清仓后自动失效",
+    final_status: str = "expired",
+) -> int:
+    """持仓清仓后级联失效同标的卖出 threshold_state（REQ-058）。
+
+    返回受影响行数。无 threshold_state 表时静默返回 0。
+    final_status 通常为 expired；止损自动成交路径可用 executed。
+    """
+    if not _table_exists(cur, "threshold_state"):
+        return 0
+    code = normalize_stock_code(stock_code)
+    if not code:
+        return 0
+    rule_ph = ",".join("?" for _ in SELL_RULES)
+    status_ph = ",".join("?" for _ in ACTIVE_ORPHAN_STATUSES)
+    cur.execute(
+        f"""
+        UPDATE threshold_state
+           SET status = ?,
+               notes = CASE
+                   WHEN notes IS NULL OR notes = '' THEN ?
+                   ELSE notes || ' | ' || ?
+               END,
+               updated_at = CURRENT_TIMESTAMP
+         WHERE status IN ({status_ph})
+           AND rule_name IN ({rule_ph})
+           AND (
+                stock_code = ?
+                OR stock_code = ?
+                OR REPLACE(UPPER(stock_code), 'SH', '') = ?
+                OR REPLACE(UPPER(stock_code), 'SZ', '') = ?
+                OR REPLACE(UPPER(stock_code), 'BJ', '') = ?
+           )
+        """,
+        (
+            final_status,
+            note,
+            note,
+            *ACTIVE_ORPHAN_STATUSES,
+            *SELL_RULES,
+            code,
+            stock_code,
+            code,
+            code,
+            code,
+        ),
+    )
+    return int(cur.rowcount or 0)
 
 
 def build_sell_signal_reason(

@@ -19,6 +19,13 @@ accounts:
     description: 波段模拟账户（起始 5 万，挂单建议 / 波段赚亏）
     initial_cash: 50000.0
     max_total_value: 50000.0
+  bank_swing:
+    account_id: 4
+    account_name: bank_swing
+    auto_trade: false
+    description: 银行股专用波段模拟（起始 3 万，独立结论，不被通用波段仓挤掉）
+    initial_cash: 30000.0
+    max_total_value: 30000.0
 data:
   use_cache_only: false
   max_retries: 3

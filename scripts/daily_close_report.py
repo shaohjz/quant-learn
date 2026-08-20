@@ -29,10 +29,11 @@ DB_PATH = resolve_db_path()
 
 logger = logging.getLogger("daily_close")
 
-# 主人约定：日常只看这两个
+# 主人约定：日常盯学习仓 + 通用波段 + 银行波段
 ACCOUNTS = (
     {"id": 1, "label": "模拟学习仓", "short": "学习"},
     {"id": 3, "label": "波段模拟仓", "short": "波段"},
+    {"id": 4, "label": "银行波段仓", "short": "银行"},
 )
 
 
@@ -543,6 +544,14 @@ def main(argv: list[str] | None = None) -> int:
     if not args.no_nav:
         print(f"📝 回写 {trade_date} NAV 数据...")
         write_all_navs(trade_date, db_path=db_path)
+
+    # REQ-058: 收盘巡检清仓后悬挂的 threshold_state（全账户）
+    try:
+        from scripts.patrol_orphan_thresholds import patrol as patrol_orphan_thresholds
+        n = patrol_orphan_thresholds(db_path)
+        print(f"🧹 REQ-058 orphan threshold patrol: {n}")
+    except Exception as e:
+        print(f"⚠️ REQ-058 patrol skipped: {e}")
 
     if args.nav_only:
         print("✅ NAV 回写完成（--nav-only）")

@@ -290,20 +290,30 @@ def _do_sell(
             ),
         )
 
-        # 9. 更新 threshold_state（如果有对应记录）
-        cur.execute(
-            "UPDATE threshold_state SET status = 'executed', notes = "
-            "CASE WHEN notes IS NULL OR notes = '' THEN ? "
-            "ELSE notes || ' | ' || ? END, "
-            "updated_at = CURRENT_TIMESTAMP "
-            "WHERE stock_code = ? AND status IN ('armed', 'pending') "
-            "AND rule_name IN ('trend_break', 'take_profit', 'stop_loss', 'trailing_stop')",
-            (
-                f"止损自动执行: {quantity}股 @ {price:.4f}",
-                f"止损自动执行: {quantity}股 @ {price:.4f}",
+        # 9. 更新 threshold_state（含 confirmed；REQ-058 清仓级联）
+        try:
+            from sim.sell_signal_audit import expire_thresholds_on_flat
+            expire_thresholds_on_flat(
+                cur,
                 stock_code,
-            ),
-        )
+                note=f"止损自动执行: {quantity}股 @ {price:.4f}",
+                final_status="executed",
+            )
+        except Exception:
+            cur.execute(
+                "UPDATE threshold_state SET status = 'executed', notes = "
+                "CASE WHEN notes IS NULL OR notes = '' THEN ? "
+                "ELSE notes || ' | ' || ? END, "
+                "updated_at = CURRENT_TIMESTAMP "
+                "WHERE stock_code = ? AND status IN ('armed', 'pending', 'confirmed') "
+                "AND rule_name IN ('trend_break', 'take_profit', 'take_profit_half', "
+                "'stop_loss', 'trailing_stop')",
+                (
+                    f"止损自动执行: {quantity}股 @ {price:.4f}",
+                    f"止损自动执行: {quantity}股 @ {price:.4f}",
+                    stock_code,
+                ),
+            )
 
         conn.commit()
         return {

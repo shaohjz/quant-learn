@@ -69,6 +69,14 @@ EXECUTABLE_TYPES = set(PARAMS.executable_types)
 SINGLE_BUDGET = PARAMS.single_budget
 LOT = 100
 
+# 可被 bank_swing_daily 覆盖的展示/流程开关（默认 = 通用波段 #3）
+REPORT_TITLE = "波段结论"
+VERDICT_LABEL = "波段模拟"
+HOLDINGS_LABEL = "波段模拟持仓"
+CONCLUSIONS_TABLE = "swing_daily_conclusions"
+SKIP_GENERAL_POOL = False
+SKIP_INTRADAY_MERGE = False
+
 
 def _conn() -> sqlite3.Connection:
     c = sqlite3.connect(str(DB_PATH))
@@ -163,6 +171,14 @@ def sim_sell(pos: dict, price: float, reason: str) -> dict:
             "WHERE account_id=? AND stock_code=? AND quantity>0",
             (SWING_ACCOUNT_ID, code),
         )
+        # REQ-058: 清仓后级联失效 threshold_state
+        try:
+            from sim.sell_signal_audit import expire_thresholds_on_flat
+            expire_thresholds_on_flat(
+                conn.cursor(), code, note=f"swing_daily清仓|{reason}",
+            )
+        except Exception:
+            pass
         today = date.today().isoformat()
         now_t = datetime.now().strftime("%H:%M:%S")
         conn.execute(
@@ -570,11 +586,11 @@ def build_conclusion(
     realized = sum(float(f.get("realized") or 0) for f in sold)
 
     if day_pnl > 5:
-        verdict = f"波段模拟今日赚 ¥{day_pnl:.0f}（{day_pct:+.2f}%）"
+        verdict = f"{VERDICT_LABEL}今日赚 ¥{day_pnl:.0f}（{day_pct:+.2f}%）"
     elif day_pnl < -5:
-        verdict = f"波段模拟今日亏 ¥{abs(day_pnl):.0f}（{day_pct:+.2f}%）"
+        verdict = f"{VERDICT_LABEL}今日亏 ¥{abs(day_pnl):.0f}（{day_pct:+.2f}%）"
     else:
-        verdict = f"波段模拟今日基本平（¥{day_pnl:+.0f} / {day_pct:+.2f}%）"
+        verdict = f"{VERDICT_LABEL}今日基本平（¥{day_pnl:+.0f} / {day_pct:+.2f}%）"
 
     # 给你真实账户挂单建议（短）
     advice = []
@@ -649,7 +665,7 @@ def render_markdown(c: dict) -> str:
     now = datetime.now().strftime("%H:%M")
     sign = "🟢" if c["day_pnl"] >= 0 else "🔴"
     lines = [
-        f"# 波段结论 {c['date']} {now}",
+        f"# {REPORT_TITLE} {c['date']} {now}",
         "",
         f"## {sign} {c['verdict']}",
         f"累计：¥{c['cum_pnl']:+.0f}（{c['cum_pct']:+.2f}%）| 总资产 {c['total']:.0f} | 现金 {c['cash']:.0f}",
@@ -665,7 +681,7 @@ def render_markdown(c: dict) -> str:
         else:
             lines.append(f"- {a['hint']}")
     lines.append("")
-    lines.append("## 波段模拟持仓")
+    lines.append(f"## {HOLDINGS_LABEL}")
     if not c["positions"]:
         lines.append("> 空仓")
     else:
@@ -686,7 +702,10 @@ def render_markdown(c: dict) -> str:
                 f"@{f.get('price'):.2f} — {f.get('reason')}"
             )
     lines.append("")
-    lines.append(f"> {c['fee_note']} | 模拟账户 #{SWING_ACCOUNT_ID} | 非投资承诺")
+    lines.append(
+        f"> {c['fee_note']} | 模拟账户 #{SWING_ACCOUNT_ID} "
+        f"({SWING_ACCOUNT_NAME}) | 非投资承诺"
+    )
     return "\n".join(lines)
 
 
@@ -740,8 +759,8 @@ def save_daily(concl: dict, md: str) -> Path:
     conn = _conn()
     try:
         conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS swing_daily_conclusions (
+            f"""
+            CREATE TABLE IF NOT EXISTS {CONCLUSIONS_TABLE} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 report_date TEXT UNIQUE,
                 headline TEXT,
@@ -751,7 +770,7 @@ def save_daily(concl: dict, md: str) -> Path:
             """
         )
         conn.execute(
-            "INSERT INTO swing_daily_conclusions (report_date, headline, payload_json) VALUES (?,?,?) "
+            f"INSERT INTO {CONCLUSIONS_TABLE} (report_date, headline, payload_json) VALUES (?,?,?) "
             "ON CONFLICT(report_date) DO UPDATE SET headline=excluded.headline, "
             "payload_json=excluded.payload_json, created_at=CURRENT_TIMESTAMP",
             (day, concl["verdict"], json.dumps(concl, ensure_ascii=False)),
@@ -786,12 +805,13 @@ def main() -> int:
     today = date.today().isoformat()
     ensure_swing_account()
 
-    # 今日动态池缺失则补建（方法过滤 + 软上限50）
-    try:
-        from swing_pool_builder import ensure_today_pool
-        ensure_today_pool(max_pool=50, min_score=70)
-    except Exception as e:
-        log.warning("ensure_today_pool 失败，将回退种子池: %s", e)
+    # 今日动态池缺失则补建（方法过滤 + 软上限50）；银行专用 profile 跳过
+    if not SKIP_GENERAL_POOL:
+        try:
+            from swing_pool_builder import ensure_today_pool
+            ensure_today_pool(max_pool=50, min_score=70)
+        except Exception as e:
+            log.warning("ensure_today_pool 失败，将回退种子池: %s", e)
 
     # 盘前净值（交易前）
     before = snapshot()
@@ -821,17 +841,20 @@ def main() -> int:
             scan_rows = []
 
     scan_buys = pick_buys(scan_rows, marked)
-    # 盘中已提醒但未成交的 BUY 要补漏（避免「10:05提醒买、16:05说空仓」）
-    already = today_bought_codes(today) | {
-        str(p["stock_code"]).zfill(6)[-6:] for p in marked
-    }
-    intraday = [
-        b for b in load_intraday_buy_alerts(today)
-        if b["code"] not in already
-    ]
-    buys = merge_buys(scan_buys, intraday, marked)
-    if intraday:
-        log.info("盘中补漏候选 %d: %s", len(intraday), [b["code"] for b in intraday])
+    # 盘中已提醒但未成交的 BUY 要补漏（银行专用 profile 不并入通用盯盘）
+    if SKIP_INTRADAY_MERGE:
+        buys = scan_buys
+    else:
+        already = today_bought_codes(today) | {
+            str(p["stock_code"]).zfill(6)[-6:] for p in marked
+        }
+        intraday = [
+            b for b in load_intraday_buy_alerts(today)
+            if b["code"] not in already
+        ]
+        buys = merge_buys(scan_buys, intraday, marked)
+        if intraday:
+            log.info("盘中补漏候选 %d: %s", len(intraday), [b["code"] for b in intraday])
 
     fills: list[dict] = []
     if not args.no_trade:

@@ -46,6 +46,7 @@ ALLOW_PREFIXES = (
     "pm/ops/",
     "pm/agents/",
     "output/swing_daily/",
+    "output/bank_swing_daily/",
     "output/swing_pool/",
     "output/reviews/",
     "output/finance_manager/",
@@ -255,7 +256,11 @@ def _path_stats(paths: list[str]) -> dict[str, int]:
             or p.startswith("output/pm_daily_report_")
         ):
             buckets["日总结"] += 1
-        elif p.startswith("output/swing_daily/") or p.startswith("output/swing_pool/"):
+        elif (
+            p.startswith("output/swing_daily/")
+            or p.startswith("output/bank_swing_daily/")
+            or p.startswith("output/swing_pool/")
+        ):
             buckets["波段日报/池"] += 1
         elif p.startswith("pm/"):
             buckets["PM/队列/BUG"] += 1

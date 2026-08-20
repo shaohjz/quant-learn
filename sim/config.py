@@ -70,6 +70,7 @@ _ACCOUNT_FALLBACK: dict[int, dict] = {
     1: {"key": "learn", "account_name": "learn", "initial_cash": 100000.0},
     2: {"key": "real", "account_name": "real_portfolio", "initial_cash": 25000.0},
     3: {"key": "swing", "account_name": "swing_trade", "initial_cash": 50000.0},
+    4: {"key": "bank_swing", "account_name": "bank_swing", "initial_cash": 30000.0},
 }
 
 

@@ -42,7 +42,8 @@ flowchart TD
 | **08:40** | 动态稳定池+盘前机会 | **Windows schtasks** | `swing_pool_builder_runner.bat` | 方法过滤+软上限50 → `swing_auto` 推企微 |
 | **09:35→14:50 /10m** | 统一脉搏 | **Windows schtasks** + **任务计划 GUI 重复间隔 10 分** | `quant_pulse_runner.bat` | 真仓+波段+指数；**不要**开 LLM cron |
 | **10:00→14:30 /30m** | 全市场异动 | **Windows schtasks** + **GUI 重复 30 分**（可选） | `intraday_scanner_runner.bat` | 吵可关；**不要**开 LLM cron |
-| **16:05** | 波段日报 | **Windows schtasks** | `swing_daily_report_runner.bat` | #3 赚亏+挂单建议 |
+| **16:05** | 通用波段日报 | **Windows schtasks** | `swing_daily_report_runner.bat` | #3 赚亏+挂单建议 |
+| **16:08** | 银行波段日报 | **Windows schtasks** | `bank_swing_daily_runner.bat` | #4 银行专用结论 |
 | **16:15** | 交易台账 | **Windows schtasks** | `trade_journal_runner.bat` | `pm/trade_journal/` |
 | **16:20** | 双账户摘要 | **Windows schtasks** | `daily_close_report_runner.bat` | #1+#3 |
 | **16:35** | **策略复盘诊断** | **Windows schtasks** | `strategy_review_runner.bat` | 诊断策略本身（不是播报盈亏）；出 P0 清单 + 刷新 `docs/STRATEGY_SPEC.md` |
@@ -91,7 +92,8 @@ flowchart TD
 |------|--------|------|
 | **必开** | `QuantLearn_QuantPulse` | 盘中主心跳；已含真仓+波段盯盘 |
 | **必开** | `QuantLearn_SwingPool` | 08:40 方法过滤池(≤50) + 盘前波段扫描推企微 |
-| **必开** | `QuantLearn_SwingDaily` | 收盘波段结论 |
+| **必开** | `QuantLearn_SwingDaily` | 收盘通用波段结论 |
+| **必开** | `QuantLearn_BankSwingDaily` | 16:08 银行股专用波段结论 |
 | **必开** | `QuantLearn_TradeJournal` | 每日交易记录 |
 | **必开** | `QuantLearn_DailyClose` | 收盘双账户摘要 |
 | **必开** | `QuantLearn_StrategyReview` | **16:35 策略诊断**；P0 清单 + 参数漂移检测，见 `docs/METHODOLOGY.md` |
@@ -249,7 +251,8 @@ systemEvent 示例（若不用 schtasks）：
 |----|----|------|
 | **1** | learn | **模拟学习仓**（主推企微） |
 | 2 | real_portfolio | 真仓镜像（可选，默认可不看） |
-| **3** | swing_trade | **波段模拟**（挂单建议看这个） |
+| **3** | swing_trade | **通用波段模拟**（挂单建议看这个） |
+| **4** | bank_swing | **银行股专用波段**（独立结论） |
 
 > 主人约定日常 **只盯 #1 + #3**。  
 > 旧 bug：`daily_close_report` 曾把「当日盈亏」写成 `总资产-100000` → 出现 +119% 鬼畜数字（2026-07-15 已修）。
@@ -257,6 +260,7 @@ systemEvent 示例（若不用 schtasks）：
 | 产出 | 路径 |
 |------|------|
 | 波段结论 | `output/swing_daily/YYYY-MM-DD.md` |
+| 银行波段结论 | `output/bank_swing_daily/YYYY-MM-DD.md` |
 | 交易台账 | `pm/trade_journal/YYYY-MM-DD.md` |
 | LLM 研发/PM 日报 | `daily_reports/YYYY-MM-DD-rd-report.md` |
 | LLM 理财日报 | `daily_reports/YYYY-MM-DD-finance-report.md` |

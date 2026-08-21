@@ -1,6 +1,15 @@
 """银行股专用波段：池 + profile 切换（无行情依赖）。"""
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+
 from quant_core.bank_swing_pool import BANK_POOL, get_bank_pool, is_bank_code
 
 

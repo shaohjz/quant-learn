@@ -10,7 +10,7 @@ set PYTHONIOENCODING=utf-8
 REM fix: SYSTEM account has empty HOME and OpenSSH does not read admin .ssh,
 REM causing "Host key verification failed" on push. Point SSH at admin key/known_hosts explicitly.
 set HOME=C:\Users\Administrator
-set GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=C:\Users\Administrator\.ssh\known_hosts -i C:\Users\Administrator\.ssh\id_ed25519
+set GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=C:/Users/Administrator/.ssh/known_hosts -i C:/Users/Administrator/.ssh/id_ed25519
 
 if not exist output mkdir output
 

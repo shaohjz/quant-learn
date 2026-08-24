@@ -1,0 +1,183 @@
+{
+  "trade_date": "2026-08-24",
+  "generated_at": "2026-08-24 16:15:01",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 4,
+    "trades": 0,
+    "open_positions": 8
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 59545.27000000001,
+      "total_value": 92932.27,
+      "day_pnl": -46.0,
+      "day_pct": -0.049473925466670864,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "quantity": 1400,
+          "avg_cost": 9.977,
+          "current_price": 9.58,
+          "market_value": 13412.0,
+          "pnl": -555.8,
+          "pnl_pct": -3.9791520497143456,
+          "trailing_stop_price": 9.16
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600233",
+          "stock_name": "圆通速递",
+          "quantity": 500,
+          "avg_cost": 17.21,
+          "current_price": 17.36,
+          "market_value": 8680.0,
+          "pnl": 75.0,
+          "pnl_pct": 0.8715862870424088,
+          "trailing_stop_price": 15.83
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "quantity": 300,
+          "avg_cost": 38.877,
+          "current_price": 37.65,
+          "market_value": 11295.0,
+          "pnl": -368.1,
+          "pnl_pct": -3.1561077243614575,
+          "trailing_stop_price": 35.61
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 8556.8105,
+      "total_value": 47667.8105,
+      "day_pnl": -8.99949999999808,
+      "day_pct": -0.018876053158753868,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "002594",
+          "stock_name": "比亚迪",
+          "quantity": 100,
+          "avg_cost": 92.11,
+          "current_price": 90.66,
+          "market_value": 9066.0,
+          "pnl": -145.00000000000028,
+          "pnl_pct": -1.5742047551840277,
+          "trailing_stop_price": 87.5
+        },
+        {
+          "account_id": 3,
+          "stock_code": "002714",
+          "stock_name": "牧原股份",
+          "quantity": 200,
+          "avg_cost": 39.75,
+          "current_price": 38.83,
+          "market_value": 7766.0,
+          "pnl": -184.00000000000034,
+          "pnl_pct": -2.314465408805033,
+          "trailing_stop_price": 37.76
+        },
+        {
+          "account_id": 3,
+          "stock_code": "300014",
+          "stock_name": "亿纬锂能",
+          "quantity": 100,
+          "avg_cost": 56.0,
+          "current_price": 55.82,
+          "market_value": 5582.0,
+          "pnl": -17.99999999999997,
+          "pnl_pct": -0.3214285714285725,
+          "trailing_stop_price": 53.2
+        },
+        {
+          "account_id": 3,
+          "stock_code": "600309",
+          "stock_name": "万华化学",
+          "quantity": 100,
+          "avg_cost": 74.73,
+          "current_price": 73.19,
+          "market_value": 7319.0,
+          "pnl": -154.00000000000063,
+          "pnl_pct": -2.060752040679792,
+          "trailing_stop_price": 70.99
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601088",
+          "stock_name": "中国神华",
+          "quantity": 200,
+          "avg_cost": 44.65,
+          "current_price": 46.89,
+          "market_value": 9378.0,
+          "pnl": 448.0000000000004,
+          "pnl_pct": 5.01679731243001,
+          "trailing_stop_price": 42.42
+        }
+      ],
+      "nav_today": {
+        "id": 316,
+        "account_id": 3,
+        "trade_date": "2026-08-24",
+        "total_value": 47667.8105,
+        "cash": 8556.8105,
+        "market_value": 39111.0,
+        "daily_return": -0.00018876053158756179,
+        "cumulative_return": -0.04664378999999997,
+        "max_drawdown": null,
+        "created_at": "2026-08-24 08:05:34",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    },
+    {
+      "account_id": 4,
+      "label": "bank_swing",
+      "cash": 30000.0,
+      "total_value": 30000.0,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    }
+  ]
+}

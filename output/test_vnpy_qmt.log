@@ -1,9 +1,0 @@
-没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容
-2026-05-19 17:07:34.152 | INFO | MainEngine | 连接登录 -> QMT
-2026-05-19 17:07:34.571 | INFO | QMT | ✅ QMT trader 连接成功 acct=90072426 session=970525 dry_run=True
-2026-05-19 17:07:34,571 [INFO] test_vnpy_qmt | setting={'qmt_path': 'D:\\国金QMT交易端模拟\\userdata_mini', 'qmt_account': '90072426', 'session_id': 970525, 'xtquant_site_packages': 'D:\\国金QMT交易端模拟\\bin.x64\\Lib\\site-packages', 'dry_run': True}
-2026-05-19 17:07:34.573 | INFO | MainEngine | 订阅行情 -> QMT：SubscribeRequest(symbol='600330', exchange=<Exchange.SSE: 'SSE'>)
-2026-05-19 17:07:34,731 [INFO] test_vnpy_qmt | 等待 5 秒看是否有 tick / log ...
-2026-05-19 17:07:34.731 | INFO | QMT | 📡 订阅 600330.SH
-2026-05-19 17:07:39,732 [INFO] test_vnpy_qmt | 关闭 ...
-2026-05-19 17:07:40,080 [INFO] test_vnpy_qmt | ✅ 测试结束

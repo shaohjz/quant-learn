@@ -1,859 +1,0 @@
-===== [2026/05/25 ÖÜÒ»  7:50:02.49] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-05-25 07:50:03,002 [INFO] === Morning Scanner ¿ªÊ¼ 2026-05-25 ===
-2026-05-25 07:50:09,025 [INFO] »¦Éî300: 300 Ö»
-2026-05-25 07:50:13,922 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-05-25 07:50:13,922 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-05-25 07:50:13,922 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-05-25 07:50:37,303 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:12,  5.51it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:11,  5.94it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:11,  5.69it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:20,  3.20it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:16,  3.89it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:14,  4.42it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:12,  4.90it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:11,  5.22it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:01<00:11,  5.51it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:19,  3.03it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:16,  3.60it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:02<00:14,  4.14it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:19,  2.97it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:03<00:15,  3.53it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:04<00:18,  2.90it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:04<00:16,  3.34it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:04<00:21,  2.44it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:05<00:17,  2.98it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:05<00:14,  3.54it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:05<00:12,  4.06it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:05<00:10,  4.52it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:05<00:09,  4.93it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:08,  5.27it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:06<00:08,  5.52it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:06<00:07,  5.71it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:06<00:07,  5.79it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:06<00:07,  5.91it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:06<00:06,  6.02it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:07<00:15,  2.65it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:07<00:12,  3.20it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:07<00:10,  3.74it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:08<00:09,  4.14it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:08<00:08,  4.47it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:08<00:07,  4.88it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:08<00:06,  5.21it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:08<00:06,  5.46it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:09<00:10,  3.25it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:09<00:13,  2.38it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:11<00:18,  1.66it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:11<00:14,  2.13it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:11<00:13,  2.07it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:12<00:14,  1.95it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:12<00:11,  2.41it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:13<00:11,  2.20it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:13<00:11,  2.12it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:13<00:09,  2.62it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:14<00:10,  2.23it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:14<00:11,  1.98it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:15<00:10,  2.00it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:15<00:08,  2.48it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:16<00:08,  2.29it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:16<00:09,  1.89it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:17<00:11,  1.54it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:18<00:10,  1.59it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:19<00:09,  1.57it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:19<00:07,  2.00it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:19<00:07,  1.84it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:20<00:07,  1.69it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:21<00:06,  1.77it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:21<00:05,  1.80it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:22<00:04,  1.81it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:22<00:04,  1.68it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:23<00:04,  1.64it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:24<00:03,  1.61it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:24<00:03,  1.47it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:25<00:02,  1.90it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:25<00:01,  2.40it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:25<00:00,  2.05it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:26<00:00,  1.99it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:26<00:00,  2.61it/s]                                                                         2026-05-25 07:51:04,054 [INFO] ÊµÊ±ĞĞÇé: 5521 Ìõ
-2026-05-25 07:51:04,139 [INFO] ¹ıÂËºóÊ£Óà: 618 Ö»
-2026-05-25 07:51:48,187 [INFO] ½ø¶È 50/618, ÒÑºÄÊ± 44s
-Traceback (most recent call last):
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_with_fallback.py", line 25, in try_primary
-    p = subprocess.run(
-        ^^^^^^^^^^^^^^^
-  File "C:\Users\Administrator\scoop\apps\python311\current\Lib\subprocess.py", line 550, in run
-    stdout, stderr = process.communicate(input, timeout=timeout)
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Administrator\scoop\apps\python311\current\Lib\subprocess.py", line 1228, in communicate
-    sts = self.wait(timeout=self._remaining_time(endtime))
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Administrator\scoop\apps\python311\current\Lib\subprocess.py", line 1264, in wait
-    return self._wait(timeout=timeout)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Administrator\scoop\apps\python311\current\Lib\subprocess.py", line 1593, in _wait
-    raise TimeoutExpired(self.args, timeout)
-subprocess.TimeoutExpired: Command '['C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\.venv\\Scripts\\python.exe', '-u', 'C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\scripts\\morning_scanner.py']' timed out after 120.0 seconds
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_with_fallback.py", line 61, in <module>
-    main()
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_with_fallback.py", line 50, in main
-    if try_primary():
-       ^^^^^^^^^^^^^
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_with_fallback.py", line 32, in try_primary
-    print("[scanner-fallback] \u23f0 Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback", flush=True)
-UnicodeEncodeError: 'gbk' codec can't encode character '\u23f0' in position 19: illegal multibyte sequence
-===== [2026/05/25 ÖÜÒ»  7:52:02.76] market scanner END   ===== 
-===== [2026/05/26 ÖÜ¶ş  7:50:02.55] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-05-26 07:50:03,367 [INFO] === Morning Scanner ¿ªÊ¼ 2026-05-26 ===
-2026-05-26 07:50:09,426 [INFO] »¦Éî300: 300 Ö»
-2026-05-26 07:50:14,666 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-05-26 07:50:14,668 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-05-26 07:50:14,668 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-05-26 07:50:38,121 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:46,  1.49it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:01<00:39,  1.73it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:02<00:49,  1.34it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:02<00:34,  1.92it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:02<00:37,  1.72it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:03<00:42,  1.49it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:04<00:47,  1.33it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:05<00:44,  1.40it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:05<00:33,  1.84it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:06<00:31,  1.90it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:06<00:30,  1.90it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:07<00:32,  1.80it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:07<00:33,  1.73it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:08<00:31,  1.76it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:08<00:30,  1.80it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:09<00:30,  1.79it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:10<00:29,  1.81it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:10<00:22,  2.28it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:10<00:23,  2.16it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:11<00:29,  1.71it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:12<00:33,  1.45it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:12<00:25,  1.86it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:13<00:25,  1.81it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:13<00:20,  2.28it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:13<00:16,  2.77it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:13<00:13,  3.24it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:13<00:11,  3.71it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:14<00:10,  4.07it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:14<00:09,  4.43it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:14<00:13,  3.05it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:15<00:11,  3.50it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:15<00:09,  3.95it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:15<00:11,  3.13it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:16<00:13,  2.64it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:16<00:11,  3.11it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:16<00:09,  3.58it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:16<00:08,  4.03it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:16<00:07,  4.40it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:17<00:06,  4.67it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:17<00:05,  5.02it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:17<00:05,  5.16it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:17<00:05,  4.96it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:17<00:05,  4.61it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:18<00:05,  4.42it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:18<00:05,  4.41it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:18<00:05,  4.58it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:18<00:04,  4.78it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:19<00:04,  5.04it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:19<00:04,  5.23it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:19<00:03,  5.35it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:19<00:03,  5.46it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:19<00:03,  5.55it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:19<00:03,  5.40it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:20<00:02,  5.45it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:20<00:02,  5.55it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:20<00:02,  5.45it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:20<00:02,  5.48it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:20<00:02,  5.56it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:21<00:02,  5.46it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:21<00:01,  5.45it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:21<00:01,  5.48it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:22<00:02,  2.93it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:23<00:04,  1.70it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:23<00:02,  2.14it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:23<00:01,  2.60it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:23<00:01,  3.08it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:24<00:00,  3.49it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:24<00:00,  2.56it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:24<00:00,  3.02it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:25<00:00,  2.64it/s]                                                                         2026-05-26 07:51:03,697 [INFO] ÊµÊ±ĞĞÇé: 5521 Ìõ
-2026-05-26 07:51:03,794 [INFO] ¹ıÂËºóÊ£Óà: 626 Ö»
-2026-05-26 07:51:31,593 [INFO] ½ø¶È 50/626, ÒÑºÄÊ± 28s
-2026-05-26 07:51:52,507 [INFO] ½ø¶È 100/626, ÒÑºÄÊ± 49s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-05-26 07:52:04,384 [INFO] ¹ÉÆ±³Ø: 40 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 20
-2026-05-26 07:52:04,384 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-05-26 07:52:04,803 [INFO]   ÊµÊ±È¡µ½ 40/40
-2026-05-26 07:52:04,805 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-05-26 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   002067  æ™¯å…´çº¸ä¸š         5.35  +2.88%    80    25    25     5    25
-2   002405  å››ç»´å›¾æ–°         9.55  +0.95%    75    25    20     5    25
-3   600563  æ³•æ‹‰ç”µå­       172.43  -1.02%    75    25    25    10    15
-4   002453  åè½¯ç§‘æŠ€         6.35  +1.44%    74    19    10    20    25
-5   002906  åé˜³é›†å›¢        32.17  +0.34%    74    19    25     5    25
-6   300124  æ±‡å·æŠ€æœ¯        78.83  -0.20%    70    25    25     5    15
-7   301179  æ³½å®‡æ™ºèƒ½        26.21  +3.84%    70    25    20     5    20
-8   603290  æ–¯è¾¾åŠå¯¼       139.56  +5.93%    70    25    25    10    10
-9   002156  é€šå¯Œå¾®ç”µ        69.78  +9.99%    65    25    25    10     5
-10  600310  å¹¿è¥¿èƒ½æº         5.61 +10.00%    65    25    25    10     5
-11  600863  åèƒ½è’™ç”µ         5.93 +10.02%    65    25    25    10     5
-12  000600  å»ºæŠ•èƒ½æº        10.28  +1.48%    64    19    15     5    25
-13  601222  æ—æ´‹èƒ½æº         6.50  +0.31%    64    19    15     5    25
-14  605006  å±±ä¸œç»çº¤        16.29  +3.49%    64    19    10    15    20
-15  600021  ä¸Šæµ·ç”µåŠ›        18.54  +5.34%    60    25    20     5    10
-
-â±  ç”¨æ—¶ 3.8s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 125.3s
-===== [2026/05/26 ÖÜ¶ş  7:52:08.27] market scanner END   ===== 
-===== [2026/05/27 ÖÜÈı  7:50:02.32] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-05-27 07:50:02,909 [INFO] === Morning Scanner ¿ªÊ¼ 2026-05-27 ===
-2026-05-27 07:50:08,706 [INFO] »¦Éî300: 300 Ö»
-2026-05-27 07:50:13,735 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-05-27 07:50:13,735 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-05-27 07:50:13,735 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-05-27 07:50:38,146 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:11,  6.07it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:11,  5.94it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:22,  2.97it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:17,  3.71it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:15,  4.28it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:13,  4.73it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:19,  3.17it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:16,  3.73it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:21,  2.89it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:17,  3.39it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:03<00:28,  2.10it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:04<00:37,  1.56it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:04<00:28,  2.01it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:05<00:22,  2.48it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:05<00:27,  2.01it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:05<00:21,  2.50it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:06<00:17,  3.02it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:06<00:21,  2.44it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:07<00:31,  1.61it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:07<00:24,  2.07it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:08<00:27,  1.81it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:08<00:21,  2.28it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:09<00:16,  2.79it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:09<00:13,  3.34it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:09<00:17,  2.62it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:10<00:19,  2.28it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:10<00:20,  2.11it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:11<00:20,  2.02it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:11<00:20,  2.01it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:12<00:20,  1.99it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:12<00:19,  1.98it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:13<00:21,  1.73it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:14<00:20,  1.80it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:14<00:19,  1.85it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:15<00:22,  1.53it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:16<00:22,  1.48it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:16<00:21,  1.57it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:17<00:15,  2.00it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:17<00:15,  2.04it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:18<00:19,  1.56it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:18<00:14,  2.01it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:19<00:14,  1.99it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:20<00:16,  1.65it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:20<00:12,  2.09it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:20<00:09,  2.58it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:20<00:10,  2.33it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:21<00:08,  2.86it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:21<00:06,  3.40it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:21<00:07,  2.74it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:22<00:08,  2.28it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:23<00:10,  1.89it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:23<00:10,  1.71it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:24<00:11,  1.51it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:24<00:08,  1.95it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:25<00:06,  2.44it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:25<00:04,  2.96it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:25<00:03,  3.42it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:25<00:03,  3.93it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:26<00:05,  2.20it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:27<00:05,  1.98it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:27<00:04,  1.81it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:28<00:04,  1.84it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:28<00:03,  1.79it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:29<00:04,  1.40it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:30<00:03,  1.43it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:31<00:02,  1.47it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:31<00:01,  1.58it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:32<00:01,  1.56it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:33<00:00,  1.39it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:33<00:00,  1.87it/s]                                                                         2026-05-27 07:51:11,934 [INFO] ÊµÊ±ĞĞÇé: 5521 Ìõ
-2026-05-27 07:51:12,014 [INFO] ¹ıÂËºóÊ£Óà: 627 Ö»
-2026-05-27 07:51:35,048 [INFO] ½ø¶È 50/627, ÒÑºÄÊ± 23s
-2026-05-27 07:51:54,633 [INFO] ½ø¶È 100/627, ÒÑºÄÊ± 43s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-05-27 07:52:03,930 [INFO] ¹ÉÆ±³Ø: 41 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 21
-2026-05-27 07:52:03,930 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-05-27 07:52:04,296 [INFO]   ÊµÊ±È¡µ½ 41/41
-2026-05-27 07:52:04,296 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-05-27 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   002067  æ™¯å…´çº¸ä¸š         5.41  +1.12%    85    25    20    15    25
-2   300124  æ±‡å·æŠ€æœ¯        80.88  +2.60%    85    25    20    15    25
-3   603986  XDå…†æ˜“åˆ›      526.22  +2.21%    85    25    25    10    25
-4   600863  åèƒ½è’™ç”µ         6.10  +2.87%    80    25    20    10    25
-5   000600  å»ºæŠ•èƒ½æº        10.48  +1.95%    75    25    20     5    25
-6   002920  å¾·èµ›è¥¿å¨       109.69  +1.26%    74    19    25     5    25
-7   002156  é€šå¯Œå¾®ç”µ        75.39  +8.04%    70    25    25    15     5
-8   002906  åé˜³é›†å›¢        32.02  -0.47%    70    25    25     5    15
-9   600021  ä¸Šæµ·ç”µåŠ›        20.39  +9.98%    70    25    25    15     5
-10  600310  å¹¿è¥¿èƒ½æº         5.53  -1.43%    69    19    20    15    15
-11  605006  å±±ä¸œç»çº¤        17.92 +10.01%    65    25    25    10     5
-12  000708  ä¸­ä¿¡ç‰¹é’¢        14.55  +4.38%    56     6    10    20    20
-13  603290  æ–¯è¾¾åŠå¯¼       132.94  -4.74%    55    25    20     5     5
-14  002405  å››ç»´å›¾æ–°         9.42  -1.36%    54    19    15     5    15
-15  002453  åè½¯ç§‘æŠ€         6.25  -1.57%    54    19    10    10    15
-
-â±  ç”¨æ—¶ 5.1s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 126.4s
-===== [2026/05/27 ÖÜÈı  7:52:09.05] market scanner END   ===== 
-===== [2026/05/28 ÖÜËÄ  7:50:02.39] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-05-28 07:50:02,974 [INFO] === Morning Scanner ¿ªÊ¼ 2026-05-28 ===
-2026-05-28 07:50:08,727 [INFO] »¦Éî300: 300 Ö»
-2026-05-28 07:50:13,692 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-05-28 07:50:13,692 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-05-28 07:50:13,692 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-05-28 07:50:37,752 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:35,  1.93it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:21,  3.19it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:16,  3.96it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:14,  4.53it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:13,  4.96it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:22,  2.88it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:02<00:18,  3.45it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:22,  2.75it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:18,  3.30it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:15,  3.82it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:03<00:13,  4.32it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:12,  4.69it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:17,  3.20it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:04<00:20,  2.68it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:04<00:24,  2.23it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:05<00:25,  2.11it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:06<00:27,  1.91it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:06<00:28,  1.83it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:07<00:28,  1.78it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:07<00:27,  1.83it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:07<00:21,  2.32it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:08<00:27,  1.72it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:09<00:26,  1.79it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:09<00:20,  2.27it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:09<00:16,  2.79it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:09<00:13,  3.31it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:10<00:11,  3.81it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:10<00:09,  4.22it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:10<00:08,  4.59it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:10<00:08,  4.92it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:10<00:07,  5.23it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:11<00:12,  3.05it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:11<00:14,  2.63it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:12<00:11,  3.15it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:12<00:09,  3.69it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:12<00:08,  4.17it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:12<00:07,  4.49it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:12<00:06,  4.85it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:12<00:06,  5.10it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:13<00:05,  5.34it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:13<00:05,  5.51it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:13<00:04,  5.65it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:13<00:04,  5.77it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:13<00:04,  5.81it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:13<00:04,  5.85it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:14<00:04,  5.78it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:14<00:03,  5.86it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:14<00:03,  5.77it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:14<00:03,  5.80it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:14<00:03,  5.90it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:14<00:03,  5.96it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:15<00:04,  3.62it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:15<00:04,  4.06it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:15<00:03,  4.48it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:15<00:03,  4.83it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:16<00:02,  5.13it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:16<00:02,  5.36it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:16<00:02,  5.55it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:17<00:03,  3.41it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:17<00:03,  2.76it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:18<00:03,  2.45it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:18<00:03,  2.09it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:19<00:04,  1.71it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:20<00:03,  1.80it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:20<00:02,  2.28it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:20<00:01,  2.08it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:21<00:01,  2.11it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:21<00:01,  1.97it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:22<00:00,  1.99it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:22<00:00,  2.03it/s]                                                                         2026-05-28 07:51:00,773 [INFO] ÊµÊ±ĞĞÇé: 5523 Ìõ
-2026-05-28 07:51:00,856 [INFO] ¹ıÂËºóÊ£Óà: 646 Ö»
-2026-05-28 07:51:34,507 [INFO] ½ø¶È 50/646, ÒÑºÄÊ± 34s
-2026-05-28 07:52:02,089 [INFO] ½ø¶È 100/646, ÒÑºÄÊ± 61s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-05-28 07:52:04,023 [INFO] ¹ÉÆ±³Ø: 42 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 22
-2026-05-28 07:52:04,023 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-05-28 07:52:04,295 [INFO]   ÊµÊ±È¡µ½ 42/42
-2026-05-28 07:52:04,295 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-Traceback (most recent call last):
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_lite.py", line 240, in <module>
-    main()
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_lite.py", line 231, in main
-    print(render(results))
-          ^^^^^^^^^^^^^^^
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\scanner_lite.py", line 213, in render
-    f"{i:<4}{r['code']:<8}{r['name'][:6]:<10}{r['price']:>7.2f} "
-ValueError: Unknown format code 'd' for object of type 'float'
-[scanner-fallback] Á½ÌõÂ·¾¶¶¼Ê§°Ü£¬ÓÃÊ± 125.1s
-===== [2026/05/28 ÖÜËÄ  7:52:07.80] market scanner END   ===== 
-===== [2026/05/29 ÖÜÎå  7:50:02.47] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-05-29 07:50:02,922 [INFO] === Morning Scanner ¿ªÊ¼ 2026-05-29 ===
-2026-05-29 07:50:09,121 [INFO] »¦Éî300: 300 Ö»
-2026-05-29 07:50:14,099 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-05-29 07:50:14,099 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-05-29 07:50:14,099 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-05-29 07:50:38,318 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:11,  6.19it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:11,  5.72it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:11,  5.69it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:11,  5.77it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:11,  5.83it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:10,  5.83it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:10,  5.88it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:10,  5.84it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:01<00:10,  5.81it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:01<00:10,  5.76it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:01<00:10,  5.75it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:02<00:10,  5.75it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:02<00:09,  5.79it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:02<00:09,  5.78it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:02<00:14,  3.79it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:03<00:18,  2.93it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:03<00:15,  3.46it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:04<00:18,  2.82it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:04<00:20,  2.47it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:05<00:21,  2.33it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:05<00:17,  2.85it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:05<00:14,  3.36it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:06<00:18,  2.51it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:06<00:19,  2.30it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:07<00:20,  2.21it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:07<00:21,  2.04it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:08<00:22,  1.93it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:08<00:17,  2.41it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:08<00:17,  2.33it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:09<00:18,  2.15it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:09<00:18,  2.06it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:10<00:18,  2.09it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:11<00:19,  1.94it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:11<00:14,  2.43it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:11<00:15,  2.21it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:12<00:16,  2.12it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:12<00:16,  2.01it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:13<00:15,  2.06it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:13<00:16,  1.93it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:14<00:16,  1.85it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:15<00:16,  1.81it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:15<00:15,  1.81it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:15<00:11,  2.28it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:16<00:11,  2.22it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:16<00:12,  2.07it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:17<00:12,  1.93it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:18<00:12,  1.84it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:18<00:11,  1.89it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:19<00:11,  1.89it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:19<00:10,  1.94it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:20<00:10,  1.85it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:20<00:09,  1.92it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:21<00:08,  1.97it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:21<00:08,  1.86it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:21<00:06,  2.32it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:22<00:06,  2.06it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:23<00:06,  1.94it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:23<00:06,  1.84it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:24<00:05,  1.90it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:24<00:04,  2.37it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:24<00:03,  2.89it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:24<00:02,  3.43it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:25<00:02,  2.69it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:25<00:02,  2.50it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:26<00:02,  2.38it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:26<00:01,  2.02it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:26<00:01,  2.50it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:27<00:00,  2.40it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:28<00:00,  2.14it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:28<00:00,  2.22it/s]                                                                         2026-05-29 07:51:06,991 [INFO] ÊµÊ±ĞĞÇé: 5523 Ìõ
-2026-05-29 07:51:07,078 [INFO] ¹ıÂËºóÊ£Óà: 633 Ö»
-2026-05-29 07:51:21,945 [INFO] ½ø¶È 50/633, ÒÑºÄÊ± 15s
-2026-05-29 07:51:45,192 [INFO] ½ø¶È 100/633, ÒÑºÄÊ± 38s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-05-29 07:52:03,889 [INFO] ¹ÉÆ±³Ø: 44 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 24
-2026-05-29 07:52:03,889 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-05-29 07:52:04,598 [INFO]   ÊµÊ±È¡µ½ 44/44
-2026-05-29 07:52:04,598 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-05-29 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   600021  ä¸Šæµ·ç”µåŠ›        21.18  +2.87%  90.0  25.0  25.0  15.0  25.0
-2   000600  å»ºæŠ•èƒ½æº        12.10 +10.00%  75.0  25.0  25.0  20.0   5.0
-3   301120  æ–°ç‰¹ç”µæ°”        25.64  +6.74%  75.0  25.0  25.0  15.0  10.0
-4   600563  æ³•æ‹‰ç”µå­       176.77  +3.76%  75.0  25.0  25.0   5.0  20.0
-5   600863  åèƒ½è’™ç”µ         6.64  -1.04%  75.0  25.0  20.0  15.0  15.0
-6   600310  å¹¿è¥¿èƒ½æº         5.80  -0.34%  70.0  25.0  20.0  10.0  15.0
-7   603290  æ–¯è¾¾åŠå¯¼       143.00  +5.93%  70.0  25.0  25.0  10.0  10.0
-8   601222  æ—æ´‹èƒ½æº         6.48  +0.47%  65.0  25.0  10.0   5.0  25.0
-9   002475  ç«‹è®¯ç²¾å¯†        72.80  +1.69%  59.0  19.0  10.0   5.0  25.0
-10  600703  ä¸‰å®‰å…‰ç”µ        16.85  +1.44%  59.0  19.0   5.0  10.0  25.0
-11  300124  æ±‡å·æŠ€æœ¯        76.95  -1.47%  54.0  19.0  15.0   5.0  15.0
-12  000899  èµ£èƒ½è‚¡ä»½        14.04  +9.69%  53.0  13.0  10.0  25.0   5.0
-13  002594  æ¯”äºšè¿ª         95.88  +0.69%  52.0  12.0  10.0   5.0  25.0
-14  002290  ç¦¾ç››æ–°æ        96.11  +1.36%  49.0  19.0   0.0   5.0  25.0
-15  002405  å››ç»´å›¾æ–°         9.23  -1.39%  47.0  12.0  15.0   5.0  15.0
-
-â±  ç”¨æ—¶ 5.7s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 127.0s
-===== [2026/05/29 ÖÜÎå  7:52:09.68] market scanner END   ===== 
-===== [2026/06/08 ÖÜÒ»  7:50:02.27] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-06-08 07:50:02,833 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-08 ===
-2026-06-08 07:50:08,112 [INFO] »¦Éî300: 300 Ö»
-2026-06-08 07:50:13,258 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-06-08 07:50:13,259 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-06-08 07:50:13,259 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-06-08 07:50:39,397 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:15,  4.35it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:27,  2.47it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:01<00:42,  1.57it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:02<00:39,  1.68it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:02<00:28,  2.28it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:02<00:30,  2.12it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:03<00:30,  2.03it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:03<00:31,  1.99it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:04<00:24,  2.51it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:04<00:26,  2.29it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:05<00:29,  2.00it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:05<00:28,  2.02it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:06<00:28,  2.01it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:06<00:28,  1.98it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:07<00:27,  1.99it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:07<00:27,  1.98it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:07<00:21,  2.50it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:08<00:21,  2.38it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:08<00:22,  2.25it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:09<00:25,  1.92it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:10<00:27,  1.75it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:10<00:27,  1.76it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:11<00:21,  2.20it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:11<00:16,  2.74it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:11<00:17,  2.53it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:12<00:25,  1.73it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:12<00:19,  2.20it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:13<00:15,  2.73it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:13<00:17,  2.41it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:14<00:17,  2.29it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:14<00:13,  2.84it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:14<00:11,  3.36it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:14<00:09,  3.90it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:14<00:08,  4.37it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:15<00:11,  3.12it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:15<00:09,  3.66it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:15<00:11,  2.94it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:16<00:12,  2.58it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:16<00:09,  3.13it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:16<00:08,  3.67it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:16<00:06,  4.17it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:17<00:06,  4.63it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:17<00:05,  5.02it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:17<00:07,  3.49it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:18<00:08,  2.83it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:18<00:09,  2.51it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:19<00:09,  2.31it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:19<00:10,  2.03it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:20<00:12,  1.74it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:21<00:11,  1.79it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:22<00:14,  1.34it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:22<00:10,  1.76it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:22<00:07,  2.24it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:23<00:08,  1.95it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:23<00:06,  2.46it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:24<00:06,  2.22it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:24<00:04,  2.74it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:24<00:04,  2.42it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:24<00:03,  2.94it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:25<00:03,  2.57it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:25<00:02,  3.12it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:26<00:03,  2.63it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:26<00:03,  1.91it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:27<00:02,  2.41it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:27<00:01,  2.94it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:27<00:01,  3.48it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:27<00:00,  3.99it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:27<00:00,  4.45it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:27<00:00,  4.86it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:28<00:00,  5.59it/s]                                                                         2026-06-08 07:51:07,608 [INFO] ÊµÊ±ĞĞÇé: 5524 Ìõ
-2026-06-08 07:51:07,689 [INFO] ¹ıÂËºóÊ£Óà: 626 Ö»
-2026-06-08 07:51:38,145 [INFO] ½ø¶È 50/626, ÒÑºÄÊ± 30s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-06-08 07:52:03,969 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-06-08 07:52:03,969 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-06-08 07:52:04,292 [INFO]   ÊµÊ±È¡µ½ 39/39
-2026-06-08 07:52:04,292 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-06-08 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   600703  ä¸‰å®‰å…‰ç”µ        16.91  -0.88%  53.0  13.0   5.0  20.0  15.0
-2   002149  è¥¿éƒ¨ææ–™        65.00  +3.98%  51.0   6.0  10.0  15.0  20.0
-3   300124  æ±‡å·æŠ€æœ¯        75.08  +1.25%  51.0   6.0   5.0  15.0  25.0
-4   600563  æ³•æ‹‰ç”µå­       169.36  -1.39%  49.0  19.0   5.0  10.0  15.0
-5   603178  åœ£é¾™è‚¡ä»½        17.37  +2.00%  46.0   6.0   5.0  10.0  25.0
-6   000899  èµ£èƒ½è‚¡ä»½        13.73  -6.15%  44.0  19.0  15.0   5.0   5.0
-7   001896  è±«èƒ½æ§è‚¡        19.88 -10.00%  39.0  25.0  20.0  15.0   5.0
-8   002067  æ™¯å…´çº¸ä¸š         4.74  +0.85%  36.0   6.0   0.0   5.0  25.0
-9   002156  é€šå¯Œå¾®ç”µ        66.84  -5.99%  34.0  19.0   5.0   5.0   5.0
-10  000301  ä¸œæ–¹ç››è™¹        11.85  +1.98%  30.0   0.0   0.0   5.0  25.0
-11  002453  åè½¯ç§‘æŠ€         5.60  -0.18%  30.0   0.0   0.0  15.0  15.0
-12  603013  äºšæ™®è‚¡ä»½        18.45  -0.27%  30.0   0.0   0.0  15.0  15.0
-13  600310  å¹¿è¥¿èƒ½æº         5.66 -10.02%  29.4  19.0  15.0  10.0   5.0
-14  605006  å±±ä¸œç»çº¤        18.39  -0.22%  29.4  19.0   5.0  10.0  15.0
-15  603986  å…†æ˜“åˆ›æ–°       488.00  -7.80%  28.0  13.0   0.0  10.0   5.0
-
-â±  ç”¨æ—¶ 4.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 125.7s
-===== [2026/06/08 ÖÜÒ»  7:52:08.32] market scanner END   ===== 
-===== [2026/06/09 ÖÜ¶ş  7:50:02.30] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-06-09 07:50:02,932 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-09 ===
-2026-06-09 07:50:08,919 [INFO] »¦Éî300: 300 Ö»
-2026-06-09 07:50:14,363 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-06-09 07:50:14,363 [INFO] ¹ÉÆ±³Ø: 705 Ö»
-2026-06-09 07:50:14,363 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-06-09 07:50:36,930 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:11,  6.05it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:33,  2.03it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:01<00:34,  1.97it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:32,  2.06it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:02<00:30,  2.10it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:02<00:30,  2.07it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:03<00:32,  1.97it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:03<00:24,  2.49it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:03<00:20,  3.03it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:03<00:17,  3.48it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:04<00:18,  3.20it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:04<00:20,  2.90it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:05<00:23,  2.45it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:05<00:24,  2.29it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:06<00:26,  2.11it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:07<00:29,  1.81it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:07<00:23,  2.28it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:07<00:18,  2.79it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:08<00:24,  2.12it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:08<00:24,  2.05it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:08<00:19,  2.54it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:08<00:15,  3.09it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:10<00:26,  1.79it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:10<00:22,  2.02it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:11<00:27,  1.61it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:11<00:26,  1.68it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:12<00:20,  2.13it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:12<00:16,  2.61it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:12<00:13,  3.08it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:12<00:15,  2.64it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:13<00:12,  3.12it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:13<00:10,  3.63it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:13<00:12,  2.88it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:14<00:10,  3.33it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:14<00:09,  3.80it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:14<00:08,  4.09it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:14<00:10,  3.21it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:15<00:09,  3.53it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:15<00:07,  3.95it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:15<00:11,  2.63it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:16<00:09,  3.18it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:16<00:07,  3.72it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:17<00:11,  2.33it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:17<00:12,  2.15it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:18<00:12,  2.05it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:19<00:16,  1.42it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:19<00:14,  1.55it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:20<00:13,  1.63it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:20<00:11,  1.85it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:20<00:08,  2.32it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:21<00:07,  2.41it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:21<00:07,  2.29it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:22<00:06,  2.43it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:22<00:07,  2.01it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:23<00:05,  2.50it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:23<00:06,  2.32it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:24<00:06,  2.08it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:25<00:10,  1.18it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:26<00:08,  1.33it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:26<00:05,  1.70it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:26<00:04,  2.15it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:27<00:05,  1.47it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:28<00:04,  1.61it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:28<00:03,  1.65it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:29<00:03,  1.53it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:30<00:02,  1.61it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:30<00:01,  2.04it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:30<00:00,  2.01it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:31<00:00,  2.48it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:31<00:00,  2.44it/s]                                                                         2026-06-09 07:51:08,806 [INFO] ÊµÊ±ĞĞÇé: 5525 Ìõ
-2026-06-09 07:51:08,894 [INFO] ¹ıÂËºóÊ£Óà: 608 Ö»
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-06-09 07:52:03,689 [WARNING] ¶Á sim DB Ê§°Ü: no such table: sim_positions
-2026-06-09 07:52:03,689 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-06-09 07:52:03,689 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-06-09 07:52:04,000 [INFO]   ÊµÊ±È¡µ½ 39/39
-2026-06-09 07:52:04,001 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-06-09 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   600703  ä¸‰å®‰å…‰ç”µ        16.45  -2.72%  39.0  19.0   5.0  10.0   5.0
-2   000899  èµ£èƒ½è‚¡ä»½        12.76  -7.06%  37.0  12.0  15.0   5.0   5.0
-3   001896  è±«èƒ½æ§è‚¡        19.60  -1.41%  35.4  19.0  15.0  10.0  15.0
-4   002920  å¾·èµ›è¥¿å¨        94.92  +0.53%  30.0   0.0   0.0   5.0  25.0
-5   300124  æ±‡å·æŠ€æœ¯        74.52  -0.75%  30.0   0.0   0.0  15.0  15.0
-6   000600  å»ºæŠ•èƒ½æº        10.75  -6.36%  22.2  12.0  15.0   5.0   5.0
-7   600310  å¹¿è¥¿èƒ½æº         5.23  -7.60%  22.2  12.0  15.0   5.0   5.0
-8   002149  è¥¿éƒ¨ææ–™        63.38  -2.49%  21.0   6.0   5.0   5.0   5.0
-9   002594  æ¯”äºšè¿ª         91.19  -1.96%  20.0   0.0   0.0   5.0  15.0
-10  002906  åé˜³é›†å›¢        27.42  -3.25%  20.0   0.0   0.0  15.0   5.0
-11  300059  ä¸œæ–¹è´¢å¯Œ        17.72  -4.32%  20.0   0.0   0.0  15.0   5.0
-12  600130  æ³¢å¯¼è‚¡ä»½         4.72  -1.26%  20.0   0.0   0.0   5.0  15.0
-13  601012  éš†åŸºç»¿èƒ½        12.44  -5.26%  20.0   0.0   0.0  15.0   5.0
-14  600021  ä¸Šæµ·ç”µåŠ›        17.71  -8.71%  16.0   6.0   0.0   5.0   5.0
-15  002453  åè½¯ç§‘æŠ€         5.27  -5.89%  15.0   0.0   0.0  10.0   5.0
-
-â±  ç”¨æ—¶ 3.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 124.4s
-===== [2026/06/09 ÖÜ¶ş  7:52:07.04] market scanner END   ===== 
-===== [2026/06/15 ÖÜÒ»  7:50:02.49] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-06-15 07:50:03,241 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-15 ===
-2026-06-15 07:50:10,392 [INFO] »¦Éî300: 300 Ö»
-2026-06-15 07:50:15,475 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-06-15 07:50:15,475 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-06-15 07:50:15,475 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-06-15 07:50:39,578 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:34,  2.02it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:01<00:34,  1.98it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:01<00:23,  2.86it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:18,  3.64it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:22,  2.88it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:02<00:24,  2.63it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:02<00:26,  2.36it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:03<00:27,  2.23it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:03<00:27,  2.20it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:04<00:39,  1.52it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:04<00:29,  2.00it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:05<00:22,  2.54it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:05<00:18,  3.12it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:05<00:15,  3.72it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:05<00:12,  4.27it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:06<00:17,  3.10it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:06<00:19,  2.69it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:06<00:15,  3.27it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:07<00:19,  2.68it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:07<00:20,  2.46it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:08<00:29,  1.65it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:09<00:22,  2.12it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:09<00:17,  2.66it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:09<00:18,  2.46it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:10<00:19,  2.28it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:10<00:20,  2.17it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:11<00:19,  2.16it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:11<00:20,  2.06it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:12<00:22,  1.82it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:12<00:17,  2.33it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:13<00:17,  2.23it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:13<00:13,  2.78it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:13<00:18,  2.03it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:14<00:17,  2.03it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:14<00:17,  2.03it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:15<00:16,  2.05it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:16<00:17,  1.90it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:16<00:20,  1.55it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:17<00:15,  2.01it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:17<00:15,  1.99it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:17<00:11,  2.52it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:18<00:12,  2.33it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:18<00:12,  2.19it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:19<00:12,  2.07it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:19<00:12,  2.06it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:20<00:12,  1.91it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:20<00:11,  1.95it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:21<00:08,  2.47it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:22<00:12,  1.71it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:22<00:09,  2.20it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:23<00:11,  1.72it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:23<00:08,  2.21it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:23<00:08,  2.08it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:23<00:06,  2.61it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:24<00:06,  2.31it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:25<00:06,  2.14it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:25<00:06,  2.04it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:26<00:05,  2.02it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:26<00:05,  1.92it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:27<00:05,  1.93it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:27<00:04,  1.95it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:28<00:04,  1.84it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:28<00:02,  2.35it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:29<00:02,  2.11it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:29<00:02,  2.09it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:30<00:01,  2.08it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:30<00:01,  1.88it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:31<00:01,  1.96it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:31<00:00,  2.47it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:31<00:00,  2.16it/s]                                                                         2026-06-15 07:51:11,817 [INFO] ÊµÊ±ĞĞÇé: 5526 Ìõ
-2026-06-15 07:51:11,916 [INFO] ¹ıÂËºóÊ£Óà: 649 Ö»
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-06-15 07:52:04,207 [WARNING] ¶Á sim DB Ê§°Ü: no such table: sim_positions
-2026-06-15 07:52:04,207 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-06-15 07:52:04,207 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-06-15 07:52:04,569 [INFO]   ÊµÊ±È¡µ½ 39/39
-2026-06-15 07:52:04,569 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-06-15 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   603260  åˆç››ç¡…ä¸š        43.36  +4.73%  74.0  19.0  20.0  15.0  20.0
-2   000708  ä¸­ä¿¡ç‰¹é’¢        14.07  +1.74%  68.0  13.0  10.0  20.0  25.0
-3   601222  æ—æ´‹èƒ½æº         6.23  +2.81%  61.0   6.0  10.0  20.0  25.0
-4   002428  äº‘å—é”—ä¸š        92.26  +4.56%  58.0  13.0  10.0  15.0  20.0
-5   000301  ä¸œæ–¹ç››è™¹        11.88  +2.33%  56.0   6.0  10.0  15.0  25.0
-6   002594  æ¯”äºšè¿ª         91.60  +2.00%  56.0   6.0  10.0  15.0  25.0
-7   002709  å¤©èµææ–™        49.64  +2.43%  56.0   6.0  10.0  15.0  25.0
-8   300059  ä¸œæ–¹è´¢å¯Œ        18.00  +3.69%  51.0   6.0   5.0  20.0  20.0
-9   300750  å®å¾·æ—¶ä»£       394.85  +3.31%  51.0   6.0  10.0  15.0  20.0
-10  000899  èµ£èƒ½è‚¡ä»½        13.27  +3.59%  42.0  12.0   5.0   5.0  20.0
-11  001896  è±«èƒ½æ§è‚¡        21.80  +2.78%  39.0  25.0  10.0   5.0  25.0
-12  603986  å…†æ˜“åˆ›æ–°       481.47  -0.42%  38.0  13.0   0.0  10.0  15.0
-13  605006  å±±ä¸œç»çº¤        20.59  -7.50%  36.0  25.0  20.0  10.0   5.0
-14  000967  ç›ˆå³°ç¯å¢ƒ         9.85  +0.10%  35.0   0.0   0.0  10.0  25.0
-15  301179  æ³½å®‡æ™ºèƒ½        19.99  +0.45%  35.0   0.0   0.0  10.0  25.0
-
-â±  ç”¨æ—¶ 40.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 161.8s
-===== [2026/06/15 ÖÜÒ»  7:52:44.55] market scanner END   ===== 
-===== [2026/06/17 ÖÜÈı  7:50:02.59] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-06-17 07:50:03,303 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-17 ===
-2026-06-17 07:50:10,100 [INFO] »¦Éî300: 300 Ö»
-2026-06-17 07:50:15,221 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-06-17 07:50:15,222 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-06-17 07:50:15,222 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-06-17 07:50:38,796 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:11,  6.00it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.34it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.22it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:19,  3.41it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:15,  4.07it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:13,  4.60it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:19,  3.20it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:27,  2.24it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:21,  2.82it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:17,  3.42it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:03<00:14,  3.99it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:13,  4.41it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:11,  4.86it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:03<00:10,  5.25it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:03<00:09,  5.60it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:03<00:09,  5.86it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:03<00:08,  6.00it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:04<00:08,  6.15it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:04<00:08,  6.26it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:04<00:07,  6.25it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:04<00:12,  3.87it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:05<00:15,  3.06it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:18,  2.60it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:06<00:19,  2.34it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:06<00:20,  2.23it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:07<00:20,  2.12it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:08<00:22,  1.95it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:08<00:17,  2.45it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:08<00:17,  2.33it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:09<00:19,  2.10it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:09<00:18,  2.15it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:10<00:17,  2.17it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:10<00:16,  2.18it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:11<00:16,  2.22it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:11<00:12,  2.74it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:11<00:15,  2.19it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:12<00:15,  2.10it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:12<00:12,  2.62it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:13<00:13,  2.35it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:13<00:10,  2.89it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:13<00:08,  3.46it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:13<00:09,  2.90it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:14<00:10,  2.49it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:15<00:11,  2.20it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:15<00:09,  2.67it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:15<00:07,  3.25it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:15<00:06,  3.81it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:15<00:05,  4.36it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:15<00:04,  4.79it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:15<00:03,  5.20it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:16<00:03,  5.47it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:16<00:03,  5.53it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:16<00:03,  5.44it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:16<00:02,  5.58it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:16<00:02,  5.82it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:17<00:04,  3.31it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:17<00:04,  2.84it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:18<00:05,  2.35it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:19<00:05,  2.20it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:19<00:04,  2.08it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:20<00:04,  2.01it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:20<00:03,  2.07it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:21<00:03,  2.03it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:21<00:02,  2.09it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:22<00:02,  1.80it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:22<00:02,  1.84it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:23<00:02,  1.50it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:24<00:01,  1.59it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:24<00:00,  1.66it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:24<00:00,  2.19it/s]                                                                         2026-06-17 07:51:03,922 [INFO] ÊµÊ±ĞĞÇé: 5527 Ìõ
-2026-06-17 07:51:04,022 [INFO] ¹ıÂËºóÊ£Óà: 642 Ö»
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-06-17 07:52:04,396 [INFO] ¹ÉÆ±³Ø: 40 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 20
-2026-06-17 07:52:04,397 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-06-17 07:52:04,746 [INFO]   ÊµÊ±È¡µ½ 40/40
-2026-06-17 07:52:04,747 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-06-17 07:54)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   002428  äº‘å—é”—ä¸š       101.20  -0.29%  75.0  25.0  20.0  15.0  15.0
-2   603260  åˆç››ç¡…ä¸š        51.03 +10.00%  75.0  25.0  25.0  20.0   5.0
-3   603986  å…†æ˜“åˆ›æ–°       532.76  +2.85%  70.0  25.0  10.0  10.0  25.0
-4   000600  å»ºæŠ•èƒ½æº        10.51  +2.64%  62.0  12.0  10.0  15.0  25.0
-5   605006  å±±ä¸œç»çº¤        23.98 +10.00%  60.0  25.0  25.0   5.0   5.0
-6   300059  ä¸œæ–¹è´¢å¯Œ        19.12  +1.22%  58.0  13.0  10.0  10.0  25.0
-7   000301  ä¸œæ–¹ç››è™¹        12.45  -2.43%  54.0  19.0  20.0  10.0   5.0
-8   002709  å¤©èµææ–™        52.28  +6.65%  54.0  19.0  10.0  15.0  10.0
-9   600330  å¤©é€šè‚¡ä»½        32.39  +4.69%  54.0  19.0  10.0   5.0  20.0
-10  603290  XDæ–¯è¾¾åŠ      124.45  +7.02%  54.0  19.0  10.0  20.0   5.0
-11  002156  é€šå¯Œå¾®ç”µ        62.93  +2.26%  51.0   6.0  10.0  10.0  25.0
-12  300750  å®å¾·æ—¶ä»£       403.53  +1.36%  51.0   6.0  10.0  10.0  25.0
-13  603178  åœ£é¾™è‚¡ä»½        17.01  +1.73%  51.0   6.0  10.0  10.0  25.0
-14  600703  ä¸‰å®‰å…‰ç”µ        16.84  +9.99%  49.0  19.0  10.0  15.0   5.0
-15  000967  ç›ˆå³°ç¯å¢ƒ        10.35  +0.10%  46.0   6.0  10.0   5.0  25.0
-
-â±  ç”¨æ—¶ 172.7s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 294.3s
-===== [2026/06/17 ÖÜÈı  7:54:57.19] market scanner END   ===== 
-===== [2026/06/24 ÖÜÈı  7:50:02.34] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-06-24 07:50:03,026 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-24 ===
-2026-06-24 07:50:08,102 [WARNING] À­»¦Éî300 Ê§°Ü: HTTPSConnectionPool(host='vip.stock.finance.sina.com.cn', port=443): Max retries exceeded with url: /corp/go.php/vII_NewestComponent/indexid/000300.phtml (Caused by NameResolutionError("HTTPSConnection(host='vip.stock.finance.sina.com.cn', port=443): Failed to resolve 'vip.stock.finance.sina.com.cn' ([Errno 11001] getaddrinfo failed)"))
-2026-06-24 07:50:13,354 [WARNING] À­ÖĞÖ¤500 Ê§°Ü: HTTPSConnectionPool(host='vip.stock.finance.sina.com.cn', port=443): Max retries exceeded with url: /corp/go.php/vII_NewestComponent/indexid/000905.phtml (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-2026-06-24 07:50:13,354 [INFO] ¹ÉÆ±³Ø: 0 Ö»
-2026-06-24 07:50:13,354 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-06-24 07:51:19,691 [WARNING] ¶«²Æ spot_em Ê§°Ü: HTTPSConnectionPool(host='82.push2.eastmoney.com', port=443): Max retries exceeded with url: /api/qt/clist/get?pn=1&pz=100&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6%2Cf7%2Cf8%2Cf9%2Cf10%2Cf12%2Cf13%2Cf14%2Cf15%2Cf16%2Cf17%2Cf18%2Cf20%2Cf21%2Cf23%2Cf24%2Cf25%2Cf22%2Cf11%2Cf62%2Cf128%2Cf136%2Cf115%2Cf152 (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))£¬ÇĞĞÂÀË
-2026-06-24 07:51:24,716 [ERROR] ĞÂÀË spot Ò²Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-Traceback (most recent call last):
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 466, in <module>
-    main()
-    ~~~~^^
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 368, in main
-    spot_df = fetch_all_realtime()
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 142, in fetch_all_realtime
-    raise RuntimeError("¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü")
-RuntimeError: ¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-06-24 07:51:26,099 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-06-24 07:51:26,099 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-06-24 07:51:31,354 [ERROR] ĞÂÀËÊµÊ±ĞĞÇéÈ«Ê§°Ü£¡
-âŒ æ‰«ææ— ç»“æœ
-
-â±  ç”¨æ—¶ 5.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 88.9s
-===== [2026/06/24 ÖÜÈı  7:51:31.45] market scanner END   ===== 
-===== [2026/06/25 ÖÜËÄ  7:50:01.74] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-06-25 07:50:02,226 [INFO] === Morning Scanner ¿ªÊ¼ 2026-06-25 ===
-2026-06-25 07:50:10,822 [WARNING] À­»¦Éî300 Ê§°Ü: HTTPSConnectionPool(host='vip.stock.finance.sina.com.cn', port=443): Max retries exceeded with url: /corp/go.php/vII_NewestComponent/indexid/000300.phtml (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-2026-06-25 07:50:16,020 [WARNING] À­ÖĞÖ¤500 Ê§°Ü: HTTPSConnectionPool(host='vip.stock.finance.sina.com.cn', port=443): Max retries exceeded with url: /corp/go.php/vII_NewestComponent/indexid/000905.phtml (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))
-2026-06-25 07:50:16,020 [INFO] ¹ÉÆ±³Ø: 0 Ö»
-2026-06-25 07:50:16,020 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-06-25 07:51:24,021 [WARNING] ¶«²Æ spot_em Ê§°Ü: HTTPSConnectionPool(host='82.push2.eastmoney.com', port=443): Max retries exceeded with url: /api/qt/clist/get?pn=1&pz=100&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f12&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048&fields=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6%2Cf7%2Cf8%2Cf9%2Cf10%2Cf12%2Cf13%2Cf14%2Cf15%2Cf16%2Cf17%2Cf18%2Cf20%2Cf21%2Cf23%2Cf24%2Cf25%2Cf22%2Cf11%2Cf62%2Cf128%2Cf136%2Cf115%2Cf152 (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)')))£¬ÇĞĞÂÀË
-2026-06-25 07:51:29,041 [ERROR] ĞÂÀË spot Ò²Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-Traceback (most recent call last):
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 466, in <module>
-    main()
-    ~~~~^^
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 368, in main
-    spot_df = fetch_all_realtime()
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 142, in fetch_all_realtime
-    raise RuntimeError("¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü")
-RuntimeError: ¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-06-25 07:51:30,774 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-06-25 07:51:30,774 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-06-25 07:51:36,007 [ERROR] ĞÂÀËÊµÊ±ĞĞÇéÈ«Ê§°Ü£¡
-âŒ æ‰«ææ— ç»“æœ
-
-â±  ç”¨æ—¶ 5.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 94.2s
-===== [2026/06/25 ÖÜËÄ  7:51:36.11] market scanner END   ===== 
-===== [2026/06/29 ÖÜÒ»  7:50:01.18] market scanner START ===== 
-ÏµÍ³ÕÒ²»µ½Ö¸¶¨µÄÂ·¾¶¡£
-===== [2026/06/29 ÖÜÒ»  7:50:01.19] market scanner END   ===== 
-===== [2026/06/30 ÖÜ¶ş  7:50:01.25] market scanner START ===== 
-ÏµÍ³ÕÒ²»µ½Ö¸¶¨µÄÂ·¾¶¡£
-===== [2026/06/30 ÖÜ¶ş  7:50:01.25] market scanner END   ===== 
-===== [2026/07/01 ÖÜÈı  7:50:01.30] market scanner START ===== 
-ÏµÍ³ÕÒ²»µ½Ö¸¶¨µÄÂ·¾¶¡£
-===== [2026/07/01 ÖÜÈı  7:50:01.30] market scanner END   ===== 
-===== [2026/07/02 ÖÜËÄ  7:50:01.41] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-02 07:50:01,820 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-02 ===
-2026-07-02 07:50:08,938 [INFO] »¦Éî300: 300 Ö»
-2026-07-02 07:50:13,716 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-02 07:50:13,717 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-02 07:50:13,717 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-  0%|          | 0/58 [00:00<?, ?it/s]  2%|¨‡         | 1/58 [00:01<00:59,  1.05s/it]  3%|¨†         | 2/58 [00:02<00:58,  1.04s/it]  5%|¨„         | 3/58 [00:03<01:09,  1.26s/it]  7%|¨ƒ         | 4/58 [00:05<01:11,  1.32s/it]  9%|¨‚         | 5/58 [00:06<01:10,  1.33s/it] 10%|¨€         | 6/58 [00:08<01:19,  1.53s/it] 12%|¨€¨‡        | 7/58 [00:10<01:22,  1.61s/it] 14%|¨€¨…        | 8/58 [00:11<01:17,  1.55s/it] 16%|¨€¨„        | 9/58 [00:15<01:51,  2.28s/it] 17%|¨€¨ƒ        | 10/58 [00:16<01:34,  1.98s/it] 19%|¨€¨        | 11/58 [00:20<02:02,  2.61s/it] 21%|¨€¨€        | 12/58 [00:22<01:51,  2.43s/it] 22%|¨€¨€¨‡       | 13/58 [00:24<01:39,  2.21s/it] 24%|¨€¨€¨…       | 14/58 [00:26<01:31,  2.08s/it] 26%|¨€¨€¨„       | 15/58 [00:27<01:16,  1.77s/it] 28%|¨€¨€¨‚       | 16/58 [00:29<01:15,  1.80s/it] 29%|¨€¨€¨       | 17/58 [00:36<02:18,  3.37s/it] 31%|¨€¨€¨€       | 18/58 [00:37<01:48,  2.72s/it] 33%|¨€¨€¨€¨†      | 19/58 [00:38<01:30,  2.32s/it] 34%|¨€¨€¨€¨…      | 20/58 [00:40<01:24,  2.22s/it] 36%|¨€¨€¨€¨„      | 21/58 [00:42<01:16,  2.08s/it] 38%|¨€¨€¨€¨‚      | 22/58 [00:44<01:11,  2.00s/it] 40%|¨€¨€¨€¨      | 23/58 [00:46<01:08,  1.97s/it] 41%|¨€¨€¨€¨€¨‡     | 24/58 [00:49<01:18,  2.30s/it] 43%|¨€¨€¨€¨€¨†     | 25/58 [00:50<01:03,  1.92s/it] 45%|¨€¨€¨€¨€¨…     | 26/58 [00:51<00:52,  1.65s/it] 47%|¨€¨€¨€¨€¨ƒ     | 27/58 [00:52<00:46,  1.50s/it] 48%|¨€¨€¨€¨€¨‚     | 28/58 [00:53<00:43,  1.45s/it] 50%|¨€¨€¨€¨€¨€     | 29/58 [00:55<00:42,  1.46s/it] 52%|¨€¨€¨€¨€¨€¨‡    | 30/58 [01:00<01:09,  2.49s/it] 53%|¨€¨€¨€¨€¨€¨†    | 31/58 [01:02<01:02,  2.30s/it] 55%|¨€¨€¨€¨€¨€¨„    | 32/58 [01:05<01:09,  2.66s/it] 57%|¨€¨€¨€¨€¨€¨ƒ    | 33/58 [01:09<01:18,  3.13s/it] 59%|¨€¨€¨€¨€¨€¨‚    | 34/58 [01:14<01:24,  3.52s/it] 60%|¨€¨€¨€¨€¨€¨€    | 35/58 [01:15<01:03,  2.78s/it] 62%|¨€¨€¨€¨€¨€¨€¨‡   | 36/58 [01:16<00:52,  2.37s/it] 64%|¨€¨€¨€¨€¨€¨€¨…   | 37/58 [01:23<01:19,  3.81s/it] 66%|¨€¨€¨€¨€¨€¨€¨„   | 38/58 [01:25<01:03,  3.18s/it] 67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 39/58 [01:27<00:52,  2.76s/it]                                                 0%|          | 0/58 [00:00<?, ?it/s]  2%|¨‡         | 1/58 [00:04<04:01,  4.24s/it]  3%|¨†         | 2/58 [00:05<02:31,  2.71s/it][scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-02 07:52:03,042 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-07-02 07:52:03,042 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-02 07:52:03,361 [INFO]   ÊµÊ±È¡µ½ 39/39
-2026-07-02 07:52:03,361 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-02 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   300059  ä¸œæ–¹è´¢å¯Œ        21.45  +5.25%  75.0  25.0  25.0  15.0  10.0
-2   603290  æ–¯è¾¾åŠå¯¼       151.89  -0.69%  75.0  25.0  20.0  15.0  15.0
-3   002709  å¤©èµææ–™        54.47  +5.91%  64.0  19.0  20.0  15.0  10.0
-4   601012  éš†åŸºç»¿èƒ½        13.19  +0.53%  64.0  19.0  10.0  10.0  25.0
-5   301179  æ³½å®‡æ™ºèƒ½        20.93  +2.30%  62.0  12.0  20.0   5.0  25.0
-6   603986  å…†æ˜“åˆ›æ–°       772.01  -5.27%  49.0  19.0  15.0  10.0   5.0
-7   000301  ä¸œæ–¹ç››è™¹        12.02  +4.98%  48.0  13.0  10.0   5.0  20.0
-8   002067  æ™¯å…´çº¸ä¸š         3.79  +2.99%  46.0   6.0   5.0  10.0  25.0
-9   002256  å…†æ–°è‚¡ä»½         3.73  +2.75%  46.0   6.0   5.0  10.0  25.0
-10  300124  æ±‡å·æŠ€æœ¯        68.20  +2.82%  46.0   6.0   5.0  10.0  25.0
-11  600310  å¹¿è¥¿èƒ½æº         4.26  +0.95%  46.0   6.0  10.0   5.0  25.0
-12  603013  äºšæ™®è‚¡ä»½        16.01  +1.39%  46.0   6.0   5.0  10.0  25.0
-13  002156  é€šå¯Œå¾®ç”µ        73.91  -2.58%  44.0  19.0  15.0   5.0   5.0
-14  600563  æ³•æ‹‰ç”µå­       182.55  -4.32%  44.0  19.0  15.0   5.0   5.0
-15  600703  ä¸‰å®‰å…‰ç”µ        19.84  -6.50%  44.0  19.0  15.0   5.0   5.0
-
-â±  ç”¨æ—¶ 22.6s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 144.2s
-===== [2026/07/02 ÖÜËÄ  7:52:25.72] market scanner END   ===== 
-===== [2026/07/03 ÖÜÎå  7:50:01.39] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-03 07:50:01,931 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-03 ===
-2026-07-03 07:50:08,322 [INFO] »¦Éî300: 300 Ö»
-2026-07-03 07:50:13,214 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-03 07:50:13,214 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-03 07:50:13,214 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-03 07:50:37,621 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.35it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.23it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.15it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:10,  6.19it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:10,  6.13it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:00<00:10,  6.17it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:10,  6.15it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:09,  6.23it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:01<00:09,  6.21it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:01<00:09,  6.27it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:01<00:09,  6.32it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:02<00:12,  4.56it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:02<00:11,  4.98it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:02<00:10,  5.10it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:02<00:10,  5.44it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:02<00:09,  5.70it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:02<00:09,  5.89it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:03<00:13,  3.80it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:03<00:16,  3.02it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:04<00:18,  2.70it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:04<00:20,  2.41it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:05<00:21,  2.20it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:21,  2.15it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:06<00:20,  2.25it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:06<00:18,  2.37it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:07<00:19,  2.30it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:07<00:15,  2.83it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:08<00:21,  1.91it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:08<00:16,  2.42it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:08<00:18,  2.20it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:09<00:14,  2.74it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:09<00:11,  3.29it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:09<00:09,  3.83it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:09<00:08,  4.29it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:09<00:07,  4.73it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:09<00:06,  5.11it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:10<00:06,  5.47it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:10<00:05,  5.63it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:10<00:05,  5.78it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:10<00:05,  5.94it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:10<00:04,  6.09it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:10<00:04,  6.10it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:11<00:04,  6.12it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:11<00:04,  6.11it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:11<00:04,  5.88it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:11<00:04,  6.00it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:11<00:03,  6.07it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:11<00:03,  5.98it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:12<00:03,  6.03it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:12<00:03,  6.08it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:12<00:03,  6.06it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:12<00:02,  6.11it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:12<00:02,  6.14it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:12<00:02,  5.88it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:13<00:02,  6.04it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:13<00:02,  6.11it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:13<00:02,  6.07it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:13<00:01,  6.08it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:13<00:01,  6.17it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:13<00:01,  6.22it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:13<00:01,  6.27it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:14<00:01,  6.30it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:14<00:01,  6.11it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:14<00:00,  6.20it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:14<00:00,  6.27it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:14<00:00,  6.26it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:15<00:00,  3.64it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:15<00:00,  4.16it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:15<00:00,  4.64it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:15<00:00,  5.44it/s]                                                                         2026-07-03 07:50:53,576 [INFO] ÊµÊ±ĞĞÇé: 5529 Ìõ
-2026-07-03 07:50:53,685 [INFO] ¹ıÂËºóÊ£Óà: 616 Ö»
-2026-07-03 07:51:34,576 [INFO] ½ø¶È 50/616, ÒÑºÄÊ± 41s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-03 07:52:02,932 [INFO] ¹ÉÆ±³Ø: 39 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 19
-2026-07-03 07:52:02,932 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-03 07:52:03,239 [INFO]   ÊµÊ±È¡µ½ 39/39
-2026-07-03 07:52:03,239 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-03 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   002709  å¤©èµææ–™        54.84  +0.68%  79.0  19.0  20.0  15.0  25.0
-2   603757  å¤§å…ƒæ³µä¸š        74.07  +1.77%  75.0  25.0  20.0   5.0  25.0
-3   300059  ä¸œæ–¹è´¢å¯Œ        20.73  -3.36%  55.0  25.0  20.0   5.0   5.0
-4   000301  ä¸œæ–¹ç››è™¹        12.12  +0.83%  53.0  13.0  10.0   5.0  25.0
-5   002067  æ™¯å…´çº¸ä¸š         3.82  +0.79%  51.0   6.0  10.0  10.0  25.0
-6   002594  æ¯”äºšè¿ª         83.57  +3.61%  51.0   6.0  10.0  15.0  20.0
-7   002906  åé˜³é›†å›¢        25.45  +0.87%  51.0   6.0  10.0  10.0  25.0
-8   300124  æ±‡å·æŠ€æœ¯        68.40  +0.29%  51.0   6.0   5.0  15.0  25.0
-9   603013  äºšæ™®è‚¡ä»½        16.05  +0.25%  51.0   6.0  10.0  10.0  25.0
-10  603290  æ–¯è¾¾åŠå¯¼       136.89  -9.88%  49.0  19.0  15.0  10.0   5.0
-11  002920  å¾·èµ›è¥¿å¨        81.09  +0.05%  46.0   6.0   5.0  10.0  25.0
-12  601222  æ—æ´‹èƒ½æº         5.45  +1.30%  46.0   6.0  10.0   5.0  25.0
-13  603178  åœ£é¾™è‚¡ä»½        14.25  +0.71%  46.0   6.0   5.0  10.0  25.0
-14  603986  å…†æ˜“åˆ›æ–°       694.81 -10.00%  44.0  19.0  15.0   5.0   5.0
-15  000708  ä¸­ä¿¡ç‰¹é’¢        12.87  +0.86%  41.0   6.0   5.0   5.0  25.0
-
-â±  ç”¨æ—¶ 4.4s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 125.7s
-===== [2026/07/03 ÖÜÎå  7:52:07.35] market scanner END   ===== 
-===== [2026/07/06 ÖÜÒ»  7:50:01.57] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-06 07:50:01,984 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-06 ===
-2026-07-06 07:50:08,381 [INFO] »¦Éî300: 300 Ö»
-2026-07-06 07:50:13,453 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-06 07:50:13,453 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-06 07:50:13,453 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-06 07:50:38,411 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:11,  6.03it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.24it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.33it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:10,  6.20it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:10,  6.19it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:00<00:10,  6.30it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:21,  2.90it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:17,  3.50it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:14,  4.08it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:18,  3.22it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:15,  3.77it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:21,  2.73it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:24,  2.31it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:04<00:25,  2.20it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:04<00:24,  2.22it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:05<00:25,  2.15it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:05<00:24,  2.20it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:06<00:25,  2.05it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:06<00:25,  2.02it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:07<00:24,  2.04it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:07<00:26,  1.87it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:08<00:24,  1.93it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:08<00:24,  1.93it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:09<00:24,  1.89it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:09<00:22,  1.96it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:10<00:23,  1.90it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:10<00:21,  1.99it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:11<00:21,  1.99it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:11<00:20,  1.98it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:12<00:20,  1.98it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:13<00:21,  1.81it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:13<00:20,  1.88it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:14<00:19,  1.88it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:14<00:18,  1.95it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:15<00:17,  1.97it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:15<00:18,  1.86it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:15<00:13,  2.36it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:16<00:14,  2.23it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:16<00:14,  2.19it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:17<00:14,  2.03it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:18<00:15,  1.89it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:18<00:11,  2.40it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:18<00:09,  2.93it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:18<00:09,  2.67it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:19<00:10,  2.40it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:19<00:10,  2.28it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:20<00:10,  2.16it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:20<00:10,  2.14it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:20<00:07,  2.68it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:21<00:08,  2.29it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:22<00:10,  1.88it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:22<00:07,  2.34it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:22<00:05,  2.87it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:22<00:04,  3.39it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:22<00:03,  3.90it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:23<00:04,  3.15it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:23<00:04,  2.76it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:24<00:03,  3.33it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:24<00:02,  3.87it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:24<00:03,  2.92it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:24<00:02,  3.44it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:25<00:03,  2.51it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:25<00:02,  3.07it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:25<00:01,  3.62it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:26<00:01,  4.11it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:26<00:01,  2.98it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:26<00:00,  3.54it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:26<00:00,  3.99it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:27<00:00,  3.29it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:27<00:00,  4.06it/s]                                                                         2026-07-06 07:51:06,088 [INFO] ÊµÊ±ĞĞÇé: 5527 Ìõ
-2026-07-06 07:51:06,220 [INFO] ¹ıÂËºóÊ£Óà: 620 Ö»
-2026-07-06 07:51:26,053 [INFO] ½ø¶È 50/620, ÒÑºÄÊ± 20s
-2026-07-06 07:51:53,788 [INFO] ½ø¶È 100/620, ÒÑºÄÊ± 48s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-06 07:52:02,935 [INFO] ¹ÉÆ±³Ø: 44 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 24
-2026-07-06 07:52:02,935 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-06 07:52:03,256 [INFO]   ÊµÊ±È¡µ½ 43/44
-2026-07-06 07:52:03,256 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-06 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   300059  ä¸œæ–¹è´¢å¯Œ        21.06  +1.59%  75.0  25.0  20.0   5.0  25.0
-2   000301  ä¸œæ–¹ç››è™¹        12.55  +3.55%  64.0  19.0  10.0  15.0  20.0
-3   000002  ä¸‡ ç§‘ï¼¡         3.09  +0.98%  59.0  19.0  10.0   5.0  25.0
-4   002709  å¤©èµææ–™        54.04  -1.46%  59.0  19.0  20.0   5.0  15.0
-5   600233  åœ†é€šé€Ÿé€’        17.20  -4.07%  59.0  19.0  20.0  15.0   5.0
-6   002906  åé˜³é›†å›¢        26.48  +4.05%  58.0  13.0  10.0  15.0  20.0
-7   000967  ç›ˆå³°ç¯å¢ƒ        10.48  +2.24%  54.0  19.0   5.0   5.0  25.0
-8   300124  æ±‡å·æŠ€æœ¯        72.15  +5.48%  54.0  19.0   5.0  20.0  10.0
-9   002920  å¾·èµ›è¥¿å¨        86.48  +6.65%  53.0  13.0  10.0  20.0  10.0
-10  002594  æ¯”äºšè¿ª         88.47  +5.86%  48.0  13.0  10.0  15.0  10.0
-11  000001  å¹³å®‰é“¶è¡Œ        10.29  +0.10%  46.0   6.0  10.0   5.0  25.0
-12  000708  ä¸­ä¿¡ç‰¹é’¢        13.12  +1.94%  46.0   6.0  10.0   5.0  25.0
-13  000899  èµ£èƒ½è‚¡ä»½         9.96  +0.30%  46.0   6.0  10.0   5.0  25.0
-14  002405  å››ç»´å›¾æ–°         6.56  +1.23%  46.0   6.0  10.0   5.0  25.0
-15  600021  ä¸Šæµ·ç”µåŠ›        14.95  +1.56%  46.0   6.0  10.0   5.0  25.0
-
-â±  ç”¨æ—¶ 34.3s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 155.6s
-===== [2026/07/06 ÖÜÒ»  7:52:37.34] market scanner END   ===== 
-===== [2026/07/07 ÖÜ¶ş  7:50:01.68] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-07 07:50:03,327 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-07 ===
-2026-07-07 07:50:09,749 [INFO] »¦Éî300: 300 Ö»
-2026-07-07 07:50:14,606 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-07 07:50:14,606 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-07 07:50:14,606 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-07 07:50:38,848 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.71it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:11,  6.14it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.21it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:10,  6.29it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:18,  3.45it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:15,  4.05it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:21,  2.99it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:17,  3.57it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:14,  4.17it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:18,  3.18it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:03<00:23,  2.49it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:18,  3.06it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:15,  3.66it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:03<00:13,  4.23it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:03<00:11,  4.70it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:04<00:10,  5.11it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:04<00:15,  3.52it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:04<00:12,  4.09it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:04<00:11,  4.56it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:04<00:10,  4.98it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:05<00:09,  5.34it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:05<00:08,  5.65it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:08,  5.78it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:05<00:07,  5.94it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:05<00:07,  6.02it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:05<00:07,  6.16it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:06<00:06,  6.28it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:06<00:06,  6.31it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:06<00:06,  6.32it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:06<00:06,  6.39it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:06<00:06,  6.44it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:06<00:05,  6.40it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:06<00:05,  6.35it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:07<00:05,  6.40it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:07<00:05,  6.48it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:07<00:05,  6.41it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:07<00:05,  6.36it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:07<00:05,  6.32it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:07<00:04,  6.33it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:08<00:04,  6.39it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:08<00:04,  6.42it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:08<00:04,  6.31it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:08<00:04,  6.15it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:08<00:04,  6.18it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:08<00:04,  6.19it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:09<00:06,  3.64it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:10<00:08,  2.56it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:10<00:07,  3.12it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:10<00:07,  2.66it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:11<00:09,  2.21it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:11<00:08,  2.18it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:12<00:08,  2.13it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:12<00:06,  2.67it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:13<00:06,  2.33it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:13<00:06,  2.21it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:14<00:06,  2.10it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:14<00:06,  1.99it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:15<00:06,  1.99it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:15<00:04,  2.52it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:15<00:04,  2.30it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:16<00:04,  2.01it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:16<00:03,  2.01it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:17<00:03,  1.95it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:18<00:03,  1.95it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:18<00:02,  2.00it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:18<00:01,  2.50it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:19<00:01,  2.09it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:19<00:00,  2.61it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:19<00:00,  2.46it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:20<00:00,  2.46it/s]                                                                         2026-07-07 07:50:59,421 [INFO] ÊµÊ±ĞĞÇé: 5526 Ìõ
-2026-07-07 07:50:59,528 [INFO] ¹ıÂËºóÊ£Óà: 646 Ö»
-2026-07-07 07:51:17,518 [INFO] ½ø¶È 50/646, ÒÑºÄÊ± 18s
-2026-07-07 07:51:35,846 [INFO] ½ø¶È 100/646, ÒÑºÄÊ± 36s
-2026-07-07 07:51:52,592 [INFO] ½ø¶È 150/646, ÒÑºÄÊ± 53s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-07 07:52:02,921 [INFO] ¹ÉÆ±³Ø: 42 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 22
-2026-07-07 07:52:02,921 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-07 07:52:03,235 [INFO]   ÊµÊ±È¡µ½ 42/42
-2026-07-07 07:52:03,235 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-07 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   000301  ä¸œæ–¹ç››è™¹        13.81 +10.04%  80.0  25.0  25.0  25.0   5.0
-2   300059  ä¸œæ–¹è´¢å¯Œ        21.18  +0.57%  75.0  25.0  20.0   5.0  25.0
-3   600233  åœ†é€šé€Ÿé€’        17.41  +1.22%  69.0  19.0  20.0   5.0  25.0
-4   002738  ä¸­çŸ¿èµ„æº        63.47  -1.23%  65.0  25.0  20.0   5.0  15.0
-5   603757  å¤§å…ƒæ³µä¸š        79.19 +10.00%  65.0  25.0  25.0  10.0   5.0
-6   002067  æ™¯å…´çº¸ä¸š         4.19  -0.24%  64.0  19.0   5.0  25.0  15.0
-7   603013  äºšæ™®è‚¡ä»½        17.34  -1.81%  59.0  19.0   5.0  20.0  15.0
-8   000708  ä¸­ä¿¡ç‰¹é’¢        13.50  +2.90%  58.0  13.0  10.0  10.0  25.0
-9   603341  é¾™æ——ç§‘æŠ€        39.29  +0.74%  53.0  13.0   0.0  15.0  25.0
-10  002594  æ¯”äºšè¿ª         87.54  -1.05%  49.0  19.0  10.0   5.0  15.0
-11  000899  èµ£èƒ½è‚¡ä»½        10.10  +1.41%  46.0   6.0  10.0   5.0  25.0
-12  603178  åœ£é¾™è‚¡ä»½        14.86  -5.23%  41.0   6.0   5.0  25.0   5.0
-13  603290  æ–¯è¾¾åŠå¯¼       126.71  -2.04%  37.0  12.0  15.0   5.0   5.0
-14  002156  é€šå¯Œå¾®ç”µ        66.18  +2.13%  36.0   6.0   0.0   5.0  25.0
-15  601222  æ—æ´‹èƒ½æº         5.45  -0.18%  36.0   6.0  10.0   5.0  15.0
-
-â±  ç”¨æ—¶ 2.4s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 123.4s
-===== [2026/07/07 ÖÜ¶ş  7:52:05.40] market scanner END   ===== 
-===== [2026/07/08 ÖÜÈı  7:50:01.61] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-08 07:50:02,160 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-08 ===
-2026-07-08 07:50:08,576 [INFO] »¦Éî300: 300 Ö»
-2026-07-08 07:50:13,318 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-08 07:50:13,318 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-08 07:50:13,318 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-08 07:50:37,877 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.51it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.52it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.56it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:09,  6.64it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:09,  6.66it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:00<00:09,  6.59it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:17,  3.56it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:24,  2.49it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:19,  3.09it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:16,  3.69it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:13,  4.23it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:20,  2.78it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:17,  3.33it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:03<00:14,  3.90it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:03<00:12,  4.47it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:03<00:11,  4.90it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:03<00:09,  5.31it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:04<00:09,  5.59it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:04<00:08,  5.85it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:04<00:08,  6.07it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:04<00:07,  6.19it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:04<00:07,  6.29it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:04<00:07,  6.38it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:05<00:07,  6.43it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:05<00:06,  6.45it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:05<00:06,  6.48it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:05<00:11,  3.84it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:06<00:09,  4.36it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:06<00:08,  4.84it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:06<00:07,  5.20it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:06<00:07,  5.54it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:06<00:06,  5.81it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:06<00:06,  5.98it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:06<00:06,  5.87it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:07<00:05,  6.11it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:07<00:05,  6.02it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:07<00:05,  6.13it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:07<00:05,  6.19it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:07<00:04,  6.26it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:07<00:04,  6.14it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:08<00:04,  6.23it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:08<00:04,  5.99it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:08<00:04,  6.15it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:08<00:04,  6.21it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:08<00:03,  6.29it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:08<00:03,  6.29it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:09<00:03,  6.34it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:09<00:03,  6.38it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:09<00:03,  6.36it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:09<00:03,  6.35it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:09<00:03,  5.75it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:10<00:04,  3.60it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:10<00:04,  4.15it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:10<00:03,  4.58it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:11<00:04,  3.29it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:11<00:03,  3.87it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:11<00:04,  2.67it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:12<00:04,  2.42it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:12<00:03,  2.96it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:12<00:02,  3.55it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:12<00:02,  4.11it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:13<00:02,  3.06it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:13<00:02,  2.59it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:14<00:02,  2.33it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:14<00:01,  2.86it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:15<00:01,  2.54it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:15<00:01,  2.25it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:15<00:00,  2.80it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:15<00:00,  3.39it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:16<00:00,  4.21it/s]                                                                         2026-07-08 07:50:54,118 [INFO] ÊµÊ±ĞĞÇé: 5526 Ìõ
-2026-07-08 07:50:54,233 [INFO] ¹ıÂËºóÊ£Óà: 647 Ö»
-2026-07-08 07:51:15,995 [INFO] ½ø¶È 50/647, ÒÑºÄÊ± 22s
-2026-07-08 07:51:33,411 [INFO] ½ø¶È 100/647, ÒÑºÄÊ± 39s
-2026-07-08 07:51:53,031 [INFO] ½ø¶È 150/647, ÒÑºÄÊ± 59s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-08 07:52:03,263 [INFO] ¹ÉÆ±³Ø: 43 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 23
-2026-07-08 07:52:03,263 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-08 07:52:03,563 [INFO]   ÊµÊ±È¡µ½ 43/43
-2026-07-08 07:52:03,563 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-08 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   000301  ä¸œæ–¹ç››è™¹        12.43  -9.99%  59.0  19.0  15.0  20.0   5.0
-2   600580  å§é¾™ç”µé©±        36.08  -4.83%  54.0  19.0  20.0  10.0   5.0
-3   002709  å¤©èµææ–™        49.54  +1.10%  51.0   6.0  15.0   5.0  25.0
-4   603290  æ–¯è¾¾åŠå¯¼       128.45  +1.37%  51.0   6.0  15.0   5.0  25.0
-5   002156  é€šå¯Œå¾®ç”µ        68.21  +3.07%  49.0  19.0   5.0   5.0  20.0
-6   600233  åœ†é€šé€Ÿé€’        17.12  -1.67%  48.0  13.0  15.0   5.0  15.0
-7   002594  æ¯”äºšè¿ª         86.26  -1.46%  44.0  19.0   5.0   5.0  15.0
-8   002738  ä¸­çŸ¿èµ„æº        61.05  -3.81%  44.0  19.0  15.0   5.0   5.0
-9   300059  ä¸œæ–¹è´¢å¯Œ        20.29  -4.20%  44.0  19.0  15.0   5.0   5.0
-10  603178  åœ£é¾™è‚¡ä»½        16.35 +10.03%  44.0  19.0  10.0  10.0   5.0
-11  603013  äºšæ™®è‚¡ä»½        16.85  -2.83%  42.0  12.0  20.0   5.0   5.0
-12  301179  æ³½å®‡æ™ºèƒ½        20.24  +1.20%  35.0   0.0   0.0  10.0  25.0
-13  002428  äº‘å—é”—ä¸š       110.00  +4.45%  32.4  19.0   5.0  10.0  20.0
-14  603757  å¤§å…ƒæ³µä¸š        74.18  -6.33%  32.4  19.0  15.0  15.0   5.0
-15  002475  ç«‹è®¯ç²¾å¯†        63.28  +0.64%  30.0   0.0   0.0   5.0  25.0
-
-â±  ç”¨æ—¶ 22.8s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 144.3s
-===== [2026/07/08 ÖÜÈı  7:52:26.07] market scanner END   ===== 
-===== [2026/07/09 ÖÜËÄ  7:50:01.69] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-09 07:50:02,309 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-09 ===
-2026-07-09 07:50:09,896 [INFO] »¦Éî300: 300 Ö»
-2026-07-09 07:50:14,644 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-09 07:50:14,645 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-09 07:50:14,645 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-09 07:50:38,296 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.62it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.63it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.64it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:10,  6.56it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:10,  6.47it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:00<00:09,  6.44it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:09,  6.49it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:09,  6.55it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:01<00:09,  6.55it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:01<00:09,  6.55it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:01<00:09,  6.50it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:01<00:08,  6.49it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:01<00:08,  6.48it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:02<00:08,  6.54it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:02<00:08,  6.59it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:02<00:08,  6.61it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:02<00:08,  6.50it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:02<00:08,  6.43it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:02<00:07,  6.44it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:03<00:07,  6.49it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:03<00:07,  6.52it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:03<00:15,  3.03it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:04<00:13,  3.59it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:04<00:15,  2.96it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:05<00:17,  2.57it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:05<00:14,  3.14it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:05<00:11,  3.72it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:05<00:15,  2.79it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:06<00:18,  2.24it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:06<00:14,  2.72it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:06<00:12,  3.25it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:07<00:10,  3.77it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:07<00:08,  4.28it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:07<00:07,  4.74it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:07<00:10,  3.40it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:09<00:23,  1.43it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:09<00:17,  1.87it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:10<00:17,  1.84it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:10<00:13,  2.34it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:11<00:15,  1.98it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:11<00:14,  1.99it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:11<00:11,  2.51it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:12<00:12,  2.21it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:12<00:12,  2.04it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:13<00:09,  2.57it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:13<00:07,  3.13it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:14<00:10,  2.25it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:14<00:07,  2.80it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:14<00:09,  2.18it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:15<00:07,  2.71it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:15<00:08,  2.14it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:15<00:06,  2.68it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:16<00:07,  2.42it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:17<00:09,  1.72it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:17<00:06,  2.18it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:18<00:09,  1.48it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:18<00:06,  1.93it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:19<00:04,  2.45it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:19<00:03,  3.01it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:19<00:02,  3.60it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:19<00:02,  4.14it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:19<00:01,  4.63it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:20<00:02,  3.27it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:20<00:02,  2.73it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:21<00:03,  1.63it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:21<00:01,  2.10it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:22<00:01,  2.64it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:22<00:00,  3.22it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:22<00:00,  3.79it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:23<00:00,  1.89it/s]                                                                         2026-07-09 07:51:02,076 [INFO] ÊµÊ±ĞĞÇé: 5527 Ìõ
-2026-07-09 07:51:02,192 [INFO] ¹ıÂËºóÊ£Óà: 611 Ö»
-2026-07-09 07:51:30,779 [INFO] ½ø¶È 50/611, ÒÑºÄÊ± 29s
-2026-07-09 07:51:53,811 [INFO] ½ø¶È 100/611, ÒÑºÄÊ± 52s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-09 07:52:03,325 [INFO] ¹ÉÆ±³Ø: 41 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 21
-2026-07-09 07:52:03,325 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-09 07:52:04,675 [INFO]   ÊµÊ±È¡µ½ 41/41
-2026-07-09 07:52:04,675 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-09 07:52)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   603178  åœ£é¾™è‚¡ä»½        17.84  +9.11%  74.0  19.0  25.0  25.0   5.0
-2   000301  ä¸œæ–¹ç››è™¹        12.82  +3.14%  70.0  25.0  20.0   5.0  20.0
-3   002594  æ¯”äºšè¿ª         87.80  +1.79%  59.0  19.0  10.0   5.0  25.0
-4   002920  å¾·èµ›è¥¿å¨        86.15  +3.91%  59.0  19.0  10.0  10.0  20.0
-5   603341  é¾™æ——ç§‘æŠ€        39.85  +4.59%  59.0  19.0   5.0  15.0  20.0
-6   600233  åœ†é€šé€Ÿé€’        16.75  -2.16%  44.0  19.0  15.0   5.0   5.0
-7   601222  æ—æ´‹èƒ½æº         5.38  +0.37%  41.0   6.0   5.0   5.0  25.0
-8   603290  æ–¯è¾¾åŠå¯¼       129.28  +0.65%  41.0   6.0   0.0  10.0  25.0
-9   300059  ä¸œæ–¹è´¢å¯Œ        20.13  -0.79%  39.0  19.0   0.0   5.0  15.0
-10  002906  åé˜³é›†å›¢        24.96  +0.24%  36.0   6.0   0.0   5.0  25.0
-11  300124  æ±‡å·æŠ€æœ¯        63.20  -4.31%  31.0   6.0  15.0   5.0   5.0
-12  603013  äºšæ™®è‚¡ä»½        16.33  -3.09%  31.0   6.0  15.0   5.0   5.0
-13  002405  å››ç»´å›¾æ–°         6.41  +1.75%  30.0   0.0   0.0   5.0  25.0
-14  600863  åèƒ½è’™ç”µ         4.36  +1.16%  30.0   0.0   0.0   5.0  25.0
-15  603757  å¤§å…ƒæ³µä¸š        70.11  -5.49%  29.4  19.0  15.0  10.0   5.0
-
-â±  ç”¨æ—¶ 32.8s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 154.2s
-===== [2026/07/09 ÖÜËÄ  7:52:36.22] market scanner END   ===== 
-===== [2026/07/10 ÖÜÎå  7:50:01.95] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-10 07:50:02,473 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-10 ===
-2026-07-10 07:50:08,476 [INFO] »¦Éî300: 300 Ö»
-2026-07-10 07:50:14,366 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-10 07:50:14,367 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-10 07:50:14,367 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-10 07:50:38,099 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:40,  1.72it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:22,  2.97it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:17,  3.91it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:15,  4.24it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:13,  4.86it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:12,  5.16it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:02<00:32,  1.93it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:24,  2.49it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:03<00:29,  2.08it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:03<00:22,  2.63it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:03<00:18,  3.20it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:15,  3.76it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:04<00:25,  2.25it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:04<00:20,  2.80it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:05<00:16,  3.39it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:05<00:13,  3.94it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:05<00:11,  4.47it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:05<00:10,  4.91it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:06<00:15,  3.34it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:06<00:12,  3.92it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:06<00:11,  4.44it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:06<00:09,  4.87it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:06<00:09,  5.18it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:07<00:13,  3.30it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:07<00:11,  3.88it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:07<00:10,  4.38it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:07<00:08,  4.86it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:07<00:07,  5.31it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:08<00:12,  3.40it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:08<00:10,  3.95it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:09<00:12,  3.09it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:09<00:10,  3.60it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:09<00:08,  4.16it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:09<00:07,  4.56it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:09<00:06,  5.01it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:09<00:06,  5.39it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:10<00:09,  3.59it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:10<00:07,  4.13it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:10<00:06,  4.58it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:10<00:05,  5.03it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:10<00:05,  5.41it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:11<00:05,  5.54it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:11<00:04,  5.64it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:11<00:04,  5.80it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:11<00:04,  5.61it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:11<00:04,  5.75it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:12<00:06,  3.47it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:12<00:07,  2.79it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:13<00:08,  2.43it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:13<00:06,  2.98it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:13<00:05,  3.51it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:14<00:06,  2.57it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:14<00:05,  3.06it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:15<00:06,  2.38it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:15<00:05,  2.93it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:16<00:06,  2.27it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:16<00:04,  2.80it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:16<00:04,  2.60it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:17<00:06,  1.59it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:18<00:04,  2.05it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:18<00:03,  2.55it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:18<00:02,  3.11it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:18<00:02,  2.54it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:19<00:01,  3.10it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:19<00:02,  2.15it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:20<00:01,  2.69it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:20<00:01,  2.54it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:20<00:00,  2.36it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:21<00:00,  1.89it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:22<00:00,  1.40it/s]                                                                         2026-07-10 07:51:01,143 [INFO] ÊµÊ±ĞĞÇé: 5528 Ìõ
-2026-07-10 07:51:01,252 [INFO] ¹ıÂËºóÊ£Óà: 605 Ö»
-2026-07-10 07:51:47,123 [INFO] ½ø¶È 50/605, ÒÑºÄÊ± 46s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-10 07:52:03,334 [INFO] ¹ÉÆ±³Ø: 41 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 21
-2026-07-10 07:52:03,334 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-10 07:52:04,684 [INFO]   ÊµÊ±È¡µ½ 41/41
-2026-07-10 07:52:04,685 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login success!
-logout success!
-ğŸ” Lite Scanner (2026-07-10 07:53)  N=15
-æ•°æ®æºï¼šæ–°æµªå®æ—¶ + baostock å†å²ï¼ˆAKShare é™çº§ç‰ˆï¼‰
-
-æ’å  ä»£ç       åç§°              ä»·æ ¼     æ¶¨å¹…     åˆ†    è¶‹åŠ¿    çªç ´    é‡èƒ½    åŒºé—´
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-1   603178  åœ£é¾™è‚¡ä»½        16.70  -6.39%  64.0  19.0  20.0  20.0   5.0
-2   601222  æ—æ´‹èƒ½æº         5.45  +1.30%  62.0  12.0  10.0  15.0  25.0
-3   002920  å¾·èµ›è¥¿å¨        88.38  +2.59%  59.0  19.0  10.0   5.0  25.0
-4   603290  æ–¯è¾¾åŠå¯¼       133.40  +3.19%  54.0  19.0  10.0   5.0  20.0
-5   603341  é¾™æ——ç§‘æŠ€        42.38  +6.35%  54.0  19.0  10.0  15.0  10.0
-6   002475  ç«‹è®¯ç²¾å¯†        64.46  +3.19%  51.0   6.0  10.0  15.0  20.0
-7   300124  æ±‡å·æŠ€æœ¯        64.32  +1.77%  51.0   6.0  15.0   5.0  25.0
-8   600863  åèƒ½è’™ç”µ         4.49  +2.98%  51.0   6.0   5.0  15.0  25.0
-9   002067  æ™¯å…´çº¸ä¸š         4.05 +10.05%  49.0  19.0  20.0   5.0   5.0
-10  002156  é€šå¯Œå¾®ç”µ        72.17 +10.00%  49.0  19.0  10.0  15.0   5.0
-11  300059  ä¸œæ–¹è´¢å¯Œ        20.59  +2.29%  49.0  19.0   0.0   5.0  25.0
-12  300750  å®å¾·æ—¶ä»£       375.50  +4.02%  46.0   6.0   5.0  15.0  20.0
-13  000301  ä¸œæ–¹ç››è™¹        12.48  -2.65%  44.0  19.0  15.0   5.0   5.0
-14  603013  äºšæ™®è‚¡ä»½        16.28  -0.31%  41.0   6.0  15.0   5.0  15.0
-15  600233  åœ†é€šé€Ÿé€’        16.66  -0.54%  39.0  19.0   0.0   5.0  15.0
-
-â±  ç”¨æ—¶ 94.1s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 215.4s
-===== [2026/07/10 ÖÜÎå  7:53:37.50] market scanner END   ===== 
-===== [2026/07/13 ÖÜÒ»  7:50:02.07] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-13 07:50:02,573 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-13 ===
-2026-07-13 07:50:08,776 [INFO] »¦Éî300: 300 Ö»
-2026-07-13 07:50:13,786 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-13 07:50:13,786 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-13 07:50:13,786 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-13 07:50:38,978 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.44it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.32it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.29it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:10,  6.13it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:10,  6.19it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:00<00:10,  6.21it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:17,  3.62it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:14,  4.19it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:01<00:13,  4.67it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:01<00:11,  5.06it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:11,  5.33it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:02<00:10,  5.49it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:02<00:09,  5.74it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:02<00:09,  5.97it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:02<00:09,  6.04it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:02<00:08,  6.15it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:03<00:08,  6.18it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:03<00:08,  6.13it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:03<00:08,  6.06it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:03<00:08,  6.01it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:03<00:08,  6.09it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:03<00:07,  6.18it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:04<00:12,  3.88it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:04<00:10,  4.38it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:04<00:09,  4.82it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:04<00:08,  5.12it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:05<00:07,  5.44it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:05<00:07,  5.68it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:05<00:07,  5.57it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:05<00:07,  5.53it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:05<00:07,  5.45it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:05<00:06,  5.49it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:06<00:06,  5.65it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:06<00:06,  5.82it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:06<00:06,  5.78it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:06<00:05,  5.89it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:06<00:05,  5.99it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:07<00:09,  3.49it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:07<00:07,  4.01it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:07<00:06,  4.53it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:07<00:05,  4.92it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:07<00:05,  5.22it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:08<00:05,  5.31it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:08<00:04,  5.57it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:08<00:06,  3.81it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:08<00:05,  4.30it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:09<00:04,  4.65it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:09<00:08,  2.74it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:10<00:08,  2.45it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:10<00:09,  2.12it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:11<00:09,  2.01it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:12<00:09,  1.95it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:12<00:08,  1.98it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:13<00:07,  2.00it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:13<00:07,  2.02it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:13<00:05,  2.53it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:14<00:04,  2.62it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:14<00:03,  3.15it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:14<00:02,  3.71it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:14<00:03,  2.96it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:16<00:05,  1.67it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:16<00:03,  2.15it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:16<00:02,  2.64it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:16<00:01,  3.19it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:16<00:01,  3.73it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:16<00:00,  4.23it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:17<00:00,  4.68it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:17<00:00,  5.08it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:17<00:00,  2.62it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:18<00:00,  3.29it/s]                                                                         2026-07-13 07:50:57,260 [INFO] ÊµÊ±ĞĞÇé: 5529 Ìõ
-2026-07-13 07:50:57,375 [INFO] ¹ıÂËºóÊ£Óà: 622 Ö»
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-13 07:52:04,356 [INFO] ¹ÉÆ±³Ø: 41 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 21
-2026-07-13 07:52:04,356 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-13 07:52:04,687 [INFO]   ÊµÊ±È¡µ½ 41/41
-2026-07-13 07:52:04,687 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-===== [2026/07/14 ÖÜ¶ş  7:50:02.16] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-14 07:50:02,627 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-14 ===
-2026-07-14 07:50:08,901 [INFO] »¦Éî300: 300 Ö»
-2026-07-14 07:50:13,949 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-14 07:50:13,949 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-14 07:50:13,949 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-14 07:50:38,828 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.62it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:30,  2.21it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:01<00:32,  2.06it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:23,  2.81it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:18,  3.50it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:15,  4.16it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:13,  4.73it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:11,  5.18it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:11,  5.48it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:10,  5.77it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:09,  5.96it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:02<00:09,  6.09it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:02<00:09,  6.21it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:03<00:08,  6.29it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:03<00:08,  6.41it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:03<00:08,  6.45it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:03<00:08,  6.49it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:03<00:08,  6.49it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:03<00:08,  6.37it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:03<00:07,  6.44it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:04<00:07,  6.43it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:04<00:13,  3.61it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:17,  2.68it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:05<00:14,  3.25it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:05<00:11,  3.80it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:05<00:10,  4.34it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:05<00:08,  4.85it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:06<00:08,  5.21it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:06<00:07,  5.55it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:06<00:10,  3.70it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:07<00:16,  2.31it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:07<00:13,  2.82it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:08<00:16,  2.28it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:08<00:17,  2.07it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:09<00:13,  2.58it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:09<00:10,  3.14it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:10<00:16,  2.01it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:10<00:12,  2.53it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:10<00:09,  3.10it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:10<00:11,  2.57it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:11<00:09,  3.14it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:11<00:10,  2.63it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:12<00:11,  2.30it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:12<00:09,  2.85it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:12<00:07,  3.43it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:12<00:06,  3.91it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:12<00:05,  4.43it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:13<00:04,  4.86it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:13<00:07,  2.98it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:14<00:08,  2.35it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:14<00:06,  2.90it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:14<00:07,  2.57it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:15<00:05,  3.14it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:15<00:06,  2.53it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:15<00:04,  3.10it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:15<00:03,  3.68it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:16<00:04,  2.85it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:17<00:04,  2.48it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:17<00:03,  3.02it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:17<00:02,  3.60it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:17<00:02,  4.07it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:18<00:02,  3.01it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:18<00:02,  2.66it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:18<00:01,  3.20it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:18<00:01,  3.70it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:19<00:00,  4.22it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:19<00:00,  4.69it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:19<00:00,  5.11it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:19<00:00,  5.49it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:19<00:00,  6.24it/s]                                                                         2026-07-14 07:50:58,615 [INFO] ÊµÊ±ĞĞÇé: 5529 Ìõ
-2026-07-14 07:50:58,724 [INFO] ¹ıÂËºóÊ£Óà: 577 Ö»
-2026-07-14 07:51:57,417 [INFO] ½ø¶È 50/577, ÒÑºÄÊ± 59s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-14 07:52:03,560 [INFO] ¹ÉÆ±³Ø: 42 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 22
-2026-07-14 07:52:03,560 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-14 07:52:03,947 [INFO]   ÊµÊ±È¡µ½ 42/42
-2026-07-14 07:52:03,947 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login failed!
-logout failed!
-âŒ æ‰«ææ— ç»“æœ
-
-â±  ç”¨æ—¶ 20.2s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 141.5s
-===== [2026/07/14 ÖÜ¶ş  7:52:23.82] market scanner END   ===== 
-===== [2026/07/15 ÖÜÈı  7:50:01.58] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-15 07:50:02,024 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-15 ===
-2026-07-15 07:50:08,461 [INFO] »¦Éî300: 300 Ö»
-2026-07-15 07:50:13,529 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-15 07:50:13,529 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-15 07:50:13,529 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-15 07:50:37,343 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:35,  1.93it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:20,  3.28it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:15,  4.23it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:25,  2.62it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:19,  3.35it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:15,  4.02it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:02<00:20,  3.01it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:02<00:17,  3.60it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:14,  4.13it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:12,  4.63it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:11,  5.01it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:03<00:10,  5.30it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:03<00:16,  3.50it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:03<00:13,  4.09it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:03<00:11,  4.61it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:04<00:10,  5.00it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:04<00:09,  5.37it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:04<00:09,  5.67it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:04<00:08,  5.80it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:04<00:08,  6.00it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:04<00:08,  6.12it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:04<00:07,  6.22it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:07,  6.24it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:05<00:07,  6.33it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:05<00:07,  6.30it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:05<00:07,  6.28it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:05<00:06,  6.35it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:06<00:11,  3.66it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:06<00:09,  4.17it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:06<00:08,  4.64it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:06<00:07,  5.04it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:07<00:10,  3.63it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:07<00:08,  4.14it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:07<00:07,  4.67it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:07<00:06,  5.09it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:07<00:06,  5.44it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:07<00:05,  5.75it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:08<00:05,  5.97it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:08<00:05,  6.15it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:08<00:04,  6.27it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:08<00:04,  6.21it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:08<00:04,  6.31it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:08<00:04,  6.41it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:09<00:04,  6.46it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:09<00:03,  6.50it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:09<00:03,  6.38it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:09<00:03,  6.42it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:09<00:03,  6.50it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:09<00:03,  6.55it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:09<00:03,  6.46it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:10<00:02,  6.38it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:10<00:02,  6.41it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:10<00:02,  6.41it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:10<00:02,  6.41it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:10<00:02,  6.41it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:10<00:02,  6.44it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:11<00:02,  6.44it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:11<00:01,  6.49it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:11<00:02,  3.74it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:11<00:02,  4.23it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:12<00:01,  4.73it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:12<00:01,  5.15it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:12<00:01,  5.49it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:12<00:01,  5.73it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:12<00:00,  5.86it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:12<00:00,  6.06it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:13<00:00,  6.17it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:13<00:00,  3.73it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:14<00:00,  2.98it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:14<00:00,  3.70it/s]                                                                         2026-07-15 07:50:51,671 [INFO] ÊµÊ±ĞĞÇé: 5527 Ìõ
-2026-07-15 07:50:51,779 [INFO] ¹ıÂËºóÊ£Óà: 619 Ö»
-2026-07-15 07:51:45,952 [INFO] ½ø¶È 50/619, ÒÑºÄÊ± 54s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-15 07:52:02,967 [INFO] ¹ÉÆ±³Ø: 43 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 23
-2026-07-15 07:52:02,967 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-15 07:52:03,362 [INFO]   ÊµÊ±È¡µ½ 43/43
-2026-07-15 07:52:03,363 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login failed!
-logout failed!
-âŒ æ‰«ææ— ç»“æœ
-
-â±  ç”¨æ—¶ 39.4s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 160.7s
-===== [2026/07/15 ÖÜÈı  7:52:42.43] market scanner END   ===== 
-===== [2026/07/16 ÖÜËÄ  7:50:01.91] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-16 07:50:02,347 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-16 ===
-2026-07-16 07:50:08,715 [INFO] »¦Éî300: 300 Ö»
-2026-07-16 07:50:13,781 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-16 07:50:13,781 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-16 07:50:13,781 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-16 07:50:37,186 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:10,  6.52it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:10,  6.36it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:10,  6.28it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:00<00:10,  6.35it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:00<00:10,  6.34it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:00<00:10,  6.28it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:10,  6.25it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:10,  6.20it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:01<00:09,  6.22it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:01<00:09,  6.24it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:01<00:09,  6.29it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:01<00:09,  6.12it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:02<00:09,  6.18it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:02<00:09,  6.12it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:02<00:08,  6.14it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:02<00:08,  6.13it/s]                                                                         2026-07-16 07:50:39,954 [ERROR] ĞÂÀË spot Ò²Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-Traceback (most recent call last):
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 466, in <module>
-    main()
-    ~~~~^^
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 368, in main
-    spot_df = fetch_all_realtime()
-  File "C:\Users\Administrator\.openclaw\workspace\quant-learn\scripts\morning_scanner.py", line 142, in fetch_all_realtime
-    raise RuntimeError("¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü")
-RuntimeError: ¶«²ÆºÍĞÂÀËÊµÊ±ĞĞÇé½Ó¿Ú¾ùÊ§°Ü
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-16 07:50:41,138 [INFO] ¹ÉÆ±³Ø: 44 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 24
-2026-07-16 07:50:41,138 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-16 07:50:41,563 [INFO]   ÊµÊ±È¡µ½ 44/44
-2026-07-16 07:50:41,563 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login failed!
-logout failed!
-âŒ æ‰«ææ— ç»“æœ
-
-â±  ç”¨æ—¶ 15.4s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 54.5s
-===== [2026/07/16 ÖÜËÄ  7:50:56.59] market scanner END   ===== 
-===== [2026/07/17 ÖÜÎå  7:50:01.84] market scanner START ===== 
-[scanner-fallback] 1/2 ³¢ÊÔÖ÷Â·¾¶ morning_scanner.py£¨³¬Ê± 120s£©
-2026-07-17 07:50:02,240 [INFO] === Morning Scanner ¿ªÊ¼ 2026-07-17 ===
-2026-07-17 07:50:08,427 [INFO] »¦Éî300: 300 Ö»
-2026-07-17 07:50:13,818 [INFO] ÖĞÖ¤500: 500 Ö»
-2026-07-17 07:50:13,819 [INFO] ¹ÉÆ±³Ø: 717 Ö»
-2026-07-17 07:50:13,819 [INFO] À­È«ÊĞ³¡ÊµÊ±ĞĞÇé...
-2026-07-17 07:50:36,884 [WARNING] ¶«²Æ spot_em Ê§°Ü: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))£¬ÇĞĞÂÀË
-Please wait for a moment:   0%|          | 0/70 [00:00<?, ?it/s]Please wait for a moment:   1%|¨‡         | 1/70 [00:00<00:34,  2.00it/s]Please wait for a moment:   3%|¨†         | 2/70 [00:00<00:20,  3.31it/s]Please wait for a moment:   4%|¨…         | 3/70 [00:00<00:15,  4.21it/s]Please wait for a moment:   6%|¨„         | 4/70 [00:01<00:22,  2.93it/s]Please wait for a moment:   7%|¨ƒ         | 5/70 [00:01<00:18,  3.60it/s]Please wait for a moment:   9%|¨‚         | 6/70 [00:01<00:15,  4.16it/s]Please wait for a moment:  10%|¨€         | 7/70 [00:01<00:13,  4.67it/s]Please wait for a moment:  11%|¨€¨‡        | 8/70 [00:01<00:12,  5.05it/s]Please wait for a moment:  13%|¨€¨†        | 9/70 [00:02<00:11,  5.23it/s]Please wait for a moment:  14%|¨€¨…        | 10/70 [00:02<00:10,  5.50it/s]Please wait for a moment:  16%|¨€¨„        | 11/70 [00:02<00:10,  5.69it/s]Please wait for a moment:  17%|¨€¨ƒ        | 12/70 [00:02<00:10,  5.76it/s]Please wait for a moment:  19%|¨€¨‚        | 13/70 [00:02<00:10,  5.68it/s]Please wait for a moment:  20%|¨€¨€        | 14/70 [00:02<00:09,  5.86it/s]Please wait for a moment:  21%|¨€¨€¨‡       | 15/70 [00:03<00:09,  5.82it/s]Please wait for a moment:  23%|¨€¨€¨†       | 16/70 [00:03<00:14,  3.70it/s]Please wait for a moment:  24%|¨€¨€¨…       | 17/70 [00:04<00:17,  2.96it/s]Please wait for a moment:  26%|¨€¨€¨„       | 18/70 [00:04<00:14,  3.53it/s]Please wait for a moment:  27%|¨€¨€¨ƒ       | 19/70 [00:04<00:12,  4.05it/s]Please wait for a moment:  29%|¨€¨€¨‚       | 20/70 [00:04<00:11,  4.49it/s]Please wait for a moment:  30%|¨€¨€¨€       | 21/70 [00:04<00:10,  4.83it/s]Please wait for a moment:  31%|¨€¨€¨€¨‡      | 22/70 [00:04<00:09,  5.20it/s]Please wait for a moment:  33%|¨€¨€¨€¨†      | 23/70 [00:05<00:08,  5.31it/s]Please wait for a moment:  34%|¨€¨€¨€¨…      | 24/70 [00:05<00:13,  3.51it/s]Please wait for a moment:  36%|¨€¨€¨€¨„      | 25/70 [00:05<00:11,  4.05it/s]Please wait for a moment:  37%|¨€¨€¨€¨ƒ      | 26/70 [00:05<00:09,  4.51it/s]Please wait for a moment:  39%|¨€¨€¨€¨‚      | 27/70 [00:06<00:08,  4.85it/s]Please wait for a moment:  40%|¨€¨€¨€¨€      | 28/70 [00:06<00:08,  5.02it/s]Please wait for a moment:  41%|¨€¨€¨€¨€¨‡     | 29/70 [00:06<00:07,  5.22it/s]Please wait for a moment:  43%|¨€¨€¨€¨€¨†     | 30/70 [00:06<00:07,  5.47it/s]Please wait for a moment:  44%|¨€¨€¨€¨€¨…     | 31/70 [00:07<00:10,  3.58it/s]Please wait for a moment:  46%|¨€¨€¨€¨€¨„     | 32/70 [00:07<00:09,  4.03it/s]Please wait for a moment:  47%|¨€¨€¨€¨€¨ƒ     | 33/70 [00:07<00:08,  4.42it/s]Please wait for a moment:  49%|¨€¨€¨€¨€¨‚     | 34/70 [00:08<00:11,  3.27it/s]Please wait for a moment:  50%|¨€¨€¨€¨€¨€     | 35/70 [00:08<00:09,  3.77it/s]Please wait for a moment:  51%|¨€¨€¨€¨€¨€¨‡    | 36/70 [00:08<00:08,  4.21it/s]Please wait for a moment:  53%|¨€¨€¨€¨€¨€¨†    | 37/70 [00:08<00:07,  4.63it/s]Please wait for a moment:  54%|¨€¨€¨€¨€¨€¨…    | 38/70 [00:08<00:06,  4.97it/s]Please wait for a moment:  56%|¨€¨€¨€¨€¨€¨„    | 39/70 [00:08<00:05,  5.30it/s]Please wait for a moment:  57%|¨€¨€¨€¨€¨€¨ƒ    | 40/70 [00:09<00:05,  5.37it/s]Please wait for a moment:  59%|¨€¨€¨€¨€¨€¨‚    | 41/70 [00:09<00:05,  5.49it/s]Please wait for a moment:  60%|¨€¨€¨€¨€¨€¨€    | 42/70 [00:09<00:04,  5.68it/s]Please wait for a moment:  61%|¨€¨€¨€¨€¨€¨€¨‡   | 43/70 [00:09<00:04,  5.87it/s]Please wait for a moment:  63%|¨€¨€¨€¨€¨€¨€¨†   | 44/70 [00:09<00:04,  6.02it/s]Please wait for a moment:  64%|¨€¨€¨€¨€¨€¨€¨…   | 45/70 [00:09<00:04,  6.11it/s]Please wait for a moment:  66%|¨€¨€¨€¨€¨€¨€¨„   | 46/70 [00:10<00:03,  6.07it/s]Please wait for a moment:  67%|¨€¨€¨€¨€¨€¨€¨ƒ   | 47/70 [00:10<00:03,  6.14it/s]Please wait for a moment:  69%|¨€¨€¨€¨€¨€¨€¨‚   | 48/70 [00:10<00:03,  6.07it/s]Please wait for a moment:  70%|¨€¨€¨€¨€¨€¨€¨€   | 49/70 [00:10<00:03,  6.17it/s]Please wait for a moment:  71%|¨€¨€¨€¨€¨€¨€¨€¨‡  | 50/70 [00:10<00:03,  6.13it/s]Please wait for a moment:  73%|¨€¨€¨€¨€¨€¨€¨€¨†  | 51/70 [00:11<00:05,  3.78it/s]Please wait for a moment:  74%|¨€¨€¨€¨€¨€¨€¨€¨…  | 52/70 [00:11<00:04,  4.29it/s]Please wait for a moment:  76%|¨€¨€¨€¨€¨€¨€¨€¨„  | 53/70 [00:11<00:06,  2.75it/s]Please wait for a moment:  77%|¨€¨€¨€¨€¨€¨€¨€¨ƒ  | 54/70 [00:12<00:04,  3.26it/s]Please wait for a moment:  79%|¨€¨€¨€¨€¨€¨€¨€¨‚  | 55/70 [00:12<00:05,  2.75it/s]Please wait for a moment:  80%|¨€¨€¨€¨€¨€¨€¨€¨€  | 56/70 [00:12<00:04,  3.29it/s]Please wait for a moment:  81%|¨€¨€¨€¨€¨€¨€¨€¨€¨‡ | 57/70 [00:12<00:03,  3.84it/s]Please wait for a moment:  83%|¨€¨€¨€¨€¨€¨€¨€¨€¨† | 58/70 [00:13<00:02,  4.32it/s]Please wait for a moment:  84%|¨€¨€¨€¨€¨€¨€¨€¨€¨… | 59/70 [00:13<00:02,  4.73it/s]Please wait for a moment:  86%|¨€¨€¨€¨€¨€¨€¨€¨€¨„ | 60/70 [00:13<00:03,  3.25it/s]Please wait for a moment:  87%|¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ | 61/70 [00:14<00:02,  3.78it/s]Please wait for a moment:  89%|¨€¨€¨€¨€¨€¨€¨€¨€¨‚ | 62/70 [00:14<00:01,  4.27it/s]Please wait for a moment:  90%|¨€¨€¨€¨€¨€¨€¨€¨€¨€ | 63/70 [00:14<00:02,  3.03it/s]Please wait for a moment:  91%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‡| 64/70 [00:14<00:01,  3.56it/s]Please wait for a moment:  93%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨†| 65/70 [00:15<00:01,  2.89it/s]Please wait for a moment:  94%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨…| 66/70 [00:15<00:01,  3.43it/s]Please wait for a moment:  96%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨„| 67/70 [00:15<00:00,  3.95it/s]Please wait for a moment:  97%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨ƒ| 68/70 [00:15<00:00,  4.45it/s]Please wait for a moment:  99%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨‚| 69/70 [00:16<00:00,  4.89it/s]Please wait for a moment: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 70/70 [00:16<00:00,  3.13it/s]                                                                         2026-07-17 07:50:53,748 [INFO] ÊµÊ±ĞĞÇé: 5528 Ìõ
-2026-07-17 07:50:53,863 [INFO] ¹ıÂËºóÊ£Óà: 636 Ö»
-2026-07-17 07:51:28,386 [INFO] ½ø¶È 50/636, ÒÑºÄÊ± 35s
-2026-07-17 07:52:01,106 [INFO] ½ø¶È 100/636, ÒÑºÄÊ± 67s
-[scanner-fallback] Ö÷Â·¾¶³¬Ê±£¨¶à°ëÊÇ AKShare ¿¨×¡£©£¬ÇĞ fallback
-[scanner-fallback] 2/2 ÅÜ½µ¼¶°æ scanner_lite.py
-2026-07-17 07:52:03,228 [INFO] ¹ÉÆ±³Ø: 42 Ö» = E2/F 20 + ³Ö²Ö/¹Ø×¢ 22
-2026-07-17 07:52:03,228 [INFO] À­ÊµÊ±ĞĞÇé£¨ĞÂÀË£©...
-2026-07-17 07:52:03,630 [INFO]   ÊµÊ±È¡µ½ 42/42
-2026-07-17 07:52:03,630 [INFO] À­ÀúÊ· K Ïß£¨baostock£©...
-login failed!
-logout failed!
-âŒ æ‰«ææ— ç»“æœ
-
-â±  ç”¨æ—¶ 7.6s | æ•°æ®æº: æ–°æµª+baostock | è‚¡ç¥¨æ± : E2/F + æŒä»“
-[scanner-fallback] ½µ¼¶Â·¾¶³É¹¦£¬ÓÃÊ± 128.9s
-===== [2026/07/17 ÖÜÎå  7:52:10.91] market scanner END   ===== 

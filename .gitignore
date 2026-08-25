@@ -128,3 +128,6 @@ update_to_testing.py
 
 
 venv_qmt/
+
+# 递归忽略所有子目录下的运行日志（含 output/swing_intraday 等）
+**/*.log

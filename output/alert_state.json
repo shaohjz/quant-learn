@@ -1,5 +1,1099 @@
 {
   "date": "2026-05-19",
+  "2026-08-27": {
+    "000600_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 7.93,
+      "trigger": 9.1
+    },
+    "000600_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 7.93,
+      "trigger": 8.48
+    },
+    "000600_trend_break": {
+      "triggered_at": "09:35",
+      "price": 7.93,
+      "trigger": 8.54
+    },
+    "000725_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 5.77,
+      "trigger": 7.48
+    },
+    "000725_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 5.77,
+      "trigger": 8.05
+    },
+    "000899_trend_break": {
+      "triggered_at": "09:35",
+      "price": 9.6,
+      "trigger": 9.9
+    },
+    "000899_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 9.6,
+      "trigger": 12.84
+    },
+    "001896_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 12.02,
+      "trigger": 17.57
+    },
+    "001896_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 12.02,
+      "trigger": 15.28
+    },
+    "001896_trend_break": {
+      "triggered_at": "09:35",
+      "price": 12.02,
+      "trigger": 15.29
+    },
+    "002067_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 4.24,
+      "trigger": 4.76
+    },
+    "002149_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 36.13,
+      "trigger": 49.93
+    },
+    "002149_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 36.13,
+      "trigger": 45.94
+    },
+    "002156_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 61.92,
+      "trigger": 69.74
+    },
+    "002156_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 61.92,
+      "trigger": 69.86
+    },
+    "002290_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 63.28,
+      "trigger": 85.46
+    },
+    "002290_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 63.28,
+      "trigger": 85.07
+    },
+    "002290_trend_break": {
+      "triggered_at": "09:35",
+      "price": 63.28,
+      "trigger": 74.39
+    },
+    "002654_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 13.77,
+      "trigger": 18.59
+    },
+    "002654_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 13.77,
+      "trigger": 18.76
+    },
+    "002709_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 36.36,
+      "trigger": 50.24
+    },
+    "002709_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 36.36,
+      "trigger": 47.66
+    },
+    "301120_trend_break": {
+      "triggered_at": "09:35",
+      "price": 15.04,
+      "trigger": 15.88
+    },
+    "301120_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 15.04,
+      "trigger": 21.83
+    },
+    "301179_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 19.27,
+      "trigger": 23.74
+    },
+    "600021_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 13.63,
+      "trigger": 15.24
+    },
+    "600021_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 13.63,
+      "trigger": 14.37
+    },
+    "600021_trend_break": {
+      "triggered_at": "09:35",
+      "price": 13.63,
+      "trigger": 14.37
+    },
+    "600186_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 11.45,
+      "trigger": 12.9
+    },
+    "600186_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 11.45,
+      "trigger": 11.75
+    },
+    "600309_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 74.53,
+      "trigger": 77.82
+    },
+    "600863_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 4.66,
+      "trigger": 4.92
+    },
+    "601222_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 5.51,
+      "trigger": 5.99
+    },
+    "601728_right_side_confirm": {
+      "triggered_at": "09:35",
+      "price": 6.37,
+      "trigger": 6.3
+    },
+    "601991_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 5.84,
+      "trigger": 7.58
+    },
+    "601991_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 5.84,
+      "trigger": 7.04
+    },
+    "601991_trend_break": {
+      "triggered_at": "09:35",
+      "price": 5.84,
+      "trigger": 6.63
+    },
+    "603005_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 30.45,
+      "trigger": 46.45
+    },
+    "603005_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 30.45,
+      "trigger": 45.43
+    },
+    "603256_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 135.81,
+      "trigger": 243.04
+    },
+    "603256_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 135.81,
+      "trigger": 224.39
+    },
+    "603256_trend_break": {
+      "triggered_at": "09:35",
+      "price": 135.81,
+      "trigger": 209.29
+    },
+    "603693_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 11.16,
+      "trigger": 12.83
+    },
+    "603693_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 11.16,
+      "trigger": 12.14
+    },
+    "603693_trend_break": {
+      "triggered_at": "09:35",
+      "price": 11.16,
+      "trigger": 12.1
+    },
+    "603757_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 67.94,
+      "trigger": 69.06
+    },
+    "603757_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 67.94,
+      "trigger": 74.72
+    },
+    "605006_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 13.83,
+      "trigger": 20.66
+    },
+    "605006_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 13.83,
+      "trigger": 18.07
+    },
+    "605006_trend_break": {
+      "triggered_at": "09:35",
+      "price": 13.83,
+      "trigger": 17.55
+    },
+    "300308_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 870.07,
+      "trigger": 1149.82
+    },
+    "300308_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 870.07,
+      "trigger": 1221.86
+    },
+    "300308_trend_break": {
+      "triggered_at": "09:35",
+      "price": 870.07,
+      "trigger": 1099.95
+    },
+    "300502_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 405.95,
+      "trigger": 532.64
+    },
+    "300502_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 405.95,
+      "trigger": 548.8
+    },
+    "300502_trend_break": {
+      "triggered_at": "09:35",
+      "price": 405.95,
+      "trigger": 479.33
+    },
+    "300394_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 256.8,
+      "trigger": 261.73
+    },
+    "300394_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 256.8,
+      "trigger": 291.53
+    },
+    "300394_trend_break": {
+      "triggered_at": "09:35",
+      "price": 256.8,
+      "trigger": 257.31
+    },
+    "601138_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 62.48,
+      "trigger": 66.31
+    },
+    "601138_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 62.48,
+      "trigger": 70.34
+    },
+    "601138_trend_break": {
+      "triggered_at": "09:35",
+      "price": 62.48,
+      "trigger": 63.95
+    },
+    "002475_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 57.15,
+      "trigger": 63.62
+    },
+    "002475_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 57.15,
+      "trigger": 66.47
+    },
+    "002475_trend_break": {
+      "triggered_at": "09:35",
+      "price": 57.15,
+      "trigger": 58.91
+    },
+    "300750_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 373.5,
+      "trigger": 384.74
+    },
+    "603986_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 398.88,
+      "trigger": 666.33
+    },
+    "603986_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 398.88,
+      "trigger": 667.51
+    },
+    "603986_trend_break": {
+      "triggered_at": "09:35",
+      "price": 398.88,
+      "trigger": 562.94
+    },
+    "688041_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 245.7,
+      "trigger": 345.39
+    },
+    "688041_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 245.7,
+      "trigger": 336.22
+    },
+    "688041_trend_break": {
+      "triggered_at": "09:35",
+      "price": 245.7,
+      "trigger": 294.66
+    },
+    "688256_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 1045.0,
+      "trigger": 1430.22
+    },
+    "688256_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 1045.0,
+      "trigger": 1426.98
+    },
+    "688256_trend_break": {
+      "triggered_at": "09:35",
+      "price": 1045.0,
+      "trigger": 1251.16
+    },
+    "002335_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 30.37,
+      "trigger": 42.31
+    },
+    "002335_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 30.37,
+      "trigger": 40.57
+    },
+    "002335_trend_break": {
+      "triggered_at": "09:35",
+      "price": 30.37,
+      "trigger": 37.08
+    },
+    "603341_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 37.36,
+      "trigger": 41.27
+    },
+    "603341_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 37.36,
+      "trigger": 39.57
+    },
+    "600233_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 16.82,
+      "trigger": 17.45
+    },
+    "002273_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 25.93,
+      "trigger": 39.75
+    },
+    "002273_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 25.93,
+      "trigger": 38.11
+    },
+    "002273_trend_break": {
+      "triggered_at": "09:35",
+      "price": 25.93,
+      "trigger": 34.83
+    },
+    "002738_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 51.16,
+      "trigger": 64.36
+    },
+    "002738_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 51.16,
+      "trigger": 61.71
+    },
+    "002738_trend_break": {
+      "triggered_at": "09:35",
+      "price": 51.16,
+      "trigger": 56.4
+    },
+    "600580_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 30.02,
+      "trigger": 36.78
+    },
+    "600580_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 30.02,
+      "trigger": 35.27
+    },
+    "600580_trend_break": {
+      "triggered_at": "09:35",
+      "price": 30.02,
+      "trigger": 32.23
+    },
+    "002126_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 41.7,
+      "trigger": 53.72
+    },
+    "002126_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 41.7,
+      "trigger": 51.5
+    },
+    "002126_trend_break": {
+      "triggered_at": "09:35",
+      "price": 41.7,
+      "trigger": 47.07
+    },
+    "002607_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 2.07,
+      "trigger": 2.08
+    },
+    "603296_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 78.0,
+      "trigger": 79.25
+    },
+    "600118_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 60.36,
+      "trigger": 90.13
+    },
+    "600118_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 60.36,
+      "trigger": 86.42
+    },
+    "600118_trend_break": {
+      "triggered_at": "09:35",
+      "price": 60.36,
+      "trigger": 78.98
+    },
+    "601628_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 38.24,
+      "trigger": 39.31
+    },
+    "002739_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 8.37,
+      "trigger": 10.38
+    },
+    "002739_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 8.37,
+      "trigger": 9.95
+    },
+    "002739_trend_break": {
+      "triggered_at": "09:35",
+      "price": 8.37,
+      "trigger": 9.09
+    },
+    "300146_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 9.82,
+      "trigger": 10.11
+    },
+    "002432_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 67.49,
+      "trigger": 78.71
+    },
+    "002432_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 67.49,
+      "trigger": 75.46
+    },
+    "002432_trend_break": {
+      "triggered_at": "09:35",
+      "price": 67.49,
+      "trigger": 68.97
+    },
+    "300750_buy_zone": {
+      "triggered_at": "09:45",
+      "price": 373.0,
+      "trigger": 373.05
+    },
+    "600310_buy_strong": {
+      "triggered_at": "10:05",
+      "price": 4.18,
+      "trigger": 4.18
+    }
+  },
+  "2026-08-26": {
+    "000600_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 7.96,
+      "trigger": 9.1
+    },
+    "000600_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 7.96,
+      "trigger": 8.48
+    },
+    "000600_trend_break": {
+      "triggered_at": "09:35",
+      "price": 7.96,
+      "trigger": 8.54
+    },
+    "000725_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 5.76,
+      "trigger": 7.48
+    },
+    "000725_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 5.76,
+      "trigger": 8.05
+    },
+    "000899_trend_break": {
+      "triggered_at": "09:35",
+      "price": 9.55,
+      "trigger": 9.9
+    },
+    "000899_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 9.55,
+      "trigger": 12.84
+    },
+    "001896_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 11.83,
+      "trigger": 17.57
+    },
+    "001896_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 11.83,
+      "trigger": 15.28
+    },
+    "001896_trend_break": {
+      "triggered_at": "09:35",
+      "price": 11.83,
+      "trigger": 15.29
+    },
+    "002067_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 4.16,
+      "trigger": 4.76
+    },
+    "002149_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 36.47,
+      "trigger": 49.93
+    },
+    "002149_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 36.47,
+      "trigger": 45.94
+    },
+    "002156_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 61.83,
+      "trigger": 69.74
+    },
+    "002156_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 61.83,
+      "trigger": 69.86
+    },
+    "002290_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 62.52,
+      "trigger": 85.46
+    },
+    "002290_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 62.52,
+      "trigger": 85.07
+    },
+    "002290_trend_break": {
+      "triggered_at": "09:35",
+      "price": 62.52,
+      "trigger": 74.39
+    },
+    "002654_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 13.82,
+      "trigger": 18.59
+    },
+    "002654_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 13.82,
+      "trigger": 18.76
+    },
+    "002709_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 36.52,
+      "trigger": 50.24
+    },
+    "002709_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 36.52,
+      "trigger": 47.66
+    },
+    "301120_trend_break": {
+      "triggered_at": "09:35",
+      "price": 15.05,
+      "trigger": 15.88
+    },
+    "301120_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 15.05,
+      "trigger": 21.83
+    },
+    "301179_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 19.68,
+      "trigger": 23.74
+    },
+    "600021_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 13.68,
+      "trigger": 15.24
+    },
+    "600021_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 13.68,
+      "trigger": 14.37
+    },
+    "600021_trend_break": {
+      "triggered_at": "09:35",
+      "price": 13.68,
+      "trigger": 14.37
+    },
+    "600186_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 11.55,
+      "trigger": 12.9
+    },
+    "600186_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 11.55,
+      "trigger": 11.75
+    },
+    "600309_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 72.59,
+      "trigger": 77.82
+    },
+    "600863_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 4.64,
+      "trigger": 4.92
+    },
+    "601222_trend_break_warn": {
+      "triggered_at": "09:35",
+      "price": 5.52,
+      "trigger": 5.99
+    },
+    "601728_right_side_confirm": {
+      "triggered_at": "09:35",
+      "price": 6.42,
+      "trigger": 6.3
+    },
+    "601991_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 5.82,
+      "trigger": 7.58
+    },
+    "601991_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 5.82,
+      "trigger": 7.04
+    },
+    "601991_trend_break": {
+      "triggered_at": "09:35",
+      "price": 5.82,
+      "trigger": 6.63
+    },
+    "603005_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 30.19,
+      "trigger": 46.45
+    },
+    "603005_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 30.19,
+      "trigger": 45.43
+    },
+    "603256_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 134.74,
+      "trigger": 243.04
+    },
+    "603256_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 134.74,
+      "trigger": 224.39
+    },
+    "603256_trend_break": {
+      "triggered_at": "09:35",
+      "price": 134.74,
+      "trigger": 209.29
+    },
+    "603693_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 11.28,
+      "trigger": 12.83
+    },
+    "603693_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 11.28,
+      "trigger": 12.14
+    },
+    "603693_trend_break": {
+      "triggered_at": "09:35",
+      "price": 11.28,
+      "trigger": 12.1
+    },
+    "603757_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 65.93,
+      "trigger": 69.06
+    },
+    "603757_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 65.93,
+      "trigger": 74.72
+    },
+    "605006_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 13.72,
+      "trigger": 20.66
+    },
+    "605006_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 13.72,
+      "trigger": 18.07
+    },
+    "605006_trend_break": {
+      "triggered_at": "09:35",
+      "price": 13.72,
+      "trigger": 17.55
+    },
+    "300308_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 853.77,
+      "trigger": 1149.82
+    },
+    "300308_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 853.77,
+      "trigger": 1221.86
+    },
+    "300308_trend_break": {
+      "triggered_at": "09:35",
+      "price": 853.77,
+      "trigger": 1099.95
+    },
+    "300502_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 399.84,
+      "trigger": 532.64
+    },
+    "300502_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 399.84,
+      "trigger": 548.8
+    },
+    "300502_trend_break": {
+      "triggered_at": "09:35",
+      "price": 399.84,
+      "trigger": 479.33
+    },
+    "300394_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 253.47,
+      "trigger": 261.73
+    },
+    "300394_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 253.47,
+      "trigger": 291.53
+    },
+    "300394_trend_break": {
+      "triggered_at": "09:35",
+      "price": 253.47,
+      "trigger": 257.31
+    },
+    "601138_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 60.41,
+      "trigger": 66.31
+    },
+    "601138_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 60.41,
+      "trigger": 70.34
+    },
+    "601138_trend_break": {
+      "triggered_at": "09:35",
+      "price": 60.41,
+      "trigger": 63.95
+    },
+    "002475_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 54.9,
+      "trigger": 63.62
+    },
+    "002475_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 54.9,
+      "trigger": 66.47
+    },
+    "002475_trend_break": {
+      "triggered_at": "09:35",
+      "price": 54.9,
+      "trigger": 58.91
+    },
+    "300750_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 377.04,
+      "trigger": 384.74
+    },
+    "603986_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 393.35,
+      "trigger": 666.33
+    },
+    "603986_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 393.35,
+      "trigger": 667.51
+    },
+    "603986_trend_break": {
+      "triggered_at": "09:35",
+      "price": 393.35,
+      "trigger": 562.94
+    },
+    "688041_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 230.2,
+      "trigger": 345.39
+    },
+    "688041_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 230.2,
+      "trigger": 336.22
+    },
+    "688041_trend_break": {
+      "triggered_at": "09:35",
+      "price": 230.2,
+      "trigger": 294.66
+    },
+    "688256_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 1009.57,
+      "trigger": 1430.22
+    },
+    "688256_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 1009.57,
+      "trigger": 1426.98
+    },
+    "688256_trend_break": {
+      "triggered_at": "09:35",
+      "price": 1009.57,
+      "trigger": 1251.16
+    },
+    "002335_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 30.42,
+      "trigger": 42.31
+    },
+    "002335_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 30.42,
+      "trigger": 40.57
+    },
+    "002335_trend_break": {
+      "triggered_at": "09:35",
+      "price": 30.42,
+      "trigger": 37.08
+    },
+    "603341_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 36.98,
+      "trigger": 41.27
+    },
+    "603341_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 36.98,
+      "trigger": 39.57
+    },
+    "600233_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 16.89,
+      "trigger": 17.45
+    },
+    "002273_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 25.46,
+      "trigger": 39.75
+    },
+    "002273_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 25.46,
+      "trigger": 38.11
+    },
+    "002273_trend_break": {
+      "triggered_at": "09:35",
+      "price": 25.46,
+      "trigger": 34.83
+    },
+    "002738_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 50.94,
+      "trigger": 64.36
+    },
+    "002738_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 50.94,
+      "trigger": 61.71
+    },
+    "002738_trend_break": {
+      "triggered_at": "09:35",
+      "price": 50.94,
+      "trigger": 56.4
+    },
+    "600580_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 29.96,
+      "trigger": 36.78
+    },
+    "600580_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 29.96,
+      "trigger": 35.27
+    },
+    "600580_trend_break": {
+      "triggered_at": "09:35",
+      "price": 29.96,
+      "trigger": 32.23
+    },
+    "002126_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 40.78,
+      "trigger": 53.72
+    },
+    "002126_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 40.78,
+      "trigger": 51.5
+    },
+    "002126_trend_break": {
+      "triggered_at": "09:35",
+      "price": 40.78,
+      "trigger": 47.07
+    },
+    "002607_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 2.07,
+      "trigger": 2.08
+    },
+    "603296_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 75.93,
+      "trigger": 79.25
+    },
+    "603296_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 75.93,
+      "trigger": 75.98
+    },
+    "600118_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 60.52,
+      "trigger": 90.13
+    },
+    "600118_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 60.52,
+      "trigger": 86.42
+    },
+    "600118_trend_break": {
+      "triggered_at": "09:35",
+      "price": 60.52,
+      "trigger": 78.98
+    },
+    "601628_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 37.65,
+      "trigger": 39.31
+    },
+    "601628_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 37.65,
+      "trigger": 37.69
+    },
+    "002739_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 8.34,
+      "trigger": 10.38
+    },
+    "002739_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 8.34,
+      "trigger": 9.95
+    },
+    "002739_trend_break": {
+      "triggered_at": "09:35",
+      "price": 8.34,
+      "trigger": 9.09
+    },
+    "300146_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 9.76,
+      "trigger": 10.11
+    },
+    "002432_buy_zone": {
+      "triggered_at": "09:35",
+      "price": 66.24,
+      "trigger": 78.71
+    },
+    "002432_buy_strong": {
+      "triggered_at": "09:35",
+      "price": 66.24,
+      "trigger": 75.46
+    },
+    "002432_trend_break": {
+      "triggered_at": "09:35",
+      "price": 66.24,
+      "trigger": 68.97
+    },
+    "600186_trend_break": {
+      "triggered_at": "09:55",
+      "price": 11.3,
+      "trigger": 11.34
+    },
+    "600602_buy_zone": {
+      "triggered_at": "09:55",
+      "price": 18.01,
+      "trigger": 18.12
+    }
+  },
   "2026-07-21": {
     "000600_buy_strong": {
       "triggered_at": "09:35",
@@ -2078,970 +3172,6 @@
       "triggered_at": "10:00",
       "price": 39.3,
       "trigger": 39.31
-    }
-  },
-  "2026-07-15": {
-    "000600_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 7.82,
-      "trigger": 9.1
-    },
-    "000600_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 7.82,
-      "trigger": 8.48
-    },
-    "000600_trend_break": {
-      "triggered_at": "09:30",
-      "price": 7.82,
-      "trigger": 8.54
-    },
-    "000725_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 6.92,
-      "trigger": 7.48
-    },
-    "000725_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 6.92,
-      "trigger": 8.05
-    },
-    "000899_trend_break": {
-      "triggered_at": "09:30",
-      "price": 9.7,
-      "trigger": 9.9
-    },
-    "000899_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 9.7,
-      "trigger": 12.84
-    },
-    "001896_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 13.57,
-      "trigger": 17.57
-    },
-    "001896_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 13.57,
-      "trigger": 15.28
-    },
-    "001896_trend_break": {
-      "triggered_at": "09:30",
-      "price": 13.57,
-      "trigger": 15.29
-    },
-    "002067_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 3.89,
-      "trigger": 4.76
-    },
-    "002149_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 38.34,
-      "trigger": 49.93
-    },
-    "002149_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 38.34,
-      "trigger": 45.94
-    },
-    "002290_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 76.92,
-      "trigger": 85.46
-    },
-    "002290_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 76.92,
-      "trigger": 85.07
-    },
-    "002654_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 16.7,
-      "trigger": 18.59
-    },
-    "002654_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 16.7,
-      "trigger": 18.76
-    },
-    "002709_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 38.31,
-      "trigger": 50.24
-    },
-    "002709_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 38.31,
-      "trigger": 47.66
-    },
-    "301120_trend_break": {
-      "triggered_at": "09:30",
-      "price": 14.53,
-      "trigger": 15.88
-    },
-    "301120_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 14.53,
-      "trigger": 21.83
-    },
-    "301179_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 20.26,
-      "trigger": 23.74
-    },
-    "600021_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 13.61,
-      "trigger": 15.24
-    },
-    "600021_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 13.61,
-      "trigger": 14.37
-    },
-    "600021_trend_break": {
-      "triggered_at": "09:30",
-      "price": 13.61,
-      "trigger": 14.37
-    },
-    "600186_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 9.49,
-      "trigger": 12.9
-    },
-    "600186_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 9.49,
-      "trigger": 11.75
-    },
-    "600186_trend_break": {
-      "triggered_at": "09:30",
-      "price": 9.49,
-      "trigger": 11.34
-    },
-    "600309_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 68.91,
-      "trigger": 77.82
-    },
-    "600310_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 4.05,
-      "trigger": 4.18
-    },
-    "600863_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 4.77,
-      "trigger": 4.92
-    },
-    "601222_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 5.39,
-      "trigger": 5.99
-    },
-    "601728_trend_watch": {
-      "triggered_at": "09:30",
-      "price": 5.72,
-      "trigger": 5.96
-    },
-    "601991_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 5.81,
-      "trigger": 7.58
-    },
-    "601991_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 5.81,
-      "trigger": 7.04
-    },
-    "601991_trend_break": {
-      "triggered_at": "09:30",
-      "price": 5.81,
-      "trigger": 6.63
-    },
-    "603005_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 41.28,
-      "trigger": 46.45
-    },
-    "603005_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 41.28,
-      "trigger": 45.43
-    },
-    "603256_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 207.02,
-      "trigger": 243.04
-    },
-    "603256_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 207.02,
-      "trigger": 224.39
-    },
-    "603256_trend_break": {
-      "triggered_at": "09:30",
-      "price": 207.02,
-      "trigger": 209.29
-    },
-    "603693_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 11.29,
-      "trigger": 12.83
-    },
-    "603693_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 11.29,
-      "trigger": 12.14
-    },
-    "603693_trend_break": {
-      "triggered_at": "09:30",
-      "price": 11.29,
-      "trigger": 12.1
-    },
-    "605006_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 17.1,
-      "trigger": 20.66
-    },
-    "605006_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 17.1,
-      "trigger": 18.07
-    },
-    "605006_trend_break": {
-      "triggered_at": "09:30",
-      "price": 17.1,
-      "trigger": 17.55
-    },
-    "300308_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 1192.85,
-      "trigger": 1221.86
-    },
-    "300394_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 275.0,
-      "trigger": 291.53
-    },
-    "601138_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 65.73,
-      "trigger": 66.31
-    },
-    "601138_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 65.73,
-      "trigger": 70.34
-    },
-    "002475_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 62.1,
-      "trigger": 63.62
-    },
-    "002475_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 62.1,
-      "trigger": 66.47
-    },
-    "300750_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 367.56,
-      "trigger": 373.05
-    },
-    "300750_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 367.56,
-      "trigger": 384.74
-    },
-    "603986_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 599.0,
-      "trigger": 666.33
-    },
-    "603986_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 599.0,
-      "trigger": 667.51
-    },
-    "688256_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 1419.24,
-      "trigger": 1430.22
-    },
-    "688256_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 1419.24,
-      "trigger": 1426.98
-    },
-    "002335_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 33.7,
-      "trigger": 42.31
-    },
-    "002335_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 33.7,
-      "trigger": 40.57
-    },
-    "002335_trend_break": {
-      "triggered_at": "09:30",
-      "price": 33.7,
-      "trigger": 37.08
-    },
-    "603341_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 39.99,
-      "trigger": 41.27
-    },
-    "600233_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 17.2,
-      "trigger": 17.45
-    },
-    "002273_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 31.48,
-      "trigger": 39.75
-    },
-    "002273_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 31.48,
-      "trigger": 38.11
-    },
-    "002273_trend_break": {
-      "triggered_at": "09:30",
-      "price": 31.48,
-      "trigger": 34.83
-    },
-    "002738_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 52.55,
-      "trigger": 64.36
-    },
-    "002738_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 52.55,
-      "trigger": 61.71
-    },
-    "002738_trend_break": {
-      "triggered_at": "09:30",
-      "price": 52.55,
-      "trigger": 56.4
-    },
-    "600580_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 31.66,
-      "trigger": 36.78
-    },
-    "600580_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 31.66,
-      "trigger": 35.27
-    },
-    "600580_trend_break": {
-      "triggered_at": "09:30",
-      "price": 31.66,
-      "trigger": 32.23
-    },
-    "002126_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 52.0,
-      "trigger": 53.72
-    },
-    "002607_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 1.81,
-      "trigger": 2.08
-    },
-    "002607_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 1.81,
-      "trigger": 1.99
-    },
-    "002607_trend_break": {
-      "triggered_at": "09:30",
-      "price": 1.81,
-      "trigger": 1.82
-    },
-    "300017_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 14.36,
-      "trigger": 14.5
-    },
-    "603296_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 77.88,
-      "trigger": 79.25
-    },
-    "600118_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 77.53,
-      "trigger": 90.13
-    },
-    "600118_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 77.53,
-      "trigger": 86.42
-    },
-    "600118_trend_break": {
-      "triggered_at": "09:30",
-      "price": 77.53,
-      "trigger": 78.98
-    },
-    "002290_trend_break": {
-      "triggered_at": "10:00",
-      "price": 73.19,
-      "trigger": 74.39
-    },
-    "603757_buy_zone": {
-      "triggered_at": "10:00",
-      "price": 72.3,
-      "trigger": 74.72
-    },
-    "688041_buy_zone": {
-      "triggered_at": "10:00",
-      "price": 332.9,
-      "trigger": 345.39
-    },
-    "688041_buy_strong": {
-      "triggered_at": "10:00",
-      "price": 332.9,
-      "trigger": 336.22
-    },
-    "002126_buy_strong": {
-      "triggered_at": "10:00",
-      "price": 49.88,
-      "trigger": 51.5
-    },
-    "603341_buy_strong": {
-      "triggered_at": "11:00",
-      "price": 39.39,
-      "trigger": 39.57
-    },
-    "300394_buy_zone": {
-      "triggered_at": "14:00",
-      "price": 261.72,
-      "trigger": 261.73
-    },
-    "601138_trend_break": {
-      "triggered_at": "14:30",
-      "price": 63.89,
-      "trigger": 63.95
-    }
-  },
-  "2026-07-14": {
-    "000600_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 7.71,
-      "trigger": 9.1
-    },
-    "000600_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 7.71,
-      "trigger": 8.48
-    },
-    "000600_trend_break": {
-      "triggered_at": "09:30",
-      "price": 7.71,
-      "trigger": 8.54
-    },
-    "000725_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 6.91,
-      "trigger": 7.48
-    },
-    "000725_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 6.91,
-      "trigger": 8.05
-    },
-    "000899_trend_break": {
-      "triggered_at": "09:30",
-      "price": 9.48,
-      "trigger": 9.9
-    },
-    "000899_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 9.48,
-      "trigger": 12.84
-    },
-    "001896_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 13.39,
-      "trigger": 17.57
-    },
-    "001896_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 13.39,
-      "trigger": 15.28
-    },
-    "001896_trend_break": {
-      "triggered_at": "09:30",
-      "price": 13.39,
-      "trigger": 15.29
-    },
-    "002067_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 3.93,
-      "trigger": 4.76
-    },
-    "002149_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 38.81,
-      "trigger": 49.93
-    },
-    "002149_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 38.81,
-      "trigger": 45.94
-    },
-    "002290_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 78.0,
-      "trigger": 85.46
-    },
-    "002290_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 78.0,
-      "trigger": 85.07
-    },
-    "002654_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 16.59,
-      "trigger": 18.59
-    },
-    "002654_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 16.59,
-      "trigger": 18.76
-    },
-    "002709_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 37.57,
-      "trigger": 50.24
-    },
-    "002709_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 37.57,
-      "trigger": 47.66
-    },
-    "301120_trend_break": {
-      "triggered_at": "09:30",
-      "price": 14.45,
-      "trigger": 15.88
-    },
-    "301120_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 14.45,
-      "trigger": 21.83
-    },
-    "301179_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 19.89,
-      "trigger": 23.74
-    },
-    "600021_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 13.47,
-      "trigger": 15.24
-    },
-    "600021_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 13.47,
-      "trigger": 14.37
-    },
-    "600021_trend_break": {
-      "triggered_at": "09:30",
-      "price": 13.47,
-      "trigger": 14.37
-    },
-    "600186_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 10.69,
-      "trigger": 12.9
-    },
-    "600186_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 10.69,
-      "trigger": 11.75
-    },
-    "600186_trend_break": {
-      "triggered_at": "09:30",
-      "price": 10.69,
-      "trigger": 11.34
-    },
-    "600309_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 66.7,
-      "trigger": 77.82
-    },
-    "600310_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 3.85,
-      "trigger": 4.18
-    },
-    "600310_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 3.85,
-      "trigger": 3.99
-    },
-    "600310_trend_break": {
-      "triggered_at": "09:30",
-      "price": 3.85,
-      "trigger": 3.88
-    },
-    "600863_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 4.71,
-      "trigger": 4.92
-    },
-    "601222_trend_break": {
-      "triggered_at": "09:30",
-      "price": 5.35,
-      "trigger": 5.37
-    },
-    "601222_trend_break_warn": {
-      "triggered_at": "09:30",
-      "price": 5.35,
-      "trigger": 5.99
-    },
-    "601728_trend_watch": {
-      "triggered_at": "09:30",
-      "price": 5.69,
-      "trigger": 5.96
-    },
-    "601991_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 5.79,
-      "trigger": 7.58
-    },
-    "601991_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 5.79,
-      "trigger": 7.04
-    },
-    "601991_trend_break": {
-      "triggered_at": "09:30",
-      "price": 5.79,
-      "trigger": 6.63
-    },
-    "603005_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 41.61,
-      "trigger": 46.45
-    },
-    "603005_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 41.61,
-      "trigger": 45.43
-    },
-    "603256_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 188.0,
-      "trigger": 243.04
-    },
-    "603256_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 188.0,
-      "trigger": 224.39
-    },
-    "603256_trend_break": {
-      "triggered_at": "09:30",
-      "price": 188.0,
-      "trigger": 209.29
-    },
-    "603693_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 11.14,
-      "trigger": 12.83
-    },
-    "603693_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 11.14,
-      "trigger": 12.14
-    },
-    "603693_trend_break": {
-      "triggered_at": "09:30",
-      "price": 11.14,
-      "trigger": 12.1
-    },
-    "603757_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 72.87,
-      "trigger": 74.72
-    },
-    "605006_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 15.6,
-      "trigger": 20.66
-    },
-    "605006_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 15.6,
-      "trigger": 18.07
-    },
-    "605006_trend_break": {
-      "triggered_at": "09:30",
-      "price": 15.6,
-      "trigger": 17.55
-    },
-    "300308_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 1110.99,
-      "trigger": 1149.82
-    },
-    "300308_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 1110.99,
-      "trigger": 1221.86
-    },
-    "300502_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 523.45,
-      "trigger": 532.64
-    },
-    "300502_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 523.45,
-      "trigger": 548.8
-    },
-    "300394_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 257.8,
-      "trigger": 261.73
-    },
-    "300394_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 257.8,
-      "trigger": 291.53
-    },
-    "601138_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 62.86,
-      "trigger": 66.31
-    },
-    "601138_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 62.86,
-      "trigger": 70.34
-    },
-    "601138_trend_break": {
-      "triggered_at": "09:30",
-      "price": 62.86,
-      "trigger": 63.95
-    },
-    "002475_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 58.6,
-      "trigger": 63.62
-    },
-    "002475_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 58.6,
-      "trigger": 66.47
-    },
-    "002475_trend_break": {
-      "triggered_at": "09:30",
-      "price": 58.6,
-      "trigger": 58.91
-    },
-    "300750_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 353.01,
-      "trigger": 373.05
-    },
-    "300750_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 353.01,
-      "trigger": 384.74
-    },
-    "300750_trend_break": {
-      "triggered_at": "09:30",
-      "price": 353.01,
-      "trigger": 361.62
-    },
-    "603986_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 555.0,
-      "trigger": 666.33
-    },
-    "603986_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 555.0,
-      "trigger": 667.51
-    },
-    "603986_trend_break": {
-      "triggered_at": "09:30",
-      "price": 555.0,
-      "trigger": 562.94
-    },
-    "688256_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 1414.14,
-      "trigger": 1430.22
-    },
-    "688256_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 1414.14,
-      "trigger": 1426.98
-    },
-    "002335_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 34.09,
-      "trigger": 42.31
-    },
-    "002335_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 34.09,
-      "trigger": 40.57
-    },
-    "002335_trend_break": {
-      "triggered_at": "09:30",
-      "price": 34.09,
-      "trigger": 37.08
-    },
-    "603341_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 40.58,
-      "trigger": 41.27
-    },
-    "600233_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 16.78,
-      "trigger": 17.45
-    },
-    "002273_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 29.88,
-      "trigger": 39.75
-    },
-    "002273_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 29.88,
-      "trigger": 38.11
-    },
-    "002273_trend_break": {
-      "triggered_at": "09:30",
-      "price": 29.88,
-      "trigger": 34.83
-    },
-    "002738_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 51.4,
-      "trigger": 64.36
-    },
-    "002738_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 51.4,
-      "trigger": 61.71
-    },
-    "002738_trend_break": {
-      "triggered_at": "09:30",
-      "price": 51.4,
-      "trigger": 56.4
-    },
-    "600580_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 31.2,
-      "trigger": 36.78
-    },
-    "600580_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 31.2,
-      "trigger": 35.27
-    },
-    "600580_trend_break": {
-      "triggered_at": "09:30",
-      "price": 31.2,
-      "trigger": 32.23
-    },
-    "002126_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 50.67,
-      "trigger": 53.72
-    },
-    "002126_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 50.67,
-      "trigger": 51.5
-    },
-    "002607_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 1.79,
-      "trigger": 2.08
-    },
-    "002607_buy_strong": {
-      "triggered_at": "09:30",
-      "price": 1.79,
-      "trigger": 1.99
-    },
-    "002607_trend_break": {
-      "triggered_at": "09:30",
-      "price": 1.79,
-      "trigger": 1.82
-    },
-    "600118_buy_zone": {
-      "triggered_at": "09:30",
-      "price": 86.91,
-      "trigger": 90.13
-    },
-    "688041_buy_zone": {
-      "triggered_at": "10:00",
-      "price": 339.0,
-      "trigger": 345.39
-    },
-    "300017_buy_zone": {
-      "triggered_at": "10:00",
-      "price": 14.09,
-      "trigger": 14.5
-    },
-    "603296_buy_zone": {
-      "triggered_at": "10:00",
-      "price": 74.43,
-      "trigger": 79.25
-    },
-    "603296_buy_strong": {
-      "triggered_at": "10:00",
-      "price": 74.43,
-      "trigger": 75.98
-    },
-    "600118_buy_strong": {
-      "triggered_at": "10:00",
-      "price": 82.13,
-      "trigger": 86.42
-    },
-    "002156_buy_strong": {
-      "triggered_at": "11:00",
-      "price": 69.45,
-      "trigger": 69.74
-    },
-    "002156_buy_zone": {
-      "triggered_at": "11:00",
-      "price": 69.45,
-      "trigger": 69.86
-    },
-    "002290_trend_break": {
-      "triggered_at": "11:00",
-      "price": 74.32,
-      "trigger": 74.39
-    },
-    "688041_buy_strong": {
-      "triggered_at": "11:00",
-      "price": 325.0,
-      "trigger": 336.22
-    },
-    "603341_buy_strong": {
-      "triggered_at": "11:00",
-      "price": 39.26,
-      "trigger": 39.57
-    },
-    "300017_buy_strong": {
-      "triggered_at": "11:00",
-      "price": 13.67,
-      "trigger": 13.9
     }
   }
 }

@@ -595,7 +595,11 @@ def _on_order(event):
     }
     vt_order_id = order.vt_order_id or ""
     broker_order_id = order.trade_id or order.vt_order_id or ""  # 实盘委托号
-    status_str = status_map.get(str(order.status), str(order.status))
+    # vnpy Status 枚举 str() 形如 "Status.SUBMITTING" / "OrderStatus.ALL_TRADED"，
+    # 需归一化到裸枚举名再映射，避免 fallback 存原始枚举串导致状态脏数据。
+    _raw_status = str(order.status)
+    _status_key = _raw_status.split(".")[-1].upper() if "." in _raw_status else _raw_status.upper()
+    status_str = status_map.get(_status_key, _raw_status)
 
     # 尝试更新已有记录(ORDER 事件会多次推送同一单)
     conn = get_conn()

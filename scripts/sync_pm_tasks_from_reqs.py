@@ -11,8 +11,8 @@ Mapping (REQ doc status -> task status):
   testing -> in_progress (still needs production verification, do NOT mark done)
   todo / pending -> todo (leave)
 """
-import sqlite3
 import re
+import sqlite3
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,7 +31,7 @@ def read_req_statuses():
         fm = text.split("---", 2)
         if len(fm) < 2:
             continue
-        s = re.search(r'^status:\s*(\S+)', fm[1], re.M)
+        s = re.search(r'^status:\s*(\S+)', fm[1], re.MULTILINE)
         if s:
             out[req_id] = s.group(1).strip()
     return out

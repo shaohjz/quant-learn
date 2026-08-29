@@ -3,3 +3,8 @@
 docs/STRATEGY_SPEC.md      text eol=lf
 output/strategy_review/**  text eol=lf
 pm/strategy_review/**      text eol=lf
+# 配置文件同理，且更关键：它们在 Windows 产机上由脚本回写（CRLF），
+# 在开发机上是 LF。不固定会每天产生 2800+1200 行整文件 diff，
+# 把「今天到底调了哪个参数」彻底淹没。2026-08-29 补上。
+config.yaml                text eol=lf
+config_auto.yaml           text eol=lf

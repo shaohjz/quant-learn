@@ -67,6 +67,9 @@ MAX_POSITIONS = PARAMS.max_positions
 MIN_SCORE_BUY = PARAMS.min_score_buy
 EXECUTABLE_TYPES = set(PARAMS.executable_types)
 SINGLE_BUDGET = PARAMS.single_budget
+# 费率试算预算。None = 沿用历史的固定 100 股口径（账户 #3 现状，行为不变）。
+# 账户 #4 银行池由 bank_swing_daily 覆盖为银行单票预算。
+SCAN_FEE_BUDGET: float | None = None
 LOT = 100
 
 # 可被 bank_swing_daily 覆盖的展示/流程开关（默认 = 通用波段 #3）
@@ -317,11 +320,11 @@ def run_scan() -> list[dict]:
     results = []
     for code, name in get_stock_pool():
         try:
-            r = scan_stock(code, name)
+            r = scan_stock(code, name, fee_budget=SCAN_FEE_BUDGET)
             if r:
                 results.append(r)
         except Exception:
-            pass
+            log.warning("扫描失败，已跳过 %s(%s)", code, name, exc_info=True)
         time.sleep(0.12)
     results.sort(key=lambda x: x["score"], reverse=True)
     save_results(results, date.today().isoformat())

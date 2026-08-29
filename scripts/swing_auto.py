@@ -199,8 +199,29 @@ def calc_fees(buy_price, sell_price, shares):
     return buy_comm + sell_comm + stamp_tax
 
 
-def scan_stock(code, name):
-    """扫描单只股票，返回波段机会（含盈亏比）"""
+LOT_SIZE = 100
+
+
+def fee_test_shares(price: float, fee_budget: float | None) -> int:
+    """费率试算用的股数。
+
+    历史上固定按 100 股试算。低价股（银行股多在 3~11 元）买 100 股只有几百元，
+    必然触发最低佣金 5 元，算出的费率被放大 6~19 倍，净盈亏比被打成负数，
+    低价股因此结构性选不出来（2026-08-29 实测：16 只银行股 0 只可买）。
+
+    fee_budget 为空时沿用历史行为（100 股），保证未启用该参数的账户行为不变。
+    """
+    if fee_budget and price > 0:
+        return max(LOT_SIZE, int(fee_budget / price / LOT_SIZE) * LOT_SIZE)
+    return LOT_SIZE
+
+
+def scan_stock(code, name, fee_budget: float | None = None):
+    """扫描单只股票，返回波段机会（含盈亏比）
+
+    fee_budget: 单票建仓预算，用于按真实仓位试算手续费率。
+                为 None 时沿用历史的固定 100 股口径。
+    """
     quote = get_quote(code)
     if not quote or quote['price'] == 0:
         return None
@@ -339,8 +360,8 @@ def scan_stock(code, name):
     
     risk_reward = upside / downside
     
-    # 计算手续费影响（按100股计算）
-    test_shares = 100
+    # 计算手续费影响（按真实建仓预算试算，而非固定 100 股）
+    test_shares = fee_test_shares(price, fee_budget)
     fees = calc_fees(price, resist, test_shares)
     fee_ratio = fees / (price * test_shares)
     
@@ -356,8 +377,9 @@ def scan_stock(code, name):
     if avg_amp < PARAMS.min_avg_amp:
         return None
     
-    # 建议仓位
-    suggested_shares = max(100, int(10000 / price / 100) * 100)  # 约1万元
+    # 建议仓位：启用预算时按预算给，否则沿用 1 万元口径
+    suggested_budget = fee_budget or 10000.0
+    suggested_shares = max(LOT_SIZE, int(suggested_budget / price / LOT_SIZE) * LOT_SIZE)
     
     return {
         'name': name, 'code': code,

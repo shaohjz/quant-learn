@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import swing_auto as sa  # noqa: E402
+import swing_auto as sa
 
 
 def test_default_is_legacy_100_shares():

@@ -31,6 +31,7 @@ def test_is_bank_code():
 
 def test_apply_bank_profile_overrides(tmp_path, monkeypatch):
     import swing_daily_report as sdr
+
     from scripts.bank_swing_daily import apply_bank_profile
 
     # 隔离 OUT_DIR，避免写真实产物
@@ -67,6 +68,7 @@ def test_bank_params_come_from_bank_section(monkeypatch, tmp_path):
     银行池需要自己的盈亏比门槛与可执行信号类型，且不能反向影响 #3。
     """
     import swing_daily_report as sdr
+
     from scripts.bank_swing_daily import apply_bank_profile
     from sim import config as sim_config
 
@@ -97,6 +99,7 @@ def test_bank_params_come_from_bank_section(monkeypatch, tmp_path):
 def test_bank_params_fall_back_to_defaults_without_section(monkeypatch, tmp_path):
     """未配置 bank_swing_strategy: 段时必须回退到默认值，行为与之前一致。"""
     import swing_daily_report as sdr
+
     from scripts.bank_swing_daily import apply_bank_profile
     from sim import config as sim_config
 

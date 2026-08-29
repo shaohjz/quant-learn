@@ -18,11 +18,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import swing_daily_report as sdr  # noqa: E402
-from quant_core.bank_swing_pool import get_bank_pool  # noqa: E402
+import swing_daily_report as sdr
+
+from quant_core.bank_swing_pool import get_bank_pool
 from quant_core.swing_params import load_swing_params
-from sim.config import account_initial_cash  # noqa: E402
-from sim.config_resolver import resolve_artifact_root  # noqa: E402
+from sim.config import account_initial_cash
+from sim.config_resolver import resolve_artifact_root
 
 BANK_ACCOUNT_ID = 4
 # 银行池在 config.yaml 里的人工声明段。留空则沿用 swing_strategy 的默认值。

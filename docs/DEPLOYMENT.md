@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-08-21（银行股专用波段：账户 #4 + 独立「银行波段结论」）  
+> **更新**：2026-08-29（银行波段费率修复 + 池独立参数；账户 #3 行为不变）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -491,7 +491,37 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
-### ★ 上一次变更怎么部署（银行股专用波段 #4）
+### ★ 最新变更：银行波段费率修复 + 池独立参数（2026-08-29）
+
+> **改了什么：** 修复账户 `#4` 银行波段自上线以来 **0 笔成交、持续空仓** 的问题。根因是 `swing_auto.scan_stock` 的手续费按固定 **100 股** 试算：低价银行股（3~11 元）买 100 股只有几百元，必然触发最低佣金 5 元，费率被放大 **6~19 倍**（光大银行 3.03 元：算成 3.35%，按 8000 元预算实为 0.18%），净盈亏比被打成负数。
+> 三处改动：① `scan_stock` 新增可选 `fee_budget`，按真实建仓预算试算费率；② `swing_params` 支持按 section 读取，银行池走 `config.yaml` 的 `bank_swing_strategy:` 段获得独立参数（`min_net_rr` 1.2→1.0、`executable_types` 增加 C/D）；③ `run_scan` 的 `except Exception: pass` 改为记 WARNING 日志并带堆栈。
+> **账户 #3 行为零变化**：`fee_budget=None` 时走原路径，全量测试失败集合与改前逐条一致。
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+
+REM 1) 确认银行参数已生效（应打印 1.0 / A,B,C,D / 8000.0）
+.venv\Scripts\python.exe -c "from quant_core.swing_params import load_swing_params as L; p=L(section='bank_swing_strategy',auto_overrides={}); print(p.min_net_rr, sorted(p.executable_types), p.single_budget, p.source_layers)"
+
+REM 2) 冒烟（不推企微、不模拟成交）
+.venv\Scripts\python.exe -m pytest tests\test_swing_fee_budget.py tests\test_bank_swing_daily.py -q
+.venv\Scripts\python.exe -u scripts\bank_swing_daily.py --no-push --no-trade
+type output\bank_swing_daily\今天日期.md
+```
+
+**验收标准：**
+
+1. 银行参数打印为 `1.0 ['A', 'B', 'C', 'D'] 8000.0 ('defaults', 'config.yaml:bank_swing_strategy')`。
+2. `tests\test_swing_fee_budget.py` + `tests\test_bank_swing_daily.py` 全绿（共 10 个用例）。
+3. 银行日报不再是「空仓观望 / 无强买点」——用 2026-08-28 收盘行情实测：**改前 0 只可买 → 改后 3 只**（兴业银行、北京银行、华夏银行）。
+4. **账户 #3 不受影响**：`scripts\swing_daily_report.py --no-push` 的选股与持仓行为与改前一致。
+
+**回滚：** `git revert` 两个提交即可；`config.yaml` 的 `bank_swing_strategy:` 段整段删除后，银行池自动回退到通用参数（`min_net_rr` 1.2 / A,B / 1 万预算）。
+
+### 历史变更：银行股专用波段 #4（2026-08-21）
 
 > **改了什么：** 新增账户 `#4 bank_swing`（初始 3 万）+ 固定银行池 + `scripts/bank_swing_daily.py`。每日 16:08 推独立企微结论标题「银行波段结论」，与 `#3` 通用波段隔离，避免满仓锂电/白酒时银行买点永远进不去。收盘摘要/台账纳入 #4；`daily_git_sync` 白名单增加 `output/bank_swing_daily/`。
 

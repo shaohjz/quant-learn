@@ -32,6 +32,10 @@ except ImportError:  # pragma: no cover - 部署文档要求装 pyyaml
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 AUTO_PARAMS_FILE = _PROJECT_ROOT / "config.strategy_params.yaml"
 
+# config.yaml 里人工声明段的默认名字（账户 #3 通用波段）。
+# 其它账户池（如账户 #4 银行池的 bank_swing_strategy）传各自的 section。
+DEFAULT_SECTION = "swing_strategy"
+
 # 生产基线：数值来自 2026-07-31 的 swing_auto.py / swing_daily_report.py。
 # 改这里等于改生产行为，必须走部署文档。
 DEFAULTS: dict[str, dict[str, Any]] = {
@@ -117,15 +121,24 @@ def load_auto_overrides(path: Path | None = None) -> dict:
 def resolve_params_dict(
     config: dict | None = None,
     auto_overrides: dict | None = None,
+    section: str = DEFAULT_SECTION,
 ) -> tuple[dict, tuple[str, ...]]:
-    """按三层优先级合并，返回 (参数树, 生效层名)。"""
+    """按三层优先级合并，返回 (参数树, 生效层名)。
+
+    section 让不同账户池拥有各自的人工声明段（如账户 #4 银行池用
+    `bank_swing_strategy`），同一份 config.yaml 里互不干扰。
+    不传时行为与之前完全一致。
+    """
     layers = ["defaults"]
     merged = copy.deepcopy(DEFAULTS)
 
-    declared = ((config or {}).get("swing_strategy") or {}) if config else {}
+    declared = ((config or {}).get(section) or {}) if config else {}
     if declared:
         merged = _deep_merge(merged, declared)
-        layers.append("config.yaml")
+        # 默认段的层名保持原样，避免打破既有断言与信号台账里的层名追溯
+        layers.append(
+            "config.yaml" if section == DEFAULT_SECTION else f"config.yaml:{section}"
+        )
 
     auto = auto_overrides if auto_overrides is not None else load_auto_overrides()
     if auto:
@@ -138,8 +151,13 @@ def resolve_params_dict(
 def load_swing_params(
     config: dict | None = None,
     auto_overrides: dict | None = None,
+    section: str = DEFAULT_SECTION,
 ) -> SwingParams:
-    """加载生效参数。config 省略时走 sim.config.load_config()。"""
+    """加载生效参数。config 省略时走 sim.config.load_config()。
+
+    section: config.yaml 里的人工声明段名。不同账户池传不同段即可获得
+             各自的阈值；不传时行为与之前完全一致。
+    """
     if config is None:
         try:
             from sim.config import load_config
@@ -148,7 +166,7 @@ def load_swing_params(
         except Exception:
             config = {}
 
-    merged, layers = resolve_params_dict(config, auto_overrides)
+    merged, layers = resolve_params_dict(config, auto_overrides, section=section)
     sig = merged["signals"]
     flt = merged["filters"]
     exe = merged["execution"]

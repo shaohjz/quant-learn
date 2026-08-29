@@ -58,3 +58,56 @@ def test_apply_bank_profile_overrides(tmp_path, monkeypatch):
     md = sdr.render_markdown(c)
     assert md.startswith("# 银行波段结论")
     assert "bank_swing" in md or "#4" in md
+
+
+def test_bank_params_come_from_bank_section(monkeypatch, tmp_path):
+    """银行池必须读 bank_swing_strategy: 段，而不是 #3 的 swing_strategy:。
+
+    银行股波动小、股价低，通用参数下 16 只 0 只可买（2026-08-29 实测）。
+    银行池需要自己的盈亏比门槛与可执行信号类型，且不能反向影响 #3。
+    """
+    import swing_daily_report as sdr
+    from scripts.bank_swing_daily import apply_bank_profile
+    from sim import config as sim_config
+
+    cfg = {
+        "swing_strategy": {
+            "filters": {"min_net_rr": 1.2},
+            "execution": {"executable_types": ["A", "B"], "single_budget": 10000.0},
+        },
+        "bank_swing_strategy": {
+            "filters": {"min_net_rr": 1.0},
+            "execution": {
+                "executable_types": ["A", "B", "C", "D"],
+                "single_budget": 8000.0,
+            },
+        },
+    }
+    monkeypatch.setattr(sim_config, "load_config", lambda: cfg)
+    monkeypatch.setenv("QUANT_ARTIFACT_ROOT", str(tmp_path))
+
+    apply_bank_profile()
+
+    assert sdr.PARAMS.min_net_rr == 1.0
+    assert sdr.PARAMS.single_budget == 8000.0
+    assert sdr.EXECUTABLE_TYPES == {"A", "B", "C", "D"}
+    assert sdr.SCAN_FEE_BUDGET == 8000.0
+
+
+def test_bank_params_fall_back_to_defaults_without_section(monkeypatch, tmp_path):
+    """未配置 bank_swing_strategy: 段时必须回退到默认值，行为与之前一致。"""
+    import swing_daily_report as sdr
+    from scripts.bank_swing_daily import apply_bank_profile
+    from sim import config as sim_config
+
+    cfg = {"swing_strategy": {"execution": {"max_positions": 5}}}
+    monkeypatch.setattr(sim_config, "load_config", lambda: cfg)
+    monkeypatch.setenv("QUANT_ARTIFACT_ROOT", str(tmp_path))
+
+    apply_bank_profile()
+
+    # 通用段的配置不应泄漏到银行池
+    assert sdr.MAX_POSITIONS == 3
+    assert sdr.PARAMS.single_budget == 10000.0
+    assert sdr.PARAMS.min_net_rr == 1.2
+    assert sdr.EXECUTABLE_TYPES == {"A", "B"}

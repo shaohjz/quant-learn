@@ -52,6 +52,20 @@ swing_strategy:
     # 提到 5 仓后 5×1万=5万 与本金对齐，单票集中度反而由 33% 降到 20%。
     # 复核日 2026-08-22，不达预期回退为 3。
     max_positions: 5
+# 账户 #4 银行股专用波段的独立参数。留空则沿用上面 swing_strategy 的默认值。
+# 银行股波动小、股价低（3~11 元），在通用参数下结构性选不出票：
+# 2026-08-29 实测 16 只 0 只可买，其中 10 只有信号但全卡在净盈亏比。
+bank_swing_strategy:
+  filters:
+    # 通用为 1.2。银行股回踩时支撑与阻力都紧贴现价，比值天然≈1，
+    # 1.2 会把所有回踩信号一律挡在门外。
+    min_net_rr: 1.0
+  execution:
+    # 通用只认 A/B（缩量回踩 MA20/MA10）。布林下轨(C) 与 RSI超卖(D)
+    # 对低波动银行股是有效的入场信号，不应一律排除。
+    executable_types: ["A", "B", "C", "D"]
+    max_positions: 3
+    single_budget: 8000.0
 # 策略反馈闭环（信号台账 → 记分卡 → 周度复盘 → 参数提案）
 strategy_feedback:
   enabled: true

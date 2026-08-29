@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import swing_daily_report as sdr  # noqa: E402
 from quant_core.bank_swing_pool import get_bank_pool  # noqa: E402
-from quant_core.swing_params import load_swing_params  # noqa: E402
+from quant_core.swing_params import load_swing_params
 from sim.config import account_initial_cash  # noqa: E402
 from sim.config_resolver import resolve_artifact_root  # noqa: E402
 

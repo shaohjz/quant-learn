@@ -96,6 +96,33 @@ def test_bank_params_come_from_bank_section(monkeypatch, tmp_path):
     assert sdr.SCAN_FEE_BUDGET == 8000.0
 
 
+def test_initial_cash_failure_falls_back_with_warning(monkeypatch, tmp_path, caplog):
+    """读不到账户初始资金时必须兜底 3 万并留下日志，不能静默吞掉。
+
+    这里曾被 `except Exception: pass` 静默吞掉：配置一坏银行日报就当无事发生，
+    用错误的本金算净值，且日志里查不到任何线索。
+    """
+    import logging
+
+    import swing_daily_report as sdr
+
+    import scripts.bank_swing_daily as bsd
+
+    monkeypatch.setenv("QUANT_ARTIFACT_ROOT", str(tmp_path))
+
+    def boom(_account_id):
+        raise OSError("config.yaml 被其它进程占用")
+
+    monkeypatch.setattr(bsd, "account_initial_cash", boom)
+
+    with caplog.at_level(logging.WARNING):
+        bsd.apply_bank_profile()
+
+    assert sdr.SWING_INITIAL_CASH == 30_000.0
+    assert "初始资金" in caplog.text
+    assert "config.yaml 被其它进程占用" in caplog.text
+
+
 def test_bank_params_fall_back_to_defaults_without_section(monkeypatch, tmp_path):
     """未配置 bank_swing_strategy: 段时必须回退到默认值，行为与之前一致。"""
     import swing_daily_report as sdr

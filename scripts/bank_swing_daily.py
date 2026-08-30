@@ -14,6 +14,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -29,15 +31,35 @@ BANK_ACCOUNT_ID = 4
 # 银行池在 config.yaml 里的人工声明段。留空则沿用 swing_strategy 的默认值。
 BANK_SECTION = "bank_swing_strategy"
 
+# 读不到账户初始资金时的兜底值，与 sim/config.py 的 _ACCOUNT_FALLBACK[4] 对齐。
+_FALLBACK_INITIAL_CASH = 30_000.0
+
+# sim.config.load_config 自身不做异常兜底，读账户资金时可能外泄的故障面就这些：
+#   OSError        config.yaml / config.local.yaml 缺失、无权限、被其它进程占用
+#   yaml.YAMLError 人工编辑 yaml 留下语法错误
+#   ValueError     initial_cash / account_id / QUANT_INITIAL_CASH 不是合法数字
+#   TypeError      配置项类型不对
+#   RuntimeError   pyyaml 未安装（sim.config 里也是这么抛的）
+# 只兜底配置读取这一类故障，不放任 KeyboardInterrupt 之类被吞掉。
+_CONFIG_ERRORS = (OSError, yaml.YAMLError, ValueError, TypeError, RuntimeError)
+
 
 def apply_bank_profile() -> None:
     """把通用波段日报切到银行专用 profile（模块级开关，进程内一次）。"""
+    # logger 先切，后面读配置失败时的兜底日志才不会记到通用波段的 logger 上
+    sdr.log = sdr.logging.getLogger("bank_swing_daily")
     sdr.SWING_ACCOUNT_ID = BANK_ACCOUNT_ID
     sdr.SWING_ACCOUNT_NAME = "bank_swing"
     try:
         sdr.SWING_INITIAL_CASH = float(account_initial_cash(BANK_ACCOUNT_ID))
-    except Exception:
-        sdr.SWING_INITIAL_CASH = 30_000.0
+    except _CONFIG_ERRORS as exc:
+        sdr.log.warning(
+            "读取账户 #%s 初始资金失败，兜底 %.0f 元：%s",
+            BANK_ACCOUNT_ID,
+            _FALLBACK_INITIAL_CASH,
+            exc,
+        )
+        sdr.SWING_INITIAL_CASH = _FALLBACK_INITIAL_CASH
 
     # 银行独立参数。刻意不套用机器自动调参层（auto_overrides）——那层的证据
     # 来自账户 #3 的样本，级联过来会让一次自动调参同时影响两个结论不同的账户。
@@ -60,7 +82,6 @@ def apply_bank_profile() -> None:
     sdr.CONCLUSIONS_TABLE = "bank_swing_daily_conclusions"
     sdr.SKIP_GENERAL_POOL = True
     sdr.SKIP_INTRADAY_MERGE = True
-    sdr.log = sdr.logging.getLogger("bank_swing_daily")
 
 
 def main() -> int:

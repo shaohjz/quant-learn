@@ -413,5 +413,64 @@
         }
       }
     }
+  },
+  {
+    "date": "2026-09-01",
+    "specs": {
+      "swing": {
+        "spec_hash": "7e0813ecbd7b",
+        "params": {
+          "pool_max": 50,
+          "pool_min_score": 70.0,
+          "pool_min_amount": 100000000.0,
+          "pool_price_floor": 5.0,
+          "pool_price_cap": 200.0,
+          "pool_atr_min": 1.5,
+          "pool_atr_max": 5.5,
+          "pool_max_amp": 6.0,
+          "pool_max_drop_5d": -8.0,
+          "entry_types": [
+            "A",
+            "B"
+          ],
+          "entry_min_score": 5,
+          "entry_min_net_rr": 1.2,
+          "entry_min_upside": 0.005,
+          "entry_min_amp": 1.0,
+          "stop_loss_pct": 0.05,
+          "take_profit_pct": 0.08,
+          "max_positions": 5,
+          "single_budget": 10000.0,
+          "initial_cash": 50000.0,
+          "auto_trade": false,
+          "commission_rate": 0.00025,
+          "stamp_tax_rate": 0.0005
+        }
+      },
+      "learn": {
+        "spec_hash": "846eada0f2e4",
+        "params": {
+          "watchlist_size": 34,
+          "buy_strong_enabled": false,
+          "max_daily_new_positions": 1,
+          "block_add_to_loser_pct": -3.0,
+          "market_panic_drop_pct": -1.0,
+          "stop_loss_pct": -0.08,
+          "take_profit_pct": 0.15,
+          "take_profit_mode": "half",
+          "trailing_mode": "atr_hybrid",
+          "trailing_activate_pct": 5.0,
+          "single_budget": 10000,
+          "max_total_positions": 8,
+          "max_position_pct": 0.15,
+          "initial_cash": 100000.0,
+          "auto_trade": true,
+          "max_industry_pct": 0.3,
+          "max_daily_trades": 10,
+          "commission_rate": 0.00025,
+          "stamp_tax_rate": 0.0005
+        }
+      }
+    }
   }
 ]

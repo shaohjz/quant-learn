@@ -107,25 +107,36 @@ class TestPositionLimit:
         总持仓数已达上限时，对已有持仓加仓应允许
         
         注意：当前 BUG-009 已实现同日买入去重，所以同日加仓会被拒绝。
-        这个测试改为验证：总持仓未达到上限时，可以新建不同股票的仓位。
+        这个测试改为验证：在单日新建上限内，可以新建不同股票的仓位。
+
+        赚钱闸策略（config.yaml commit 7d85565b）已将 max_daily_new_positions
+        由 3 调整为 1，故须按跨日方式建仓以规避单日新建上限。
         """
         risk = risk_params()
         max_pos = risk.get("max_total_positions", 6)
+        max_new_per_day = risk.get("max_daily_new_positions", 1)
 
-        # 先建 (max_pos - 1) 个仓位，留一个空间
-        for i in range(max_pos - 1):
-            code = f"00000{i}"
-            result = self.engine.buy(
-                stock_code=code,
-                price=10.0,
-                quantity=100,
-                stock_name=f"Test{i}",
-                trade_date=Date.today(),
-            )
-            assert result["success"], f"新建仓位应成功: {result['msg']}"
+        # 先按单日新建上限分多天建 (max_pos - 1) 个仓位，留一个空间
+        created = 0
+        day_offset = 0
+        base = Date.today() - timedelta(days=max_pos)
+        while created < max_pos - 1:
+            trades_today = min(max_new_per_day, (max_pos - 1) - created)
+            for i in range(trades_today):
+                code = f"0000{created}"
+                result = self.engine.buy(
+                    stock_code=code,
+                    price=10.0,
+                    quantity=100,
+                    stock_name=f"Test{created}",
+                    trade_date=base + timedelta(days=day_offset),
+                )
+                assert result["success"], f"新建仓位应成功: {result['msg']}"
+                created += 1
+            day_offset += 1
 
         # 现在总持仓数 = max_pos - 1，还没到上限
-        # 尝试新建一个不同股票的仓位（应允许）
+        # 今日尝试新建一个不同股票的仓位（应在单日新建上限内，允许）
         result = self.engine.buy(
             stock_code="000009",  # 新的股票代码
             price=11.0,
@@ -144,7 +155,7 @@ class TestPositionLimit:
         单日新建仓位数达到上限后，新建仓应被阻断
         """
         risk = risk_params()
-        max_new = risk.get("max_daily_new_positions", 3)
+        max_new = risk.get("max_daily_new_positions", 1)
 
         # 新建 max_new 个仓位
         for i in range(max_new):
@@ -174,7 +185,7 @@ class TestPositionLimit:
         单日新建上限应按自然日重置（昨天建的仓位不计入今天上限）
         """
         risk = risk_params()
-        max_new = risk.get("max_daily_new_positions", 3)
+        max_new = risk.get("max_daily_new_positions", 1)
 
         yesterday = str(Date.today() - timedelta(days=1))
 
@@ -210,17 +221,31 @@ class TestPositionLimit:
     def test_buy_reflects_correct_position_count(self):
         """
         验证买入后 get_positions 返回的数量与预期一致
+
+        注意：赚钱闸已把 max_daily_new_positions 收敛为 1，因此本用例按
+        跨日方式建仓（每天 1 只），以规避单日新建上限。
         """
-        # 买 3 只不同的股票
-        for i in range(3):
-            result = self.engine.buy(
-                stock_code=f"60000{i}",
-                price=10.0,
-                quantity=100,
-                stock_name=f"Stock{i}",
-                trade_date=Date.today(),
-            )
-            assert result["success"]
+        risk = risk_params()
+        max_new = risk.get("max_daily_new_positions", 1)
+        base = Date.today() - timedelta(days=3)
+
+        # 买 3 只不同的股票（跨 3 天，每天最多 max_new 只）
+        created = 0
+        day_offset = 0
+        while created < 3:
+            for i in range(max_new):
+                result = self.engine.buy(
+                    stock_code=f"60000{created}",
+                    price=10.0,
+                    quantity=100,
+                    stock_name=f"Stock{created}",
+                    trade_date=base + timedelta(days=day_offset),
+                )
+                assert result["success"]
+                created += 1
+                if created >= 3:
+                    break
+            day_offset += 1
 
         positions = self.engine.get_positions()
         assert len(positions) == 3

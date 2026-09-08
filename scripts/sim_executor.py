@@ -164,6 +164,10 @@ DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
 # 费率
 COMMISSION_RATE = 0.00025   # 万2.5
 STAMP_TAX_RATE = 0.0005   # 万5（仅卖出）
+MIN_COMMISSION = 5.0
+# 只有学习仓 / 实盘镜像走 ATR 跟踪止损。#3/#4 波段是固定 5%/8%，
+# 不能被 portfolio_alert 把止损抬到成本之上。
+ATR_TRAILING_ACCOUNT_IDS = frozenset({1, 2})
 
 # ── quant_core 适配: 佣金计算桥接 ──────────────────────────────────
 def calc_commission(amount: float, rate: float = COMMISSION_RATE) -> float:
@@ -175,11 +179,26 @@ def calc_commission(amount: float, rate: float = COMMISSION_RATE) -> float:
         "calc_commission is deprecated, use quant_core.fees.FeeModel.calculate() instead",
         DeprecationWarning, stacklevel=2,
     )
+    return commission_for_amount(amount, rate=rate, side="BUY")
+
+
+def uses_atr_trailing(account_id: int) -> bool:
+    """账户是否使用学习仓 ATR 跟踪止损（#3/#4 否）。"""
+    return int(account_id) in ATR_TRAILING_ACCOUNT_IDS
+
+
+def commission_for_amount(
+    amount: float,
+    rate: float = COMMISSION_RATE,
+    side: str = "BUY",
+) -> float:
+    """统一最低佣金 5 元。sim_executor 旧路径按金额×费率入账，小单会落到 1~2 元。"""
+    if amount <= 0:
+        return 0.0
     if _HAS_QC_FEES:
         model = _QCFeeModel()
-        fees = model.calculate(side="BUY", amount=amount)
-        return fees.commission
-    return max(amount * rate, 5.0)  # 旧逻辑保底
+        return float(model.calculate(side=side, amount=amount).commission)
+    return max(quantize_amount(amount * rate), MIN_COMMISSION)
 
 
 def calc_stamp_tax(amount: float) -> float:
@@ -603,10 +622,10 @@ def _load_money_gates() -> tuple[float, bool, float, float]:
         max_pos = float(risk.get('max_position_pct', 0.15))
         panic_on = bool(risk.get('market_panic_enabled', True))
         drop_pct = float(risk.get('market_panic_index_drop_pct', -1.0))
-        loser_pct = float(risk.get('block_add_to_loser_pct', -3.0))
+        loser_pct = float(risk.get('block_add_to_loser_pct', 0.0))
         return max_pos, panic_on, drop_pct, loser_pct
     except Exception:
-        return 0.15, True, -1.0, -3.0
+        return 0.15, True, -1.0, 0.0
 
 
 MAX_POSITION_PCT, MARKET_PANIC_ENABLED, MARKET_PANIC_DROP_PCT, BLOCK_ADD_TO_LOSER_PCT = (
@@ -1741,6 +1760,8 @@ def calc_trailing_stop(
 
 def update_position_trailing(account_id: int, code: str, current_price: float) -> dict:
     """P2: 更新仓位的 highest_price 和 trailing_stop_price。每次实时价格变动后调用。"""
+    if not uses_atr_trailing(account_id):
+        return {'updated': False, 'reason': '非学习仓，使用策略固定止损'}
     conn = sqlite3.connect(_DB_PATH)
     try:
         _ensure_trailing_columns(conn)
@@ -1797,6 +1818,7 @@ def update_all_positions_market_value(price_dict: dict, account_id: int | None =
     返回实际更新的持仓数。
     """
     account_id = int(account_id or _ACCOUNT_ID)
+    apply_trailing = uses_atr_trailing(account_id)
     conn = sqlite3.connect(_DB_PATH)
     try:
         _ensure_trailing_columns(conn)
@@ -1817,8 +1839,12 @@ def update_all_positions_market_value(price_dict: dict, account_id: int | None =
                 continue
             qty, avg_cost, prev_high, prev_trailing = row
             new_high = max(float(prev_high or avg_cost or 0), cur_price)
-            atr_pct = _get_atr_pct_for_code(code) if TRAILING_MODE in ('atr', 'atr_hybrid') else None
-            new_trailing, _reason = calc_trailing_stop(avg_cost, new_high, prev_trailing, atr_pct=atr_pct)
+            if apply_trailing:
+                atr_pct = _get_atr_pct_for_code(code) if TRAILING_MODE in ('atr', 'atr_hybrid') else None
+                new_trailing, _reason = calc_trailing_stop(avg_cost, new_high, prev_trailing, atr_pct=atr_pct)
+                trailing_value = new_trailing if new_trailing > 0 else None
+            else:
+                trailing_value = prev_trailing
             conn.execute(
                 "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, "
                 "highest_price=?, trailing_stop_price=?, updated_at=CURRENT_TIMESTAMP "
@@ -1829,7 +1855,7 @@ def update_all_positions_market_value(price_dict: dict, account_id: int | None =
                     quantize_amount((cur_price - avg_cost) * qty),
                     (cur_price - avg_cost) / avg_cost * 100 if avg_cost else 0,
                     new_high,
-                    new_trailing if new_trailing > 0 else None,
+                    trailing_value,
                     account_id,
                     code,
                 ),
@@ -1936,9 +1962,21 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
 
     price_vs_trigger = abs(cur_price - ref_ma10) / ref_ma10 * 100
     if price_vs_trigger <= _BUY_ZONE_MA10_MAX_DEVIATION_PCT:
+        ma10 = ref_ma10
+        cached = _MA10_CACHE.get(code)
+        if cached:
+            ma10 = cached[1]
+        ma20 = None
+        ma20_cached = _MA20_CACHE.get(code)
+        if ma20_cached:
+            ma20 = ma20_cached[1]
+        q_ok, q_reason = apply_buy_zone_quality_gates(cur_price, ma10, ma20)
+        if not q_ok:
+            logger.warning(f'🚫 [{code}] {q_reason}')
+            return False, q_reason
         return True, (
             f'MA10偏离{price_vs_trigger:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%，'
-            f'价格与信号MA10一致'
+            f'价格与信号MA10一致；{q_reason}'
         )
 
     now_ts = time.time()
@@ -1979,6 +2017,8 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
             closes = [float(r[1]) for r in rows]
             current_ma10 = sum(closes[-10:]) / 10
             _MA10_CACHE[code] = (now_ts, current_ma10)
+            if len(closes) >= 20:
+                _MA20_CACHE[code] = (now_ts, sum(closes[-20:]) / 20)
         except Exception as e:
             if price_vs_trigger > _FAIL_CLOSED_TRIGGER_PCT:
                 reason = (
@@ -2013,10 +2053,63 @@ def _check_buy_zone_ma_deviation(code: str, rule: dict, cur_price: float) -> tup
         logger.warning(f'🚫 [{code}] {reason}')
         return False, reason
 
+    ma20 = None
+    ma20_cached = _MA20_CACHE.get(code)
+    if ma20_cached:
+        ma20 = ma20_cached[1]
+    q_ok, q_reason = apply_buy_zone_quality_gates(cur_price, current_ma10, ma20)
+    if not q_ok:
+        logger.warning(f'🚫 [{code}] {q_reason}')
+        return False, q_reason
+
     return True, (
         f'实时MA10新鲜(trigger={ref_ma10:.2f}≈{current_ma10:.2f})，'
-        f'现价偏离{price_vs_ma:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%'
+        f'现价偏离{price_vs_ma:.1f}% ≤ {_BUY_ZONE_MA10_MAX_DEVIATION_PCT}%；{q_reason}'
     )
+
+
+def _buy_zone_quality_from_config() -> tuple[float | None, bool]:
+    """(max_below_ma10_pct, require_ma10_above_ma20)。"""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}
+        risk = cfg.get('risk') or {}
+        raw = risk.get('max_below_ma10_pct', 0.03)
+        max_below = None if raw is None else float(raw)
+        require_trend = bool(risk.get('require_ma10_above_ma20', True))
+        return max_below, require_trend
+    except Exception:
+        return 0.03, True
+
+
+def apply_buy_zone_quality_gates(
+    cur_price: float,
+    ma10: float,
+    ma20: float | None = None,
+    *,
+    max_below_ma10_pct: float | None = None,
+    require_ma10_above_ma20: bool | None = None,
+) -> tuple[bool, str]:
+    """buy_zone 质量闸：不接飞刀、均线未确认的下跌趋势不买。"""
+    if max_below_ma10_pct is None or require_ma10_above_ma20 is None:
+        cfg_below, cfg_trend = _buy_zone_quality_from_config()
+        if max_below_ma10_pct is None:
+            max_below_ma10_pct = cfg_below
+        if require_ma10_above_ma20 is None:
+            require_ma10_above_ma20 = cfg_trend
+    if ma10 <= 0 or cur_price <= 0:
+        return True, '质量闸跳过（均线无效）'
+    if require_ma10_above_ma20 and ma20 is not None and ma20 > 0 and ma10 < ma20:
+        return False, (
+            f'趋势未确认：MA10 {ma10:.2f} < MA20 {ma20:.2f}，buy_zone 不买下跌趋势'
+        )
+    if max_below_ma10_pct is not None:
+        below = (ma10 - cur_price) / ma10
+        if below > max_below_ma10_pct:
+            return False, (
+                f'接飞刀拦截：现价低于 MA10 {below:.2%} > {max_below_ma10_pct:.2%}'
+            )
+    return True, 'buy_zone 质量闸通过'
 
 
 def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
@@ -2140,7 +2233,7 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         conn = sqlite3.connect(_DB_PATH)
         try:
             loser_row = conn.execute(
-                "SELECT quantity, pnl_pct FROM sim_positions "
+                "SELECT quantity, pnl_pct, trailing_stop_price FROM sim_positions "
                 "WHERE account_id=? AND stock_code=? AND quantity > 0",
                 (_ACCOUNT_ID, code),
             ).fetchone()
@@ -2152,6 +2245,22 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
                 logger.info(f'🚫 [{code}] {reason}')
                 _write_review_decision(_ACCOUNT_ID, code, 'add_to_loser_blocked', 0, reason)
                 return 'NO_ACTION'
+            forbid_below = True
+            try:
+                import yaml as _yaml_stop
+                _risk = (_yaml_stop.safe_load((ROOT / 'config.yaml').read_text(encoding='utf-8')) or {}).get('risk') or {}
+                forbid_below = bool(_risk.get('forbid_add_below_stop', True))
+            except Exception:
+                forbid_below = True
+            if loser_row and forbid_below:
+                trail = float(loser_row[2] or 0)
+                if trail > 0 and cur_price <= trail:
+                    reason = (
+                        f'禁止止损下加仓：{code} 现价{cur_price:.2f} <= 跟踪止损{trail:.2f}'
+                    )
+                    logger.info(f'🚫 [{code}] {reason}')
+                    _write_review_decision(_ACCOUNT_ID, code, 'add_below_stop_blocked', 0, reason)
+                    return 'NO_ACTION'
         finally:
             conn.close()
 
@@ -2623,7 +2732,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 return {'action': 'NO_ACTION', 'success': True, 'message': msg, 'trade': None,
                         'severity': severity, 'severity_label': severity_label}
 
-            commission = quantize_amount(cur_price * qty * COMMISSION_RATE)
+            commission = commission_for_amount(cur_price * qty, side="BUY")
             amount = quantize_amount(cur_price * qty + commission)
 
             # REQ-033: 成交前在同一事务中再次校验日内预算/冷静期，避免并发或重算预算穿透。
@@ -2756,7 +2865,7 @@ def execute_trade(rule: dict, cur_price: float) -> dict:
                 conn.execute("ROLLBACK")
                 return {'action': action, 'success': False, 'message': f'计算卖出数量失败'}
 
-            commission = quantize_amount(cur_price * sell_qty * COMMISSION_RATE)
+            commission = commission_for_amount(cur_price * sell_qty, side="SELL")
             stamp_tax = quantize_amount(cur_price * sell_qty * STAMP_TAX_RATE)
             amount = quantize_amount(cur_price * sell_qty - commission - stamp_tax)
 

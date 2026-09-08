@@ -139,6 +139,32 @@ class TestAccount1BuyZone:
         assert too_far.reason_code == "TOO_FAR_BELOW_MA10"
         assert weak_trend.reason_code == "TREND_NOT_CONFIRMED"
 
+    def test_add_below_trailing_stop_is_blocked(self):
+        result = evaluate_account1_buy_zone(
+            account1_input(
+                close=9.90,
+                position=ExistingPosition(
+                    quantity=100,
+                    pnl_pct=1.0,
+                    trailing_stop_price=10.00,
+                ),
+            )
+        )
+
+        assert result.allowed is False
+        assert result.reason_code == "ADD_BELOW_STOP"
+
+    def test_default_gates_block_falling_knife_and_downtrend(self):
+        falling = evaluate_account1_buy_zone(
+            account1_input(close=9.50, buy_zone=10.0, ma10=10.0, ma20=9.80)
+        )
+        downtrend = evaluate_account1_buy_zone(
+            account1_input(close=9.70, buy_zone=9.80, ma10=9.80, ma20=10.0)
+        )
+
+        assert falling.reason_code == "TOO_FAR_BELOW_MA10"
+        assert downtrend.reason_code == "TREND_NOT_CONFIRMED"
+
     def test_close_must_also_be_at_or_below_ma10(self):
         result = evaluate_account1_buy_zone(account1_input(close=10.0, buy_zone=10.2, ma10=9.9))
 

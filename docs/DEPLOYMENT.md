@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-08（代码仓迁到 GitHub `shaohjz/quant-learn`；不再用工蜂 git.woa.com）  
+> **更新**：2026-09-08（#1 收紧 buy_zone / #3 同日不换仓 + 固定止损；代码仓已在 GitHub `shaohjz/quant-learn`）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -493,7 +493,46 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
-### ★ 最新变更：代码仓迁到 GitHub（2026-09-08）
+### ★ 最新变更：#1 胜率闸 + #3 波段止损/换仓（2026-09-08 晚）
+
+> **改了什么：** 主人不满 #1 buy_zone 胜率 21%、#3 波段换仓不稳。同一次修好这几件：
+> 1. **#1 入场收紧**：`block_add_to_loser_pct` -3→**0**（浮亏不加仓）；新增 `require_ma10_above_ma20=true`、`max_below_ma10_pct=0.03`、`forbid_add_below_stop=true`（禁止买在跟踪止损下方，杜绝万科 3.08 加在止损 3.15 下）。
+> 2. **#1 最低佣金**：`sim_executor` 买入/卖出按金额×费率入账，小单佣金 1~2 元；改为走 `FeeModel` / 保底 **5 元**。
+> 3. **#3 不再被学习仓 ATR 跟踪抬止损**：`portfolio_alert` / `stop_loss_auto` / `update_position_trailing` 只作用于账户 1、2。#3/#4 固定 5% 止损 / 8% 止盈。`swing_daily_report.snapshot` 会把脏的 trailing（如万华 75.48）钉回 `成本×0.95`。
+> 4. **#3 同日不换仓**：`swing_strategy.execution.same_day_replace=false`。盘中或收盘只要当天已经卖过，不再立刻买下一只。
+> 5. **#3 买分 5→6**：挡住纯 B 分 5 的弱换仓。`max_positions` **维持 5**，不提到 8。
+> 6. **漏斗口径**：日报 `fills` 改读 DB 当日成交，不再把盘中止盈止损记成「连续 0 成交」。
+> 7. **H-001 结案 confirmed、H-002 结案 rejected**；新假设 H-004 / H-005，复核日 2026-09-30。
+>
+> **不必重建 schtasks。**
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+
+.venv\Scripts\python.exe -m pytest tests\test_buy_strategies.py tests\test_account_quality_and_swing_stability.py tests\test_swing_daily_report.py tests\test_req105_buyzone_stale_trigger.py tests\test_fee_model.py -q
+
+REM 确认 #3 参数（应打印 6 False 5）
+.venv\Scripts\python.exe -c "from quant_core.swing_params import load_swing_params as L; p=L(); print(p.min_score_buy, (p.raw.get('execution') or {}).get('same_day_replace'), p.max_positions)"
+
+REM 下一交易日开盘后，QuantPulse 会把 #3 止损钉回 5%；也可手动跑一次日报 --no-trade 预热
+.venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push --no-trade
+```
+
+**验收标准：**
+
+1. 上述 pytest 全绿。
+2. `min_score_buy=6`、`same_day_replace=false`、`max_positions=5`。
+3. `config.yaml` 的 `risk.block_add_to_loser_pct` 为 `0.0`，`require_ma10_above_ma20: true`。
+4. 不必重建任何 QuantLearn_* 定时器。
+5. 下一交易日 #1 不再对浮亏票加仓，也不再买在跟踪止损下方；#3 若早盘止盈/止损，当天不再开新仓。
+6. 台账里 #3 万华止损应回到约 70.99（成本 74.73×0.95），不再是 75.48。
+
+**回滚：** `git revert` 本次提交。或把 `config.yaml` 里本次新增的 risk / swing_strategy.execution 键删掉（`block_add_to_loser_pct` 回 -3，`min_score_buy` 回 5，`same_day_replace` 删掉即默认 true）。
+
+### 历史变更：代码仓迁到 GitHub（2026-09-08）
 
 > **改了什么：** 主人要求以后不再用公司工蜂。权威远程改为 [https://github.com/shaohjz/quant-learn](https://github.com/shaohjz/quant-learn)。本机 `origin` 已切走；产机必须 `git remote set-url`，否则 `git pull` / DailyGitSync 仍会推到 `git.woa.com`。
 > **不必重建 schtasks**，但 DailyGitSync 的 `git push` 需要产机能写 GitHub（HTTPS 凭据或 `gh auth login`）。公开仓 `git pull` 不需要登录。
@@ -1261,7 +1300,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：把 origin 改成 https://github.com/shaohjz/quant-learn.git，确认 git remote -v 不再出现 git.woa.com，并能 git pull / git push。不必重建定时器。
+重点：#1 收紧 buy_zone（浮亏不加仓 / 均线多头 / 禁止止损下加仓），#3 同日不换仓、买分 6、止损钉回 5%；跑文档里那组 pytest。不必重建定时器。
 做完写 pm/ops/今天-deploy.md。
 ```
 

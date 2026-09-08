@@ -462,12 +462,103 @@ def today_bought_codes(today: str) -> set[str]:
         conn.close()
 
 
+def today_sold_codes(today: str) -> set[str]:
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT stock_code FROM sim_trades WHERE account_id=? AND trade_date=? AND direction='SELL'",
+            (SWING_ACCOUNT_ID, today),
+        ).fetchall()
+        return {str(r[0]).zfill(6)[-6:] for r in rows}
+    except sqlite3.OperationalError:
+        return set()
+    finally:
+        conn.close()
+
+
+def allow_same_day_replace() -> bool:
+    """config.yaml swing_strategy.execution.same_day_replace，缺省 True 保持旧行为。"""
+    raw = getattr(PARAMS, "raw", {}) or {}
+    return bool((raw.get("execution") or {}).get("same_day_replace", True))
+
+
+def sync_swing_fixed_stops(account_id: int | None = None) -> int:
+    """把波段仓 trailing_stop 钉回成本×(1-止损%)，清掉学习仓 ATR 抬上去的脏值。"""
+    account_id = int(account_id or SWING_ACCOUNT_ID)
+    conn = _conn()
+    n = 0
+    try:
+        rows = conn.execute(
+            "SELECT id, avg_cost, trailing_stop_price FROM sim_positions "
+            "WHERE account_id=? AND quantity>0",
+            (account_id,),
+        ).fetchall()
+        for r in rows:
+            cost = float(r["avg_cost"] or 0)
+            if cost <= 0:
+                continue
+            stop0 = round(cost * (1 - STOP_LOSS_PCT), 2)
+            old = r["trailing_stop_price"]
+            if old is None or abs(float(old) - stop0) > 1e-6:
+                conn.execute(
+                    "UPDATE sim_positions SET trailing_stop_price=? WHERE id=?",
+                    (stop0, r["id"]),
+                )
+                n += 1
+        conn.commit()
+        if n:
+            log.info("已把账户 %s 的 %d 条止损钉回固定 %.0f%%", account_id, n, STOP_LOSS_PCT * 100)
+        return n
+    except sqlite3.OperationalError:
+        return 0
+    finally:
+        conn.close()
+
+
+def load_db_fills(today: str) -> list[dict]:
+    """以 DB 当日成交为准，避免漏斗把盘中换仓记成 0 成交。"""
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT direction, stock_code, stock_name, quantity, price, commission, signal_reason "
+            "FROM sim_trades WHERE account_id=? AND trade_date=? ORDER BY trade_time",
+            (SWING_ACCOUNT_ID, today),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    finally:
+        conn.close()
+    out = []
+    for r in rows:
+        side = str(r["direction"] or "").upper()
+        code = str(r["stock_code"]).zfill(6)[-6:]
+        price = float(r["price"] or 0)
+        out.append({
+            "ok": True,
+            "side": side,
+            "code": code,
+            "name": r["stock_name"] or code,
+            "qty": int(r["quantity"] or 0),
+            "price": price,
+            "commission": float(r["commission"] or 0),
+            "reason": r["signal_reason"] or "",
+            "stop": round(price * (1 - STOP_LOSS_PCT), 2) if side == "BUY" else None,
+            "target": round(price * (1 + TAKE_PROFIT_PCT), 2) if side == "BUY" else None,
+        })
+    return out
+
+
 def execute_sim(marked: list[dict], buys: list[dict]) -> list[dict]:
     """真模拟：先卖后买。返回成交列表。"""
     fills = []
     for p in marked:
         if p["action"].startswith("SELL"):
             fills.append(sim_sell(p, p["current_price"], p["action_reason"]))
+    today = date.today().isoformat()
+    sold_ok = any(f.get("ok") and f.get("side") == "SELL" for f in fills)
+    if not allow_same_day_replace() and (sold_ok or today_sold_codes(today)):
+        log.info("同日已有卖出，跳过收盘补买（same_day_replace=false）")
+        return fills
     positions = load_positions()
     slots = max(0, MAX_POSITIONS - len(positions))
     for b in buys[:slots]:
@@ -479,6 +570,10 @@ def execute_sim(marked: list[dict], buys: list[dict]) -> list[dict]:
 
 def snapshot() -> dict:
     acct = ensure_swing_account()
+    try:
+        sync_swing_fixed_stops()
+    except Exception as e:
+        log.warning("钉回固定止损失败: %s", e)
     positions = load_positions()
     # 刷新市值
     mv = 0.0
@@ -881,6 +976,10 @@ def main() -> int:
                     "side": "SELL", "price": p["current_price"], "qty": p["quantity"],
                     "reason": f"[未成交]{p['action_reason']}",
                 })
+
+    db_fills = load_db_fills(today)
+    if db_fills:
+        fills = db_fills
 
     after = snapshot()
     write_nav(today, after)

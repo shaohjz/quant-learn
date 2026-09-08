@@ -558,7 +558,7 @@ def main():
 
     # P2: 为所有学习账户持仓更新跟踪止损(钉住高点、抬高止损位)
     try:
-        from sim_executor import update_position_trailing
+        from sim_executor import update_position_trailing, uses_atr_trailing
         import sqlite3
         sim_db = resolve_db_path()
         if sim_db.exists():
@@ -569,6 +569,8 @@ def main():
             conn.close()
             trailing_updates = 0
             for acc_id, code in held_codes:
+                if not uses_atr_trailing(acc_id):
+                    continue
                 cur_p = clean_prices.get(code, 0)
                 if cur_p > 0:
                     res = update_position_trailing(acc_id, code, cur_p)
@@ -585,6 +587,7 @@ def main():
     try:
         import sqlite3
         from pathlib import Path
+        from sim_executor import uses_atr_trailing
         DB_PATH = resolve_db_path()
 
         conn = sqlite3.connect(DB_PATH)
@@ -597,6 +600,8 @@ def main():
         conn.close()
 
         for pos in positions:
+            if not uses_atr_trailing(pos["account_id"]):
+                continue
             pnl_pct = pos['pnl_pct'] or 0
             cur_price = float(pos['current_price'] or 0)
             fallback_stop = float(pos['avg_cost'] or 0) * 0.92

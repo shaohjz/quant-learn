@@ -384,15 +384,24 @@ def try_sim_fill(a: dict) -> dict:
     """提醒同时写账户 #3：买→sim_buy，卖→sim_sell。"""
     from swing_daily_report import (  # noqa: WPS433
         MAX_POSITIONS,
+        allow_same_day_replace,
         ensure_swing_account,
         load_positions,
         sim_buy,
         sim_sell,
+        sync_swing_fixed_stops,
+        today_sold_codes,
     )
 
     ensure_swing_account()
+    try:
+        sync_swing_fixed_stops()
+    except Exception as e:
+        log.warning("钉回固定止损失败: %s", e)
     code = str(a["code"]).zfill(6)[-6:]
     if a["kind"] == "BUY":
+        if not allow_same_day_replace() and today_sold_codes(date.today().isoformat()):
+            return {"ok": False, "code": code, "reason": "同日已有卖出，冷却至下一交易日再开仓"}
         held = load_positions()
         held_codes = {str(p["stock_code"]).zfill(6)[-6:] for p in held}
         if code in held_codes:

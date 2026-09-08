@@ -50,8 +50,13 @@ swing_strategy:
     # 2026-08-01 假设 H-001：3 仓 × 1 万预算 = 3 万，撑不满 5 万本金，
     # 4 成资金结构性闲置；且近 15 日有 5 天出了买点因持仓已 3/3 被挡。
     # 提到 5 仓后 5×1万=5万 与本金对齐，单票集中度反而由 33% 降到 20%。
-    # 复核日 2026-08-22，不达预期回退为 3。
+    # 复核日 2026-08-22。2026-09-08 结案：5 仓资金口径对了，但不把仓位提到 8——
+    # 不稳来自「止盈/止损后同日立刻换仓」+ 学习仓 ATR 跟踪污染了 5% 固定止损。
     max_positions: 5
+    # 默认 5 会放行单 A（4+辅）或单 B（3+辅）。收到 6：挡掉纯 B 分 5 的弱换仓。
+    min_score_buy: 6
+    # false=当日账户已有卖出则不再模拟开新仓，下一交易日再买。
+    same_day_replace: false
 # 账户 #4 银行股专用波段的独立参数。留空则沿用上面 swing_strategy 的默认值。
 # 银行股波动小、股价低（3~11 元），在通用参数下结构性选不出票：
 # 2026-08-29 实测 16 只 0 只可买，其中 10 只有信号但全卡在净盈亏比。
@@ -216,8 +221,16 @@ risk:
   # 弱势日禁买：任一宽基指数跌幅 ≤ 该值则拒绝 buy_zone/buy_strong
   market_panic_enabled: true
   market_panic_index_drop_pct: -1.0
-  # 浮亏加仓禁：持仓浮亏超过该比例（负值）时禁止加仓
-  block_add_to_loser_pct: -3.0
+  # 浮亏加仓禁：持仓浮亏超过该比例（负值）时禁止加仓。
+  # 2026-09-08：buy_zone 胜率 21%，-3% 仍允许在小亏时加仓（万科 3.08 加在止损 3.15 下方）。
+  # 收到 0：浮亏一律不加；另见 forbid_add_below_stop / require_ma10_above_ma20。
+  block_add_to_loser_pct: 0.0
+  # 现价低于 MA10 超过该比例视为接飞刀（0.03 = 3%）
+  max_below_ma10_pct: 0.03
+  # 买区必须处于均线多头（MA10 ≥ MA20），避免下跌趋势里的 buy_zone
+  require_ma10_above_ma20: true
+  # 加仓价不得 ≤ 当前跟踪止损，防止新仓一买就被止损打掉
+  forbid_add_below_stop: true
   # Pause buy_strong until paper sample is large enough; buy_zone remains active.
   buy_strong_enabled: false
   # Same-day reverse guard still blocks fluff exits, but hard -8% cost breach may sell.

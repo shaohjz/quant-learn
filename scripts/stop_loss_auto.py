@@ -372,6 +372,9 @@ def scan_and_execute(db_path: Path, dry_run: bool = False) -> dict:
             trailing_stop = float(pos["trailing_stop_price"] or 0)
             highest_price = float(pos["highest_price"] or avg_cost or 0)
 
+            if int(account_id) in (3, 4):
+                continue
+
             # 获取实时价格
             price_data = prices.get(code, {})
             current_price = float(price_data.get("price", 0) or 0)

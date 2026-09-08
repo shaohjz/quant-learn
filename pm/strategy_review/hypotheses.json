@@ -13,10 +13,10 @@
     "target": null,
     "review_after": "2026-08-22",
     "min_samples": 10,
-    "status": "open",
-    "outcome": "",
-    "closed": "",
-    "source_finding": ""
+    "status": "confirmed",
+    "outcome": "5 仓把资金口径对齐了（上限 100%）。满仓拦截没归零，是因为止盈/止损后同日立刻换仓 + 学习仓 ATR 跟踪污染了 5% 固定止损，不是仓位数不够。2026-09-08 不把 max_positions 提到 8；改 same_day_replace=false、min_score_buy=6、#3/#4 停 ATR 跟踪。",
+    "closed": "2026-09-08",
+    "source_finding": "position_cap_blocking / dual trailing stop"
   },
   {
     "id": "H-002",
@@ -32,10 +32,10 @@
     "target": null,
     "review_after": "2026-08-22",
     "min_samples": 10,
-    "status": "open",
-    "outcome": "",
-    "closed": "",
-    "source_finding": ""
+    "status": "rejected",
+    "outcome": "8 仓没有改善期望。buy_zone 28 笔胜率 21%，累计约 -6097。仓位上限维持 8，但 2026-09-08 收紧入场：浮亏不加仓、禁止止损下加仓、MA10≥MA20、现价低于 MA10 不超过 3%。",
+    "closed": "2026-09-08",
+    "source_finding": "buy_zone negative expectancy"
   },
   {
     "id": "H-003",
@@ -55,5 +55,43 @@
     "outcome": "",
     "closed": "",
     "source_finding": ""
+  },
+  {
+    "id": "H-004",
+    "created": "2026-09-08",
+    "title": "#1 buy_zone 收紧：浮亏不加仓 + 均线多头 + 不接飞刀 + 禁止止损下加仓",
+    "layer": "entry",
+    "param": "risk.block_add_to_loser_pct,require_ma10_above_ma20,max_below_ma10_pct,forbid_add_below_stop",
+    "before": "-3 / false / none / false",
+    "after": "0 / true / 0.03 / true",
+    "expect": "新开仓胜率不再长期低于保本线；不再出现加仓价低于跟踪止损（如万科 3.08 vs 止损 3.15）",
+    "metric": "account1.win_rate / add_below_stop events",
+    "baseline": null,
+    "target": null,
+    "review_after": "2026-09-30",
+    "min_samples": 10,
+    "status": "open",
+    "outcome": "",
+    "closed": "",
+    "source_finding": "buy_zone 21% win rate"
+  },
+  {
+    "id": "H-005",
+    "created": "2026-09-08",
+    "title": "#3 稳波段：同日不换仓 + 买分 5→6 + 固定 5% 止损不被 ATR 抬高",
+    "layer": "execution",
+    "param": "swing.same_day_replace,min_score_buy,atr_trailing_accounts",
+    "before": "true / 5 / {1,2,3,4}",
+    "after": "false / 6 / {1,2}",
+    "expect": "止盈/止损后不再当天补一只弱信号；万华等浮盈仓止损回到成本×0.95；漏斗不再把盘中成交记成 0",
+    "metric": "same_day replace fills / trailing_stop==cost*0.95",
+    "baseline": null,
+    "target": null,
+    "review_after": "2026-09-30",
+    "min_samples": 8,
+    "status": "open",
+    "outcome": "",
+    "closed": "",
+    "source_finding": "churn + dual stop 75.48 vs 70.99"
   }
 ]

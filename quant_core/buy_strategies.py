@@ -19,6 +19,7 @@ class ExistingPosition:
 
     quantity: int = 0
     pnl_pct: float = 0.0
+    trailing_stop_price: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -39,14 +40,15 @@ class Account1BuyInput:
 
 @dataclass(frozen=True)
 class Account1BuyParams:
-    """账户 #1 参数，默认值与当前赚钱闸基线一致。"""
+    """账户 #1 参数，默认值与 2026-09-08 收紧后的赚钱闸基线一致。"""
 
     weak_market_enabled: bool = True
     weak_market_change_pct: float = -1.0
-    block_add_to_loser_pct: float = -3.0
+    block_add_to_loser_pct: float = 0.0
     min_expected_rr: float = 0.0
-    max_below_ma10_pct: float | None = None
-    require_ma10_above_ma20: bool = False
+    max_below_ma10_pct: float | None = 0.03
+    require_ma10_above_ma20: bool = True
+    forbid_add_below_stop: bool = True
     confidence: float = 0.60
 
 
@@ -163,8 +165,9 @@ def evaluate_account1_buy_zone(
 ) -> BuySignalResult:
     """评估账户 #1 buy_zone。
 
-    买点必须同时不高于配置的 ``buy_zone`` 和当日 MA10。MA20、量比保留在
-    输入快照中用于审计，但不增加额外指标门槛。
+    买点必须同时不高于配置的 ``buy_zone`` 和当日 MA10。默认还要求
+    MA10≥MA20（趋势未坏）、现价低于 MA10 不超过 3%、浮亏不加仓、
+    买价不得落在跟踪止损下方。量比保留在输入快照中用于审计。
     """
 
     params = params or Account1BuyParams()
@@ -175,8 +178,11 @@ def evaluate_account1_buy_zone(
     for name in ("volume_ratio", "market_change_pct", "expected_rr"):
         _require_finite(name, getattr(data, name))
     _require_finite("position.pnl_pct", data.position.pnl_pct)
+    _require_finite("position.trailing_stop_price", data.position.trailing_stop_price)
     if data.position.quantity < 0:
         raise ValueError("position.quantity 不能为负数")
+    if data.position.trailing_stop_price < 0:
+        raise ValueError("position.trailing_stop_price 不能为负数")
     if params.max_below_ma10_pct is not None and params.max_below_ma10_pct < 0:
         raise ValueError("max_below_ma10_pct 不能为负数")
 
@@ -238,6 +244,26 @@ def evaluate_account1_buy_zone(
             strategy=strategy,
             code="ADD_TO_LOSER",
             reason=(f"浮亏不加仓：持仓浮亏 {data.position.pnl_pct:.2f}% <= {params.block_add_to_loser_pct:.2f}%"),
+            close=data.close,
+            expected_rr=data.expected_rr,
+        )
+
+    if (
+        data.position.quantity > 0
+        and params.forbid_add_below_stop
+        and data.position.trailing_stop_price > 0
+        and data.close <= data.position.trailing_stop_price
+    ):
+        return _blocked(
+            symbol=data.symbol,
+            as_of=data.date,
+            account_id=1,
+            strategy=strategy,
+            code="ADD_BELOW_STOP",
+            reason=(
+                f"加仓价 {data.close:.2f} <= 跟踪止损 "
+                f"{data.position.trailing_stop_price:.2f}，禁止止损线下加仓"
+            ),
             close=data.close,
             expected_rr=data.expected_rr,
         )

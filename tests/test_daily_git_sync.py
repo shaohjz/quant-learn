@@ -39,12 +39,12 @@ def test_summary_md_mentions_status():
         ],
         remote="origin",
         branch="master",
-        remote_url="git@git.woa.com:jizhouhu/quant-learn.git",
+        remote_url="git@github.com:shaohjz/quant-learn.git",
         commit="abc1234",
     )
     assert "上报成功" in text
     assert "origin/master" in text
-    assert "git@git.woa.com:jizhouhu/quant-learn.git" in text
+    assert "git@github.com:shaohjz/quant-learn.git" in text
     assert "abc1234" in text
     assert "交易台账: 1" in text
     assert "日总结: 1" in text

@@ -6,10 +6,13 @@
 ## Git 地址
 
 ```
-git@git.woa.com:jizhouhu/quant-learn.git
+git@github.com:shaohjz/quant-learn.git
+https://github.com/shaohjz/quant-learn.git
 ```
 
-Web 浏览：https://git.woa.com/jizhouhu/quant-learn
+Web 浏览：https://github.com/shaohjz/quant-learn
+
+不再使用公司工蜂 `git.woa.com:jizhouhu/quant-learn`。
 
 ---
 
@@ -27,11 +30,11 @@ Web 浏览：https://git.woa.com/jizhouhu/quant-learn
 ## 2. 克隆代码
 
 ```bash
-git clone git@git.woa.com:jizhouhu/quant-learn.git
+git clone https://github.com/shaohjz/quant-learn.git
 cd quant-learn
 ```
 
-> 如果遇到权限问题，先配置工蜂 SSH Key：https://git.woa.com/-/profile/keys
+> 如果遇到权限问题，先配置 GitHub SSH Key：https://github.com/settings/keys
 
 ---
 

@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-08（账户 #4 银行波段：扫描吃到独立参数 + 分数/量比放宽；账户 #3 行为不变）  
+> **更新**：2026-09-08（代码仓迁到 GitHub `shaohjz/quant-learn`；不再用工蜂 git.woa.com）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -75,6 +75,8 @@
 
 ```bat
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git remote set-url origin https://github.com/shaohjz/quant-learn.git
+git remote -v
 git status
 git pull
 git log -1 --oneline
@@ -491,7 +493,35 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
-### ★ 最新变更：账户 #4 银行波段真正能买（2026-09-08）
+### ★ 最新变更：代码仓迁到 GitHub（2026-09-08）
+
+> **改了什么：** 主人要求以后不再用公司工蜂。权威远程改为 [https://github.com/shaohjz/quant-learn](https://github.com/shaohjz/quant-learn)。本机 `origin` 已切走；产机必须 `git remote set-url`，否则 `git pull` / DailyGitSync 仍会推到 `git.woa.com`。
+> **不必重建 schtasks**，但 DailyGitSync 的 `git push` 需要产机能写 GitHub（HTTPS 凭据或 `gh auth login`）。公开仓 `git pull` 不需要登录。
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git remote set-url origin https://github.com/shaohjz/quant-learn.git
+git remote -v
+git fetch origin
+git pull
+git log -1 --oneline
+
+REM 验证 push（DailyGitSync 依赖这个）
+git push origin HEAD
+```
+
+**验收标准：**
+
+1. `git remote -v` 的 fetch/push 都是 `https://github.com/shaohjz/quant-learn.git`（或 `git@github.com:shaohjz/quant-learn.git`），**不能再出现 git.woa.com**。
+2. `git pull` 成功；`git log -1` 能看到 GitHub 上的最新提交。
+3. `git push origin HEAD` 成功（否则当晚 18:45/20:30 DailyGitSync 会失败）。若 push 要登录：`gh auth login` 或在 Windows 凭据管理器存 GitHub HTTPS token。
+4. 不必重建任何 QuantLearn_* 定时器。
+
+**回滚：** `git remote set-url origin git@git.woa.com:jizhouhu/quant-learn.git`（仅当主人明确说改回工蜂）。
+
+### 历史变更：账户 #4 银行波段真正能买（2026-09-08）
 
 > **改了什么：** 费率修复后 #4 仍连续空仓（08-21 起 0 成交）。2026-09-08 用当日行情拆漏斗：16 只银行股里有人已踩均线，但被三件事挡死——① `scan_stock` 仍读 #3 的 `swing_auto.PARAMS`（`min_net_rr=1.2` / 量比 0.8），`bank_swing_daily` 只改了日报模块的 `sdr.PARAMS`；② `min_score_buy=5`，而 A=4、B/C/D=3，单次回踩永远买不了（当日交通银行 B/RR 2.66、建设银行 D/RR 2.80 都卡在 3<5）；③ 量比 0.8 对银行过严（当日 6 只量比 0.83~1.02）。
 > 三处改动：① `scan_stock` 增加 `params=`，`run_scan` 传入当前 `PARAMS`，`apply_bank_profile` 同时覆盖 `swing_auto.PARAMS`；② `bank_swing_strategy.min_score_buy` 5→3；③ `max_volume_ratio` 0.8→0.95。
@@ -1146,7 +1176,7 @@ CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
 |----|------|
 | OS | Windows 10/11 |
 | Python | 3.11 推荐（`>=3.11,<3.14`） |
-| Git | 能拉工蜂 |
+| Git | 能拉 GitHub（https://github.com/shaohjz/quant-learn） |
 | QMT | 可选 |
 | 企微机器人 | webhook |
 
@@ -1154,7 +1184,7 @@ CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
 
 ```bat
 cd C:\Users\Administrator\.openclaw\workspace
-git clone git@git.woa.com:jizhouhu/quant-learn.git
+git clone https://github.com/shaohjz/quant-learn.git
 cd quant-learn
 ```
 
@@ -1231,7 +1261,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：账户 #4 银行扫描改为吃独立参数，min_score_buy 5→3、量比 0.8→0.95；不必重建定时器。冒烟 pytest tests\test_bank_swing_daily.py 与 bank_swing_daily.py --no-push --no-trade。
+重点：把 origin 改成 https://github.com/shaohjz/quant-learn.git，确认 git remote -v 不再出现 git.woa.com，并能 git pull / git push。不必重建定时器。
 做完写 pm/ops/今天-deploy.md。
 ```
 

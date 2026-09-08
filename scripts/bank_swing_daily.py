@@ -65,6 +65,10 @@ def apply_bank_profile() -> None:
     # 来自账户 #3 的样本，级联过来会让一次自动调参同时影响两个结论不同的账户。
     bank_params = load_swing_params(section=BANK_SECTION, auto_overrides={})
     sdr.PARAMS = bank_params
+    # scan_stock 缺省读 swing_auto.PARAMS（#3）。进程内一并切过去，
+    # 避免漏传 params= 时银行扫描仍按 1.2 / 0.8 把票滤光。
+    import swing_auto as _sa
+    _sa.PARAMS = bank_params
     sdr.STOP_LOSS_PCT = bank_params.stop_loss_pct
     sdr.TAKE_PROFIT_PCT = bank_params.take_profit_pct
     sdr.MIN_SCORE_BUY = bank_params.min_score_buy

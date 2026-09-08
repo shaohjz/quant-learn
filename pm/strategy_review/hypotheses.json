@@ -36,5 +36,24 @@
     "outcome": "",
     "closed": "",
     "source_finding": ""
+  },
+  {
+    "id": "H-003",
+    "created": "2026-09-08",
+    "title": "#4 银行仓：扫描改吃独立参数，min_score_buy 5→3、量比 0.8→0.95",
+    "layer": "parameter",
+    "param": "bank_swing.min_score_buy,max_volume_ratio",
+    "before": "5 / 0.8",
+    "after": "3 / 0.95",
+    "expect": "费率修复后仍连续空仓的 #4，10 个交易日内至少出现 1 笔模拟买入",
+    "metric": "account4.fills",
+    "baseline": null,
+    "target": null,
+    "review_after": "2026-09-29",
+    "min_samples": 5,
+    "status": "open",
+    "outcome": "",
+    "closed": "",
+    "source_finding": ""
   }
 ]

@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-08-29（银行波段费率修复 + 池独立参数；账户 #3 行为不变）  
+> **更新**：2026-09-08（账户 #4 银行波段：扫描吃到独立参数 + 分数/量比放宽；账户 #3 行为不变）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -491,7 +491,38 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
-### ★ 最新变更：银行波段费率修复 + 池独立参数（2026-08-29）
+### ★ 最新变更：账户 #4 银行波段真正能买（2026-09-08）
+
+> **改了什么：** 费率修复后 #4 仍连续空仓（08-21 起 0 成交）。2026-09-08 用当日行情拆漏斗：16 只银行股里有人已踩均线，但被三件事挡死——① `scan_stock` 仍读 #3 的 `swing_auto.PARAMS`（`min_net_rr=1.2` / 量比 0.8），`bank_swing_daily` 只改了日报模块的 `sdr.PARAMS`；② `min_score_buy=5`，而 A=4、B/C/D=3，单次回踩永远买不了（当日交通银行 B/RR 2.66、建设银行 D/RR 2.80 都卡在 3<5）；③ 量比 0.8 对银行过严（当日 6 只量比 0.83~1.02）。
+> 三处改动：① `scan_stock` 增加 `params=`，`run_scan` 传入当前 `PARAMS`，`apply_bank_profile` 同时覆盖 `swing_auto.PARAMS`；② `bank_swing_strategy.min_score_buy` 5→3；③ `max_volume_ratio` 0.8→0.95。
+> **账户 #3 行为零变化**：不传 `params` 时仍用模块级 PARAMS；`swing_strategy:` 段未改。
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+
+REM 1) 确认银行参数（应打印 1.0 3 0.95 ['A', 'B', 'C', 'D'] 8000.0）
+.venv\Scripts\python.exe -c "from quant_core.swing_params import load_swing_params as L; p=L(section='bank_swing_strategy',auto_overrides={}); print(p.min_net_rr, p.min_score_buy, p.max_volume_ratio, sorted(p.executable_types), p.single_budget)"
+
+REM 2) 冒烟（不推企微；收盘后可去掉 --no-trade 看是否能模拟建仓）
+.venv\Scripts\python.exe -m pytest tests\test_swing_fee_budget.py tests\test_bank_swing_daily.py -q
+.venv\Scripts\python.exe -u scripts\bank_swing_daily.py --no-push --no-trade
+type output\bank_swing_daily\今天日期.md
+```
+
+**验收标准：**
+
+1. 银行参数打印为 `1.0 3 0.95 ['A', 'B', 'C', 'D'] 8000.0`。
+2. `tests\test_swing_fee_budget.py` + `tests\test_bank_swing_daily.py` 全绿。
+3. **不必重建 schtasks**（仍是 `QuantLearn_BankSwingDaily`@16:08）。
+4. **账户 #3 不受影响**：`scripts\swing_daily_report.py --no-push` 选股与持仓行为与改前一致。
+5. 下一交易日 #4 不再要求「必须双信号才买」；若仍空仓，看 `output\bank_swing_daily_report.log` 是不是行情真没回踩。
+
+**回滚：** `git revert` 本次提交；或把 `config.yaml` 的 `bank_swing_strategy.execution.min_score_buy` / `signals.max_volume_ratio` 删掉（回退 5 / 0.8）。扫描 `params=` 不要单独回滚，否则又会扫成 #3 参数。
+
+### 历史变更：银行波段费率修复 + 池独立参数（2026-08-29）
 
 > **改了什么：** 修复账户 `#4` 银行波段自上线以来 **0 笔成交、持续空仓** 的问题。根因是 `swing_auto.scan_stock` 的手续费按固定 **100 股** 试算：低价银行股（3~11 元）买 100 股只有几百元，必然触发最低佣金 5 元，费率被放大 **6~19 倍**（光大银行 3.03 元：算成 3.35%，按 8000 元预算实为 0.18%），净盈亏比被打成负数。
 > 三处改动：① `scan_stock` 新增可选 `fee_budget`，按真实建仓预算试算费率；② `swing_params` 支持按 section 读取，银行池走 `config.yaml` 的 `bank_swing_strategy:` 段获得独立参数（`min_net_rr` 1.2→1.0、`executable_types` 增加 C/D）；③ `run_scan` 的 `except Exception: pass` 改为记 WARNING 日志并带堆栈。
@@ -1200,7 +1231,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：新建 QuantLearn_BankSwingDaily@16:08（银行股专用波段 #4）；冒烟 bank_swing_daily.py --no-push，确认 output/bank_swing_daily/今天.md 标题为「银行波段结论」。
+重点：账户 #4 银行扫描改为吃独立参数，min_score_buy 5→3、量比 0.8→0.95；不必重建定时器。冒烟 pytest tests\test_bank_swing_daily.py 与 bank_swing_daily.py --no-push --no-trade。
 做完写 pm/ops/今天-deploy.md。
 ```
 

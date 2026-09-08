@@ -216,12 +216,16 @@ def fee_test_shares(price: float, fee_budget: float | None) -> int:
     return LOT_SIZE
 
 
-def scan_stock(code, name, fee_budget: float | None = None):
+def scan_stock(code, name, fee_budget: float | None = None, params=None):
     """扫描单只股票，返回波段机会（含盈亏比）
 
     fee_budget: 单票建仓预算，用于按真实仓位试算手续费率。
                 为 None 时沿用历史的固定 100 股口径。
+    params: 波段参数。缺省用模块级 PARAMS（账户 #3）。
+            账户 #4 必须传入 bank_swing_strategy，否则扫描仍按 #3 的
+            min_net_rr=1.2 / max_volume_ratio=0.8 把银行股滤掉。
     """
+    p = params if params is not None else PARAMS
     quote = get_quote(code)
     if not quote or quote['price'] == 0:
         return None
@@ -275,28 +279,28 @@ def scan_stock(code, name, fee_budget: float | None = None):
     signal_type = None
     
     # 信号1: 缩量回踩MA20支撑（最可靠）
-    a_tol = PARAMS.a_ma20_tolerance
+    a_tol = p.a_ma20_tolerance
     if price <= ma20 * (1 + a_tol) and price >= ma20 * (1 - a_tol):
-        if today_vol_ratio < PARAMS.max_volume_ratio:
+        if today_vol_ratio < p.max_volume_ratio:
             signals.append(("缩量回踩MA20", 4))
             signal_type = 'A'
     
     # 信号2: 缩量回踩MA10支撑
-    b_tol = PARAMS.b_ma10_tolerance
+    b_tol = p.b_ma10_tolerance
     if price <= ma10 * (1 + b_tol) and price >= ma10 * (1 - b_tol):
-        if today_vol_ratio < PARAMS.max_volume_ratio:
+        if today_vol_ratio < p.max_volume_ratio:
             signals.append(("缩量回踩MA10", 3))
             if not signal_type:
                 signal_type = 'B'
     
     # 信号3: 布林下轨附近
-    if boll_lower and price <= boll_lower * (1 + PARAMS.boll_lower_tolerance):
+    if boll_lower and price <= boll_lower * (1 + p.boll_lower_tolerance):
         signals.append(("布林下轨附近", 3))
         if not signal_type:
             signal_type = 'C'
     
     # 信号4: RSI超卖
-    if rsi < PARAMS.rsi_oversold:
+    if rsi < p.rsi_oversold:
         signals.append((f"RSI超卖({rsi:.0f})", 3))
         if not signal_type:
             signal_type = 'D'
@@ -305,13 +309,13 @@ def scan_stock(code, name, fee_budget: float | None = None):
     if len(closes) >= 5:
         last_3 = closes[-3:]
         if all(last_3[i] < last_3[i-1] for i in range(1, 3)):
-            if today_vol_ratio < PARAMS.quiet_volume_ratio and change_pct >= PARAMS.e_min_change_pct:
+            if today_vol_ratio < p.quiet_volume_ratio and change_pct >= p.e_min_change_pct:
                 signals.append(("三连阴缩量企稳", 4))
                 if not signal_type:
                     signal_type = 'E'
     
     # 信号6: 回调缩量（单日大跌缩量）
-    if change_pct < PARAMS.f_max_change_pct and today_vol_ratio < PARAMS.quiet_volume_ratio:
+    if change_pct < p.f_max_change_pct and today_vol_ratio < p.quiet_volume_ratio:
         signals.append((f"大跌缩量({change_pct:.1f}%)", 2))
         if not signal_type:
             signal_type = 'F'
@@ -370,11 +374,11 @@ def scan_stock(code, name, fee_budget: float | None = None):
     net_rr = net_upside / net_downside if net_downside > 0 else 0
     
     # 最终筛选
-    if net_rr < PARAMS.min_net_rr:
+    if net_rr < p.min_net_rr:
         return None
-    if upside < PARAMS.min_upside_pct:
+    if upside < p.min_upside_pct:
         return None
-    if avg_amp < PARAMS.min_avg_amp:
+    if avg_amp < p.min_avg_amp:
         return None
     
     # 建议仓位：启用预算时按预算给，否则沿用 1 万元口径

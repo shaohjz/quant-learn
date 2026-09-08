@@ -320,7 +320,7 @@ def run_scan() -> list[dict]:
     results = []
     for code, name in get_stock_pool():
         try:
-            r = scan_stock(code, name, fee_budget=SCAN_FEE_BUDGET)
+            r = scan_stock(code, name, fee_budget=SCAN_FEE_BUDGET, params=PARAMS)
             if r:
                 results.append(r)
         except Exception:

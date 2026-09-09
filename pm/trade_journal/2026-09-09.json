@@ -1,0 +1,285 @@
+{
+  "trade_date": "2026-09-09",
+  "generated_at": "2026-09-09 16:15:01",
+  "db_path": "C:\\Users\\Administrator\\.openclaw\\workspace\\quant-learn\\data\\sim_live_mirror.db",
+  "totals": {
+    "accounts": 4,
+    "trades": 3,
+    "open_positions": 12
+  },
+  "accounts": [
+    {
+      "account_id": 1,
+      "label": "learn",
+      "cash": 6377.990000000006,
+      "total_value": 93425.99,
+      "day_pnl": -300.1100000000006,
+      "day_pct": -0.3201989627222306,
+      "buy_amount": 4459.11,
+      "sell_amount": 0,
+      "commission": 1.11,
+      "trade_count": 1,
+      "trades": [
+        {
+          "id": 186,
+          "account_id": 1,
+          "trade_time": "09:36:25",
+          "stock_code": "600406",
+          "stock_name": "国电南瑞",
+          "direction": "BUY",
+          "price": 22.29,
+          "quantity": 200,
+          "amount": 4459.11,
+          "commission": 1.11,
+          "signal_reason": "buy_zone|建仓价=22.29|触发阈值=22.55|国电南瑞 buy_zone 试探建仓"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 1,
+          "stock_code": "000002",
+          "stock_name": "万 科Ａ",
+          "quantity": 4500,
+          "avg_cost": 3.114,
+          "current_price": 3.19,
+          "market_value": 14355.0,
+          "pnl": 342.0,
+          "pnl_pct": 2.4405908798972407,
+          "trailing_stop_price": 3.15
+        },
+        {
+          "account_id": 1,
+          "stock_code": "300146",
+          "stock_name": "汤臣倍健",
+          "quantity": 1400,
+          "avg_cost": 9.977,
+          "current_price": 9.71,
+          "market_value": 13594.0,
+          "pnl": -373.8,
+          "pnl_pct": -2.676155156860774,
+          "trailing_stop_price": 9.16
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600233",
+          "stock_name": "圆通速递",
+          "quantity": 800,
+          "avg_cost": 17.206,
+          "current_price": 16.84,
+          "market_value": 13472.0,
+          "pnl": -292.8,
+          "pnl_pct": -2.12716494246193,
+          "trailing_stop_price": 15.83
+        },
+        {
+          "account_id": 1,
+          "stock_code": "600406",
+          "stock_name": "国电南瑞",
+          "quantity": 600,
+          "avg_cost": 22.443,
+          "current_price": 22.47,
+          "market_value": 13482.0,
+          "pnl": 16.2,
+          "pnl_pct": 0.1203047720892816,
+          "trailing_stop_price": 20.72
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601138",
+          "stock_name": "工业富联",
+          "quantity": 200,
+          "avg_cost": 64.27,
+          "current_price": 65.22,
+          "market_value": 13044.0,
+          "pnl": 190.0,
+          "pnl_pct": 1.478139100669057,
+          "trailing_stop_price": 58.59
+        },
+        {
+          "account_id": 1,
+          "stock_code": "601628",
+          "stock_name": "中国人寿",
+          "quantity": 300,
+          "avg_cost": 38.877,
+          "current_price": 38.19,
+          "market_value": 11457.0,
+          "pnl": -206.1,
+          "pnl_pct": -1.7671116598503092,
+          "trailing_stop_price": 35.61
+        },
+        {
+          "account_id": 1,
+          "stock_code": "603296",
+          "stock_name": "华勤技术",
+          "quantity": 100,
+          "avg_cost": 76.59,
+          "current_price": 76.44,
+          "market_value": 7644.0,
+          "pnl": -15.0,
+          "pnl_pct": -0.19584802193498588,
+          "trailing_stop_price": 70.46
+        }
+      ],
+      "nav_today": null
+    },
+    {
+      "account_id": 2,
+      "label": "real_portfolio",
+      "cash": 23963.642249999997,
+      "total_value": 23963.64,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": null
+    },
+    {
+      "account_id": 3,
+      "label": "swing_trade",
+      "cash": 8655.256000000001,
+      "total_value": 49218.256,
+      "day_pnl": 764.6460000000006,
+      "day_pct": 1.5780991344091815,
+      "buy_amount": 6467.0,
+      "sell_amount": 8705.6425,
+      "commission": 10.0,
+      "trade_count": 2,
+      "trades": [
+        {
+          "id": 187,
+          "account_id": 3,
+          "trade_time": "13:55:17",
+          "stock_code": "000807",
+          "stock_name": "云铝股份",
+          "direction": "SELL",
+          "price": 29.05,
+          "quantity": 300,
+          "amount": 8705.6425,
+          "commission": 5.0,
+          "signal_reason": "波段模拟|盘中止盈"
+        },
+        {
+          "id": 188,
+          "account_id": 3,
+          "trade_time": "16:05:31",
+          "stock_code": "601138",
+          "stock_name": "工业富联",
+          "direction": "BUY",
+          "price": 64.62,
+          "quantity": 100,
+          "amount": 6467.0,
+          "commission": 5.0,
+          "signal_reason": "波段模拟|盘中补漏|A分11 rr=2.94"
+        }
+      ],
+      "positions": [
+        {
+          "account_id": 3,
+          "stock_code": "002648",
+          "stock_name": "卫星化学",
+          "quantity": 300,
+          "avg_cost": 27.51,
+          "current_price": 28.18,
+          "market_value": 8454.0,
+          "pnl": 200.99999999999943,
+          "pnl_pct": 2.435478007997083,
+          "trailing_stop_price": 26.13
+        },
+        {
+          "account_id": 3,
+          "stock_code": "300059",
+          "stock_name": "东方财富",
+          "quantity": 500,
+          "avg_cost": 19.35,
+          "current_price": 18.91,
+          "market_value": 9455.0,
+          "pnl": -220.00000000000063,
+          "pnl_pct": -2.273901808785539,
+          "trailing_stop_price": 18.38
+        },
+        {
+          "account_id": 3,
+          "stock_code": "600309",
+          "stock_name": "万华化学",
+          "quantity": 100,
+          "avg_cost": 74.73,
+          "current_price": 78.87,
+          "market_value": 7887.0,
+          "pnl": 414.00000000000006,
+          "pnl_pct": 5.53994379767162,
+          "trailing_stop_price": 75.48
+        },
+        {
+          "account_id": 3,
+          "stock_code": "601138",
+          "stock_name": "工业富联",
+          "quantity": 100,
+          "avg_cost": 64.62,
+          "current_price": 64.62,
+          "market_value": 6462.0,
+          "pnl": 0.0,
+          "pnl_pct": 0.0,
+          "trailing_stop_price": 61.39
+        },
+        {
+          "account_id": 3,
+          "stock_code": "603019",
+          "stock_name": "中科曙光",
+          "quantity": 100,
+          "avg_cost": 85.52,
+          "current_price": 82.43,
+          "market_value": 8243.0,
+          "pnl": -308.9999999999989,
+          "pnl_pct": -3.6131898971000775,
+          "trailing_stop_price": 81.24
+        }
+      ],
+      "nav_today": {
+        "id": 375,
+        "account_id": 3,
+        "trade_date": "2026-09-09",
+        "total_value": 49218.256,
+        "cash": 8655.256000000001,
+        "market_value": 40563.0,
+        "daily_return": 0.015780991344091833,
+        "cumulative_return": -0.015634880000000018,
+        "max_drawdown": null,
+        "created_at": "2026-09-09 08:05:32",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    },
+    {
+      "account_id": 4,
+      "label": "bank_swing",
+      "cash": 30000.0,
+      "total_value": 30000.0,
+      "day_pnl": 0.0,
+      "day_pct": 0.0,
+      "buy_amount": 0,
+      "sell_amount": 0,
+      "commission": 0,
+      "trade_count": 0,
+      "trades": [],
+      "positions": [],
+      "nav_today": {
+        "id": 376,
+        "account_id": 4,
+        "trade_date": "2026-09-09",
+        "total_value": 30000.0,
+        "cash": 30000.0,
+        "market_value": 0.0,
+        "daily_return": 0.0,
+        "cumulative_return": 0.0,
+        "max_drawdown": null,
+        "created_at": "2026-09-09 08:08:05",
+        "cash_jump_detected": 0,
+        "cash_jump_reason": null
+      }
+    }
+  ]
+}

@@ -235,8 +235,8 @@ def sim_buy(code: str, name: str, price: float, reason: str) -> dict:
             nq = existing["quantity"] + qty
             nc = (existing["avg_cost"] * existing["quantity"] + price * qty) / nq
             conn.execute(
-                "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=? "
-                "WHERE id=?",
+                "UPDATE sim_positions SET quantity=?, avg_cost=?, current_price=?, market_value=?, "
+                "updated_at=datetime('now','localtime') WHERE id=?",
                 (nq, nc, price, price * nq, existing["id"]),
             )
         else:
@@ -305,7 +305,8 @@ def refresh_and_mark(positions: list[dict]) -> list[dict]:
         conn = _conn()
         try:
             conn.execute(
-                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=? "
+                "UPDATE sim_positions SET current_price=?, market_value=?, pnl=?, pnl_pct=?, "
+                "updated_at=datetime('now','localtime') "
                 "WHERE account_id=? AND stock_code=? AND quantity>0",
                 (price, price * qty, item["pnl"], pnl_pct, SWING_ACCOUNT_ID, code),
             )

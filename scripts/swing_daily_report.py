@@ -286,10 +286,21 @@ def refresh_and_mark(positions: list[dict]) -> list[dict]:
         cost = float(p.get("avg_cost") or 0)
         qty = int(p.get("quantity") or 0)
         pnl_pct = (price / cost - 1) * 100 if cost else 0
-        stop = cost * (1 - STOP_LOSS_PCT) if cost else 0
+        fixed_stop = cost * (1 - STOP_LOSS_PCT) if cost else 0
+        trailer = p.get("trailing_stop_price")
+        # REQ-048/REQ-057/REQ-061 复发修复：trailing_stop_price 从未参与卖出判定，
+        # 导致移动止损（如万华化学 75.48）破位后持仓仍悬挂不卖。
+        # 有效止损取两者中更紧者（更高），确保移动止损上移后优先触发。
+        try:
+            trailer_f = float(trailer) if trailer not in (None, "") else 0.0
+        except (TypeError, ValueError):
+            trailer_f = 0.0
+        stop = max(fixed_stop, trailer_f) if trailer_f and trailer_f > fixed_stop else fixed_stop
+        is_trailing = bool(trailer_f and trailer_f > fixed_stop)
         target = cost * (1 + TAKE_PROFIT_PCT) if cost else 0
         if price <= stop:
-            action, reason = "SELL_STOP", f"止损@{stop:.2f}"
+            kind = "移动止损" if is_trailing else "止损"
+            action, reason = "SELL_STOP", f"{kind}@{stop:.2f}"
         elif price >= target:
             action, reason = "SELL_TP", f"止盈@{target:.2f}"
         else:

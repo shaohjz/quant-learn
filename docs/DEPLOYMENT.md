@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-08（账户 #4 银行波段：扫描吃到独立参数 + 分数/量比放宽；账户 #3 行为不变）  
+> **更新**：2026-09-13（修复移动止损破位不卖出：卖出判定读入 trailing_stop_price）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -490,6 +490,12 @@ type output\strategy_review.log
   --param swing.max_positions --before 3 --after 5 ^
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
+
+### ★ 最新变更：修复移动止损破位不卖出（2026-09-13）
+
+> **改了什么：** 万华化学(600309) `current_price=74.50 < trailing_stop_price=75.48` 却仍持仓悬挂未卖，触发每日巡检 `stop_loss_not_executed` P0 复发。根因：`sim_positions.trailing_stop_price` 字段在买入时正确写入、也被 `backfill_trailing_stop.py` 上移，但**卖出判定从未读它** —— `swing_daily_report.refresh_and_mark` 与 `swing_intraday_watch.check_positions` 都用固定 `stop = cost*(1-STOP_LOSS_PCT)`（万华=70.99），移动止损 75.48 破位后不触发。
+> 两处改动：① `swing_daily_report.py` 的 `refresh_and_mark` 把有效止损改为 `max(fixed_stop, trailing_stop_price)`；② `swing_intraday_watch.py` 的 `check_positions` 同样对齐，收盘与盘中口径一致。无 `trailing_stop_price`（为 NULL/空）时行为不变，完全兼容旧数据。
+> **账户 #3 行为变化**：仅当移动止损已上移（> fixed_stop）且现价破位时，比原来更早、正确地触发 SELL_STOP。
 
 ### ★ 最新变更：账户 #4 银行波段真正能买（2026-09-08）
 

@@ -213,11 +213,21 @@ def check_positions() -> list[dict]:
         cost = float(p.get("avg_cost") or 0)
         if cost <= 0:
             continue
-        stop = cost * (1 - STOP_LOSS_PCT)
+        fixed_stop = cost * (1 - STOP_LOSS_PCT)
+        trailer = p.get("trailing_stop_price")
+        # 与 swing_daily_report.refresh_and_mark 对齐：移动止损参与盘中判定，
+        # 防止 trailing_stop_price 破位后盘中无告警、收盘仍悬挂不卖。
+        try:
+            trailer_f = float(trailer) if trailer not in (None, "") else 0.0
+        except (TypeError, ValueError):
+            trailer_f = 0.0
+        stop = max(fixed_stop, trailer_f) if trailer_f and trailer_f > fixed_stop else fixed_stop
+        is_trailing = bool(trailer_f and trailer_f > fixed_stop)
         target = cost * (1 + TAKE_PROFIT_PCT)
         pnl_pct = (price / cost - 1) * 100
         name = p.get("stock_name") or q["name"]
         if price <= stop:
+            kind = "移动止损" if is_trailing else "止损"
             alerts.append({
                 "kind": "SELL_STOP",
                 "code": code,
@@ -226,7 +236,7 @@ def check_positions() -> list[dict]:
                 "pnl_pct": pnl_pct,
                 "stop": stop,
                 "target": target,
-                "msg": f"止损线破位：建议卖出挂单 ~{price:.2f}",
+                "msg": f"{kind}线破位：建议卖出挂单 ~{price:.2f}",
             })
         elif price >= target:
             alerts.append({

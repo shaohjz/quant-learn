@@ -10,5 +10,7 @@ set GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFil
 
 if not exist output mkdir output
 
-".venv\Scripts\python.exe" -u scripts\prod_clock.py >> output\prod_clock.log 2>&1
+REM 注意：prod_clock.py 自己写 output\prod_clock.log，
+REM 这里再用 >> 重定向到同一文件会因 cmd 持有句柄导致 Python 端 PermissionError，故不重定向。
+".venv\Scripts\python.exe" -u scripts\prod_clock.py
 exit /b %ERRORLEVEL%

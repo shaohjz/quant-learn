@@ -1,11 +1,11 @@
 {
-  "as_of": "2026-09-11",
+  "as_of": "2026-09-10",
   "read_only": true,
-  "total_signals": 61,
+  "total_signals": 49,
   "windows": {
     "20d": {
-      "signal_days": 11,
-      "signals": 61,
+      "signal_days": 10,
+      "signals": 49,
       "groups": [
         {
           "strategy": "swing",
@@ -45,7 +45,7 @@
           "strategy": "swing",
           "signal_type": "C",
           "executable": false,
-          "samples": 28,
+          "samples": 21,
           "matured": 3,
           "win_rate": 0.6666666666666666,
           "mean_fwd_5d": 0.01656830324312719,
@@ -62,7 +62,7 @@
           "strategy": "swing",
           "signal_type": "D",
           "executable": false,
-          "samples": 28,
+          "samples": 23,
           "matured": 4,
           "win_rate": 0.75,
           "mean_fwd_5d": 0.015338127490065537,
@@ -77,7 +77,7 @@
         }
       ],
       "overall": {
-        "signals": 61,
+        "signals": 49,
         "matured": 9,
         "executed": 0,
         "mean_fwd_5d": 0.005979337476024399,
@@ -86,8 +86,8 @@
       }
     },
     "60d": {
-      "signal_days": 11,
-      "signals": 61,
+      "signal_days": 10,
+      "signals": 49,
       "groups": [
         {
           "strategy": "swing",
@@ -127,7 +127,7 @@
           "strategy": "swing",
           "signal_type": "C",
           "executable": false,
-          "samples": 28,
+          "samples": 21,
           "matured": 3,
           "win_rate": 0.6666666666666666,
           "mean_fwd_5d": 0.01656830324312719,
@@ -144,7 +144,7 @@
           "strategy": "swing",
           "signal_type": "D",
           "executable": false,
-          "samples": 28,
+          "samples": 23,
           "matured": 4,
           "win_rate": 0.75,
           "mean_fwd_5d": 0.015338127490065537,
@@ -159,7 +159,7 @@
         }
       ],
       "overall": {
-        "signals": 61,
+        "signals": 49,
         "matured": 9,
         "executed": 0,
         "mean_fwd_5d": 0.005979337476024399,

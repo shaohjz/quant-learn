@@ -1,0 +1,173 @@
+{
+  "as_of": "2026-09-09",
+  "read_only": true,
+  "total_signals": 41,
+  "windows": {
+    "20d": {
+      "signal_days": 9,
+      "signals": 41,
+      "groups": [
+        {
+          "strategy": "swing",
+          "signal_type": "A",
+          "executable": true,
+          "samples": 1,
+          "matured": 0,
+          "win_rate": null,
+          "mean_fwd_5d": null,
+          "median_fwd_5d": null,
+          "mean_fwd_1d": null,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": null,
+          "stop_hit_rate": null,
+          "mean_max_gain_5d": null,
+          "mean_max_draw_5d": null,
+          "executed": 0
+        },
+        {
+          "strategy": "swing",
+          "signal_type": "B",
+          "executable": false,
+          "samples": 3,
+          "matured": 0,
+          "win_rate": null,
+          "mean_fwd_5d": null,
+          "median_fwd_5d": null,
+          "mean_fwd_1d": null,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": null,
+          "stop_hit_rate": null,
+          "mean_max_gain_5d": null,
+          "mean_max_draw_5d": null,
+          "executed": 0
+        },
+        {
+          "strategy": "swing",
+          "signal_type": "C",
+          "executable": false,
+          "samples": 17,
+          "matured": 0,
+          "win_rate": null,
+          "mean_fwd_5d": null,
+          "median_fwd_5d": null,
+          "mean_fwd_1d": -0.01682333985781615,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": 0.0,
+          "stop_hit_rate": 0.0,
+          "mean_max_gain_5d": -9.972353760208689e-05,
+          "mean_max_draw_5d": -0.022752458963310677,
+          "executed": 0
+        },
+        {
+          "strategy": "swing",
+          "signal_type": "D",
+          "executable": false,
+          "samples": 20,
+          "matured": 1,
+          "win_rate": 1.0,
+          "mean_fwd_5d": 0.06494992846924165,
+          "median_fwd_5d": 0.06494992846924165,
+          "mean_fwd_1d": 0.013447782546494959,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": 1.0,
+          "stop_hit_rate": 0.0,
+          "mean_max_gain_5d": 0.1147353361945636,
+          "mean_max_draw_5d": 0.00028612303290409183,
+          "executed": 0
+        }
+      ],
+      "overall": {
+        "signals": 41,
+        "matured": 1,
+        "executed": 0,
+        "mean_fwd_5d": 0.06494992846924165,
+        "win_rate": 1.0,
+        "executed_mean_fwd_5d": null
+      }
+    },
+    "60d": {
+      "signal_days": 9,
+      "signals": 41,
+      "groups": [
+        {
+          "strategy": "swing",
+          "signal_type": "A",
+          "executable": true,
+          "samples": 1,
+          "matured": 0,
+          "win_rate": null,
+          "mean_fwd_5d": null,
+          "median_fwd_5d": null,
+          "mean_fwd_1d": null,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": null,
+          "stop_hit_rate": null,
+          "mean_max_gain_5d": null,
+          "mean_max_draw_5d": null,
+          "executed": 0
+        },
+        {
+          "strategy": "swing",
+          "signal_type": "B",
+          "executable": false,
+          "samples": 3,
+          "matured": 0,
+          "win_rate": null,
+          "mean_fwd_5d": null,
+          "median_fwd_5d": null,
+          "mean_fwd_1d": null,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": null,
+          "stop_hit_rate": null,
+          "mean_max_gain_5d": null,
+          "mean_max_draw_5d": null,
+          "executed": 0
+        },
+        {
+          "strategy": "swing",
+          "signal_type": "C",
+          "executable": false,
+          "samples": 17,
+          "matured": 0,
+          "win_rate": null,
+          "mean_fwd_5d": null,
+          "median_fwd_5d": null,
+          "mean_fwd_1d": -0.01682333985781615,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": 0.0,
+          "stop_hit_rate": 0.0,
+          "mean_max_gain_5d": -9.972353760208689e-05,
+          "mean_max_draw_5d": -0.022752458963310677,
+          "executed": 0
+        },
+        {
+          "strategy": "swing",
+          "signal_type": "D",
+          "executable": false,
+          "samples": 20,
+          "matured": 1,
+          "win_rate": 1.0,
+          "mean_fwd_5d": 0.06494992846924165,
+          "median_fwd_5d": 0.06494992846924165,
+          "mean_fwd_1d": 0.013447782546494959,
+          "mean_fwd_10d": null,
+          "take_profit_hit_rate": 1.0,
+          "stop_hit_rate": 0.0,
+          "mean_max_gain_5d": 0.1147353361945636,
+          "mean_max_draw_5d": 0.00028612303290409183,
+          "executed": 0
+        }
+      ],
+      "overall": {
+        "signals": 41,
+        "matured": 1,
+        "executed": 0,
+        "mean_fwd_5d": 0.06494992846924165,
+        "win_rate": 1.0,
+        "executed_mean_fwd_5d": null
+      }
+    }
+  },
+  "alarms": [],
+  "verdict": "近 60d：1 个成熟信号，5日平均 +6.49%，胜率 100%，已成交 0 笔"
+}

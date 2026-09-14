@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-14（模式 B：3-windows 跑时钟；运维运费发版；扫描 schtasks 默认停）  
+> **更新**：2026-09-14（origin 切回工蜂并合并 GitHub 独有改动；3-windows 跑时钟；扫描 schtasks 默认停） 
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -83,11 +83,29 @@
 - 「盘中每 10 分」= 时钟 cron `*/10` + `quant_pulse.py` 自己判断时段，**不是** LLM 每 10 分钟想盘。  
 - 细节表见 [CRON_JOBS.md](./CRON_JOBS.md)。人设见 [WINDOWS_PROD.md](../pm/agents/WINDOWS_PROD.md)。
 
+## ★★ 产机时钟（ProdClock，2026-09-14 起）
+
+**时钟 = 3-windows OpenClaw `quant-prod-clock`（`systemEvent`，工作日 `*/10`）** → `scripts\prod_clock_runner.bat` → `prod_clock.py`。  
+**不要**再挂 `QuantLearn_ProdClock` schtasks，否则与 OpenClaw 时钟双开。扫描类任务在窗口内由时钟承担。交易日判定用 `sim/trade_calendar.py`（akshare 官方日历 + `data/trade_dates.json` 7 天 TTL；拉不到且无缓存时回退周末判定），节假日时钟空转不产出。
+
+| 任务 | 窗口 | 承担者 |
+|------|------|--------|
+| MorningScan 08:30 / SwingPool 08:40 | 08:30–08:59 | 时钟 ONCE_JOBS |
+| Pulse 09:35–14:50（每 10 分） | 09:30–11:30 / 13:00–14:50 | 时钟（交易时段判定） |
+| SwingDaily 16:05 / BankSwingDaily 16:08 | 16:00–16:19 | 时钟 ONCE_JOBS |
+| TradeJournal 16:15 / DailyClose 16:20 | 16:10–16:29 | 时钟 ONCE_JOBS |
+| StrategyReview 16:35 | 16:30–16:49 | 时钟 ONCE_JOBS |
+| DailyGitSync 18:45 / Evening 20:30 | 18:40–19:14 / 20:30–20:59 | 时钟 ONCE_JOBS |
+| VqlearnLive / IntradayScanner / SignalLedger / StrategyScorecard | — | 模式 B 默认停；不要与时钟双开 |
+
+- 时钟产物日志：`output\prod_clock.log`；去重 stamp：`output\prod_clock\日期\任务.done`。
+- 双开检查：迁入时钟的扫描类 schtasks 必须保持 Disabled。
+
 ## 步骤 0 — 进入目录并拉代码
 
 ```bat
 cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
-git remote set-url origin https://github.com/shaohjz/quant-learn.git
+git remote set-url origin git@git.woa.com:jizhouhu/quant-learn.git
 git remote -v
 git status
 git pull
@@ -555,6 +573,38 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
+### ★ 最新变更：origin 切回工蜂并合并分叉（2026-09-14）
+
+> **改了什么：** 主人要求本机/产机先不走 GitHub。权威远程改回 [git.woa.com:jizhouhu/quant-learn](https://git.woa.com/jizhouhu/quant-learn)。GitHub `master`（含 #1 buy_zone / 3-windows 人设）与工蜂 `master`（含 09-09 起台账、移动止损修复、prod_clock 交易日门控）在 `0aa4f3b` 分叉后已合并。
+> **不必重建 schtasks。** 产机若 origin 已是工蜂，只需 `git pull`。若仍指向 GitHub：先 `git remote set-url` 再 pull。
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git remote set-url origin git@git.woa.com:jizhouhu/quant-learn.git
+git remote -v
+git fetch origin
+git pull
+git log -1 --oneline
+git push origin HEAD
+```
+
+**验收标准：**
+
+1. `git remote -v` 的 fetch/push 都是 `git@git.woa.com:jizhouhu/quant-learn.git`。
+2. `git pull` 成功；能看到合并提交，且 09-09 起台账仍在。
+3. `git push origin HEAD` 成功（否则当晚 DailyGitSync 会失败）。
+4. 不必重建任何 QuantLearn_* 定时器。
+
+**回滚：** `git remote set-url origin https://github.com/shaohjz/quant-learn.git`（仅当主人明确说改回 GitHub）。
+
+### ★ 最新变更：修复移动止损破位不卖出（2026-09-13）
+
+> **改了什么：** 万华化学(600309) `current_price=74.50 < trailing_stop_price=75.48` 却仍持仓悬挂未卖，触发每日巡检 `stop_loss_not_executed` P0 复发。根因：`sim_positions.trailing_stop_price` 字段在买入时正确写入、也被 `backfill_trailing_stop.py` 上移，但**卖出判定从未读它** —— `swing_daily_report.refresh_and_mark` 与 `swing_intraday_watch.check_positions` 都用固定 `stop = cost*(1-STOP_LOSS_PCT)`（万华=70.99），移动止损 75.48 破位后不触发。
+> 两处改动：① `swing_daily_report.py` 的 `refresh_and_mark` 把有效止损改为 `max(fixed_stop, trailing_stop_price)`；② `swing_intraday_watch.py` 的 `check_positions` 同样对齐，收盘与盘中口径一致。无 `trailing_stop_price`（为 NULL/空）时行为不变，完全兼容旧数据。
+> **账户 #3 行为变化**：仅当移动止损已上移（> fixed_stop）且现价破位时，比原来更早、正确地触发 SELL_STOP。
+
 ### ★ 最新变更：#1 胜率闸 + #3 波段止损/换仓（2026-09-08 晚）
 
 > **改了什么：** 主人不满 #1 buy_zone 胜率 21%、#3 波段换仓不稳。同一次修好这几件：
@@ -594,33 +644,9 @@ REM 下一交易日开盘后，QuantPulse 会把 #3 止损钉回 5%；也可手�
 
 **回滚：** `git revert` 本次提交。或把 `config.yaml` 里本次新增的 risk / swing_strategy.execution 键删掉（`block_add_to_loser_pct` 回 -3，`min_score_buy` 回 5，`same_day_replace` 删掉即默认 true）。
 
-### 历史变更：代码仓迁到 GitHub（2026-09-08）
+### 历史变更：代码仓曾迁 GitHub（2026-09-08，已于 2026-09-14 回滚）
 
-> **改了什么：** 主人要求以后不再用公司工蜂。权威远程改为 [https://github.com/shaohjz/quant-learn](https://github.com/shaohjz/quant-learn)。本机 `origin` 已切走；产机必须 `git remote set-url`，否则 `git pull` / DailyGitSync 仍会推到 `git.woa.com`。
-> **不必重建 schtasks**，但 DailyGitSync 的 `git push` 需要产机能写 GitHub（HTTPS 凭据或 `gh auth login`）。公开仓 `git pull` 不需要登录。
-
-产机执行（Windows）：
-
-```bat
-cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
-git remote set-url origin https://github.com/shaohjz/quant-learn.git
-git remote -v
-git fetch origin
-git pull
-git log -1 --oneline
-
-REM 验证 push（DailyGitSync 依赖这个）
-git push origin HEAD
-```
-
-**验收标准：**
-
-1. `git remote -v` 的 fetch/push 都是 `https://github.com/shaohjz/quant-learn.git`（或 `git@github.com:shaohjz/quant-learn.git`），**不能再出现 git.woa.com**。
-2. `git pull` 成功；`git log -1` 能看到 GitHub 上的最新提交。
-3. `git push origin HEAD` 成功（否则当晚 18:45/20:30 DailyGitSync 会失败）。若 push 要登录：`gh auth login` 或在 Windows 凭据管理器存 GitHub HTTPS token。
-4. 不必重建任何 QuantLearn_* 定时器。
-
-**回滚：** `git remote set-url origin git@git.woa.com:jizhouhu/quant-learn.git`（仅当主人明确说改回工蜂）。
+> 当时 origin 改过 GitHub；2026-09-14 主人要求改回工蜂，见上文「origin 切回工蜂」。产机不要再执行本节的 `git remote set-url`。
 
 ### 历史变更：账户 #4 银行波段真正能买（2026-09-08）
 
@@ -1278,7 +1304,7 @@ CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
 |----|------|
 | OS | Windows 10/11 |
 | Python | 3.11 推荐（`>=3.11,<3.14`） |
-| Git | 能拉 GitHub（https://github.com/shaohjz/quant-learn） |
+| Git | 能拉工蜂（git@git.woa.com:jizhouhu/quant-learn.git） |
 | QMT | 可选 |
 | 企微机器人 | webhook |
 
@@ -1286,7 +1312,7 @@ CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
 
 ```bat
 cd C:\Users\Administrator\.openclaw\workspace
-git clone https://github.com/shaohjz/quant-learn.git
+git clone git@git.woa.com:jizhouhu/quant-learn.git
 cd quant-learn
 ```
 
@@ -1363,7 +1389,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：3-windows 跑时钟；运维运费负责代码更新后发版（令 3-windows git pull）；不要两人各挂一条交易 cron。
+重点：origin 切回工蜂 git.woa.com:jizhouhu/quant-learn；3-windows 跑时钟，不要和 schtasks 双开。
 做完写 pm/ops/今天-deploy.md。
 ```
 

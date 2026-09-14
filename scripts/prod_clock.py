@@ -23,6 +23,8 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sim.trade_calendar import is_trading_day  # noqa: E402
+
 TZ = ZoneInfo("Asia/Shanghai")
 STAMP_ROOT = ROOT / "output" / "prod_clock"
 LOG = ROOT / "output" / "prod_clock.log"
@@ -46,6 +48,18 @@ def log(msg: str) -> None:
 
 def hm(dt: datetime) -> int:
     return dt.hour * 100 + dt.minute
+
+
+def trading_day(dt: datetime) -> bool:
+    """交易日判定：schtasks 已限周一~五触发，这里挡节假日。
+
+    is_trading_day 内部用 akshare 官方日历（缓存 data/trade_dates.json，
+    7 天 TTL）；拉不到且无缓存时回退周末判定（不抛错）。
+    """
+    try:
+        return is_trading_day(dt.date())
+    except Exception:
+        return dt.weekday() < 5
 
 
 def stamp_path(day: str, job_id: str) -> Path:
@@ -161,7 +175,7 @@ def in_pulse_clock(hmi: int) -> bool:
 
 
 def plan(dt: datetime) -> list[dict]:
-    if dt.weekday() >= 5:
+    if not trading_day(dt):
         return []
     hmi = hm(dt)
     day = dt.strftime("%Y-%m-%d")
@@ -196,6 +210,7 @@ def main() -> int:
                 {
                     "now": dt.isoformat(),
                     "weekday": dt.weekday(),
+                    "trading_day": trading_day(dt),
                     "hm": hm(dt),
                     "due": [j["id"] for j in jobs],
                     "done_today": done,
@@ -206,8 +221,8 @@ def main() -> int:
         )
         return 0
 
-    if dt.weekday() >= 5:
-        log("周末，时钟空转")
+    if not trading_day(dt):
+        log("非交易日（周末或节假日），时钟空转")
         return 0
     if not jobs:
         log(f"无到期任务 hm={hm(dt)}")

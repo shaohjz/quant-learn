@@ -1,7 +1,8 @@
 # OpenClaw 每日运行手册（读完按做）
 
-> **给谁读**：OpenClaw Agent / 产机运维（**细读**）  
-> **唯一权威部署入口**：[DEPLOYMENT.md](./DEPLOYMENT.md) ← 主人一句话让你部署时 **优先读那个**；本文与之冲突以 DEPLOYMENT 为准。  
+> **给谁读**：产机 **3-windows**（OpenClaw）  
+> **唯一权威部署入口**：[DEPLOYMENT.md](./DEPLOYMENT.md) ← **现行模式 B**：时钟=`prod_clock`，扫描 schtasks 停。本文与之冲突以 DEPLOYMENT 为准。  
+> **人设**：`pm/agents/WINDOWS_PROD.md`（工作台不要再用「工单处理」人设）  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **目标**：交易脚本按时跑；晚间把台账 / PM / 研发 / 测试落盘 **自动 push 到 `master`**  
 > **权威对照**：[DEPLOYMENT.md](./DEPLOYMENT.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)
@@ -12,8 +13,9 @@
 
 1. **禁止**用 LLM `agentTurn` 扫盘、模拟下单、改交易核心代码并自动 merge。  
 2. **禁止** `git push --force` / 改 webhook / 提交 `config.local.yaml` / `*.db`。  
-3. 交易类任务 **只用 Windows schtasks 跑 `.bat`**；OpenClaw LLM cron **最多 1～2 条**（只写 `pm/` 文案）。  
-4. 晚间推仓库用 **`QuantLearn_DailyGitSync`（脚本）**，不要让 LLM 自己乱 `git push`。
+3. 交易类任务 **用 `prod_clock` systemEvent**；OpenClaw LLM cron **最多 1～2 条**（守夜 + 日报）。  
+4. 晚间推仓库用时钟窗口里的 `daily_git_sync.py`，不要让 LLM 自己乱 `git push`。  
+5. 工作台 **删除「运维运费」**，只留 3-windows 当产机。
 
 ---
 

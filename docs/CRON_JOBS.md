@@ -1,9 +1,10 @@
 # 定时任务清单
 
-> **权威跑法**：[DEPLOYMENT.md](./DEPLOYMENT.md) ★ 章节  
+> **权威跑法**：[DEPLOYMENT.md](./DEPLOYMENT.md) ★ 章节（**模式 B 现行**）  
 > **实时层**：[REALTIME.md](./REALTIME.md) · **复盘**：[REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> 产机：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
-> 更新：2026-07-25（补本机 Cursor 队列自动消费 crontab 示例；产机 schtasks 不变）
+> **产机角色**：工作台 **3-windows**（OpenClaw）· 人设 `pm/agents/WINDOWS_PROD.md`  
+> 产机路径：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
+> 更新：2026-09-14（扫描改走 `prod_clock` systemEvent；schtasks 默认停）
 
 ---
 
@@ -11,14 +12,18 @@
 
 | 哪套 | 是什么 | 干什么 | 个数 |
 |------|--------|--------|------|
-| **Windows 任务计划** `schtasks` | 跑 `.bat` / python，**不占 LLM** | **全部交易扫描、Pulse、波段、台账、推 master** | 可多开 |
-| **OpenClaw Cron** | `openclaw cron` | **文案落盘 + ★守夜验货**（禁止用来每 10 分钟扫盘） | **有限额** |
+| **3-windows systemEvent** | `openclaw cron` 跑 `prod_clock_runner.bat` | **全部交易扫描、Pulse、波段、台账、推 master** | **1 条时钟** |
+| **OpenClaw LLM** | `openclaw cron` `agentTurn` | **文案落盘 + ★守夜验货** | **最多 1～2 条** |
+| **Windows schtasks** | 任务计划 | **默认 Disabled**。仅模式 A 回滚 | 0 |
 
-盘中「每 10 分 / 每 30 分」= 在 **Windows「任务计划程序」GUI** 里给对应 schtasks 勾「重复任务间隔」，**不是**给 OpenClaw 挂一堆 LLM cron。
+盘中「每 10 分」= 时钟 `*/10` + `quant_pulse.py` 自己判断时段，**不是** LLM 每 10 分钟扫盘。
+工作台 **不要**再留「运维运费」。
 
 ---
 
 ## 一天长什么样（推荐态）
+
+> 模式 B：下表时刻仍是「业务点」；产机由 **一条** `prod_clock` 每 10 分钟对齐，不再挂一堆 schtasks。
 
 ```mermaid
 flowchart TD

@@ -1,5 +1,16 @@
 # Agent 协作协议
 
+## 工作台角色（2026-09-14 现行）
+
+| 工作台 | 仓库角色 | 说明 |
+|--------|----------|------|
+| **3-windows** | 部署 + 运维 + 时钟 | 产机 OpenClaw。人设见 `WINDOWS_PROD.md`。**不要再留「运维运费」** |
+| test1-项目PM | 主 PM + 需求入库 | 写 REQ/BUG 与 `cursor_queue`、20:00 日报 |
+| 理财扬子 | 理财 | 台账复盘备注；不改策略 |
+| 数据分析师 | data-agent | `pm/data/` 与策略归因 |
+| 测试工程师 | qa-agent | `pm/test_reports/` |
+| 后端工程师 | 开发经理 | 写 `pm/dev/PLAN-*.md`；交易核心走 Cursor 队列 |
+
 ## 固定目录
 - 需求目录：`pm/requirements/`
 - Bug 目录：`pm/bugs/`
@@ -47,6 +58,8 @@
 - Bug 状态：通过 `verified`，失败 `reopened`
 
 ### 4. 部署 Agent（release-agent）
+**工作台**：并入 **3-windows**（见 `WINDOWS_PROD.md`）。
+
 **职责**：将已通过测试的代码部署到生产环境。
 
 **输入**：
@@ -63,6 +76,8 @@
 **详细说明**：见 `pm/agents/RELEASE_AGENT.md`
 
 ### 5. 运维监控 Agent（ops-agent）
+**工作台**：并入 **3-windows**。不要再设「运维运费」。
+
 **职责**：监控系统运行状态，自动恢复或告警。
 
 **输入**：
@@ -72,7 +87,7 @@
 - `pm/ops/YYYY-MM-DD-ops.md` 巡检报告
 - 发现问题 → 自动恢复或创建 Bug
 
-**详细说明**：见 `pm/agents/OPS_AGENT.md`
+**详细说明**：见 `pm/agents/OPS_AGENT.md`；产机执行人以 3-windows 为准。
 
 ### 6. 数据 Agent（data-agent）
 **职责**：管理数据管道，确保行情数据完整、准确、及时。

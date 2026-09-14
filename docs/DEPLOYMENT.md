@@ -69,7 +69,25 @@
 
 - 「盘中每 10 分 / 每 30 分」= 在 **Windows GUI** 给对应 schtasks 勾「重复任务间隔」。  
 - **禁止**把 Pulse/Scanner 做成 OpenClaw LLM 每 N 分钟一条（占满名额还容易挂）。  
-- 细节表见 [CRON_JOBS.md](./CRON_JOBS.md)「两套定时器」。
+- 细节表见 [CRON_JOBS.md](./CRON_JOBS.md)「两套定时器」。  
+
+## ★★ 产机时钟（ProdClock，2026-09-14 起）
+
+**时钟 = `QuantLearn_ProdClock`（schtasks，08:25 起每 10 分钟，持续 14h）** → `scripts\prod_clock_runner.bat` → `prod_clock.py`。它在**窗口内**承担扫描类 10 项（见下表「时钟」列）；**盘前 4 项保持原 schtasks 不迁**。交易日判定用 `sim/trade_calendar.py`（akshare 官方日历 + `data/trade_dates.json` 7 天 TTL 缓存；拉不到且无缓存时回退周末判定），节假日时钟空转不产出。
+
+| 任务 | 窗口 | 承担者 |
+|------|------|--------|
+| MorningScan 08:30 / SwingPool 08:40 | 08:30–08:59 | 时钟 ONCE_JOBS |
+| Pulse 09:35–14:50（每 10 分） | 09:30–11:30 / 13:00–14:50 | 时钟（交易时段判定） |
+| SwingDaily 16:05 / BankSwingDaily 16:08 | 16:00–16:19 | 时钟 ONCE_JOBS |
+| TradeJournal 16:15 / DailyClose 16:20 | 16:10–16:29 | 时钟 ONCE_JOBS |
+| StrategyReview 16:35 | 16:30–16:49 | 时钟 ONCE_JOBS |
+| DailyGitSync 18:45 / Evening 20:30 | 18:40–19:14 / 20:30–20:59 | 时钟 ONCE_JOBS |
+| **VqlearnLive 09:25**（shadow，5.7h 长任务） | — | **原 schtasks（不迁）** |
+| **IntradayScanner 10:00 / SignalLedger 16:25 / StrategyScorecard 16:30** | — | **原 schtasks（不迁）** |
+
+- 时钟产物日志：`output\prod_clock.log`；去重 stamp：`output\prod_clock\日期\任务.done`。
+- 双开检查：迁移到时钟的 10 项 schtasks 必须保持 Disabled；回迁 4 项必须 Ready，否则双开。
 
 ## 步骤 0 — 进入目录并拉代码
 
@@ -260,6 +278,8 @@ schtasks /query /fo LIST | findstr QuantLearn
 **必开（Windows）：** MorningScan · SwingPool · QuantPulse（+GUI 10 分重复）· SwingDaily · **BankSwingDaily(16:08)** · TradeJournal · DailyClose · **StrategyReview(16:35)** · **DailyGitSync(18:45)** · **DailyGitSyncEvening(20:30)** · **VqlearnLive(09:25，shadow 专用，无 auto-trade)**
 
 **可选（Windows）：** IntradayScanner（消息多就关）  
+
+> **2026-09-14 更新**：以上「必开」清单中除 VqlearnLive/IntradayScanner/SignalLedger/StrategyScorecard 四项外，其余 10 项已迁入 `QuantLearn_ProdClock` 时钟（见上文「产机时钟」表）。四项长任务/非窗口任务**保持原 schtasks**：VqlearnLive(09:25)、IntradayScanner(10:00)、SignalLedger(16:25)、StrategyScorecard(16:30)。时钟接管项的旧 schtasks 保持 Disabled，防止双开。
 
 **勿双开：** 已开 Pulse 则关掉单独的 `PortfolioAlert` / `SwingIntraday` schtasks。
 

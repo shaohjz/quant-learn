@@ -15,7 +15,7 @@
 2. **禁止** `git push --force` / 改 webhook / 提交 `config.local.yaml` / `*.db`。  
 3. 交易类任务 **用 `prod_clock` systemEvent**；OpenClaw LLM cron **最多 1～2 条**（守夜 + 日报）。  
 4. 晚间推仓库用时钟窗口里的 `daily_git_sync.py`，不要让 LLM 自己乱 `git push`。  
-5. 工作台 **删除「运维运费」**，只留 3-windows 当产机。
+5. **运维运费** 负责发版（令 3-windows `git pull`）；**禁止**运维自己再挂一套 Pulse/prod_clock。
 
 ---
 

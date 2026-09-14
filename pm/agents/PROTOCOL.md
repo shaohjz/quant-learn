@@ -4,7 +4,8 @@
 
 | 工作台 | 仓库角色 | 说明 |
 |--------|----------|------|
-| **3-windows** | 部署 + 运维 + 时钟 | 产机 OpenClaw。人设见 `WINDOWS_PROD.md`。**不要再留「运维运费」** |
+| **3-windows** | 产机执行 + 时钟 + 守夜 | 本机 git pull / prod_clock / MiniQMT。人设 `WINDOWS_PROD.md` |
+| **运维运费** | 发版 + 巡检 | 代码更新后驱动 3-windows 部署，写 `pm/ops`。人设见 `OPS_AGENT.md` 文首 |
 | test1-项目PM | 主 PM + 需求入库 | 写 REQ/BUG 与 `cursor_queue`、20:00 日报 |
 | 理财扬子 | 理财 | 台账复盘备注；不改策略 |
 | 数据分析师 | data-agent | `pm/data/` 与策略归因 |
@@ -58,7 +59,7 @@
 - Bug 状态：通过 `verified`，失败 `reopened`
 
 ### 4. 部署 Agent（release-agent）
-**工作台**：并入 **3-windows**（见 `WINDOWS_PROD.md`）。
+**工作台**：**运维运费** 发起发版；**3-windows** 在产机执行 `git pull` + 冒烟。
 
 **职责**：将已通过测试的代码部署到生产环境。
 
@@ -76,7 +77,7 @@
 **详细说明**：见 `pm/agents/RELEASE_AGENT.md`
 
 ### 5. 运维监控 Agent（ops-agent）
-**工作台**：并入 **3-windows**。不要再设「运维运费」。
+**工作台**：**运维运费**（巡检 + 发版验收）。产机命令仍由 3-windows 执行。
 
 **职责**：监控系统运行状态，自动恢复或告警。
 

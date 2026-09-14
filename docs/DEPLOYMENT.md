@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-14（模式 B：工作台 3-windows 当产机时钟+部署；扫描类 schtasks 默认停；人设 `pm/agents/WINDOWS_PROD.md`）  
+> **更新**：2026-09-14（模式 B：3-windows 跑时钟；运维运费发版；扫描 schtasks 默认停）  
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -58,19 +58,19 @@
 3. **禁止**开启实盘自动下单（QMT live），除非主人明文说「开 live」。  
 4. 交易/扫描类任务 **默认用 3-windows 的 OpenClaw `systemEvent` 跑 `prod_clock_runner.bat`**；**禁止**再用 LLM `agentTurn` 扫盘。扫描类 `QuantLearn_*` schtasks **停用**（回滚见步骤 5 末）。  
 5. 同一功能只留一个入口：有 prod_clock 就不要再开 Pulse/SwingDaily schtasks。  
-6. OpenClaw **LLM cron 有个数限制** → **最多保留 1～2 条**晚间写 `pm/` 的文案任务（见步骤 6）。工作台「运维运费」**删除**，职责并入 3-windows。
+6. OpenClaw **LLM cron 有个数限制** → **最多保留 1～2 条**晚间写 `pm/` 的文案任务（见步骤 6）。**运维运费** 负责发版验收；**3-windows** 在产机执行。禁止两人各挂一条交易时钟。
 
 ## ★★ 工作台角色（模式 B，现行）
 
 | 工作台 | 干什么 |
 |--------|--------|
-| **3-windows** | **产机本体**：部署 + MiniQMT + `prod_clock` 时钟 + 19:15 守夜。人设贴 `pm/agents/WINDOWS_PROD.md` |
+| **3-windows** | **产机执行面**：MiniQMT + `prod_clock` + 19:15 守夜；被运维要求时 `git pull`。人设 `WINDOWS_PROD.md` |
+| **运维运费** | **发版负责人**：master 更新后令 3-windows 拉代码、冒烟、写 `pm/ops`。人设见 `OPS_AGENT.md` 文首 |
 | test1-项目PM | 17:00 入库、18:15 `cursor_queue`、20:00 日报落盘 |
 | 理财扬子 | 16:30 台账复盘备注 |
 | 数据分析师 | 数据质量 / 策略归因 |
 | 测试工程师 | 验收 testing / 回归 fixed |
 | 后端工程师 | 写 PLAN；交易核心走 Cursor 队列 |
-| ~~运维运费~~ | **删掉**。与 3-windows 双 OpenClaw 会抢 git、双跑脚本 |
 
 ## ★★ 两套定时器（必懂，别混）
 
@@ -224,7 +224,7 @@ REM F 每日策略复盘（诊断策略本身，不是播报盈亏）
 
 ## 步骤 5 — 模式 B：停扫描 schtasks，挂 3-windows 时钟
 
-你是 **3-windows**。先读 `pm/agents/WINDOWS_PROD.md`，把人设贴进工作台（替换「工单处理」）。工作台若还在「运维运费」→ **删掉那个同事**。
+你是 **3-windows**。先读 `pm/agents/WINDOWS_PROD.md`。发版由工作台 **运维运费** 发起：它 @ 你 `git pull` 时你再更新。不要删除运维同事。
 
 ### 5.1 停掉扫描类任务计划（防双跑）
 
@@ -1046,7 +1046,7 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 3. **【Windows schtasks】** `findstr QuantLearn` 原文；模式 B 下扫描类应为 **Disabled**  
 4. **【时钟】** `quant-prod-clock` systemEvent 是否在 `openclaw cron list`；`prod_clock.py --status` 原文  
 5. **【OpenClaw LLM cron】** 必须有 19:15 守夜（提示词 B）；20:00 日报（提示词 C，或项目 PM 工作台承担）  
-6. 已停用的重复/LLM/「运维运费」同事  
+6. 运维运费是否在 master 有新提交后完成发版验收（`pm/ops/今天-deploy.md`）  
 7. 企微是否真推测过（是/否）  
 8. 守夜试跑：`dir` 今日台账；手动 `prod_clock.py` 后 `git fetch` 看远程  
 9. 日报链路：`dir daily_reports`；20:30 窗口会再跑 GitSync；白名单含 `daily_reports/`  
@@ -1363,7 +1363,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：你是 3-windows 产机；人设见 pm/agents/WINDOWS_PROD.md；停扫描类 schtasks；挂 quant-prod-clock systemEvent；删掉工作台「运维运费」。
+重点：3-windows 跑时钟；运维运费负责代码更新后发版（令 3-windows git pull）；不要两人各挂一条交易 cron。
 做完写 pm/ops/今天-deploy.md。
 ```
 

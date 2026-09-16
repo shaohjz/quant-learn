@@ -1,17 +1,17 @@
 {
-  "as_of": "2026-09-16",
+  "as_of": "2026-09-15",
   "read_only": true,
-  "total_signals": 87,
+  "total_signals": 76,
   "windows": {
     "20d": {
-      "signal_days": 13,
-      "signals": 87,
+      "signal_days": 12,
+      "signals": 76,
       "groups": [
         {
           "strategy": "swing",
           "signal_type": "A",
           "executable": true,
-          "samples": 5,
+          "samples": 4,
           "matured": 1,
           "win_rate": 0.0,
           "mean_fwd_5d": -0.03353265330050415,
@@ -28,7 +28,7 @@
           "strategy": "swing",
           "signal_type": "B",
           "executable": false,
-          "samples": 5,
+          "samples": 4,
           "matured": 2,
           "win_rate": 0.0,
           "mean_fwd_5d": -0.017665095852387375,
@@ -45,7 +45,7 @@
           "strategy": "swing",
           "signal_type": "C",
           "executable": false,
-          "samples": 39,
+          "samples": 34,
           "matured": 15,
           "win_rate": 0.2,
           "mean_fwd_5d": -0.017624330233234526,
@@ -62,7 +62,7 @@
           "strategy": "swing",
           "signal_type": "D",
           "executable": false,
-          "samples": 37,
+          "samples": 33,
           "matured": 17,
           "win_rate": 0.29411764705882354,
           "mean_fwd_5d": -0.015466925674796827,
@@ -94,7 +94,7 @@
         }
       ],
       "overall": {
-        "signals": 87,
+        "signals": 76,
         "matured": 35,
         "executed": 1,
         "mean_fwd_5d": -0.01703330099929551,
@@ -103,14 +103,14 @@
       }
     },
     "60d": {
-      "signal_days": 13,
-      "signals": 87,
+      "signal_days": 12,
+      "signals": 76,
       "groups": [
         {
           "strategy": "swing",
           "signal_type": "A",
           "executable": true,
-          "samples": 5,
+          "samples": 4,
           "matured": 1,
           "win_rate": 0.0,
           "mean_fwd_5d": -0.03353265330050415,
@@ -127,7 +127,7 @@
           "strategy": "swing",
           "signal_type": "B",
           "executable": false,
-          "samples": 5,
+          "samples": 4,
           "matured": 2,
           "win_rate": 0.0,
           "mean_fwd_5d": -0.017665095852387375,
@@ -144,7 +144,7 @@
           "strategy": "swing",
           "signal_type": "C",
           "executable": false,
-          "samples": 39,
+          "samples": 34,
           "matured": 15,
           "win_rate": 0.2,
           "mean_fwd_5d": -0.017624330233234526,
@@ -161,7 +161,7 @@
           "strategy": "swing",
           "signal_type": "D",
           "executable": false,
-          "samples": 37,
+          "samples": 33,
           "matured": 17,
           "win_rate": 0.29411764705882354,
           "mean_fwd_5d": -0.015466925674796827,
@@ -193,7 +193,7 @@
         }
       ],
       "overall": {
-        "signals": 87,
+        "signals": 76,
         "matured": 35,
         "executed": 1,
         "mean_fwd_5d": -0.01703330099929551,

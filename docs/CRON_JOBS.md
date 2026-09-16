@@ -87,7 +87,7 @@ flowchart TD
   CURSOR_API_KEY=*** ./scripts/cursor_queue_auto_runner.sh >> output/cursor_queue_auto.log 2>&1
 ```
 
-- 模拟入口：`scripts/linux_sim_runner.sh`；细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)「本机 Linux 长期模拟」
+- 长期模拟入口（**已停**）：`scripts/linux_sim_runner.sh`；细节见 [DEPLOYMENT.md](./DEPLOYMENT.md)「本机 Linux 长期模拟」
 - 队列：安装 CLI `curl https://cursor.com/install -fsS | bash`；演练 `CURSOR_AUTO_DRY_RUN=1 ./scripts/cursor_queue_auto_runner.sh`
 - **绝不**自动推 master；**无新 commit 不 push**；MR 人工验收
 - DailyGitSync：成功/失败推企微摘要；跳过默认不推；`output/.daily_git_sync.lock` 防 18:45/20:30 重叠

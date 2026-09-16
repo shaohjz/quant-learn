@@ -1191,15 +1191,15 @@ python3 -m venv .venv && . .venv/bin/activate && pip install -e '.[research,dev]
 ./scripts/linux_sim_runner.sh day_close   # 冒烟：写 linux_sim 日报/台账/收盘
 ```
 
-## crontab（Asia/Shanghai · 交易日）
+## crontab（已停 · 仅回滚对照，禁止再挂）
 
 ```cron
-35 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh recalibrate >> output/linux_sim/logs/cron.log 2>&1
-40 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pool >> output/linux_sim/logs/cron.log 2>&1
-*/10 9-14 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pulse >> output/linux_sim/logs/cron.log 2>&1
-5 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh swing_daily >> output/linux_sim/logs/cron.log 2>&1
-15 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh journal >> output/linux_sim/logs/cron.log 2>&1
-20 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh close >> output/linux_sim/logs/cron.log 2>&1
+# 35 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh recalibrate >> output/linux_sim/logs/cron.log 2>&1
+# 40 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pool >> output/linux_sim/logs/cron.log 2>&1
+# */10 9-14 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pulse >> output/linux_sim/logs/cron.log 2>&1
+# 5 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh swing_daily >> output/linux_sim/logs/cron.log 2>&1
+# 15 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh journal >> output/linux_sim/logs/cron.log 2>&1
+# 20 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh close >> output/linux_sim/logs/cron.log 2>&1
 ```
 
 `pulse` 在 runner 内过滤：仅 09:35–11:30、13:00–14:50 真正跑；其余整点触发直接 exit 0。

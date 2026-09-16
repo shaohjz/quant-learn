@@ -4,7 +4,7 @@
 > **实时层**：[REALTIME.md](./REALTIME.md) · **复盘**：[REVIEW_LOOP.md](./REVIEW_LOOP.md)  
 > **产机角色**：工作台 **3-windows**（OpenClaw）· 人设 `pm/agents/WINDOWS_PROD.md`  
 > 产机路径：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
-> 更新：2026-09-14（扫描改走 `prod_clock` systemEvent；schtasks 默认停）
+> 更新：2026-09-16（时钟迁回 **schtasks `\QuantLearn_ProdClock`**：OpenClaw agentTurn 时钟打爆「定时任务 50 次/天」配额停摆，事故见 `pm/ops/2026-09-16-clock-quota-outage.md`；扫描 schtasks 仍默认停）
 
 ---
 
@@ -12,9 +12,9 @@
 
 | 哪套 | 是什么 | 干什么 | 个数 |
 |------|--------|--------|------|
-| **3-windows systemEvent** | `openclaw cron` 跑 `prod_clock_runner.bat` | **全部交易扫描、Pulse、波段、台账、推 master** | **1 条时钟** |
+| **Windows ProdClock schtasks** | `\QuantLearn_ProdClock` 跑 `prod_clock_runner.bat`（工作日 08:25–21:00 每 10 分，S4U 后台） | **全部交易扫描、Pulse、波段、台账、推 master**（2026-09-16 起唯一时钟，零 LLM，不吃平台配额） | **1 条时钟** |
 | **OpenClaw LLM** | `openclaw cron` `agentTurn` | **文案落盘 + ★守夜验货** | **最多 1～2 条** |
-| **Windows schtasks** | 任务计划 | **默认 Disabled**。仅模式 A 回滚 | 0 |
+| **其余 Windows schtasks** | 任务计划 | 扫描类 **默认 Disabled**；VqlearnLive / SignalLedger / StrategyScorecard / FinanceManager / IntradayScanner / WeeklyStrategyReview 为回迁探针单独启用 | 见 DEPLOYMENT |
 
 盘中「每 10 分」= 时钟 `*/10` + `quant_pulse.py` 自己判断时段，**不是** LLM 每 10 分钟扫盘。
 工作台 **运维运费** 只发版/巡检，不另挂交易时钟（时钟只在 3-windows）。

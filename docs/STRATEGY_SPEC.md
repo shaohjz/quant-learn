@@ -3,7 +3,7 @@
 > 本文由 `scripts/strategy_review.py --write-spec` 从**代码和配置里抽取**生成，不要手改。
 > 想改策略请改下表「取自」列指向的位置，重跑复盘后本文会自动跟上。
 
-## #3 波段仓（account_id=3） `spec_hash=7e0813ecbd7b`
+## #3 波段仓（account_id=3） `spec_hash=01a48a8bf10c`
 
 **沪深300+中证500 里挑稳定池 → 缩量回踩 MA10/MA20 买入 → 固定 5% 止损 / 8% 止盈**
 
@@ -26,7 +26,7 @@
 | 参数 | 当前值 | 取自 | 说明 |
 |------|-------|------|------|
 | 可成交信号类型 | **A/B** | `swing_params:execution.executable_types`<br>`scripts/swing_daily_report.py:EXECUTABLE_TYPES`<br>`scripts/swing_intraday_watch.py:EXECUTABLE` | A=缩量回踩MA20 B=缩量回踩MA10；C/D/E/F 只观察 |
-| 信号分下限 | **5** | `swing_params:execution.min_score_buy`<br>`scripts/swing_daily_report.py:MIN_SCORE_BUY`<br>`scripts/swing_intraday_watch.py:DEFAULT_MIN_SCORE` |  |
+| 信号分下限 | **6** | `swing_params:execution.min_score_buy`<br>`scripts/swing_daily_report.py:MIN_SCORE_BUY`<br>`scripts/swing_intraday_watch.py:DEFAULT_MIN_SCORE` |  |
 | 净盈亏比下限 | **1.2** | `swing_params:filters.min_net_rr`<br>`scripts/swing_auto.py:MIN_NET_RR` |  |
 | 预期涨幅下限 | **0.5%** | `swing_params:filters.min_upside_pct`<br>`scripts/swing_auto.py:MIN_UPSIDE` |  |
 | 个股活性下限 | **1** | `swing_params:filters.min_avg_amp`<br>`scripts/swing_auto.py:MIN_AVG_AMP` | 日均振幅，太死的票不做 |
@@ -54,7 +54,7 @@
 | 佣金率 | **0.00025** | `config.yaml:fees.commission_rate` |  |
 | 印花税率 | **0.0005** | `config.yaml:fees.stamp_tax_rate` |  |
 
-## #1 学习仓（account_id=1） `spec_hash=846eada0f2e4`
+## #1 学习仓（account_id=1） `spec_hash=c4804032fb2a`
 
 **手工观察池按 MA10 买区试探建仓 → config 风控闸门 + 半仓止盈 / -8% 硬止损**
 
@@ -70,7 +70,7 @@
 |------|-------|------|------|
 | 强买通道 | **关** | `config.yaml:risk.buy_strong_enabled` | 关闭时只走 buy_zone |
 | 每日新开仓上限 | **1笔** | `config.yaml:risk.max_daily_new_positions` |  |
-| 浮亏禁加仓线 | **-3%** | `config.yaml:risk.block_add_to_loser_pct` |  |
+| 浮亏禁加仓线 | **0%** | `config.yaml:risk.block_add_to_loser_pct` |  |
 | 大盘弱势禁买线 | **-1%** | `config.yaml:risk.market_panic_index_drop_pct` |  |
 
 ### 卖出条件

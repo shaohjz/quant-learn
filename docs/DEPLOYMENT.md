@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-16（三账户切中长线并重置模拟仓；回测摘要 `output/position_backtest/summary.md`） 
+> **更新**：2026-09-16（三账户切中长线并重置模拟仓，见 `output/position_backtest/summary.md`；TES-23 修复 VqlearnLive rc=3：bat CRLF + `.gitattributes` eol=crlf，venv 补装 vnpy_paperaccount）。此前 2026-09-14 origin 切回工蜂。
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -1344,6 +1344,7 @@ CURSOR_AUTO_MAX_ITEMS=1 ./scripts/cursor_queue_auto_runner.sh
 |----|------|
 | OS | Windows 10/11 |
 | Python | 3.11 推荐（`>=3.11,<3.14`） |
+| venv 关键包 | `vnpy_paperaccount`（VqlearnLive paper runner 依赖；回迁重建 venv 漏装会 import 失败，2026-09-16 TES-23 补装过一次） |
 | Git | 能拉工蜂（git@git.woa.com:jizhouhu/quant-learn.git） |
 | QMT | 可选 |
 | 企微机器人 | webhook |
@@ -1414,9 +1415,10 @@ git log -1 --oneline origin/master
 | 企微没消息 | key / `delivery.mode` / `NOTIFIER_DRY_RUN` |
 | 早盘扫超时 | 正常走 `scanner_with_fallback` → lite；查网络/Zscaler |
 | bat Result:1 | `cmd /k` 手动跑 bat；看对应 `output\*.log` |
+| **VqlearnLive rc=3 且 `vqlearn_live*.log` 停更** | bat 行尾被 git 写回 LF-only+多行 `if (` 括号块 → cmd 解析错乱、轮转/python 行根本不执行（2026-09-16 TES-23 已修：bat 全 CRLF+单行 if；.gitattributes 已固定 eol=crlf）。复发先查 `git ls-files --eol scripts\vqlearn_live_runner.bat`（应为 w/crlf）；再查 venv：`pip show vnpy_paperaccount` |
 | 波段赚亏永远 0 | 看 `sim_trades` account_id=3；机会分是否从未成交 |
 | 银行波段没结论 | 查 `QuantLearn_BankSwingDaily`；`output\bank_swing_daily\今天.md`；日志 `bank_swing_daily_report.log` |
-| 盘中完全没提醒 | 查 3-windows `quant-prod-clock` 是否在跑；`type output\prod_clock.log`；`quant_pulse.log`；勿再查 Pulse schtasks（模式 B 已停） |
+| 盘中完全没提醒 | 查 schtasks `\QuantLearn_ProdClock`（Next Run Time / Last Result / Logon Mode=Interactive/Background）；`type output\prod_clock.log`；`quant_pulse.log`；勿再查 Pulse schtasks（模式 B 已停） |
 | 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
 | Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜 + 20:30 Evening**；重贴提示词 B/C |

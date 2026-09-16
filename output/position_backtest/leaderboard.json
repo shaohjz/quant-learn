@@ -1,0 +1,573 @@
+{
+  "audit": {
+    "research_only": true,
+    "n_symbols": 76,
+    "start": "2024-08-01",
+    "end": "2026-09-16",
+    "holdout": "2026-01-05",
+    "warning": "输入 CSV 未声明 adjustment_type=raw；仅按研究数据运行，成交价格可能受复权影响，结果不得用于生产或实盘判断。"
+  },
+  "baseline": {
+    "account1": {
+      "total_return": 0.40706660000000006,
+      "max_drawdown": 0.08902147633303209,
+      "num_trades": 222,
+      "win_rate": 0.34684684684684686,
+      "net_pnl": 39873.92,
+      "final_nav": 140706.66
+    },
+    "account3": {
+      "total_return": -0.08299440000000002,
+      "max_drawdown": 0.13727011335851044,
+      "num_trades": 77,
+      "win_rate": 0.36363636363636365,
+      "net_pnl": -3642.0499999999993,
+      "final_nav": 45850.28
+    }
+  },
+  "picked": {
+    "account1": {
+      "name": "mr_base",
+      "train": {
+        "params": {
+          "enabled": true,
+          "style": "mean_revert",
+          "stop_loss_pct": 0.12,
+          "take_profit_pct": 0.2,
+          "min_hold_days": 15,
+          "rsi_buy": 40.0,
+          "near_low60_pct": 0.05,
+          "ma60_buy_band": 0.02,
+          "ma20_pullback_band": 0.02,
+          "ma120_floor": 0.9,
+          "weekly_only": false,
+          "sell_on_ma60_recover": true,
+          "sell_ma60_band": 0.02,
+          "trend_break_ma60": true,
+          "max_positions": 3,
+          "single_budget": 10000.0,
+          "max_daily_new_positions": 1
+        },
+        "metrics": {
+          "total_return": 0.15630730000000015,
+          "max_drawdown": 0.09556956084083885,
+          "sharpe": 0.6589117948785972,
+          "num_trades": 56,
+          "win_rate": 0.75,
+          "net_pnl": 17819.870000000003,
+          "median_hold_days": 31.5,
+          "final_nav": 115630.73000000001
+        },
+        "n_buy": 61,
+        "data_hash": "fcf6b23122444ac476cab6b15d723124363f942f95709714f9ee5e9c5e777207",
+        "config_hash": "d33fff26c6a27fc039dc47c2df237bb6853a146b4e8f684e995f451a73613761"
+      },
+      "holdout": {
+        "params": {
+          "enabled": true,
+          "style": "mean_revert",
+          "stop_loss_pct": 0.12,
+          "take_profit_pct": 0.2,
+          "min_hold_days": 15,
+          "rsi_buy": 40.0,
+          "near_low60_pct": 0.05,
+          "ma60_buy_band": 0.02,
+          "ma20_pullback_band": 0.02,
+          "ma120_floor": 0.9,
+          "weekly_only": false,
+          "sell_on_ma60_recover": true,
+          "sell_ma60_band": 0.02,
+          "trend_break_ma60": true,
+          "max_positions": 3,
+          "single_budget": 10000.0,
+          "max_daily_new_positions": 1
+        },
+        "metrics": {
+          "total_return": 0.09333079999999994,
+          "max_drawdown": 0.08584977516102067,
+          "sharpe": 0.6047579641951899,
+          "num_trades": 31,
+          "win_rate": 0.7419354838709677,
+          "net_pnl": 10258.47,
+          "median_hold_days": 29.0,
+          "final_nav": 109333.08
+        },
+        "n_buy": 36,
+        "data_hash": "63372424f3be19f3c6012752a747788f47e26736a2bb6e743c3c74d0b37a2c2d",
+        "config_hash": "d33fff26c6a27fc039dc47c2df237bb6853a146b4e8f684e995f451a73613761"
+      }
+    },
+    "account3": {
+      "name": "pb_weekly",
+      "train": {
+        "params": {
+          "enabled": true,
+          "style": "trend_pullback",
+          "stop_loss_pct": 0.12,
+          "take_profit_pct": 0.2,
+          "min_hold_days": 15,
+          "rsi_buy": 50.0,
+          "near_low60_pct": 0.05,
+          "ma60_buy_band": 0.02,
+          "ma20_pullback_band": 0.02,
+          "ma120_floor": 0.9,
+          "weekly_only": true,
+          "sell_on_ma60_recover": false,
+          "sell_ma60_band": 0.02,
+          "trend_break_ma60": true,
+          "max_positions": 3,
+          "single_budget": 10000.0,
+          "max_daily_new_positions": 1
+        },
+        "metrics": {
+          "total_return": 0.14293100000000014,
+          "max_drawdown": 0.2447339350671099,
+          "sharpe": 0.4091993811131013,
+          "num_trades": 39,
+          "win_rate": 0.358974358974359,
+          "net_pnl": 5992.81,
+          "median_hold_days": 21.0,
+          "final_nav": 57146.55
+        },
+        "n_buy": 42,
+        "data_hash": "fcf6b23122444ac476cab6b15d723124363f942f95709714f9ee5e9c5e777207",
+        "config_hash": "81e521092abfff52184abb50764333edee28a2b01d402dbf15446fd61567784a"
+      },
+      "holdout": {
+        "params": {
+          "enabled": true,
+          "style": "trend_pullback",
+          "stop_loss_pct": 0.12,
+          "take_profit_pct": 0.2,
+          "min_hold_days": 15,
+          "rsi_buy": 50.0,
+          "near_low60_pct": 0.05,
+          "ma60_buy_band": 0.02,
+          "ma20_pullback_band": 0.02,
+          "ma120_floor": 0.9,
+          "weekly_only": true,
+          "sell_on_ma60_recover": false,
+          "sell_ma60_band": 0.02,
+          "trend_break_ma60": true,
+          "max_positions": 3,
+          "single_budget": 10000.0,
+          "max_daily_new_positions": 1
+        },
+        "metrics": {
+          "total_return": 0.19271380000000016,
+          "max_drawdown": 0.08638139277729016,
+          "sharpe": 1.0419387072814776,
+          "num_trades": 18,
+          "win_rate": 0.3888888888888889,
+          "net_pnl": 9655.79,
+          "median_hold_days": 21.0,
+          "final_nav": 59635.69
+        },
+        "n_buy": 21,
+        "data_hash": "63372424f3be19f3c6012752a747788f47e26736a2bb6e743c3c74d0b37a2c2d",
+        "config_hash": "81e521092abfff52184abb50764333edee28a2b01d402dbf15446fd61567784a"
+      }
+    },
+    "account4": {
+      "name": "mr_wide_take",
+      "train": {
+        "params": {
+          "enabled": true,
+          "style": "mean_revert",
+          "stop_loss_pct": 0.15,
+          "take_profit_pct": 0.3,
+          "min_hold_days": 20,
+          "rsi_buy": 40.0,
+          "near_low60_pct": 0.05,
+          "ma60_buy_band": 0.02,
+          "ma20_pullback_band": 0.02,
+          "ma120_floor": 0.9,
+          "weekly_only": false,
+          "sell_on_ma60_recover": true,
+          "sell_ma60_band": 0.02,
+          "trend_break_ma60": true,
+          "max_positions": 3,
+          "single_budget": 10000.0,
+          "max_daily_new_positions": 1
+        },
+        "metrics": {
+          "total_return": 0.22787533333333343,
+          "max_drawdown": 0.07996788016328193,
+          "sharpe": 1.119914778343123,
+          "num_trades": 31,
+          "win_rate": 0.9354838709677419,
+          "net_pnl": 7376.499999999999,
+          "median_hold_days": 30.0,
+          "final_nav": 36836.26
+        },
+        "n_buy": 34,
+        "data_hash": "3001f9a5ae4e22b0ae19a529bf4c99c820c9faec3bb8605115ccaf724adfbf7e",
+        "config_hash": "31f48b966897c65accfd5e4f1e968730b514ed524f34cb888ccdde6aea3689a4"
+      },
+      "holdout": {
+        "params": {
+          "enabled": true,
+          "style": "mean_revert",
+          "stop_loss_pct": 0.15,
+          "take_profit_pct": 0.3,
+          "min_hold_days": 20,
+          "rsi_buy": 40.0,
+          "near_low60_pct": 0.05,
+          "ma60_buy_band": 0.02,
+          "ma20_pullback_band": 0.02,
+          "ma120_floor": 0.9,
+          "weekly_only": false,
+          "sell_on_ma60_recover": true,
+          "sell_ma60_band": 0.02,
+          "trend_break_ma60": true,
+          "max_positions": 3,
+          "single_budget": 10000.0,
+          "max_daily_new_positions": 1
+        },
+        "metrics": {
+          "total_return": 0.1376736666666667,
+          "max_drawdown": 0.06385310992829364,
+          "sharpe": 1.2001120472361304,
+          "num_trades": 15,
+          "win_rate": 0.8,
+          "net_pnl": 3991.2799999999997,
+          "median_hold_days": 28.0,
+          "final_nav": 34130.21
+        },
+        "n_buy": 16,
+        "data_hash": "aeee70cb35b6e640e89131ee5db4a1893fb3a0c9d472cd699912b401fcbbd4c6",
+        "config_hash": "31f48b966897c65accfd5e4f1e968730b514ed524f34cb888ccdde6aea3689a4"
+      }
+    }
+  },
+  "leaderboard": {
+    "account1": [
+      {
+        "name": "mr_base",
+        "train": {
+          "total_return": 0.15630730000000015,
+          "max_drawdown": 0.09556956084083885,
+          "sharpe": 0.6589117948785972,
+          "num_trades": 56,
+          "win_rate": 0.75,
+          "net_pnl": 17819.870000000003,
+          "median_hold_days": 31.5,
+          "final_nav": 115630.73000000001
+        },
+        "holdout": {
+          "total_return": 0.09333079999999994,
+          "max_drawdown": 0.08584977516102067,
+          "sharpe": 0.6047579641951899,
+          "num_trades": 31,
+          "win_rate": 0.7419354838709677,
+          "net_pnl": 10258.47,
+          "median_hold_days": 29.0,
+          "final_nav": 109333.08
+        }
+      },
+      {
+        "name": "mr_conservative",
+        "train": {
+          "total_return": 0.16325389999999995,
+          "max_drawdown": 0.0716256725952564,
+          "sharpe": 0.7676558833560635,
+          "num_trades": 44,
+          "win_rate": 0.75,
+          "net_pnl": 17569.54,
+          "median_hold_days": 40.5,
+          "final_nav": 116325.39
+        },
+        "holdout": {
+          "total_return": -0.011380599999999963,
+          "max_drawdown": 0.08489051049580353,
+          "sharpe": -0.27234178593434233,
+          "num_trades": 23,
+          "win_rate": 0.6956521739130435,
+          "net_pnl": 2531.2399999999993,
+          "median_hold_days": 42.0,
+          "final_nav": 98861.94
+        }
+      },
+      {
+        "name": "mr_loose",
+        "train": {
+          "total_return": 0.2583323000000002,
+          "max_drawdown": 0.09143660947372595,
+          "sharpe": 1.081937234815057,
+          "num_trades": 57,
+          "win_rate": 0.7719298245614035,
+          "net_pnl": 28538.230000000003,
+          "median_hold_days": 33.0,
+          "final_nav": 125833.23000000001
+        },
+        "holdout": {
+          "total_return": 0.020516199999999873,
+          "max_drawdown": 0.12006815284778957,
+          "sharpe": 0.03803542851649186,
+          "num_trades": 28,
+          "win_rate": 0.6071428571428571,
+          "net_pnl": 3645.8000000000006,
+          "median_hold_days": 37.5,
+          "final_nav": 102051.62
+        }
+      },
+      {
+        "name": "mr_weekly",
+        "train": {
+          "total_return": 0.2199201999999998,
+          "max_drawdown": 0.05213809744581415,
+          "sharpe": 1.1548757915021062,
+          "num_trades": 38,
+          "win_rate": 0.7631578947368421,
+          "net_pnl": 22299.239999999994,
+          "median_hold_days": 38.0,
+          "final_nav": 121992.01999999999
+        },
+        "holdout": {
+          "total_return": -0.013978099999999993,
+          "max_drawdown": 0.07474912603581411,
+          "sharpe": -0.35890948816216234,
+          "num_trades": 19,
+          "win_rate": 0.631578947368421,
+          "net_pnl": -101.51000000000016,
+          "median_hold_days": 36.0,
+          "final_nav": 98602.19
+        }
+      },
+      {
+        "name": "mr_wide_take",
+        "train": {
+          "total_return": 0.20593909999999993,
+          "max_drawdown": 0.06957647525451013,
+          "sharpe": 0.8811926653382636,
+          "num_trades": 48,
+          "win_rate": 0.7291666666666666,
+          "net_pnl": 23840.05,
+          "median_hold_days": 33.5,
+          "final_nav": 120593.91
+        },
+        "holdout": {
+          "total_return": -0.0033551000000000553,
+          "max_drawdown": 0.0944954410598568,
+          "sharpe": -0.19887906084111157,
+          "num_trades": 26,
+          "win_rate": 0.7307692307692307,
+          "net_pnl": 3019.6700000000005,
+          "median_hold_days": 34.0,
+          "final_nav": 99664.48999999999
+        }
+      }
+    ],
+    "account3": [
+      {
+        "name": "pb_base",
+        "train": {
+          "total_return": 0.19721319999999998,
+          "max_drawdown": 0.25737277041833134,
+          "sharpe": 0.5744183988255904,
+          "num_trades": 57,
+          "win_rate": 0.3333333333333333,
+          "net_pnl": 8369.959999999997,
+          "median_hold_days": 15.5,
+          "final_nav": 59860.659999999996
+        },
+        "holdout": {
+          "total_return": 0.15356499999999995,
+          "max_drawdown": 0.15900824580066827,
+          "sharpe": 0.7595670078355117,
+          "num_trades": 32,
+          "win_rate": 0.3125,
+          "net_pnl": 6635.25,
+          "median_hold_days": 14.0,
+          "final_nav": 57678.25
+        }
+      },
+      {
+        "name": "pb_tight",
+        "train": {
+          "total_return": 0.39355760000000006,
+          "max_drawdown": 0.12522395372375777,
+          "sharpe": 1.126596509066229,
+          "num_trades": 62,
+          "win_rate": 0.3064516129032258,
+          "net_pnl": 19130.01,
+          "median_hold_days": 14.5,
+          "final_nav": 69677.88
+        },
+        "holdout": {
+          "total_return": -0.19156660000000003,
+          "max_drawdown": 0.19789724946567328,
+          "sharpe": -1.5439847515309342,
+          "num_trades": 34,
+          "win_rate": 0.08823529411764706,
+          "net_pnl": -10308.33,
+          "median_hold_days": 13.0,
+          "final_nav": 40421.67
+        }
+      },
+      {
+        "name": "pb_wide",
+        "train": {
+          "total_return": 0.42363260000000014,
+          "max_drawdown": 0.22666991979373258,
+          "sharpe": 0.991307301312203,
+          "num_trades": 54,
+          "win_rate": 0.35185185185185186,
+          "net_pnl": 18486.78,
+          "median_hold_days": 18.0,
+          "final_nav": 71181.63
+        },
+        "holdout": {
+          "total_return": -0.014044199999999951,
+          "max_drawdown": 0.12696069646406266,
+          "sharpe": -0.12206409634363734,
+          "num_trades": 24,
+          "win_rate": 0.20833333333333334,
+          "net_pnl": -1798.8700000000008,
+          "median_hold_days": 20.0,
+          "final_nav": 49297.79
+        }
+      },
+      {
+        "name": "pb_weekly",
+        "train": {
+          "total_return": 0.14293100000000014,
+          "max_drawdown": 0.2447339350671099,
+          "sharpe": 0.4091993811131013,
+          "num_trades": 39,
+          "win_rate": 0.358974358974359,
+          "net_pnl": 5992.81,
+          "median_hold_days": 21.0,
+          "final_nav": 57146.55
+        },
+        "holdout": {
+          "total_return": 0.19271380000000016,
+          "max_drawdown": 0.08638139277729016,
+          "sharpe": 1.0419387072814776,
+          "num_trades": 18,
+          "win_rate": 0.3888888888888889,
+          "net_pnl": 9655.79,
+          "median_hold_days": 21.0,
+          "final_nav": 59635.69
+        }
+      }
+    ],
+    "account4": [
+      {
+        "name": "mr_base",
+        "train": {
+          "total_return": 0.20870166666666679,
+          "max_drawdown": 0.09313217560319564,
+          "sharpe": 1.0399960171854516,
+          "num_trades": 35,
+          "win_rate": 0.8857142857142857,
+          "net_pnl": 6801.29,
+          "median_hold_days": 24.0,
+          "final_nav": 36261.05
+        },
+        "holdout": {
+          "total_return": 0.12469166666666665,
+          "max_drawdown": 0.06007687946620477,
+          "sharpe": 1.0996011775438757,
+          "num_trades": 15,
+          "win_rate": 0.8,
+          "net_pnl": 3690.8999999999996,
+          "median_hold_days": 29.0,
+          "final_nav": 33740.75
+        }
+      },
+      {
+        "name": "mr_conservative",
+        "train": {
+          "total_return": 0.2526293333333336,
+          "max_drawdown": 0.0795842981944041,
+          "sharpe": 1.281359872658637,
+          "num_trades": 30,
+          "win_rate": 0.9,
+          "net_pnl": 7511.959999999998,
+          "median_hold_days": 29.5,
+          "final_nav": 37578.880000000005
+        },
+        "holdout": {
+          "total_return": 0.11168466666666665,
+          "max_drawdown": 0.06164569044945279,
+          "sharpe": 0.9384691166140483,
+          "num_trades": 13,
+          "win_rate": 0.8461538461538461,
+          "net_pnl": 3331.6200000000003,
+          "median_hold_days": 29.0,
+          "final_nav": 33350.54
+        }
+      },
+      {
+        "name": "mr_loose",
+        "train": {
+          "total_return": 0.1705256666666668,
+          "max_drawdown": 0.10810125044318257,
+          "sharpe": 0.8221152831044886,
+          "num_trades": 42,
+          "win_rate": 0.8809523809523809,
+          "net_pnl": 5335.93,
+          "median_hold_days": 24.5,
+          "final_nav": 35115.770000000004
+        },
+        "holdout": {
+          "total_return": 0.012857666666666656,
+          "max_drawdown": 0.10433994891492304,
+          "sharpe": -0.05874696106201573,
+          "num_trades": 15,
+          "win_rate": 0.8,
+          "net_pnl": 230.9500000000002,
+          "median_hold_days": 22.0,
+          "final_nav": 30385.73
+        }
+      },
+      {
+        "name": "mr_weekly",
+        "train": {
+          "total_return": 0.3310966666666668,
+          "max_drawdown": 0.05967587456335701,
+          "sharpe": 1.6373679505185865,
+          "num_trades": 28,
+          "win_rate": 0.8571428571428571,
+          "net_pnl": 9889.979999999998,
+          "median_hold_days": 30.0,
+          "final_nav": 39932.9
+        },
+        "holdout": {
+          "total_return": 0.12306933333333347,
+          "max_drawdown": 0.05402699846597466,
+          "sharpe": 1.1031301059988554,
+          "num_trades": 12,
+          "win_rate": 0.8333333333333334,
+          "net_pnl": 3709.1600000000003,
+          "median_hold_days": 29.0,
+          "final_nav": 33692.08
+        }
+      },
+      {
+        "name": "mr_wide_take",
+        "train": {
+          "total_return": 0.22787533333333343,
+          "max_drawdown": 0.07996788016328193,
+          "sharpe": 1.119914778343123,
+          "num_trades": 31,
+          "win_rate": 0.9354838709677419,
+          "net_pnl": 7376.499999999999,
+          "median_hold_days": 30.0,
+          "final_nav": 36836.26
+        },
+        "holdout": {
+          "total_return": 0.1376736666666667,
+          "max_drawdown": 0.06385310992829364,
+          "sharpe": 1.2001120472361304,
+          "num_trades": 15,
+          "win_rate": 0.8,
+          "net_pnl": 3991.2799999999997,
+          "median_hold_days": 28.0,
+          "final_nav": 34130.21
+        }
+      }
+    ]
+  }
+}

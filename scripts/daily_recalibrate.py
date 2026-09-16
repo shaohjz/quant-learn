@@ -56,7 +56,7 @@ def code_to_baostock(code: str) -> str:
         return f"sz.{code}"
 
 
-def fetch_klines_baostock(code: str, days: int = 90) -> pd.DataFrame | None:
+def fetch_klines_baostock(code: str, days: int = 250) -> pd.DataFrame | None:
     """用 BaoStock 拉取最近 N 天日线（前复权），返回 DataFrame 或 None"""
     bs_code = code_to_baostock(code)
     end_date = date.today().strftime("%Y-%m-%d")
@@ -108,6 +108,10 @@ def calc_indicators(df: pd.DataFrame) -> dict | None:
     ma10 = float(np.mean(close[-10:]))
     ma20 = float(np.mean(close[-20:]))
 
+    ma60 = float(np.mean(close[-60:])) if len(close) >= 60 else None
+    ma120 = float(np.mean(close[-120:])) if len(close) >= 120 else None
+    low60 = float(np.min(low[-60:])) if len(low) >= 60 else None
+
     # ATR14: True Range 的 14 日均值
     if len(df) < 15:
         atr14 = float(np.mean(high[-14:] - low[-14:]))  # 简化
@@ -131,6 +135,9 @@ def calc_indicators(df: pd.DataFrame) -> dict | None:
         "ma10": round(ma10, 2),
         "ma20": round(ma20, 2),
         "atr14": round(atr14, 2),
+        "ma60": round(ma60, 2) if ma60 else None,
+        "ma120": round(ma120, 2) if ma120 else None,
+        "low60": round(low60, 2) if low60 else None,
         "last_close": round(float(close[-1]), 2),
         "trade_date": last_date,
     }
@@ -141,10 +148,24 @@ def calc_indicators(df: pd.DataFrame) -> dict | None:
 # ============================================================
 
 def calc_watchlist_thresholds(ind: dict) -> dict:
-    """观察股阈值计算"""
+    """观察股阈值计算。horizon 开启时买区改 60 日低点，破位改 MA60。"""
     ma10 = ind["ma10"]
     ma20 = ind["ma20"]
     atr = ind["atr14"]
+    try:
+        from quant_core.horizon import load_horizon
+
+        hz = load_horizon(1)
+    except Exception:
+        hz = None
+    if hz and hz.enabled and ind.get("low60") and ind.get("ma60"):
+        buy = round(float(ind["low60"]) * (1.0 + hz.near_low60_pct), 2)
+        brk = round(float(ind["ma60"]) * (1.0 - hz.stop_loss_pct), 2)
+        return {
+            "buy_zone": buy,
+            "buy_strong": round(float(ind["ma60"]), 2),
+            "trend_break": brk,
+        }
     return {
         "buy_zone": round(ma10, 2),
         "buy_strong": round(ma20, 2),
@@ -156,6 +177,20 @@ def calc_portfolio_thresholds(ind: dict, avg_cost: float | None = None) -> dict:
     """持仓股阈值计算"""
     ma20 = ind["ma20"]
     atr = ind["atr14"]
+    try:
+        from quant_core.horizon import load_horizon
+
+        hz = load_horizon(1)
+    except Exception:
+        hz = None
+    if hz and hz.enabled:
+        stop_loss = round((avg_cost or ma20) * (1.0 - hz.stop_loss_pct), 2) if (avg_cost or ma20) else round(ma20 * 0.88, 2)
+        take_profit = round((avg_cost or ma20) * (1.0 + hz.take_profit_pct), 2) if (avg_cost or ma20) else round(ma20 * 1.2, 2)
+        return {
+            "stop_loss": stop_loss,
+            "trend_break": stop_loss,
+            "take_profit": take_profit,
+        }
 
     stop_loss = round(ma20 * 0.97, 2)
     

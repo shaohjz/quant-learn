@@ -23,6 +23,7 @@ from typing import Optional
 # ── 强制使用 live_mirror DB ─────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
 os.environ.setdefault('QUANT_DB_PATH', str(ROOT / 'data' / 'sim_live_mirror.db'))
 _DB_PATH = os.environ['QUANT_DB_PATH']
 
@@ -158,8 +159,53 @@ def _ensure_trailing_columns(conn: sqlite3.Connection) -> None:
 # A股最小交易单位 100 股
 LOT_SIZE = 100
 
-# 默认每次买入的金额上限（避免一把梭）
-DEFAULT_BUY_BUDGET = 10000   # 单次买入预算（单只约总资金 5-10%）
+# 默认每次买入的金额上限（避免一把梭）。horizon 开启时改用账户 #1 的 single_budget。
+def _init_buy_budget() -> float:
+    try:
+        from quant_core.horizon import load_horizon
+
+        hz = load_horizon(1)
+        if hz.enabled:
+            return float(hz.single_budget)
+    except Exception:
+        pass
+    return 10000.0
+
+
+DEFAULT_BUY_BUDGET = _init_buy_budget()
+
+
+def _learn_horizon():
+    try:
+        from quant_core.horizon import load_horizon
+
+        return load_horizon(1)
+    except Exception:
+        from quant_core.horizon import HorizonParams
+
+        return HorizonParams(enabled=False)
+
+
+def _learn_held_days(code: str) -> int:
+    try:
+        from datetime import date as _date
+        from horizon_runtime import hold_days_from_trades
+
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            rows = conn.execute(
+                "SELECT trade_date, direction FROM sim_trades "
+                "WHERE account_id=? AND stock_code=? ORDER BY id",
+                (_ACCOUNT_ID, code),
+            ).fetchall()
+        finally:
+            conn.close()
+        return hold_days_from_trades(
+            [(str(r[0]), str(r[1])) for r in rows],
+            _date.today(),
+        )
+    except Exception:
+        return 0
 
 # 费率
 COMMISSION_RATE = 0.00025   # 万2.5
@@ -2208,12 +2254,16 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
 
         # ── TASK-20260709-2004-001 buy_zone MA10偏差拦截 ────────
         if level == 'buy_zone':
-            ma_ok, ma_reason = _check_buy_zone_ma_deviation(code, rule, cur_price)
-            if not ma_ok:
-                logger.info(f'⚠️ [{code}] {level} MA10偏离过大: {ma_reason}')
-                _write_review_decision(_ACCOUNT_ID, code, 'buy_zone_ma10_deviation_blocked', 0, ma_reason)
-                return 'NO_ACTION'
-            logger.info(f'✅ [{code}] {level} MA10检查通过: {ma_reason}')
+            hz = _learn_horizon()
+            if hz.enabled:
+                logger.info(f'✅ [{code}] horizon 开启，跳过 MA10 买区偏离检查')
+            else:
+                ma_ok, ma_reason = _check_buy_zone_ma_deviation(code, rule, cur_price)
+                if not ma_ok:
+                    logger.info(f'⚠️ [{code}] {level} MA10偏离过大: {ma_reason}')
+                    _write_review_decision(_ACCOUNT_ID, code, 'buy_zone_ma10_deviation_blocked', 0, ma_reason)
+                    return 'NO_ACTION'
+                logger.info(f'✅ [{code}] {level} MA10检查通过: {ma_reason}')
 
         # ── 赚钱闸：弱势日禁买（REQ-028 大盘熔断，此前未接入 sim_executor）──
         if MARKET_PANIC_ENABLED:
@@ -2381,7 +2431,16 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         # 修复：趋势破位 → SELL_ALL（全仓卖出，趋势破位不应留半仓）
         # 同时也检查仓位是否真的存在（观察股无仓位时返回 NO_ACTION）
         if position and position.get('quantity', 0) > 0:
-            # position 参数已传入，直接使用
+            hz = _learn_horizon()
+            if hz.enabled:
+                cost = float(position.get('avg_cost') or 0)
+                pnl = (cur_price / cost - 1) if cost else 0
+                held = _learn_held_days(code)
+                if pnl > -hz.stop_loss_pct and held < hz.min_hold_days:
+                    logger.info(
+                        f'⏳ [{code}] horizon 最短持有未满 {held}/{hz.min_hold_days}，忽略 trend_break'
+                    )
+                    return 'NO_ACTION'
             logger.info(f'🔴 [{code}] trend_break 触发，全仓卖出（position 参数传入: {position["quantity"]}股）')
             return 'SELL_ALL'
         # 否则查数据库确认
@@ -2406,6 +2465,12 @@ def decide_action(rule: dict, cur_price: float, position: dict = None) -> str:
         return 'SELL_ALL'
 
     elif level == 'take_profit':
+        hz = _learn_horizon()
+        if hz.enabled:
+            held = _learn_held_days(code)
+            if held < hz.min_hold_days:
+                logger.info(f'⏳ [{code}] horizon 最短持有未满 {held}/{hz.min_hold_days}，忽略 take_profit')
+                return 'NO_ACTION'
         # half: first hit sells half; second hit (already scaled) clears runner.
         # full: legacy REQ-066 clear-all behaviour.
         if TAKE_PROFIT_MODE == 'full':

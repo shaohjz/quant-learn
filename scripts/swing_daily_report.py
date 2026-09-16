@@ -44,6 +44,7 @@ from swing_auto import (  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_daily")
 
+from quant_core.horizon import load_horizon  # noqa: E402
 from quant_core.swing_params import load_swing_params  # noqa: E402
 from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
 
@@ -277,7 +278,26 @@ def sim_buy(code: str, name: str, price: float, reason: str) -> dict:
         conn.close()
 
 
+def _horizon_hold_days(code6: str) -> int:
+    from horizon_runtime import hold_days_from_trades
+
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT trade_date, direction FROM sim_trades "
+            "WHERE account_id=? AND stock_code LIKE ? ORDER BY id",
+            (SWING_ACCOUNT_ID, f"%{code6}"),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return 0
+    finally:
+        conn.close()
+    pairs = [(str(r["trade_date"]), str(r["direction"])) for r in rows]
+    return hold_days_from_trades(pairs, date.today())
+
+
 def refresh_and_mark(positions: list[dict]) -> list[dict]:
+    hz = load_horizon(SWING_ACCOUNT_ID)
     out = []
     for p in positions:
         code = str(p["stock_code"]).zfill(6)[-6:]
@@ -286,18 +306,22 @@ def refresh_and_mark(positions: list[dict]) -> list[dict]:
         cost = float(p.get("avg_cost") or 0)
         qty = int(p.get("quantity") or 0)
         pnl_pct = (price / cost - 1) * 100 if cost else 0
-        fixed_stop = cost * (1 - STOP_LOSS_PCT) if cost else 0
+        stop_pct = hz.stop_loss_pct if hz.enabled else STOP_LOSS_PCT
+        take_pct = hz.take_profit_pct if hz.enabled else TAKE_PROFIT_PCT
+        fixed_stop = cost * (1 - stop_pct) if cost else 0
         trailer = p.get("trailing_stop_price")
-        # REQ-048/REQ-057/REQ-061 复发修复：trailing_stop_price 从未参与卖出判定，
-        # 导致移动止损（如万华化学 75.48）破位后持仓仍悬挂不卖。
-        # 有效止损取两者中更紧者（更高），确保移动止损上移后优先触发。
         try:
             trailer_f = float(trailer) if trailer not in (None, "") else 0.0
         except (TypeError, ValueError):
             trailer_f = 0.0
-        stop = max(fixed_stop, trailer_f) if trailer_f and trailer_f > fixed_stop else fixed_stop
-        is_trailing = bool(trailer_f and trailer_f > fixed_stop)
-        target = cost * (1 + TAKE_PROFIT_PCT) if cost else 0
+        # 中长线不用盘中移动止损抬闸；固定止损即可。
+        if hz.enabled:
+            stop = fixed_stop
+            is_trailing = False
+        else:
+            stop = max(fixed_stop, trailer_f) if trailer_f and trailer_f > fixed_stop else fixed_stop
+            is_trailing = bool(trailer_f and trailer_f > fixed_stop)
+        target = cost * (1 + take_pct) if cost else 0
         if price <= stop:
             kind = "移动止损" if is_trailing else "止损"
             action, reason = "SELL_STOP", f"{kind}@{stop:.2f}"
@@ -305,6 +329,10 @@ def refresh_and_mark(positions: list[dict]) -> list[dict]:
             action, reason = "SELL_TP", f"止盈@{target:.2f}"
         else:
             action, reason = "HOLD", "持有"
+        if hz.enabled and action == "SELL_TP":
+            held = _horizon_hold_days(code)
+            if held < hz.min_hold_days:
+                action, reason = "HOLD", f"未满最短持有 {held}/{hz.min_hold_days} 日"
         item = {
             **p, "stock_code": code, "current_price": price,
             "market_value": price * qty, "pnl": (price - cost) * qty,
@@ -329,6 +357,9 @@ def refresh_and_mark(positions: list[dict]) -> list[dict]:
 
 
 def run_scan() -> list[dict]:
+    hz = load_horizon(SWING_ACCOUNT_ID)
+    if hz.enabled:
+        return _run_horizon_scan(hz)
     results = []
     for code, name in get_stock_pool():
         try:
@@ -340,6 +371,32 @@ def run_scan() -> list[dict]:
         time.sleep(0.12)
     results.sort(key=lambda x: x["score"], reverse=True)
     save_results(results, date.today().isoformat())
+    return results
+
+
+def _run_horizon_scan(hz) -> list[dict]:
+    """中长线扫描：180 日 K + G 信号，不再看 MA10/MA20 缩量回踩。"""
+    from horizon_runtime import scan_code_horizon
+    from swing_auto import get_kline, get_quote
+
+    results = []
+    today = date.today()
+    for code, name in get_stock_pool():
+        try:
+            quote = get_quote(code)
+            price = float((quote or {}).get("price") or 0)
+            klines = get_kline(code, 180)
+            if not klines or price <= 0:
+                time.sleep(0.08)
+                continue
+            row = scan_code_horizon(code, name, klines, price, hz, as_of=today)
+            if row:
+                results.append(row)
+        except Exception:
+            log.warning("中长线扫描失败，已跳过 %s(%s)", code, name, exc_info=True)
+        time.sleep(0.12)
+    results.sort(key=lambda x: x["score"], reverse=True)
+    save_results(results, today.isoformat())
     return results
 
 
@@ -368,7 +425,9 @@ def pick_buys(scan_rows: list[dict], positions: list[dict]) -> list[dict]:
         stype = r.get("signal_type") or ""
         score = int(r.get("score") or 0)
         if stype not in EXECUTABLE_TYPES or score < MIN_SCORE_BUY:
-            continue
+            hz = load_horizon(SWING_ACCOUNT_ID)
+            if not (hz.enabled and stype == "G" and score >= 5):
+                continue
         price = float(r.get("price") or 0)
         support = float(r.get("support") or 0)
         resist = float(r.get("resist") or 0)

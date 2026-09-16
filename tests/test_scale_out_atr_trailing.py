@@ -11,9 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-def test_calc_trailing_stop_atr_hybrid_raises_floor():
+def test_calc_trailing_stop_atr_hybrid_raises_floor(monkeypatch):
     from scripts.sim_executor import calc_trailing_stop
     import scripts.sim_executor as se
+
+    monkeypatch.setattr(se, "TRAILING_ACTIVATE_PCT", 5.0)
 
     # Ladder alone at +12%: lock +2% = 10.2
     assert calc_trailing_stop(10.0, 11.2, None, atr_pct=None)[0] == 10.2
@@ -88,6 +90,7 @@ def test_take_profit_decide_half_then_full(monkeypatch, tmp_path):
     monkeypatch.setattr(se, "_ACCOUNT_ID", 1)
     monkeypatch.setattr(se, "TAKE_PROFIT_MODE", "half")
     monkeypatch.setattr(se, "_write_review_decision", lambda *a, **k: None)
+    monkeypatch.setattr(se, "_learn_horizon", lambda: type("H", (), {"enabled": False, "min_hold_days": 0})())
 
     action = se.decide_action(
         {"code": "600001", "name": "测", "level": "take_profit", "trigger": 12.0, "dir": "above"},

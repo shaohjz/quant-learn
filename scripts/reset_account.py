@@ -5,11 +5,13 @@ scripts/reset_account.py — 彻底重置模拟盘账户（force 模式，无交
 默认重置：
   #1 learn        — config accounts.learn.initial_cash（默认 10万）
   #3 swing_trade  — config accounts.swing.initial_cash（默认 5万）
+  #4 bank_swing   — config accounts.bank_swing.initial_cash（默认 3万）
 
 用法：
   python scripts/reset_account.py
   python scripts/reset_account.py --only learn
   python scripts/reset_account.py --only swing
+  python scripts/reset_account.py --only bank
 """
 from __future__ import annotations
 
@@ -42,6 +44,11 @@ TARGETS = {
         "id": int(ACCOUNTS.get("swing", {}).get("account_id", 3)),
         "name": ACCOUNTS.get("swing", {}).get("account_name", "swing_trade"),
         "cash": float(ACCOUNTS.get("swing", {}).get("initial_cash", 50000.0)),
+    },
+    "bank": {
+        "id": int(ACCOUNTS.get("bank_swing", {}).get("account_id", 4)),
+        "name": ACCOUNTS.get("bank_swing", {}).get("account_name", "bank_swing"),
+        "cash": float(ACCOUNTS.get("bank_swing", {}).get("initial_cash", 30000.0)),
     },
 }
 
@@ -138,7 +145,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="重置模拟盘账户资金")
     parser.add_argument(
         "--only",
-        choices=("learn", "swing", "all"),
+        choices=("learn", "swing", "bank", "all"),
         default="all",
         help="只重置指定账户（默认 all）",
     )

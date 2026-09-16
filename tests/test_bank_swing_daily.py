@@ -178,7 +178,7 @@ def test_real_config_bank_section_loosens_score_and_volume():
     generic = load_swing_params(section="swing_strategy", auto_overrides={})
     assert bank.min_score_buy == 3
     assert bank.max_volume_ratio == 0.95
-    assert generic.min_score_buy == 5
+    assert generic.min_score_buy == 6
     assert generic.max_volume_ratio == 0.8
 
 
@@ -193,6 +193,9 @@ def test_run_scan_forwards_module_params(monkeypatch):
         seen["fee_budget"] = fee_budget
         return None
 
+    from quant_core.horizon import HorizonParams
+
+    monkeypatch.setattr(sdr, "load_horizon", lambda *_a, **_k: HorizonParams(enabled=False))
     monkeypatch.setattr(sdr, "scan_stock", fake_scan)
     monkeypatch.setattr(sdr, "get_stock_pool", lambda: [("sh601328", "交通银行")])
     monkeypatch.setattr(sdr, "save_results", lambda *_a, **_k: None)

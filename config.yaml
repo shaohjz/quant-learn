@@ -26,6 +26,43 @@ accounts:
     description: 银行股专用波段模拟（起始 3 万，独立结论，不被通用波段仓挤掉）
     initial_cash: 30000.0
     max_total_value: 30000.0
+# 2026-09-16 中长线时钟。enabled 后 #1/#3/#4 不再盯 MA10 日线噪声。
+# 参数来自 output/position_backtest/summary.md 入选组合（前复权研究回测）。
+horizon:
+  enabled: true
+  stop_loss_pct: 0.12
+  take_profit_pct: 0.20
+  rsi_buy: 40.0
+  near_low60_pct: 0.05
+  ma60_buy_band: 0.02
+  ma120_floor: 0.90
+  weekly_only: false
+  accounts:
+    1:
+      style: mean_revert
+      min_hold_days: 15
+      max_positions: 5
+      single_budget: 15000.0
+      take_profit_pct: 0.20
+      stop_loss_pct: 0.12
+    3:
+      style: trend_pullback
+      min_hold_days: 15
+      max_positions: 3
+      single_budget: 15000.0
+      rsi_buy: 50.0
+      ma20_pullback_band: 0.02
+      weekly_only: true
+      sell_on_ma60_recover: false
+      trend_break_ma60: true
+    4:
+      style: mean_revert
+      min_hold_days: 20
+      max_positions: 3
+      single_budget: 8000.0
+      stop_loss_pct: 0.15
+      take_profit_pct: 0.30
+      weekly_only: false
 data:
   use_cache_only: false
   max_retries: 3
@@ -47,16 +84,15 @@ fees:
 # 机器自动采纳的覆盖写在 config.strategy_params.yaml，优先级高于本段。
 swing_strategy:
   execution:
-    # 2026-08-01 假设 H-001：3 仓 × 1 万预算 = 3 万，撑不满 5 万本金，
-    # 4 成资金结构性闲置；且近 15 日有 5 天出了买点因持仓已 3/3 被挡。
-    # 提到 5 仓后 5×1万=5万 与本金对齐，单票集中度反而由 33% 降到 20%。
-    # 复核日 2026-08-22。2026-09-08 结案：5 仓资金口径对了，但不把仓位提到 8——
-    # 不稳来自「止盈/止损后同日立刻换仓」+ 学习仓 ATR 跟踪污染了 5% 固定止损。
-    max_positions: 5
-    # 默认 5 会放行单 A（4+辅）或单 B（3+辅）。收到 6：挡掉纯 B 分 5 的弱换仓。
+    # 2026-09-16 中长线：#3 改周线趋势回踩，3 仓 × 1.5 万对齐 5 万本金。
+    max_positions: 3
+    single_budget: 15000.0
     min_score_buy: 6
-    # false=当日账户已有卖出则不再模拟开新仓，下一交易日再买。
     same_day_replace: false
+    stop_loss_pct: 0.12
+    take_profit_pct: 0.20
+    min_hold_days: 15
+    executable_types: ["G"]
 # 账户 #4 银行股专用波段的独立参数。留空则沿用上面 swing_strategy 的默认值。
 # 银行股波动小、股价低（3~11 元），在通用参数下结构性选不出票：
 # 2026-08-29 实测 16 只 0 只可买，其中 10 只有信号但全卡在净盈亏比。
@@ -78,6 +114,10 @@ bank_swing_strategy:
     min_score_buy: 3
     max_positions: 3
     single_budget: 8000.0
+    stop_loss_pct: 0.15
+    take_profit_pct: 0.30
+    min_hold_days: 20
+    executable_types: ["G"]
 # 策略反馈闭环（信号台账 → 记分卡 → 周度复盘 → 参数提案）
 strategy_feedback:
   enabled: true
@@ -105,8 +145,8 @@ strategy_feedback:
     # 硬边界：提案越界直接拒绝（越界说明上游算错了，截断会掩盖 bug）
     bounds:
       swing_strategy.execution.min_score_buy: [4, 8]
-      swing_strategy.execution.stop_loss_pct: [0.03, 0.08]
-      swing_strategy.execution.take_profit_pct: [0.05, 0.15]
+      swing_strategy.execution.stop_loss_pct: [0.08, 0.18]
+      swing_strategy.execution.take_profit_pct: [0.12, 0.30]
       swing_strategy.filters.min_net_rr: [1.0, 2.0]
       swing_strategy.signals.a_ma20_tolerance: [0.01, 0.025]
       swing_strategy.signals.b_ma10_tolerance: [0.008, 0.02]
@@ -215,9 +255,9 @@ risk:
   # 一半资金结构性闲置。提到 8 仓后上限 8 万（80%），仍留 2 万现金缓冲；
   # 单笔预算不动（1 万 = 10%，低于 max_position_pct 15%），不抬高集中度。
   # 每日新开仓上限 1 笔，建满需 8 天。复核日 2026-08-22，不达预期回退为 5。
-  max_total_positions: 8
-  stop_loss_pct: -0.08
-  take_profit_pct: 0.15
+  max_total_positions: 5
+  stop_loss_pct: -0.12
+  take_profit_pct: 0.20
   # 弱势日禁买：任一宽基指数跌幅 ≤ 该值则拒绝 buy_zone/buy_strong
   market_panic_enabled: true
   market_panic_index_drop_pct: -1.0
@@ -235,16 +275,16 @@ risk:
   buy_strong_enabled: false
   # Same-day reverse guard still blocks fluff exits, but hard -8% cost breach may sell.
   hard_stop_bypasses_same_day: true
-  # First take-profit / +1R: sell half; runner rides ATR trailing stop.
-  take_profit_mode: half
+  # 中长线：首次止盈直接清仓，不再半仓+ATR 把持有期切碎。
+  take_profit_mode: full
   scale_out:
-    enabled: true
+    enabled: false
     at_r: 1.0
     min_qty: 200
     allow_same_day: true
   trailing:
     mode: atr_hybrid
-    activate_profit_pct: 5.0
+    activate_profit_pct: 15.0
     atr_mult: 2.0
     default_atr_pct: 3.0
   warn_industry_pct: 0.25
@@ -252,7 +292,7 @@ risk:
   post_buy_protection:
     protect_minutes: 120
     # Align with stop_loss_pct: do not let protected losers drift to -15%.
-    protect_loss_pct: -8.0
+    protect_loss_pct: -12.0
 stock_pool: []
 watchlist:
   auto_discovered: {}

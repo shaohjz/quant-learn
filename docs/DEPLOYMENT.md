@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-14（origin 切回工蜂并合并 GitHub 独有改动；3-windows 跑时钟；扫描 schtasks 默认停） 
+> **更新**：2026-09-16（三账户切中长线并重置模拟仓；回测摘要 `output/position_backtest/summary.md`） 
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -186,7 +186,7 @@ set QUANT_DB_PATH=C:\Users\Administrator\.openclaw\workspace\quant-learn\data\si
 - 要按 config 重置账户资金（清仓 + 归零 NAV）：
 
 ```bat
-.venv\Scripts\python.exe -u scripts\reset_account.py            REM 重置 #1 + #3
+.venv\Scripts\python.exe -u scripts\reset_account.py            REM 重置 #1 + #3 + #4
 .venv\Scripts\python.exe -u scripts\reset_account.py --only swing
 ```
 
@@ -599,7 +599,47 @@ git push origin HEAD
 
 **回滚：** `git remote set-url origin https://github.com/shaohjz/quant-learn.git`（仅当主人明确说改回 GitHub）。
 
-### ★ 最新变更：修复移动止损破位不卖出（2026-09-13）
+### ★ 最新变更：三账户切中长线 + 重置模拟仓（2026-09-16）
+
+> **改了什么：** 主人认为盯日 K 太近、#1/#3 持续亏。先回测再改生产：76 只股票 2024-08→2026-09 前复权研究回测（holdout 自 2026-01-05），入选见 `output/position_backtest/summary.md`。
+> 1. **#1 学习仓** `mr_base`：买 60 日低点/RSI≤40，止损 12% / 止盈 20%，最短持有 15 日，5 仓×1.5 万。盘前 `daily_recalibrate` 的 buy_zone 改成 60 日低点，trend_break 改 MA60×0.88；ATR 跟踪要浮盈 15% 才启动；半仓止盈关掉。
+> 2. **#3 波段仓** `pb_weekly`：价在 MA60 上再回踩周线 MA20，止损 12% / 止盈 20%，最短 15 日，**只在周五附近开仓**，3 仓×1.5 万。盘中 Pulse **不再给 #3 买**，只处理灾难止损。信号类型 `G`。
+> 3. **#4 银行仓** `mr_wide_take`：银行池低买，止损 15% / 止盈 30%，最短 20 日，3 仓×8000。
+> 4. `scripts/reset_account.py` 现默认清 **#1+#3+#4**，按 config 本金 10 万 / 5 万 / 3 万重建空仓。
+>
+> **不必重建 schtasks。** 下一交易日从空仓按新规则开。
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+
+.venv\Scripts\python.exe -m pytest tests\test_position_strategies.py tests\test_horizon_runtime.py tests\test_bank_swing_daily.py tests\test_swing_params.py tests\test_buy_strategies.py -q
+
+REM 确认 horizon 已开、#3 止损 12%、3 仓
+.venv\Scripts\python.exe -c "from quant_core.horizon import load_horizon; from quant_core.swing_params import load_swing_params as L; h=load_horizon(3); p=L(); print(h.enabled, h.style, h.weekly_only, p.stop_loss_pct, p.max_positions)"
+
+REM 清掉旧的日线亏损仓，三个模拟账户归零重跑
+.venv\Scripts\python.exe -u scripts\reset_account.py
+
+REM 冒烟：收盘扫描应走 G 信号（周五才可能有 #3 买点；#4 每天可扫）
+.venv\Scripts\python.exe -u scripts\swing_daily_report.py --no-push --no-trade
+.venv\Scripts\python.exe -u scripts\bank_swing_daily.py --no-push --no-trade
+```
+
+**验收标准：**
+
+1. 上述 pytest 全绿。
+2. 打印 `True trend_pullback True 0.12 3`。
+3. `capital_status.py` 显示 #1/#3/#4 现金=本金、持仓 0。
+4. 不必重建任何 QuantLearn_* 定时器。
+5. 下一交易日起 #1 不再因 MA10/MA20-1.5ATR 买卖；#3 盘中不换仓；#4 按银行低买规则等信号。
+6. 做完写 `pm/ops/今天-deploy.md`。
+
+**回滚：** `git revert` 本次提交；或把 `config.yaml` 的 `horizon.enabled` 改 `false`，并删掉本次新增的 `swing_strategy.execution.stop_loss_pct` / `executable_types` / `risk.take_profit_mode` 等覆盖（旧默认 5%/8%、MA10 买区恢复）。仓位若已重置，回滚不会自动买回旧持仓。
+
+### ★ 历史变更：修复移动止损破位不卖出（2026-09-13）
 
 > **改了什么：** 万华化学(600309) `current_price=74.50 < trailing_stop_price=75.48` 却仍持仓悬挂未卖，触发每日巡检 `stop_loss_not_executed` P0 复发。根因：`sim_positions.trailing_stop_price` 字段在买入时正确写入、也被 `backfill_trailing_stop.py` 上移，但**卖出判定从未读它** —— `swing_daily_report.refresh_and_mark` 与 `swing_intraday_watch.check_positions` 都用固定 `stop = cost*(1-STOP_LOSS_PCT)`（万华=70.99），移动止损 75.48 破位后不触发。
 > 两处改动：① `swing_daily_report.py` 的 `refresh_and_mark` 把有效止损改为 `max(fixed_stop, trailing_stop_price)`；② `swing_intraday_watch.py` 的 `check_positions` 同样对齐，收盘与盘中口径一致。无 `trailing_stop_price`（为 NULL/空）时行为不变，完全兼容旧数据。

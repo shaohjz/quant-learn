@@ -1,5 +1,6 @@
 """波段日报：结论结构与挂单建议（无行情）。"""
 
+from quant_core.horizon import HorizonParams
 from scripts.swing_daily_report import (
     build_conclusion,
     load_intraday_buy_alerts,
@@ -9,7 +10,12 @@ from scripts.swing_daily_report import (
 )
 
 
-def test_pick_buys_only_ab_high_score():
+def test_pick_buys_only_ab_high_score(monkeypatch):
+    import scripts.swing_daily_report as m
+
+    monkeypatch.setattr(m, "EXECUTABLE_TYPES", {"A", "B"})
+    monkeypatch.setattr(m, "MIN_SCORE_BUY", 5)
+    monkeypatch.setattr(m, "load_horizon", lambda *_a, **_k: HorizonParams(enabled=False))
     scan = [
         {"code": "sh600036", "name": "招商银行", "price": 35.0, "score": 6,
          "signal_type": "A", "support": 34.0, "resist": 37.0, "net_rr": 1.8},
@@ -21,7 +27,12 @@ def test_pick_buys_only_ab_high_score():
     assert picks[0]["code"] == "600036"
 
 
-def test_merge_buys_intraday_first():
+def test_merge_buys_intraday_first(monkeypatch):
+    import scripts.swing_daily_report as m
+
+    monkeypatch.setattr(m, "EXECUTABLE_TYPES", {"A", "B"})
+    monkeypatch.setattr(m, "MIN_SCORE_BUY", 5)
+    monkeypatch.setattr(m, "load_horizon", lambda *_a, **_k: HorizonParams(enabled=False))
     scan = pick_buys(
         [{"code": "sh600036", "name": "招商银行", "price": 35.0, "score": 6,
           "signal_type": "A", "support": 34.0, "resist": 37.0, "net_rr": 1.8}],

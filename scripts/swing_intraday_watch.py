@@ -37,6 +37,7 @@ from swing_auto import get_stock_pool, scan_stock  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("swing_intraday")
 
+from quant_core.horizon import load_horizon  # noqa: E402
 from quant_core.swing_params import load_swing_params  # noqa: E402
 from sim.config_resolver import resolve_artifact_root, resolve_db_path  # noqa: E402
 
@@ -239,6 +240,30 @@ def check_positions() -> list[dict]:
                 "msg": f"{kind}线破位：建议卖出挂单 ~{price:.2f}",
             })
         elif price >= target:
+            hz = load_horizon(SWING_ACCOUNT_ID)
+            if hz.enabled:
+                from horizon_runtime import hold_days_from_trades
+
+                held = 0
+                if DB_PATH.exists():
+                    conn = sqlite3.connect(str(DB_PATH))
+                    conn.row_factory = sqlite3.Row
+                    try:
+                        rows = conn.execute(
+                            "SELECT trade_date, direction FROM sim_trades "
+                            "WHERE account_id=? AND stock_code LIKE ? ORDER BY id",
+                            (SWING_ACCOUNT_ID, f"%{code}"),
+                        ).fetchall()
+                        held = hold_days_from_trades(
+                            [(str(r["trade_date"]), str(r["direction"])) for r in rows],
+                            date.today(),
+                        )
+                    except sqlite3.OperationalError:
+                        held = hz.min_hold_days
+                    finally:
+                        conn.close()
+                if held < hz.min_hold_days:
+                    continue
             alerts.append({
                 "kind": "SELL_TP",
                 "code": code,
@@ -455,7 +480,12 @@ def main() -> int:
 
     alerts: list[dict] = []
     alerts.extend(check_positions())
-    buys = scan_opportunities(args.min_score)[: args.max_buy_alerts]
+    hz = load_horizon(SWING_ACCOUNT_ID)
+    if hz.enabled:
+        log.info("horizon 开启：盘中不再扫描买入，只处理灾难止损/到期止盈")
+        buys = []
+    else:
+        buys = scan_opportunities(args.min_score)[: args.max_buy_alerts]
     alerts.extend(buys)
 
     pushed = 0

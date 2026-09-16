@@ -8,7 +8,7 @@
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-16（三账户切中长线并重置模拟仓，见 `output/position_backtest/summary.md`；TES-23 修复 VqlearnLive rc=3：bat CRLF + `.gitattributes` eol=crlf，venv 补装 vnpy_paperaccount）。此前 2026-09-14 origin 切回工蜂。
+> **更新**：2026-09-16 晚（本机 Linux `linux_sim_runner` crontab **已停**，量化只跑产机 Windows）；同日早些时候三账户切中长线、TES-23 bat/CRLF。此前 2026-09-14 origin 切回工蜂。
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -599,7 +599,13 @@ git push origin HEAD
 
 **回滚：** `git remote set-url origin https://github.com/shaohjz/quant-learn.git`（仅当主人明确说改回 GitHub）。
 
-### ★ 最新变更：三账户切中长线 + 重置模拟仓（2026-09-16）
+### ★ 最新变更：停本机 Linux 量化 crontab（2026-09-16 晚）
+
+> **改了什么：** 主人要求本机别再跑。root crontab 里 6 条 `linux_sim_runner.sh`（08:35 校准 / 08:40 池 / 盘中 Pulse / 16:05 波段 / 16:15 台账 / 16:20 收盘）已注释停用。值班 `duty-query` 与 `tagent-monitor` **未动**。当前没有残留 python 扫描进程。
+> **产机 Windows：零动作**（不必 git pull 才能停本机；文档同步后 pull 即可，**禁止**再把这 6 行加回任何机器的 crontab）。
+> 回滚：把 crontab 里对应 6 行取消注释，或 `crontab /tmp/crontab.root.bak.20260916`。
+
+### ★ 历史变更：三账户切中长线 + 重置模拟仓（2026-09-16）
 
 > **改了什么：** 主人认为盯日 K 太近、#1/#3 持续亏。先回测再改生产：76 只股票 2024-08→2026-09 前复权研究回测（holdout 自 2026-01-05），入选见 `output/position_backtest/summary.md`。
 > 1. **#1 学习仓** `mr_base`：买 60 日低点/RSI≤40，止损 12% / 止盈 20%，最短持有 15 日，5 仓×1.5 万。盘前 `daily_recalibrate` 的 buy_zone 改成 60 日低点，trend_break 改 MA60×0.88；ATR 跟踪要浮盈 15% 才启动；半仓止盈关掉。
@@ -1145,9 +1151,9 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 19:15            ★守夜验收：远程有今日台账？没有 → 补跑 + 企微【量化失职】
 20:00            ★各类日报落盘 daily_reports/（提示词 C）→ 企微精简版
 
-【本机 Linux 可选 · 非产机】
-08:35~16:20      linux_sim_runner.sh 长期模拟（独立 DB，默认不推企微）见下文
-19:30 左右        cursor_queue_auto_runner.sh 消费队列 → 只推 feature 分支（人工 MR）
+【本机 Linux · 2026-09-16 已停量化调度】
+（原 08:35~16:20 linux_sim_runner crontab 已从 root crontab 卸下，不要再挂）
+19:30 左右        cursor_queue_auto_runner.sh 仅当主人明确要求时才开；默认也不跑
 ```
 详情：本文日程表 · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md) · 下文「本机 Linux 长期模拟」/「本机 Cursor 队列自动消费」
 
@@ -1157,8 +1163,9 @@ C:\Users\Administrator\.openclaw\workspace\quant-learn
 
 # 本机 Linux 长期模拟（开发机旁路 · 非产机）
 
-> **与产机 Windows 职责切开。** 产机继续：schtasks + 企微正式推送 + DailyGitSync。  
-> **本机**：独立 `data/sim_local.db`，产物只写 `output/linux_sim/`，**默认不推企微**，**不**跑 DailyGitSync。  
+> **2026-09-16 已停。** 主人要求本机不要跑量化。root crontab 中 6 条 `linux_sim_runner` 已注释。  
+> **不要再执行本节「挂 crontab」。** 脚本仍保留，仅当主人明确说「再开本机模拟」时才恢复。  
+> 与产机 Windows 职责切开：产机继续 schtasks + 企微 + DailyGitSync。本机若重开：独立 `data/sim_local.db`，产物 `output/linux_sim/`，默认不推企微。  
 > 入口：[`scripts/linux_sim_runner.sh`](../scripts/linux_sim_runner.sh)
 
 ## 边界
@@ -1215,18 +1222,19 @@ python3 -m venv .venv && . .venv/bin/activate && pip install -e '.[research,dev]
 - `data/sim_local.db` 有 account 1/3  
 - `output/linux_sim/swing_daily/`、`trade_journal/`、`daily_close_*.md` 有当日文件  
 - **没有**误写 `pm/trade_journal/今天.md`（除非未设 `QUANT_ARTIFACT_ROOT`）  
-- `crontab -l` 可见上表；日志在 `output/linux_sim/logs/`
+- **现行：** `crontab -l` **不应**再有未注释的 `linux_sim_runner.sh`（2026-09-16 已停）
+- 日志若还在：`output/linux_sim/logs/`（不再增长即说明已停）
 
 ### ★ 本次变更怎么部署（本机 Linux 长期模拟）
 
-> **产机 Windows：只需 `git pull`，schtasks 不变。**  
-> **本机 Linux（要旁路模拟时）：**
+> **默认不要部署本节。** 2026-09-16 已停。产机 Windows 零动作。  
+> 仅当主人明确说「再开本机模拟」时：
 
 1. `git pull`  
 2. `.venv` 就绪后：`./scripts/linux_sim_runner.sh init`（仅首次或要重置）  
-3. 挂上文本「crontab」六行（或确认已挂）  
+3. 把 crontab 里已注释的 6 行取消注释  
 4. 冒烟：`./scripts/linux_sim_runner.sh day_close` → 看 `output/linux_sim/`  
-5. 写 `pm/ops/今天-deploy.md`（注明本机 cron 已挂 / 产机未改 schtasks）
+5. 写 `pm/ops/今天-deploy.md`（注明本机 cron 已重新挂上）
 
 **不用做：** 不用重建 Windows schtasks；不用把 `sim_local.db` / `config.local.yaml` 提交 git。
 

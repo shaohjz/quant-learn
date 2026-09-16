@@ -60,23 +60,24 @@ flowchart TD
 | **20:00** | ★LLM 各类日报 | **OpenClaw cron（必留）** | DEPLOYMENT 提示词 C | 必须写 `daily_reports/`，禁止只推企微 |
 | **20:30** | LLM 日报推 master | **Windows schtasks** | 同 `daily_git_sync_runner.bat` | `QuantLearn_DailyGitSyncEvening` |
 | **19:30**（可选） | 本机消费 Cursor 队列 | **本机 Linux cron**（非产机） | `scripts/cursor_queue_auto_runner.sh` | 只推 `feat/cursor-auto-*`；见 DEPLOYMENT |
-| **08:35~16:20**（可选） | 本机长期模拟 | **本机 Linux cron**（非产机） | `scripts/linux_sim_runner.sh` | 独立 `sim_local.db`；见 DEPLOYMENT「本机 Linux 长期模拟」 |
+| **08:35~16:20**（**已停**） | 本机长期模拟 | 2026-09-16 已从本机 crontab 卸下 | `scripts/linux_sim_runner.sh` | 不要再挂；见 DEPLOYMENT |
 
 **OpenClaw 侧**：交易类 **0** 条 LLM；文案 **≤3** 条（18:15 可选 + 19:15 守夜 + 20:00 日报）；**守夜与日报必留**。晚间 **push 用 schtasks（18:45+20:30）**；别让 LLM 乱 `git add scripts/`。
 
-### 本机 Linux cron（可选 · 方案 A 队列 + 长期模拟）
+### 本机 Linux cron（2026-09-16 量化调度已停）
 
-> 跑在开发机，**不是**产机 Windows。
+> 跑在开发机，**不是**产机 Windows。**长期模拟 6 条 crontab 已停**，禁止再挂，除非主人明文再说开。
 
-**长期模拟**（独立 `data/sim_local.db`，产物 `output/linux_sim/`，默认不推企微）：
+**长期模拟（已停，仅作回滚对照）：** 独立 `data/sim_local.db`，产物 `output/linux_sim/`。
 
 ```cron
-35 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh recalibrate >> output/linux_sim/logs/cron.log 2>&1
-40 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pool >> output/linux_sim/logs/cron.log 2>&1
-*/10 9-14 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pulse >> output/linux_sim/logs/cron.log 2>&1
-5 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh swing_daily >> output/linux_sim/logs/cron.log 2>&1
-15 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh journal >> output/linux_sim/logs/cron.log 2>&1
-20 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh close >> output/linux_sim/logs/cron.log 2>&1
+# 下面 6 行已从本机 root crontab 注释停用（2026-09-16）
+# 35 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh recalibrate >> output/linux_sim/logs/cron.log 2>&1
+# 40 8 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pool >> output/linux_sim/logs/cron.log 2>&1
+# */10 9-14 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh pulse >> output/linux_sim/logs/cron.log 2>&1
+# 5 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh swing_daily >> output/linux_sim/logs/cron.log 2>&1
+# 15 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh journal >> output/linux_sim/logs/cron.log 2>&1
+# 20 16 * * 1-5  cd /data/shaohjz/quant-learn && ./scripts/linux_sim_runner.sh close >> output/linux_sim/logs/cron.log 2>&1
 ```
 
 **Cursor 队列消费**（等 18:45 DailyGitSync 把 `pm/cursor_queue` 推进 master 后再消费）：

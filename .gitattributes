@@ -8,3 +8,6 @@ pm/strategy_review/**      text eol=lf
 # 把「今天到底调了哪个参数」彻底淹没。2026-08-29 补上。
 config.yaml                text eol=lf
 config_auto.yaml           text eol=lf
+# 2026-09-16 TES-23：bat 含多行 if 括号块时，LF-only 行尾会令 cmd.exe 解析错乱
+# （rc=3、日志停更）。vqlearn_live_runner.bat 固定 CRLF，防回迁/git 同步再写回 LF。
+scripts/vqlearn_live_runner.bat text eol=crlf

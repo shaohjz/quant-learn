@@ -1008,7 +1008,7 @@
     "date": "2026-09-16",
     "specs": {
       "swing": {
-        "spec_hash": "01a48a8bf10c",
+        "spec_hash": "ef4507ea4d39",
         "params": {
           "pool_max": 50,
           "pool_min_score": 70.0,
@@ -1020,17 +1020,16 @@
           "pool_max_amp": 6.0,
           "pool_max_drop_5d": -8.0,
           "entry_types": [
-            "A",
-            "B"
+            "G"
           ],
           "entry_min_score": 6,
           "entry_min_net_rr": 1.2,
           "entry_min_upside": 0.005,
           "entry_min_amp": 1.0,
-          "stop_loss_pct": 0.05,
-          "take_profit_pct": 0.08,
-          "max_positions": 5,
-          "single_budget": 10000.0,
+          "stop_loss_pct": 0.12,
+          "take_profit_pct": 0.2,
+          "max_positions": 3,
+          "single_budget": 15000.0,
           "initial_cash": 50000.0,
           "auto_trade": false,
           "commission_rate": 0.00025,
@@ -1038,20 +1037,20 @@
         }
       },
       "learn": {
-        "spec_hash": "c4804032fb2a",
+        "spec_hash": "7d22651aaa1b",
         "params": {
           "watchlist_size": 34,
           "buy_strong_enabled": false,
           "max_daily_new_positions": 1,
           "block_add_to_loser_pct": 0.0,
           "market_panic_drop_pct": -1.0,
-          "stop_loss_pct": -0.08,
-          "take_profit_pct": 0.15,
-          "take_profit_mode": "half",
+          "stop_loss_pct": -0.12,
+          "take_profit_pct": 0.2,
+          "take_profit_mode": "full",
           "trailing_mode": "atr_hybrid",
-          "trailing_activate_pct": 5.0,
-          "single_budget": 10000,
-          "max_total_positions": 8,
+          "trailing_activate_pct": 15.0,
+          "single_budget": null,
+          "max_total_positions": 5,
           "max_position_pct": 0.15,
           "initial_cash": 100000.0,
           "auto_trade": true,

@@ -7,7 +7,7 @@
       "account_id": 3,
       "name": "#3 波段仓",
       "headline": "沪深300+中证500 里挑稳定池 → 缩量回踩 MA10/MA20 买入 → 固定 5% 止损 / 8% 止盈",
-      "spec_hash": "01a48a8bf10c",
+      "spec_hash": "ef4507ea4d39",
       "params": [
         {
           "key": "pool_max",
@@ -176,10 +176,9 @@
           "label": "可成交信号类型",
           "group": "entry",
           "value": [
-            "A",
-            "B"
+            "G"
           ],
-          "display": "A/B",
+          "display": "G",
           "unit": "",
           "note": "A=缩量回踩MA20 B=缩量回踩MA10；C/D/E/F 只观察",
           "found": true,
@@ -188,8 +187,7 @@
             {
               "source": "swing_params:execution.executable_types",
               "value": [
-                "A",
-                "B"
+                "G"
               ],
               "found": true
             },
@@ -306,8 +304,8 @@
           "key": "stop_loss_pct",
           "label": "止损",
           "group": "exit",
-          "value": 0.05,
-          "display": "5%",
+          "value": 0.12,
+          "display": "12%",
           "unit": "frac",
           "note": "",
           "found": true,
@@ -315,7 +313,7 @@
           "refs": [
             {
               "source": "swing_params:execution.stop_loss_pct",
-              "value": 0.05,
+              "value": 0.12,
               "found": true
             },
             {
@@ -334,8 +332,8 @@
           "key": "take_profit_pct",
           "label": "止盈",
           "group": "exit",
-          "value": 0.08,
-          "display": "8%",
+          "value": 0.2,
+          "display": "20%",
           "unit": "frac",
           "note": "",
           "found": true,
@@ -343,7 +341,7 @@
           "refs": [
             {
               "source": "swing_params:execution.take_profit_pct",
-              "value": 0.08,
+              "value": 0.2,
               "found": true
             },
             {
@@ -362,8 +360,8 @@
           "key": "max_positions",
           "label": "最大持仓数",
           "group": "sizing",
-          "value": 5,
-          "display": "5只",
+          "value": 3,
+          "display": "3只",
           "unit": "只",
           "note": "",
           "found": true,
@@ -371,7 +369,7 @@
           "refs": [
             {
               "source": "swing_params:execution.max_positions",
-              "value": 5,
+              "value": 3,
               "found": true
             },
             {
@@ -385,8 +383,8 @@
           "key": "single_budget",
           "label": "单笔预算",
           "group": "sizing",
-          "value": 10000.0,
-          "display": "1 万",
+          "value": 15000.0,
+          "display": "1.5 万",
           "unit": "元",
           "note": "",
           "found": true,
@@ -394,7 +392,7 @@
           "refs": [
             {
               "source": "swing_params:execution.single_budget",
-              "value": 10000.0,
+              "value": 15000.0,
               "found": true
             },
             {
@@ -485,7 +483,7 @@
       "account_id": 1,
       "name": "#1 学习仓",
       "headline": "手工观察池按 MA10 买区试探建仓 → config 风控闸门 + 半仓止盈 / -8% 硬止损",
-      "spec_hash": "c4804032fb2a",
+      "spec_hash": "7d22651aaa1b",
       "params": [
         {
           "key": "watchlist_size",
@@ -581,8 +579,8 @@
           "key": "stop_loss_pct",
           "label": "硬止损",
           "group": "exit",
-          "value": -0.08,
-          "display": "-8%",
+          "value": -0.12,
+          "display": "-12%",
           "unit": "frac",
           "note": "",
           "found": true,
@@ -590,7 +588,7 @@
           "refs": [
             {
               "source": "config.yaml:risk.stop_loss_pct",
-              "value": -0.08,
+              "value": -0.12,
               "found": true
             }
           ]
@@ -599,8 +597,8 @@
           "key": "take_profit_pct",
           "label": "止盈线",
           "group": "exit",
-          "value": 0.15,
-          "display": "15%",
+          "value": 0.2,
+          "display": "20%",
           "unit": "frac",
           "note": "",
           "found": true,
@@ -608,7 +606,7 @@
           "refs": [
             {
               "source": "config.yaml:risk.take_profit_pct",
-              "value": 0.15,
+              "value": 0.2,
               "found": true
             }
           ]
@@ -617,8 +615,8 @@
           "key": "take_profit_mode",
           "label": "止盈方式",
           "group": "exit",
-          "value": "half",
-          "display": "half",
+          "value": "full",
+          "display": "full",
           "unit": "",
           "note": "half=首次止盈卖一半",
           "found": true,
@@ -626,7 +624,7 @@
           "refs": [
             {
               "source": "config.yaml:risk.take_profit_mode",
-              "value": "half",
+              "value": "full",
               "found": true
             }
           ]
@@ -653,8 +651,8 @@
           "key": "trailing_activate_pct",
           "label": "跟踪启动浮盈",
           "group": "exit",
-          "value": 5.0,
-          "display": "5%",
+          "value": 15.0,
+          "display": "15%",
           "unit": "%",
           "note": "",
           "found": true,
@@ -662,7 +660,7 @@
           "refs": [
             {
               "source": "config.yaml:risk.trailing.activate_profit_pct",
-              "value": 5.0,
+              "value": 15.0,
               "found": true
             }
           ]
@@ -671,17 +669,17 @@
           "key": "single_budget",
           "label": "单笔预算",
           "group": "sizing",
-          "value": 10000,
-          "display": "1 万",
+          "value": null,
+          "display": "（未取到）",
           "unit": "元",
           "note": "",
-          "found": true,
+          "found": false,
           "conflict": false,
           "refs": [
             {
               "source": "scripts/sim_executor.py:DEFAULT_BUY_BUDGET",
-              "value": 10000,
-              "found": true
+              "value": null,
+              "found": false
             }
           ]
         },
@@ -689,8 +687,8 @@
           "key": "max_total_positions",
           "label": "最大持仓数",
           "group": "sizing",
-          "value": 8,
-          "display": "8只",
+          "value": 5,
+          "display": "5只",
           "unit": "只",
           "note": "",
           "found": true,
@@ -698,7 +696,7 @@
           "refs": [
             {
               "source": "config.yaml:risk.max_total_positions",
-              "value": 8,
+              "value": 5,
               "found": true
             }
           ]
@@ -831,7 +829,9 @@
         }
       ],
       "conflicts": [],
-      "missing": []
+      "missing": [
+        "single_budget"
+      ]
     }
   ],
   "performances": [
@@ -839,164 +839,114 @@
       "account_id": 3,
       "name": "#3 波段仓",
       "nav": {
-        "days": 44,
-        "first_date": "2026-07-20",
+        "days": 1,
+        "first_date": "2026-09-16",
         "last_date": "2026-09-16",
-        "total_value": 46774.13,
-        "cumulative_return_pct": -0.0645,
-        "max_drawdown_pct": 7.4751,
-        "current_drawdown_pct": 7.4751,
-        "best_day_pct": 0.0145,
-        "worst_day_pct": -0.0221,
-        "losing_streak": 5
+        "total_value": 50000.0,
+        "cumulative_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "current_drawdown_pct": 0.0,
+        "best_day_pct": 0.0,
+        "worst_day_pct": 0.0,
+        "losing_streak": 0
       },
-      "closed_count": 15,
-      "win_count": 3,
-      "win_rate_pct": 20.0,
+      "closed_count": 0,
+      "win_count": 0,
+      "win_rate_pct": 0.0,
       "win_rate_ci_pct": [
-        7.05,
-        45.19
+        0.0,
+        100.0
       ],
-      "payoff_ratio": 1.737,
-      "profit_factor": 0.434,
-      "net_pnl": -2788.0,
-      "avg_holding_days": 15.6,
-      "breakeven_win_rate_pct": 36.53,
-      "edge_gap_pct": -16.53,
+      "payoff_ratio": null,
+      "profit_factor": null,
+      "net_pnl": 0.0,
+      "avg_holding_days": null,
+      "breakeven_win_rate_pct": null,
+      "edge_gap_pct": null,
       "samples_to_prove": null,
       "expectancy": {
-        "n": 15,
-        "mean_pct": -2.2176,
-        "std_pct": 5.7028,
-        "stderr_pct": 1.4724,
-        "t_stat": -1.506,
-        "ci_low_pct": -5.1036,
-        "ci_high_pct": 0.6684,
+        "n": 0,
+        "mean_pct": 0.0,
+        "std_pct": 0.0,
+        "stderr_pct": 0.0,
+        "t_stat": null,
+        "ci_low_pct": null,
+        "ci_high_pct": null,
         "significant": false
       },
       "recent_expectancy": {
-        "n": 15,
-        "mean_pct": -2.2176,
-        "std_pct": 5.7028,
-        "stderr_pct": 1.4724,
-        "t_stat": -1.506,
-        "ci_low_pct": -5.1036,
-        "ci_high_pct": 0.6684,
+        "n": 0,
+        "mean_pct": 0.0,
+        "std_pct": 0.0,
+        "stderr_pct": 0.0,
+        "t_stat": null,
+        "ci_low_pct": null,
+        "ci_high_pct": null,
         "significant": false
       },
-      "by_signal": [
-        {
-          "signal": "波段模拟",
-          "n": 15,
-          "win_count": 3,
-          "win_rate_pct": 20.0,
-          "net_pnl": -2788.0,
-          "avg_pnl_pct": -2.218,
-          "expectancy": {
-            "n": 15,
-            "mean_pct": -2.2176,
-            "std_pct": 5.7028,
-            "stderr_pct": 1.4724,
-            "t_stat": -1.506,
-            "ci_low_pct": -5.1036,
-            "ci_high_pct": 0.6684,
-            "significant": false
-          },
-          "evidence": {
-            "n": 15,
-            "level": "weak",
-            "label": "弱",
-            "can_do": "能看方向，不足以改参数"
-          }
-        }
-      ],
+      "by_signal": [],
       "evidence": {
-        "n": 15,
-        "level": "weak",
-        "label": "弱",
-        "can_do": "能看方向，不足以改参数"
+        "n": 0,
+        "level": "none",
+        "label": "无数据",
+        "can_do": "只能检查链路是否在跑"
       }
     },
     {
       "account_id": 1,
       "name": "#1 学习仓",
       "nav": {
-        "days": 43,
-        "first_date": "2026-07-20",
+        "days": 1,
+        "first_date": "2026-09-16",
         "last_date": "2026-09-16",
-        "total_value": 91076.73,
-        "cumulative_return_pct": -0.0892,
-        "max_drawdown_pct": 11.6043,
-        "current_drawdown_pct": 11.6043,
-        "best_day_pct": 0.0164,
-        "worst_day_pct": -0.0636,
-        "losing_streak": 6
+        "total_value": 100000.0,
+        "cumulative_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "current_drawdown_pct": 0.0,
+        "best_day_pct": 0.0,
+        "worst_day_pct": 0.0,
+        "losing_streak": 0
       },
-      "closed_count": 32,
-      "win_count": 6,
-      "win_rate_pct": 18.75,
+      "closed_count": 0,
+      "win_count": 0,
+      "win_rate_pct": 0.0,
       "win_rate_ci_pct": [
-        8.89,
-        35.31
+        0.0,
+        100.0
       ],
-      "payoff_ratio": 0.817,
-      "profit_factor": 0.189,
-      "net_pnl": -6807.06,
-      "avg_holding_days": 4.75,
-      "breakeven_win_rate_pct": 55.03,
-      "edge_gap_pct": -36.28,
+      "payoff_ratio": null,
+      "profit_factor": null,
+      "net_pnl": 0.0,
+      "avg_holding_days": null,
+      "breakeven_win_rate_pct": null,
+      "edge_gap_pct": null,
       "samples_to_prove": null,
       "expectancy": {
-        "n": 32,
-        "mean_pct": -2.6508,
-        "std_pct": 5.0003,
-        "stderr_pct": 0.8839,
-        "t_stat": -2.999,
-        "ci_low_pct": -4.3833,
-        "ci_high_pct": -0.9183,
-        "significant": true
-      },
-      "recent_expectancy": {
-        "n": 20,
-        "mean_pct": -2.048,
-        "std_pct": 5.3247,
-        "stderr_pct": 1.1906,
-        "t_stat": -1.72,
-        "ci_low_pct": -4.3817,
-        "ci_high_pct": 0.2856,
+        "n": 0,
+        "mean_pct": 0.0,
+        "std_pct": 0.0,
+        "stderr_pct": 0.0,
+        "t_stat": null,
+        "ci_low_pct": null,
+        "ci_high_pct": null,
         "significant": false
       },
-      "by_signal": [
-        {
-          "signal": "buy_zone",
-          "n": 32,
-          "win_count": 6,
-          "win_rate_pct": 18.75,
-          "net_pnl": -6807.06,
-          "avg_pnl_pct": -2.651,
-          "expectancy": {
-            "n": 32,
-            "mean_pct": -2.6508,
-            "std_pct": 5.0003,
-            "stderr_pct": 0.8839,
-            "t_stat": -2.999,
-            "ci_low_pct": -4.3833,
-            "ci_high_pct": -0.9183,
-            "significant": true
-          },
-          "evidence": {
-            "n": 32,
-            "level": "usable",
-            "label": "可用",
-            "can_do": "可提改参提案，须先影子验证"
-          }
-        }
-      ],
+      "recent_expectancy": {
+        "n": 0,
+        "mean_pct": 0.0,
+        "std_pct": 0.0,
+        "stderr_pct": 0.0,
+        "t_stat": null,
+        "ci_low_pct": null,
+        "ci_high_pct": null,
+        "significant": false
+      },
+      "by_signal": [],
       "evidence": {
-        "n": 32,
-        "level": "usable",
-        "label": "可用",
-        "can_do": "可提改参提案，须先影子验证"
+        "n": 0,
+        "level": "none",
+        "label": "无数据",
+        "can_do": "只能检查链路是否在跑"
       }
     }
   ],
@@ -1008,8 +958,8 @@
       "advice_not_filled_days": 11,
       "days_with_advice": 15,
       "total_fills": 6,
-      "capital_cap_pct": 100.0,
-      "idle_cash_pct": 54.09,
+      "capital_cap_pct": 90.0,
+      "idle_cash_pct": 100.0,
       "instrumentation_gaps": [
         "池内扫描层无埋点：不知道入池 N 只里有几只出信号、几只因 A/B 类型或分数线被拒。swing_daily_report 落 scanned/signaled/executable 三个计数即可补上。"
       ],
@@ -1055,7 +1005,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 8556.8105,
           "total_value": 48564.8105,
           "fills": 0,
@@ -1113,7 +1063,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 8556.8105,
           "total_value": 48886.8105,
           "fills": 0,
@@ -1172,7 +1122,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 6945.327500000001,
           "total_value": 48819.3275,
           "fills": 0,
@@ -1227,7 +1177,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 6945.327500000001,
           "total_value": 48783.3275,
           "fills": 0,
@@ -1283,7 +1233,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 7425.953500000001,
           "total_value": 48096.9535,
           "fills": 0,
@@ -1341,7 +1291,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 7425.953500000001,
           "total_value": 48523.9535,
           "fills": 0,
@@ -1399,7 +1349,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 6416.613500000001,
           "total_value": 48373.6135,
           "fills": 0,
@@ -1456,7 +1406,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 6416.613500000001,
           "total_value": 48063.6135,
           "fills": 0,
@@ -1514,7 +1464,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 6416.613500000001,
           "total_value": 48453.6135,
           "fills": 0,
@@ -1573,7 +1523,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 8655.256000000001,
           "total_value": 49218.256,
           "fills": 1,
@@ -1632,7 +1582,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 8655.256000000001,
           "total_value": 48902.256,
           "fills": 0,
@@ -1689,7 +1639,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 7816.616500000004,
           "total_value": 47810.616500000004,
           "fills": 1,
@@ -1744,7 +1694,7 @@
             }
           ],
           "positions": 5,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 9726.927000000003,
           "total_value": 47140.927,
           "fills": 2,
@@ -1804,7 +1754,7 @@
             }
           ],
           "positions": 3,
-          "max_positions": 5,
+          "max_positions": 3,
           "cash": 25301.131000000005,
           "total_value": 46789.13100000001,
           "fills": 2,
@@ -1831,13 +1781,13 @@
             {
               "key": "candidates",
               "label": "过硬过滤",
-              "count": 546,
+              "count": 0,
               "note": "价格/成交额/ATR/振幅"
             },
             {
               "key": "above_min_score",
               "label": "过稳定分线",
-              "count": 427,
+              "count": 0,
               "note": ""
             },
             {
@@ -1859,19 +1809,19 @@
               "note": ""
             }
           ],
-          "positions": 3,
-          "max_positions": 5,
-          "cash": 25301.131000000005,
-          "total_value": 46774.13100000001,
+          "positions": 0,
+          "max_positions": 3,
+          "cash": 50000.0,
+          "total_value": 50000.0,
           "fills": 0,
           "advice": 1,
           "advice_hints": [
-            "无新挂单。持仓继续拿，不破止损不乱卖。"
+            "空仓观望：盘中无买入提醒，收盘扫描也无强买点。"
           ],
-          "data_mode": "live",
+          "data_mode": "hist",
           "advice_not_filled": true,
           "blocked_by_position_cap": false,
-          "pool_fallback": false,
+          "pool_fallback": true,
           "legacy_schema": false
         }
       ]
@@ -1975,7 +1925,90 @@
         "source_finding": "churn + dual stop 75.48 vs 70.99"
       }
     ],
-    "drifts": [],
+    "drifts": [
+      {
+        "strategy_id": "swing",
+        "param": "entry_types",
+        "before": [
+          "A",
+          "B"
+        ],
+        "after": [
+          "G"
+        ],
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "swing",
+        "param": "stop_loss_pct",
+        "before": 0.05,
+        "after": 0.12,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "swing",
+        "param": "take_profit_pct",
+        "before": 0.08,
+        "after": 0.2,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "swing",
+        "param": "max_positions",
+        "before": 5,
+        "after": 3,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "swing",
+        "param": "single_budget",
+        "before": 10000.0,
+        "after": 15000.0,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "learn",
+        "param": "stop_loss_pct",
+        "before": -0.08,
+        "after": -0.12,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "learn",
+        "param": "take_profit_pct",
+        "before": 0.15,
+        "after": 0.2,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "learn",
+        "param": "take_profit_mode",
+        "before": "half",
+        "after": "full",
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "learn",
+        "param": "trailing_activate_pct",
+        "before": 5.0,
+        "after": 15.0,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "learn",
+        "param": "single_budget",
+        "before": 10000,
+        "after": null,
+        "matched_hypothesis": ""
+      },
+      {
+        "strategy_id": "learn",
+        "param": "max_total_positions",
+        "before": 8,
+        "after": 5,
+        "matched_hypothesis": ""
+      }
+    ],
     "snapshot_written": true,
     "previous_snapshot_date": "2026-09-14"
   },
@@ -1990,16 +2023,16 @@
       "horizon": "今天就能改",
       "title": "#3 波段仓 近 15 日有 10 天出了买点却因满仓没成交",
       "evidence": [
-        "2026-08-27：买点 4 个，持仓 5/5，成交 0，现金 8,557 元",
-        "2026-08-28：买点 5 个，持仓 5/5，成交 0，现金 8,557 元",
-        "2026-08-31：买点 1 个，持仓 5/5，成交 0，现金 6,945 元",
-        "2026-09-01：买点 2 个，持仓 5/5，成交 0，现金 6,945 元",
-        "2026-09-02：买点 4 个，持仓 5/5，成交 0，现金 7,426 元",
-        "2026-09-03：买点 4 个，持仓 5/5，成交 0，现金 7,426 元",
-        "2026-09-04：买点 3 个，持仓 5/5，成交 0，现金 6,417 元",
-        "2026-09-07：买点 4 个，持仓 5/5，成交 0，现金 6,417 元",
-        "2026-09-08：买点 5 个，持仓 5/5，成交 0，现金 6,417 元",
-        "2026-09-10：买点 3 个，持仓 5/5，成交 0，现金 8,655 元"
+        "2026-08-27：买点 4 个，持仓 5/3，成交 0，现金 8,557 元",
+        "2026-08-28：买点 5 个，持仓 5/3，成交 0，现金 8,557 元",
+        "2026-08-31：买点 1 个，持仓 5/3，成交 0，现金 6,945 元",
+        "2026-09-01：买点 2 个，持仓 5/3，成交 0，现金 6,945 元",
+        "2026-09-02：买点 4 个，持仓 5/3，成交 0，现金 7,426 元",
+        "2026-09-03：买点 4 个，持仓 5/3，成交 0，现金 7,426 元",
+        "2026-09-04：买点 3 个，持仓 5/3，成交 0，现金 6,417 元",
+        "2026-09-07：买点 4 个，持仓 5/3，成交 0，现金 6,417 元",
+        "2026-09-08：买点 5 个，持仓 5/3，成交 0，现金 6,417 元",
+        "2026-09-10：买点 3 个，持仓 5/3，成交 0，现金 8,655 元"
       ],
       "why": "策略不是没找到机会，是找到了也吃不下。此时再怎么优化选股逻辑都不会改变结果。",
       "action": "先解决仓位/预算口径（见 capital_cap_contradiction），再谈信号质量。",
@@ -2020,6 +2053,253 @@
       }
     },
     {
+      "finding_id": "unlogged_param_change:swing.entry_types",
+      "rule_id": "unlogged_param_change",
+      "subject": "swing.entry_types",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「swing.entry_types」被改过，但没有对应的假设记录",
+      "evidence": [
+        "['A', 'B'] → ['G']（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param swing.entry_types --expect '...'",
+      "data": {
+        "strategy_id": "swing",
+        "param": "entry_types",
+        "before": [
+          "A",
+          "B"
+        ],
+        "after": [
+          "G"
+        ],
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:swing.stop_loss_pct",
+      "rule_id": "unlogged_param_change",
+      "subject": "swing.stop_loss_pct",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「swing.stop_loss_pct」被改过，但没有对应的假设记录",
+      "evidence": [
+        "0.05 → 0.12（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param swing.stop_loss_pct --expect '...'",
+      "data": {
+        "strategy_id": "swing",
+        "param": "stop_loss_pct",
+        "before": 0.05,
+        "after": 0.12,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:swing.take_profit_pct",
+      "rule_id": "unlogged_param_change",
+      "subject": "swing.take_profit_pct",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「swing.take_profit_pct」被改过，但没有对应的假设记录",
+      "evidence": [
+        "0.08 → 0.2（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param swing.take_profit_pct --expect '...'",
+      "data": {
+        "strategy_id": "swing",
+        "param": "take_profit_pct",
+        "before": 0.08,
+        "after": 0.2,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:swing.max_positions",
+      "rule_id": "unlogged_param_change",
+      "subject": "swing.max_positions",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「swing.max_positions」被改过，但没有对应的假设记录",
+      "evidence": [
+        "5 → 3（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param swing.max_positions --expect '...'",
+      "data": {
+        "strategy_id": "swing",
+        "param": "max_positions",
+        "before": 5,
+        "after": 3,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:swing.single_budget",
+      "rule_id": "unlogged_param_change",
+      "subject": "swing.single_budget",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「swing.single_budget」被改过，但没有对应的假设记录",
+      "evidence": [
+        "10000.0 → 15000.0（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param swing.single_budget --expect '...'",
+      "data": {
+        "strategy_id": "swing",
+        "param": "single_budget",
+        "before": 10000.0,
+        "after": 15000.0,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:learn.stop_loss_pct",
+      "rule_id": "unlogged_param_change",
+      "subject": "learn.stop_loss_pct",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「learn.stop_loss_pct」被改过，但没有对应的假设记录",
+      "evidence": [
+        "-0.08 → -0.12（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param learn.stop_loss_pct --expect '...'",
+      "data": {
+        "strategy_id": "learn",
+        "param": "stop_loss_pct",
+        "before": -0.08,
+        "after": -0.12,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:learn.take_profit_pct",
+      "rule_id": "unlogged_param_change",
+      "subject": "learn.take_profit_pct",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「learn.take_profit_pct」被改过，但没有对应的假设记录",
+      "evidence": [
+        "0.15 → 0.2（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param learn.take_profit_pct --expect '...'",
+      "data": {
+        "strategy_id": "learn",
+        "param": "take_profit_pct",
+        "before": 0.15,
+        "after": 0.2,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:learn.take_profit_mode",
+      "rule_id": "unlogged_param_change",
+      "subject": "learn.take_profit_mode",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「learn.take_profit_mode」被改过，但没有对应的假设记录",
+      "evidence": [
+        "half → full（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param learn.take_profit_mode --expect '...'",
+      "data": {
+        "strategy_id": "learn",
+        "param": "take_profit_mode",
+        "before": "half",
+        "after": "full",
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:learn.trailing_activate_pct",
+      "rule_id": "unlogged_param_change",
+      "subject": "learn.trailing_activate_pct",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「learn.trailing_activate_pct」被改过，但没有对应的假设记录",
+      "evidence": [
+        "5.0 → 15.0（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param learn.trailing_activate_pct --expect '...'",
+      "data": {
+        "strategy_id": "learn",
+        "param": "trailing_activate_pct",
+        "before": 5.0,
+        "after": 15.0,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:learn.single_budget",
+      "rule_id": "unlogged_param_change",
+      "subject": "learn.single_budget",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「learn.single_budget」被改过，但没有对应的假设记录",
+      "evidence": [
+        "10000 → None（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param learn.single_budget --expect '...'",
+      "data": {
+        "strategy_id": "learn",
+        "param": "single_budget",
+        "before": 10000,
+        "after": null,
+        "matched_hypothesis": ""
+      }
+    },
+    {
+      "finding_id": "unlogged_param_change:learn.max_total_positions",
+      "rule_id": "unlogged_param_change",
+      "subject": "learn.max_total_positions",
+      "severity": "P0",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "参数「learn.max_total_positions」被改过，但没有对应的假设记录",
+      "evidence": [
+        "8 → 5（对比 2026-09-14 的快照）"
+      ],
+      "why": "改动没有预期就无法验证，等于放弃了这次改动本可以提供的信息。",
+      "action": "补一条假设说明为什么改、期望什么指标变好、多久后核对：\n  python scripts/strategy_review.py --open-hypothesis --param learn.max_total_positions --expect '...'",
+      "data": {
+        "strategy_id": "learn",
+        "param": "max_total_positions",
+        "before": 8,
+        "after": 5,
+        "matched_hypothesis": ""
+      }
+    },
+    {
       "finding_id": "pool_fallback:swing",
       "rule_id": "pool_fallback",
       "subject": "swing",
@@ -2027,79 +2307,38 @@
       "layer": "execution",
       "layer_label": "执行层",
       "horizon": "今天就能改",
-      "title": "#3 波段仓 有 1 天的池子不是按稳定分选出来的",
+      "title": "#3 波段仓 有 2 天的池子不是按稳定分选出来的",
       "evidence": [
-        "2026-09-15：过稳定分线 0 只，却仍入池 50 只"
+        "2026-09-15：过稳定分线 0 只，却仍入池 50 只",
+        "2026-09-16：过稳定分线 0 只，却仍入池 50 只"
       ],
       "why": "过线 0 只说明当天走了种子池兜底，此时的持仓不代表策略的选股能力，不该计入策略绩效。",
       "action": "查 swing_pool_builder 的数据源与 stability_score 计算；兜底时应在产物里显式标记。",
       "data": {
         "days": [
-          "2026-09-15"
+          "2026-09-15",
+          "2026-09-16"
         ]
       }
     },
     {
-      "finding_id": "signal_negative_expectancy:account1.buy_zone",
-      "rule_id": "signal_negative_expectancy",
-      "subject": "account1.buy_zone",
+      "finding_id": "spec_missing:learn",
+      "rule_id": "spec_missing",
+      "subject": "learn",
       "severity": "P1",
-      "layer": "signal",
-      "layer_label": "信号层",
-      "horizon": "攒够样本再判",
-      "title": "#1 学习仓 信号「buy_zone」累计亏损 6,807 元",
+      "layer": "execution",
+      "layer_label": "执行层",
+      "horizon": "今天就能改",
+      "title": "#1 学习仓 有 1 个参数抽取不到",
       "evidence": [
-        "32 笔，胜率 19%，单笔平均 -2.65%",
-        "证据等级：可用（可提改参提案，须先影子验证）",
-        "期望 95% 区间 [-4.3833, -0.9183]%"
+        "single_budget（单笔预算）← scripts/sim_executor.py:DEFAULT_BUY_BUDGET"
       ],
-      "why": "单一信号长期负期望，可能是入场条件不成立，也可能只是样本太小的运气。",
-      "action": "样本已够，可提改参提案并做影子对照。",
+      "why": "说明代码里常量被改名或挪走了，策略说明书从这一刻起就是错的。",
+      "action": "核对 review/spec.py 的参数注册表与代码现状。",
       "data": {
-        "signal": "buy_zone",
-        "n": 32,
-        "win_count": 6,
-        "win_rate_pct": 18.75,
-        "net_pnl": -6807.06,
-        "avg_pnl_pct": -2.651,
-        "expectancy": {
-          "n": 32,
-          "mean_pct": -2.6508,
-          "std_pct": 5.0003,
-          "stderr_pct": 0.8839,
-          "t_stat": -2.999,
-          "ci_low_pct": -4.3833,
-          "ci_high_pct": -0.9183,
-          "significant": true
-        },
-        "evidence": {
-          "n": 32,
-          "level": "usable",
-          "label": "可用",
-          "can_do": "可提改参提案，须先影子验证"
-        }
-      }
-    },
-    {
-      "finding_id": "below_breakeven:account1",
-      "rule_id": "below_breakeven",
-      "subject": "account1",
-      "severity": "P1",
-      "layer": "parameter",
-      "layer_label": "参数层",
-      "horizon": "需回测+影子验证",
-      "title": "#1 学习仓 胜率低于保本线 36.3 个点",
-      "evidence": [
-        "实际胜率 18.8%（6/32），95% 区间 [8.9%, 35.3%]",
-        "盈亏比 0.82 → 保本需要胜率 55.0%",
-        "证据等级：可用（可提改参提案，须先影子验证）"
-      ],
-      "why": "在当前盈亏比下，这个胜率长期是负期望。要么提高胜率，要么放大盈亏比。",
-      "action": "走参数层流程：先回测再影子验证，不要直接改生产参数。",
-      "data": {
-        "win_rate_pct": 18.75,
-        "breakeven_pct": 55.03008068892804,
-        "payoff_ratio": 0.8171879588052257
+        "missing": [
+          "single_budget"
+        ]
       }
     },
     {
@@ -2119,92 +2358,23 @@
       "data": {
         "gap": "池内扫描层无埋点：不知道入池 N 只里有几只出信号、几只因 A/B 类型或分数线被拒。swing_daily_report 落 scanned/signaled/executable 三个计数即可补上。"
       }
-    },
-    {
-      "finding_id": "signal_negative_expectancy:account3.波段模拟",
-      "rule_id": "signal_negative_expectancy",
-      "subject": "account3.波段模拟",
-      "severity": "P2",
-      "layer": "signal",
-      "layer_label": "信号层",
-      "horizon": "攒够样本再判",
-      "title": "#3 波段仓 信号「波段模拟」累计亏损 2,788 元",
-      "evidence": [
-        "15 笔，胜率 20%，单笔平均 -2.22%",
-        "证据等级：弱（能看方向，不足以改参数）",
-        "期望 95% 区间 [-5.1036, 0.6684]%"
-      ],
-      "why": "单一信号长期负期望，可能是入场条件不成立，也可能只是样本太小的运气。",
-      "action": "继续观察，攒到 20 笔再判（还差 5 笔）。",
-      "data": {
-        "signal": "波段模拟",
-        "n": 15,
-        "win_count": 3,
-        "win_rate_pct": 20.0,
-        "net_pnl": -2788.0,
-        "avg_pnl_pct": -2.218,
-        "expectancy": {
-          "n": 15,
-          "mean_pct": -2.2176,
-          "std_pct": 5.7028,
-          "stderr_pct": 1.4724,
-          "t_stat": -1.506,
-          "ci_low_pct": -5.1036,
-          "ci_high_pct": 0.6684,
-          "significant": false
-        },
-        "evidence": {
-          "n": 15,
-          "level": "weak",
-          "label": "弱",
-          "can_do": "能看方向，不足以改参数"
-        }
-      }
-    },
-    {
-      "finding_id": "drawdown_breach:account1",
-      "rule_id": "drawdown_breach",
-      "subject": "account1",
-      "severity": "P2",
-      "layer": "parameter",
-      "layer_label": "参数层",
-      "horizon": "需回测+影子验证",
-      "title": "#1 学习仓 最大回撤 11.6%",
-      "evidence": [
-        "当前回撤 11.6%，累计收益 -0.09%",
-        "最差单日 -0.06%，当前连亏 6 天"
-      ],
-      "why": "回撤超过风险预算时，先确认是止损没执行还是仓位过重，再谈参数。",
-      "action": "核对止损是否按规则触发；确认后再评估是否收缩单笔预算。",
-      "data": {
-        "days": 43,
-        "first_date": "2026-07-20",
-        "last_date": "2026-09-16",
-        "total_value": 91076.73,
-        "cumulative_return_pct": -0.0892,
-        "max_drawdown_pct": 11.6043,
-        "current_drawdown_pct": 11.6043,
-        "best_day_pct": 0.0164,
-        "worst_day_pct": -0.0636,
-        "losing_streak": 6
-      }
     }
   ],
   "summary": {
-    "findings_total": 7,
+    "findings_total": 15,
     "by_severity": {
-      "P0": 1,
-      "P1": 3,
-      "P2": 3
+      "P0": 12,
+      "P1": 2,
+      "P2": 1
     },
     "by_layer": {
-      "execution": 3,
-      "signal": 2,
-      "parameter": 2
+      "execution": 15,
+      "signal": 0,
+      "parameter": 0
     },
-    "actionable_today": 3,
+    "actionable_today": 15,
     "open_hypotheses": 3,
     "due_hypotheses": 0,
-    "headline": "1 个 P0 待修，最紧要：#3 波段仓 近 15 日有 10 天出了买点却因满仓没成交"
+    "headline": "12 个 P0 待修，最紧要：#3 波段仓 近 15 日有 10 天出了买点却因满仓没成交"
   }
 }

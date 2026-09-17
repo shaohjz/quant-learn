@@ -149,19 +149,25 @@ def main() -> int:
         print("非交易时段")
         return 0
 
-    extra_push = ["--no-push"] if args.no_push else []
+    try:
+        from sim.config import notify_intraday_push_enabled
+        mute = not notify_intraday_push_enabled()
+    except Exception:
+        mute = True
+    no_push = args.no_push or mute
+    extra_push = ["--no-push"] if no_push else []
     force = ["--force"] if args.force else []
 
     rc = 0
     if not args.skip_index:
         try:
-            index_pulse(args.no_push)
+            index_pulse(no_push)
         except Exception as e:
             log.warning("index_pulse: %s", e)
 
     if not args.skip_portfolio:
         # portfolio_alert 自己判断时段；force 时仍调用
-        r = run_script("scripts/portfolio_alert.py")
+        r = run_script("scripts/portfolio_alert.py", extra_push)
         rc = rc or r
 
     if not args.skip_swing:

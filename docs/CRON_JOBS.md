@@ -4,7 +4,7 @@
 > **实时层**：[REALTIME.md](./REALTIME.md) · **复盘**：[REVIEW_LOOP.md](./REVIEW_LOOP.md)  
 > **产机角色**：工作台 **3-windows**（OpenClaw）· 人设 `pm/agents/WINDOWS_PROD.md`  
 > 产机路径：`C:\Users\Administrator\.openclaw\workspace\quant-learn` · 时区 `Asia/Shanghai`  
-> 更新：2026-09-16（时钟迁回 **schtasks `\QuantLearn_ProdClock`**：OpenClaw agentTurn 时钟打爆「定时任务 50 次/天」配额停摆，事故见 `pm/ops/2026-09-16-clock-quota-outage.md`；扫描 schtasks 仍默认停）
+> 更新：2026-09-17（企微只推收盘简报；Pulse 盘中提醒默认关。时钟仍是 schtasks `\QuantLearn_ProdClock`）
 
 ---
 
@@ -16,7 +16,7 @@
 | **OpenClaw LLM** | `openclaw cron` `agentTurn` | **文案落盘 + ★守夜验货** | **最多 1～2 条** |
 | **其余 Windows schtasks** | 任务计划 | 扫描类 **默认 Disabled**；VqlearnLive / SignalLedger / StrategyScorecard / FinanceManager / IntradayScanner / WeeklyStrategyReview 为回迁探针单独启用 | 见 DEPLOYMENT |
 
-盘中「每 10 分」= 时钟 `*/10` + `quant_pulse.py` 自己判断时段，**不是** LLM 每 10 分钟扫盘。
+盘中「每 10 分」= 时钟 `*/10` 仍跑 Pulse（模拟盯盘），**默认不推企微**（`notify.intraday_push: false`）。主人只收 16:20 收盘简报。
 工作台 **运维运费** 只发版/巡检，不另挂交易时钟（时钟只在 3-windows）。
 
 ---

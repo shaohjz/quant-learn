@@ -169,6 +169,47 @@ ONCE_JOBS: list[dict] = [
     },
 ]
 
+# 这些脚本支持 --no-push。收盘简报 daily_close_report 故意不在名单里，仍推企微。
+_NO_PUSH_SCRIPTS = (
+    "scripts/quant_pulse.py",
+    "scripts/swing_auto.py",
+    "scripts/swing_daily_report.py",
+    "scripts/bank_swing_daily.py",
+    "scripts/trade_journal.py",
+    "scripts/strategy_review.py",
+    "scripts/portfolio_alert.py",
+    "scripts/swing_intraday_watch.py",
+)
+
+
+def mute_intraday_wecom() -> bool:
+    try:
+        from sim.config import notify_intraday_push_enabled
+
+        return not notify_intraday_push_enabled()
+    except Exception:
+        return True
+
+
+def _script_rel(step: list[str]) -> str:
+    for part in step:
+        p = str(part).replace("\\", "/")
+        if "/scripts/" in p:
+            return "scripts/" + p.rsplit("/scripts/", 1)[-1]
+        if p.startswith("scripts/"):
+            return p
+    return ""
+
+
+def apply_wecom_policy(step: list[str]) -> list[str]:
+    """盘中企微关闭时，给支持 --no-push 的脚本补上该参数。"""
+    if not mute_intraday_wecom():
+        return step
+    rel = _script_rel(step)
+    if rel in _NO_PUSH_SCRIPTS and "--no-push" not in step:
+        return list(step) + ["--no-push"]
+    return step
+
 
 def in_pulse_clock(hmi: int) -> bool:
     return (930 <= hmi <= 1130) or (1300 <= hmi <= 1450)
@@ -185,12 +226,18 @@ def plan(dt: datetime) -> list[dict]:
             {
                 "id": "pulse",
                 "once": False,
-                "steps": [python_cmd("scripts/quant_pulse.py")],
+                "steps": [apply_wecom_policy(python_cmd("scripts/quant_pulse.py"))],
             }
         )
     for spec in ONCE_JOBS:
         if spec["start"] <= hmi <= spec["end"] and not already_done(day, spec["id"]):
-            jobs.append({**spec, "once": True})
+            jobs.append(
+                {
+                    **spec,
+                    "once": True,
+                    "steps": [apply_wecom_policy(s) for s in spec["steps"]],
+                }
+            )
     return jobs
 
 

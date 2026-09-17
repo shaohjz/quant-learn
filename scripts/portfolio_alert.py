@@ -17,7 +17,7 @@ scripts/portfolio_alert.py - 盘中阈值提醒(持仓 + 观察股)
   - output/intraday_log.jsonl   :每次现价快照 JSON(一行一条,便于后续分析)
   - output/alert_state.json     :今日已触发阈值去重记录
 """
-import json, sys, logging, traceback, urllib.request, io, os
+import json, sys, logging, traceback, urllib.request, io, os, argparse
 from datetime import datetime, time as dtime
 from pathlib import Path
 
@@ -479,7 +479,7 @@ def process_armed_signals(now: datetime):
         return 0, []
 
 
-def main():
+def main(no_push: bool = False):
     now = get_now()
     
     # REQ-063 修复：处理 armed 信号（close_confirmed_at 已设置，次日执行卖出）
@@ -503,6 +503,14 @@ def main():
         RULES = load_all_alert_rules()
     if WEBHOOK_URL is None:
         WEBHOOK_URL = _load_webhook()
+    try:
+        from sim.config import notify_intraday_push_enabled
+        if no_push or not notify_intraday_push_enabled():
+            WEBHOOK_URL = ""
+            logger.info("盘中企微已关（notify.intraday_push=false 或 --no-push），只写日志")
+    except Exception as ex:
+        logger.warning("读取 notify.intraday_push 失败，默认不推企微: %s", ex)
+        WEBHOOK_URL = ""
 
     # 交易时段内：也检查 armed 信号（实时价格更准确）
     triggered_msgs = []
@@ -914,5 +922,8 @@ def main():
 
 if __name__ == "__main__":
     configure_stdio()
-    sys.exit(main())
+    _ap = argparse.ArgumentParser()
+    _ap.add_argument("--no-push", action="store_true", help="不推企微（盘中提醒静默）")
+    _args = _ap.parse_args()
+    sys.exit(main(no_push=_args.no_push))
 

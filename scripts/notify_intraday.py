@@ -364,6 +364,12 @@ def main():
     parser.add_argument("--no-webhook", action="store_true", help="不推送企微")
     parser.add_argument("--force", action="store_true", help="强制运行（忽略交易时段检查）")
     args = parser.parse_args()
+    try:
+        from sim.config import notify_intraday_push_enabled
+        if not notify_intraday_push_enabled():
+            args.no_webhook = True
+    except Exception:
+        args.no_webhook = True
 
     now = datetime.now()
     logger.info(f"=== 盘中盯盘 {now.strftime('%Y-%m-%d %H:%M')} ===")

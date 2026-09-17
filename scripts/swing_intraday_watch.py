@@ -468,6 +468,12 @@ def main() -> int:
     ap.add_argument("--no-trade", action="store_true", help="只提醒，不写模拟成交")
     ap.add_argument("--max-buy-alerts", type=int, default=3, help="单次最多推几只买入")
     args = ap.parse_args()
+    try:
+        from sim.config import notify_intraday_push_enabled
+        if not notify_intraday_push_enabled():
+            args.no_push = True
+    except Exception:
+        args.no_push = True
 
     if not args.force and not is_trading_now():
         log.info("非交易时段，退出")

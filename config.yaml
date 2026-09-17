@@ -164,6 +164,10 @@ notifier:
   enabled: true
 notify:
   wecom_webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE
+  # 2026-09-17 主人：盘中企微太多。false = Pulse/盘中提醒/盘前扫描/波段结论/台账
+  # 都不推企微；模拟盘照跑。只推收盘简报 scripts/daily_close_report.py。
+  # 改回 true 即恢复 09:35「🔔 盘中提醒」等旧推送。
+  intraday_push: false
 precision:
   amount_decimals: 2
   cost_decimals: 3

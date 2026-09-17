@@ -163,3 +163,12 @@ def risk_params() -> dict:
 def broker_mode() -> str:
     return os.environ.get("BROKER_MODE",
                           get("broker.mode", "sim")).lower()
+
+
+def notify_intraday_push_enabled() -> bool:
+    """盘中/盘前企微（Pulse「盘中提醒」、波段结论、台账推送）。
+
+    2026-09-17 主人：提醒太多，默认关，只留收盘简报 daily_close_report。
+    config.notify.intraday_push: true 可恢复旧行为。
+    """
+    return bool(get("notify.intraday_push", False))

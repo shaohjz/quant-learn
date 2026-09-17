@@ -2,13 +2,13 @@
 
 > **本文唯一权威。** 主人让你部署/检查时：**只读本文并严格执行**；不要另找提示词、不要另编定时器。  
 > `OPENCLAW_DAILY_RUN.md` / `CRON_JOBS.md` 等是配套细读，**缺省可只靠本文**。  
-> **项目目的**：模拟验证 → **每天给人（主人）实盘挂单建议**（盘中提醒 + 收盘赚亏）。  
+> **项目目的**：模拟验证 → **每天给人（主人）一份收盘日报**（赚亏 + 挂单建议）。盘中不再推企微。  
 > **默认不代客实盘下单**（除非主人另行要求开 QMT live）。  
 >  
 > **产机路径（写死）**：`C:\Users\Administrator\.openclaw\workspace\quant-learn`  
 > **时区**：`Asia/Shanghai`  
 > **配套**（可选细读）：[OPENCLAW_DAILY_RUN.md](./OPENCLAW_DAILY_RUN.md) · [CRON_JOBS.md](./CRON_JOBS.md) · [REALTIME.md](./REALTIME.md) · [REVIEW_LOOP.md](./REVIEW_LOOP.md)  
-> **更新**：2026-09-16 晚（本机 Linux `linux_sim_runner` crontab **已停**，量化只跑产机 Windows）；同日早些时候三账户切中长线、TES-23 bat/CRLF。此前 2026-09-14 origin 切回工蜂。
+> **更新**：2026-09-17（企微只推收盘简报，关掉 Pulse「🔔 盘中提醒」）
 > **给 Cursor 的铁律**：`.cursor/rules/deploy-docs-first.mdc` — 有部署影响的改动 → 更新本文 → push → 只回主人 OpenClaw 一句话。
 
 ---
@@ -573,7 +573,36 @@ type output\strategy_review.log
   --expect "满仓拦截归零，月成交回到 8 笔以上" --horizon-days 21
 ```
 
-### ★ 最新变更：origin 切回工蜂并合并分叉（2026-09-14）
+### ★ 最新变更：关掉盘中企微，只留收盘简报（2026-09-17）
+
+> **改了什么：** 主人嫌 `🔔 盘中提醒` 太多。`config.yaml` `notify.intraday_push: false`：Pulse / 盘中盯盘 / 盘前扫描 / 波段结论 / 台账 **不推企微**，模拟盘照跑。企微只推 `daily_close_report`（约 16:20 的「量化收盘简报」）。
+> **不必重建定时器。** `git pull` 后下一拍 Pulse 即静默。若 `QuantLearn_IntradayScanner` 仍 Enabled，请 `/disable`（模式 B 本就该停）。
+> 回滚：把 `notify.intraday_push` 改回 `true`。
+
+产机执行（Windows）：
+
+```bat
+cd /d C:\Users\Administrator\.openclaw\workspace\quant-learn
+git pull
+
+REM 确认开关
+.venv\Scripts\python.exe -c "from sim.config import notify_intraday_push_enabled; print(notify_intraday_push_enabled())"
+
+REM 冒烟：应打印 False，且 09:35 Pulse 不再推「盘中提醒」
+.venv\Scripts\python.exe -m pytest tests\test_notify_intraday_push.py -q
+schtasks /change /tn "QuantLearn_IntradayScanner" /disable
+```
+
+**验收标准：**
+
+1. 上面打印 `False`。
+2. 测试全绿。
+3. 交易时段企微不再出现 `🔔 盘中提醒`；16:20 仍有收盘简报。
+4. 不必重建 `QuantLearn_ProdClock`。
+
+**回滚：** `config.yaml` 里 `notify.intraday_push: true` 后 git pull。
+
+### ★ 历史变更：origin 切回工蜂并合并分叉（2026-09-14）
 
 > **改了什么：** 主人要求本机/产机先不走 GitHub。权威远程改回 [git.woa.com:jizhouhu/quant-learn](https://git.woa.com/jizhouhu/quant-learn)。GitHub `master`（含 #1 buy_zone / 3-windows 人设）与工蜂 `master`（含 09-09 起台账、移动止损修复、prod_clock 交易日门控）在 `0aa4f3b` 分叉后已合并。
 > **不必重建 schtasks。** 产机若 origin 已是工蜂，只需 `git pull`。若仍指向 GitHub：先 `git remote set-url` 再 pull。
@@ -1426,7 +1455,7 @@ git log -1 --oneline origin/master
 | **VqlearnLive rc=3 且 `vqlearn_live*.log` 停更** | bat 行尾被 git 写回 LF-only+多行 `if (` 括号块 → cmd 解析错乱、轮转/python 行根本不执行（2026-09-16 TES-23 已修：bat 全 CRLF+单行 if；.gitattributes 已固定 eol=crlf）。复发先查 `git ls-files --eol scripts\vqlearn_live_runner.bat`（应为 w/crlf）；再查 venv：`pip show vnpy_paperaccount` |
 | 波段赚亏永远 0 | 看 `sim_trades` account_id=3；机会分是否从未成交 |
 | 银行波段没结论 | 查 `QuantLearn_BankSwingDaily`；`output\bank_swing_daily\今天.md`；日志 `bank_swing_daily_report.log` |
-| 盘中完全没提醒 | 查 schtasks `\QuantLearn_ProdClock`（Next Run Time / Last Result / Logon Mode=Interactive/Background）；`type output\prod_clock.log`；`quant_pulse.log`；勿再查 Pulse schtasks（模式 B 已停） |
+| 盘中完全没提醒 | **现行设计**：`notify.intraday_push=false`，企微不应再有 `🔔 盘中提醒`。若还在推，查是否未 pull / 配置被 local 覆盖。收盘简报应在 16:20 出现 |
 | 波段池一直是旧蓝筹 | 查 `QuantLearn_SwingPool`；看 `output\swing_pool\latest.json` 日期；周末用 `--mode hist` |
 | LLM cron error | 交易改 schtasks；别依赖模型在线 |
 | Agent「说做了」但远程没有 | 旧提示词只落盘不验收；**补挂 19:15 守夜 + 20:30 Evening**；重贴提示词 B/C |
@@ -1439,7 +1468,7 @@ git log -1 --oneline origin/master
 
 ```text
 读 docs/DEPLOYMENT.md，git pull 后严格按文档从 ★ 做到步骤 7。
-重点：origin 切回工蜂 git.woa.com:jizhouhu/quant-learn；3-windows 跑时钟，不要和 schtasks 双开。
+重点：notify.intraday_push=false，关掉 Pulse 盘中企微，只留 16:20 收盘简报；IntradayScanner 若还开着就 disable。不必重建 ProdClock。
 做完写 pm/ops/今天-deploy.md。
 ```
 
